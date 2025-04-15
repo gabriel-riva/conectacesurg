@@ -3,6 +3,15 @@ import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 
 const app = express();
+
+// Configurar confiança em proxies para ambiente de produção (Replit)
+app.set('trust proxy', 1);
+
+// Log das variáveis de ambiente para diagnóstico
+log(`NODE_ENV: ${process.env.NODE_ENV || 'não definido'}`);
+log(`DATABASE_URL: ${process.env.DATABASE_URL ? '[configurado]' : 'não configurado'}`);
+log(`GOOGLE_CLIENT_SECRET: ${process.env.GOOGLE_CLIENT_SECRET ? '[configurado]' : 'não configurado'}`);
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 

@@ -40,8 +40,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       cookie: { 
         secure: app.get("env") === "production",
         maxAge: 24 * 60 * 60 * 1000, // 24 hours
+        // No ambiente de produção, a cookie só pode ser usada em HTTPS
+        // Adicionamos a opção sameSite para melhorar a segurança
+        sameSite: app.get("env") === "production" ? 'none' : 'lax',
       },
       store: createSessionStore(),
+      // Ajuste para funcionamento com proxy da Replit
+      proxy: true,
     })
   );
 
