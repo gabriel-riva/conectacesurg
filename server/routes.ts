@@ -1,4 +1,4 @@
-import type { Express, Request, Response } from "express";
+import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertUserSchema, insertGoogleUserSchema } from "@shared/schema";
@@ -7,9 +7,28 @@ import session from "express-session";
 import passport from "passport";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 import MemoryStore from "memorystore";
+import connectPgSimple from "connect-pg-simple";
+import { pool } from "./db";
 
-// Create memory store for sessions
-const SessionStore = MemoryStore(session);
+// Create PostgreSQL session store for production or memory store for development
+const createSessionStore = () => {
+  if (process.env.NODE_ENV === 'production' && process.env.DATABASE_URL) {
+    const PgSession = connectPgSimple(session);
+    console.log('Usando armazenamento PostgreSQL para sessões');
+    return new PgSession({
+      pool: pool,
+      tableName: 'session',
+      createTableIfMissing: true
+    });
+  }
+  
+  // Fallback para MemoryStore em desenvolvimento
+  const SessionStore = MemoryStore(session);
+  console.log('Usando armazenamento em memória para sessões');
+  return new SessionStore({
+    checkPeriod: 86400000 // prune expired entries every 24h
+  });
+};
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Session configuration
@@ -22,9 +41,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         secure: app.get("env") === "production",
         maxAge: 24 * 60 * 60 * 1000, // 24 hours
       },
-      store: new SessionStore({
-        checkPeriod: 86400000, // prune expired entries every 24h
-      }),
+      store: createSessionStore(),
     })
   );
 
@@ -90,12 +107,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Authentication status check
   app.get("/api/auth/status", (req, res) => {
+    console.log("📊 Verificando status de autenticação");
+    console.log(`Autenticado: ${req.isAuthenticated()}`);
+    
     if (req.isAuthenticated()) {
+      console.log(`Usuário logado: ${(req.user as any)?.name || 'Desconhecido'}`);
+      console.log(`Email: ${(req.user as any)?.email || 'Não disponível'}`);
+      console.log(`Função: ${(req.user as any)?.role || 'Não disponível'}`);
+      
       res.json({ 
         authenticated: true, 
         user: req.user 
       });
     } else {
+      console.log("Nenhum usuário autenticado na sessão");
       res.json({ authenticated: false });
     }
   });
@@ -110,11 +135,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Google auth callback
   app.get('/api/auth/google/callback', 
+    (req, res, next) => {
+      // Log callback recebido
+      console.log("🔄 Callback do Google OAuth recebido");
+      next();
+    },
     passport.authenticate('google', { 
       failureRedirect: '/?error=auth_failed',
       session: true
     }),
     (req, res) => {
+      // Log autenticação bem-sucedida
+      console.log("✅ Autenticação bem-sucedida, redirecionando para dashboard");
+      console.log(`👤 Usuário: ${(req.user as any)?.name || 'Desconhecido'}`);
+      
       // Successful authentication, redirect to dashboard
       res.redirect('/dashboard');
     }
