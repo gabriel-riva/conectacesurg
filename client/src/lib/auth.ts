@@ -1,13 +1,12 @@
 import { useState, useEffect, useContext, createContext } from "react";
 import { User } from "@shared/schema";
 import { apiRequest } from "./queryClient";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 
 interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   error: Error | null;
-  googleLogin: (code: string) => Promise<void>;
   logout: () => Promise<void>;
   checkAuthStatus: () => Promise<void>;
 }
@@ -27,34 +26,26 @@ export const useAuthProvider = (): AuthContextType => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
-  const { refetch } = useQuery({
-    queryKey: ['/api/auth/status'],
-    onSuccess: (data) => {
-      if (data.authenticated && data.user) {
-        setUser(data.user);
-      } else {
-        setUser(null);
-      }
-      setIsLoading(false);
-    },
-    onError: (err) => {
-      setError(err as Error);
-      setUser(null);
-      setIsLoading(false);
-    },
+  // Use the status query with stale time to prevent too many refreshes
+  const { refetch } = useQuery<{authenticated: boolean, user?: User}>({
+    queryKey: ['/api/auth/status']
   });
 
+  // Function to check authentication status
   const checkAuthStatus = async () => {
     setIsLoading(true);
     try {
-      const { data } = await refetch();
+      const result = await refetch();
+      const data = result.data;
+      
       if (data?.authenticated && data.user) {
         setUser(data.user);
       } else {
         setUser(null);
       }
-    } catch (error) {
-      setError(error as Error);
+    } catch (err) {
+      console.error("Auth check error:", err);
+      setError(err as Error);
       setUser(null);
     } finally {
       setIsLoading(false);
@@ -66,43 +57,16 @@ export const useAuthProvider = (): AuthContextType => {
     checkAuthStatus();
   }, []);
 
-  const googleLogin = async (code: string) => {
-    try {
-      setIsLoading(true);
-
-      // Exchange the authorization code for user info
-      // This would normally be done on your backend
-      // For this example, simulating with a direct API call
-      const mockGoogleUserData = {
-        tokenId: code,
-        email: "conecta@cesurg.com", // Simulating the email from Google
-        name: "Conecta Admin",
-        googleId: "google-id-123",
-        photoUrl: null
-      };
-
-      // Send the Google data to your backend
-      const response = await apiRequest("POST", "/api/auth/google", mockGoogleUserData);
-      const data = await response.json();
-      
-      setUser(data.user);
-      setError(null);
-    } catch (error) {
-      setError(error as Error);
-      throw error;
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
+  // Logout function
   const logout = async () => {
     try {
       setIsLoading(true);
       await apiRequest("POST", "/api/auth/logout");
       setUser(null);
-    } catch (error) {
-      setError(error as Error);
-      throw error;
+    } catch (err) {
+      console.error("Logout error:", err);
+      setError(err as Error);
+      throw err;
     } finally {
       setIsLoading(false);
     }
@@ -112,7 +76,6 @@ export const useAuthProvider = (): AuthContextType => {
     user,
     isLoading,
     error,
-    googleLogin,
     logout,
     checkAuthStatus,
   };

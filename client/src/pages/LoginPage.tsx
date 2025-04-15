@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -8,50 +8,42 @@ import { useAuth } from "@/lib/auth";
 
 export default function LoginPage() {
   const [, setLocation] = useLocation();
-  const { user, googleLogin, isLoading } = useAuth();
+  const { user, isLoading, checkAuthStatus } = useAuth();
   const { toast } = useToast();
+  const [loginError, setLoginError] = useState<string | null>(null);
 
   useEffect(() => {
+    // Extract error from URL if present
+    const url = new URL(window.location.href);
+    const error = url.searchParams.get('error');
+    if (error === 'auth_failed') {
+      setLoginError('Autenticação falhou. Certifique-se de usar um e-mail @cesurg.com');
+      // Remove query parameter
+      url.searchParams.delete('error');
+      window.history.replaceState({}, '', url.toString());
+    }
+
     // If user is already logged in, redirect to dashboard
     if (user) {
       setLocation("/dashboard");
     }
   }, [user, setLocation]);
 
-  const handleGoogleLogin = async () => {
-    try {
-      // Initialize Google OAuth client
-      const client = google.accounts.oauth2.initCodeClient({
-        client_id: "1033430857520-a0q61g5f6dl8o20g1oejuukrqdb4lol1.apps.googleusercontent.com",
-        scope: "profile email",
-        ux_mode: "popup",
-        callback: async (response: any) => {
-          if (response.code) {
-            try {
-              // Process Google login
-              await googleLogin(response.code);
-              setLocation("/dashboard");
-            } catch (error) {
-              console.error("Login error:", error);
-              toast({
-                title: "Login falhou",
-                description: "Certifique-se de que seu email termine com @cesurg.com",
-                variant: "destructive",
-              });
-            }
-          }
-        },
-      });
-      
-      client.requestCode();
-    } catch (error) {
-      console.error("Google login error:", error);
+  // Display error toast if login error exists
+  useEffect(() => {
+    if (loginError) {
       toast({
-        title: "Erro de login",
-        description: "Não foi possível iniciar o login com Google. Tente novamente.",
+        title: "Login falhou",
+        description: loginError,
         variant: "destructive",
       });
+      setLoginError(null);
     }
+  }, [loginError, toast]);
+
+  const handleGoogleLogin = () => {
+    // Redirect to Google OAuth endpoint
+    window.location.href = "/api/auth/google";
   };
 
   return (
