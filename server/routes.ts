@@ -5,7 +5,7 @@ import { insertUserSchema, insertGoogleUserSchema } from "@shared/schema";
 import { ZodError } from "zod";
 import session from "express-session";
 import passport from "passport";
-import { OAuth2Strategy as GoogleStrategy } from "passport-local";
+import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 import MemoryStore from "memorystore";
 
 // Create memory store for sessions
@@ -46,6 +46,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Configure Google OAuth strategy
+  passport.use(new GoogleStrategy({
+    clientID: "1033430857520-a0q61g5f6dl8o20g1oejuukrqdb4lol1.apps.googleusercontent.com",
+    clientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
+    callbackURL: "https://conectacesurg.replit.app/api/auth/google/callback",
+    scope: ["profile", "email"]
+  }, async (accessToken, refreshToken, profile, done) => {
+    try {
+      // Extract user data from Google profile
+      const email = profile.emails?.[0]?.value;
+      
+      // Check if email ends with @cesurg.com
+      if (!email || !email.endsWith('@cesurg.com')) {
+        return done(new Error('Only @cesurg.com emails are allowed'), undefined);
+      }
+      
+      // Role assignment: conecta@cesurg.com is superadmin, others are regular users
+      const role = email === 'conecta@cesurg.com' ? 'superadmin' : 'user';
+      
+      const userData = {
+        googleId: profile.id,
+        email: email,
+        name: profile.displayName,
+        photoUrl: profile.photos?.[0]?.value || null,
+        role
+      };
+      
+      // Find or create user in DB
+      const user = await storage.createOrUpdateGoogleUser(userData);
+      return done(null, user);
+    } catch (error) {
+      return done(error, undefined);
+    }
+  }));
+
   // Authentication status check
   app.get("/api/auth/status", (req, res) => {
     if (req.isAuthenticated()) {
@@ -58,43 +93,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Google auth callback - handles the token from Google OAuth
-  app.post("/api/auth/google", async (req, res) => {
-    try {
-      const { tokenId, email, name, googleId, photoUrl } = req.body;
-      
-      if (!tokenId || !email || !name || !googleId) {
-        return res.status(400).json({ message: "Missing required fields" });
-      }
+  // Google auth routes
+  app.get('/api/auth/google', 
+    passport.authenticate('google', { 
+      scope: ['profile', 'email'],
+      hd: 'cesurg.com' // Hosted domain restriction
+    })
+  );
 
-      // Validate the user data
-      const userData = insertGoogleUserSchema.parse({
-        email,
-        name,
-        googleId,
-        photoUrl
-      });
-
-      // Create or update the user
-      const user = await storage.createOrUpdateGoogleUser(userData);
-
-      // Log the user in
-      req.login(user, (err) => {
-        if (err) {
-          return res.status(500).json({ message: "Failed to log in user" });
-        }
-        return res.json({ user });
-      });
-    } catch (error) {
-      if (error instanceof ZodError) {
-        return res.status(400).json({ 
-          message: "Validation error", 
-          errors: error.errors 
-        });
-      }
-      res.status(500).json({ message: "An error occurred during authentication" });
+  // Google auth callback
+  app.get('/api/auth/google/callback', 
+    passport.authenticate('google', { 
+      failureRedirect: '/?error=auth_failed',
+      session: true
+    }),
+    (req, res) => {
+      // Successful authentication, redirect to dashboard
+      res.redirect('/dashboard');
     }
-  });
+  );
 
   // Logout route
   app.post("/api/auth/logout", (req, res) => {
