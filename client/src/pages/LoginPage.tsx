@@ -5,12 +5,29 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Logo } from "@/components/ui/logo";
 import { useAuth } from "@/lib/auth";
+import { Badge } from "@/components/ui/badge";
+import { Loader2, RefreshCw } from "lucide-react";
+
+// Tipo para usuários retornados da API
+interface UserFromApi {
+  id: number;
+  name: string;
+  email: string;
+  role: string;
+  photoUrl: string | null;
+}
 
 export default function LoginPage() {
   const [, setLocation] = useLocation();
   const { user, isLoading, checkAuthStatus } = useAuth();
   const { toast } = useToast();
   const [loginError, setLoginError] = useState<string | null>(null);
+  const [dbUsers, setDbUsers] = useState<UserFromApi[]>([]);
+  const [showDevOptions, setShowDevOptions] = useState(false);
+  const [isLoadingUsers, setIsLoadingUsers] = useState(false);
+  
+  // Verificar se estamos em ambiente de desenvolvimento
+  const isDevelopment = import.meta.env.MODE === 'development';
 
   useEffect(() => {
     // Extract error from URL if present
@@ -41,13 +58,71 @@ export default function LoginPage() {
     }
   }, [loginError, toast]);
 
+  // Função para carregar usuários do banco quando o painel é aberto
+  const loadDatabaseUsers = () => {
+    if (!showDevOptions) return;
+    
+    setIsLoadingUsers(true);
+    fetch('/api/auth/dev-user-list')
+      .then(res => res.json())
+      .then(data => {
+        setDbUsers(data);
+        setIsLoadingUsers(false);
+      })
+      .catch(err => {
+        console.error('Erro ao buscar usuários cadastrados:', err);
+        setIsLoadingUsers(false);
+        toast({
+          title: "Erro",
+          description: "Não foi possível carregar a lista de usuários",
+          variant: "destructive",
+        });
+      });
+  };
+
+  // Carregar usuários quando as opções de desenvolvimento são abertas
+  useEffect(() => {
+    if (showDevOptions) {
+      loadDatabaseUsers();
+    }
+  }, [showDevOptions]);
+
   const handleGoogleLogin = () => {
     // Redirect to Google OAuth endpoint
     window.location.href = "/api/auth/google";
   };
 
+  const handleCreateTestUser = () => {
+    setIsLoadingUsers(true);
+    fetch('/api/auth/dev-create-test-user', {
+      method: 'POST'
+    })
+    .then(res => res.json())
+    .then(data => {
+      toast({
+        title: "Sucesso",
+        description: data.message,
+      });
+      loadDatabaseUsers();
+    })
+    .catch(err => {
+      console.error('Erro ao criar usuário de teste:', err);
+      toast({
+        title: "Erro",
+        description: "Não foi possível criar o usuário de teste",
+        variant: "destructive",
+      });
+      setIsLoadingUsers(false);
+    });
+  };
+
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-gray-100">
+      {isDevelopment && (
+        <div className="absolute top-0 left-0 right-0 bg-yellow-500 text-black text-xs text-center py-0.5">
+          Ambiente de Desenvolvimento
+        </div>
+      )}
       <div className="w-full max-w-md">
         <Card className="border-0">
           <CardContent className="pt-6 flex flex-col items-center">
@@ -80,6 +155,77 @@ export default function LoginPage() {
                 Apenas usuários com e-mail institucional <strong>@cesurg.com</strong> possuem acesso.
               </p>
             </div>
+            
+            {/* Opções de Desenvolvimento */}
+            {isDevelopment && (
+              <>
+                <Button
+                  variant="outline"
+                  className="mt-8 text-xs text-gray-500"
+                  onClick={() => setShowDevOptions(!showDevOptions)}
+                  size="sm"
+                >
+                  {showDevOptions ? "Ocultar" : "Mostrar"} Opções de Desenvolvimento
+                </Button>
+                
+                {showDevOptions && (
+                  <div className="mt-4 p-4 border rounded-md bg-gray-50 w-full">
+                    <div className="flex items-center justify-between mb-2">
+                      <h3 className="text-sm font-semibold">Selecione um usuário para login</h3>
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-8 w-8" 
+                        onClick={loadDatabaseUsers}
+                        disabled={isLoadingUsers}
+                      >
+                        <RefreshCw size={16} className={isLoadingUsers ? "animate-spin" : ""} />
+                      </Button>
+                    </div>
+                    
+                    {isLoadingUsers ? (
+                      <div className="text-center py-6">
+                        <Loader2 className="h-6 w-6 animate-spin mx-auto" />
+                        <span className="text-sm mt-2 block">Carregando usuários...</span>
+                      </div>
+                    ) : dbUsers.length === 0 ? (
+                      <div className="text-center py-6">
+                        <span className="text-sm">Nenhum usuário cadastrado ainda.</span>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          className="mt-4 mx-auto"
+                          onClick={handleCreateTestUser}
+                        >
+                          Criar Usuário de Teste
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="space-y-2 max-h-60 overflow-y-auto mt-3">
+                        {dbUsers.map(user => (
+                          <a 
+                            key={user.id}
+                            href={`/api/auth/dev-login/${user.id}`}
+                            className="flex items-center p-3 text-sm bg-white border rounded hover:bg-gray-100 cursor-pointer"
+                          >
+                            <div className="flex-1">
+                              <div className="font-medium">{user.name}</div>
+                              <div className="text-xs text-gray-500">{user.email}</div>
+                            </div>
+                            <Badge variant={
+                              user.role === 'superadmin' ? 'destructive' : 
+                              user.role === 'admin' ? 'default' : 'outline'
+                            }>
+                              {user.role}
+                            </Badge>
+                          </a>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </>
+            )}
           </CardContent>
         </Card>
       </div>

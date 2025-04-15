@@ -4,11 +4,15 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth";
 import { UserDropdown } from "@/components/UserDropdown";
 import { Logo } from "@/components/ui/logo";
+import { Badge } from "@/components/ui/badge";
 
 export function Header() {
   const [location] = useLocation();
   const { user } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  
+  // Verificar se estamos em ambiente de desenvolvimento
+  const isDevelopment = import.meta.env.MODE === 'development';
   
   const isAdmin = user?.role === "superadmin" || user?.role === "admin";
   
@@ -17,11 +21,26 @@ export function Header() {
   };
 
   return (
-    <header className="bg-primary text-white shadow-md">
+    <header className="bg-primary text-white shadow-md relative">
+      {/* Indicador de ambiente de desenvolvimento */}
+      {isDevelopment && (
+        <div className="absolute top-0 left-0 right-0 bg-yellow-500 text-black text-xs text-center py-0.5">
+          Ambiente de Desenvolvimento
+        </div>
+      )}
+      
       <div className="container mx-auto px-4">
-        <div className="flex items-center justify-between py-4">
+        <div className={`flex items-center justify-between ${isDevelopment ? 'pt-6 pb-4' : 'py-4'}`}>
           <div className="flex items-center">
             <Logo className="h-10" />
+            {isDevelopment && (
+              <Badge 
+                variant="outline" 
+                className="ml-2 bg-yellow-500 text-black border-yellow-600"
+              >
+                DEV
+              </Badge>
+            )}
           </div>
           
           <nav className="hidden md:flex space-x-8">

@@ -130,6 +130,78 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Rotas de desenvolvimento para facilitar testes
+  if (process.env.NODE_ENV === 'development') {
+    // Rota para listar todos os usuários cadastrados (apenas em desenvolvimento)
+    app.get('/api/auth/dev-user-list', async (_req, res) => {
+      try {
+        // Buscar todos os usuários do banco de dados
+        const users = await storage.getAllUsers();
+        
+        // Retornar a lista de usuários
+        res.json(users);
+      } catch (error) {
+        console.error('Erro ao buscar usuários para dev login:', error);
+        res.status(500).json({ message: 'Erro ao buscar usuários' });
+      }
+    });
+    
+    // Rota para fazer login como qualquer usuário pelo ID
+    app.get('/api/auth/dev-login/:userId', async (req, res) => {
+      try {
+        const userId = parseInt(req.params.userId);
+        
+        // Buscar o usuário do banco de dados
+        const user = await storage.getUser(userId);
+        
+        if (!user) {
+          return res.status(404).json({ message: 'Usuário não encontrado' });
+        }
+        
+        // Fazer login como o usuário
+        req.login(user, (err) => {
+          if (err) {
+            return res.status(500).json({ message: 'Erro ao fazer login de desenvolvimento' });
+          }
+          
+          console.log(`🧪 Login de desenvolvimento como: ${user.name} (${user.role})`);
+          res.redirect('/dashboard');
+        });
+      } catch (error) {
+        console.error('Erro no login de desenvolvimento:', error);
+        res.status(500).json({ message: 'Erro ao processar login de desenvolvimento' });
+      }
+    });
+    
+    // Rota para criar usuário de teste se necessário
+    app.post('/api/auth/dev-create-test-user', async (_req, res) => {
+      try {
+        // Verificar se já existe o superadmin
+        const existingSuperAdmin = await storage.getUserByEmail('conecta@cesurg.com');
+        
+        if (!existingSuperAdmin) {
+          // Criar usuário superadmin para testes
+          const testUser = await storage.createUser({
+            name: 'Admin Conecta (Teste)',
+            email: 'conecta@cesurg.com',
+            role: 'superadmin'
+          });
+          
+          return res.status(201).json({ 
+            message: 'Usuário de teste criado com sucesso', 
+            user: testUser 
+          });
+        }
+        
+        // Se já existe, apenas retorna sucesso
+        res.json({ message: 'Usuário superadmin já existe' });
+      } catch (error) {
+        console.error('Erro ao criar usuário de teste:', error);
+        res.status(500).json({ message: 'Erro ao criar usuário de teste' });
+      }
+    });
+  }
+
   // Google auth routes
   app.get('/api/auth/google', 
     passport.authenticate('google', { 
