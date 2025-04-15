@@ -46,6 +46,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Verificar as variáveis de ambiente necessárias para OAuth
+  if (!process.env.GOOGLE_CLIENT_SECRET) {
+    console.error("⚠️ AVISO: GOOGLE_CLIENT_SECRET não está definido no ambiente!");
+    console.error("Para a autenticação Google OAuth funcionar, você precisa configurar este segredo.");
+    console.error("Adicione GOOGLE_CLIENT_SECRET nas variáveis de ambiente de produção.");
+  }
+
   // Configure Google OAuth strategy
   passport.use(new GoogleStrategy({
     clientID: "1033430857520-a0q61g5f6dl8o20g1oejuukrqdb4lol1.apps.googleusercontent.com",
