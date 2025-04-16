@@ -91,19 +91,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return done(new Error('Only @cesurg.com emails are allowed'), undefined);
       }
       
-      // Role assignment: conecta@cesurg.com is superadmin, others are regular users
-      const role = email === 'conecta@cesurg.com' ? 'superadmin' : 'user';
+      // Check if the user is already registered in the system
+      const existingUser = await storage.getUserByEmail(email);
+      
+      // If user doesn't exist in our database, don't allow login
+      if (!existingUser) {
+        console.log(`⛔ Login negado: ${email} não está pré-cadastrado no sistema`);
+        return done(new Error('User not registered. Please contact your administrator.'), undefined);
+      }
       
       const userData = {
         googleId: profile.id,
         email: email,
         name: profile.displayName,
         photoUrl: profile.photos?.[0]?.value || null,
-        role
       };
       
-      // Find or create user in DB
-      const user = await storage.createOrUpdateGoogleUser(userData);
+      // Update existing user with Google info
+      const user = await storage.updateExistingUserWithGoogleInfo(userData);
       return done(null, user);
     } catch (error) {
       return done(error, undefined);

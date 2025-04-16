@@ -8,6 +8,7 @@ export interface IStorage {
   getUserByGoogleId(googleId: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   createOrUpdateGoogleUser(user: InsertGoogleUser): Promise<User>;
+  updateExistingUserWithGoogleInfo(user: InsertGoogleUser): Promise<User>;
   getAllUsers(): Promise<User[]>;
   deleteUser(id: number): Promise<boolean>;
   updateUserRole(id: number, role: string): Promise<User | undefined>;
@@ -166,6 +167,32 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error("Error updating user role:", error);
       return undefined;
+    }
+  }
+
+  async updateExistingUserWithGoogleInfo(insertUser: InsertGoogleUser): Promise<User> {
+    try {
+      // Check if user exists by email
+      const existingUser = await this.getUserByEmail(insertUser.email);
+      
+      if (!existingUser) {
+        throw new Error(`Usuário com email ${insertUser.email} não está cadastrado`);
+      }
+      
+      // Update existing user with Google ID and photo
+      const [updatedUser] = await db
+        .update(users)
+        .set({
+          googleId: insertUser.googleId,
+          photoUrl: insertUser.photoUrl || existingUser.photoUrl,
+        })
+        .where(eq(users.id, existingUser.id))
+        .returning();
+      
+      return updatedUser;
+    } catch (error) {
+      console.error("Error updating user with Google info:", error);
+      throw new Error("Failed to update user with Google information");
     }
   }
 }

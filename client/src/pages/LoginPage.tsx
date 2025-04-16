@@ -34,7 +34,7 @@ export default function LoginPage() {
     const url = new URL(window.location.href);
     const error = url.searchParams.get('error');
     if (error === 'auth_failed') {
-      setLoginError('Autenticação falhou. Certifique-se de usar um e-mail @cesurg.com');
+      setLoginError('Acesso negado. Apenas usuários pré-cadastrados pelo administrador podem acessar o portal. Entre em contato com o administrador.');
       // Remove query parameter
       url.searchParams.delete('error');
       window.history.replaceState({}, '', url.toString());
@@ -152,7 +152,10 @@ export default function LoginPage() {
             
             <div className="mt-8 text-sm text-gray-500 text-center">
               <p>
-                Apenas usuários com e-mail institucional <strong>@cesurg.com</strong> possuem acesso.
+                Apenas usuários <strong>pré-cadastrados</strong> com e-mail institucional <strong>@cesurg.com</strong> possuem acesso.
+              </p>
+              <p className="mt-2 text-xs">
+                Se você não consegue acessar, entre em contato com o administrador para solicitar acesso.
               </p>
             </div>
             
