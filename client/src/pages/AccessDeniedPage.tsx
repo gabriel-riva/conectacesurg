@@ -23,11 +23,16 @@ export default function AccessDeniedPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-gray-100">
-      <div className="w-full max-w-lg">
-        <Card className="border-0 shadow-lg">
-          <CardContent className="pt-6 flex flex-col items-center">
-            <Logo className="w-64 mb-4" />
+    <div className="min-h-screen flex flex-col items-center justify-center p-6 relative bg-gradient-to-br from-blue-900 via-primary to-green-700 overflow-hidden">
+      {/* Círculos decorativos no fundo */}
+      <div className="absolute top-0 right-0 w-64 h-64 bg-blue-400 rounded-full opacity-10 -mr-20 -mt-20" />
+      <div className="absolute bottom-0 left-0 w-96 h-96 bg-green-400 rounded-full opacity-10 -ml-40 -mb-40" />
+      <div className="absolute top-1/3 left-1/4 w-72 h-72 bg-green-300 rounded-full opacity-10 -ml-20 -mt-20" />
+      
+      <div className="w-full max-w-lg z-10 relative">
+        <Card className="border-0 shadow-2xl">
+          <CardContent className="pt-8 pb-6 px-6 flex flex-col items-center">
+            <Logo className="w-56 mb-4" />
             
             <div className="flex items-center justify-center w-24 h-24 rounded-full bg-red-100 mb-6">
               <Ban className="h-12 w-12 text-red-500" />
