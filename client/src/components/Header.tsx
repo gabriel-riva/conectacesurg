@@ -32,7 +32,7 @@ export function Header() {
       <div className="container mx-auto px-4">
         <div className={`flex items-center justify-between ${isDevelopment ? 'pt-6 pb-4' : 'py-4'}`}>
           <div className="flex items-center">
-            <Logo className="h-10" />
+            <Logo variant="white" className="h-10" />
             {isDevelopment && (
               <Badge 
                 variant="outline" 

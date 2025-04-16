@@ -117,21 +117,28 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-gray-100">
+    <div className="min-h-screen flex flex-col items-center justify-center p-6 relative bg-gradient-to-br from-blue-900 via-primary to-green-700 overflow-hidden">
+      {/* Círculos decorativos no fundo */}
+      <div className="absolute top-0 right-0 w-64 h-64 bg-blue-400 rounded-full opacity-10 -mr-20 -mt-20" />
+      <div className="absolute bottom-0 left-0 w-96 h-96 bg-green-400 rounded-full opacity-10 -ml-40 -mb-40" />
+      <div className="absolute top-1/3 left-1/4 w-72 h-72 bg-green-300 rounded-full opacity-10 -ml-20 -mt-20" />
+      
       {isDevelopment && (
-        <div className="absolute top-0 left-0 right-0 bg-yellow-500 text-black text-xs text-center py-0.5">
+        <div className="absolute top-0 left-0 right-0 bg-yellow-500 text-black text-xs text-center py-0.5 z-10">
           Ambiente de Desenvolvimento
         </div>
       )}
-      <div className="w-full max-w-md">
-        <Card className="border-0">
-          <CardContent className="pt-6 flex flex-col items-center">
-            <Logo className="w-64 mb-8" />
-            <h1 className="text-2xl font-bold text-center text-primary mb-8">
-              Portal Conecta CESURG
-            </h1>
+      
+      <div className="w-full max-w-md z-10 relative">
+        <Card className="border-0 shadow-2xl">
+          <CardContent className="pt-8 pb-6 px-6 flex flex-col items-center">
+            <Logo className="w-56 mb-6" />
             
-            <p className="text-gray-600 mb-8 text-center">
+            <div className="flex justify-center items-center mb-8 mt-2">
+              <Logo variant="cesurg" className="h-10 mx-auto" />
+            </div>
+            
+            <p className="text-gray-600 mb-8 text-center text-sm">
               Faça login com sua conta institucional para acessar o portal.
             </p>
 
