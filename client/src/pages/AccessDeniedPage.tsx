@@ -32,7 +32,7 @@ export default function AccessDeniedPage() {
       <div className="w-full max-w-lg z-10 relative">
         <Card className="border-0 shadow-2xl">
           <CardContent className="pt-8 pb-6 px-6 flex flex-col items-center">
-            <Logo className="w-56 mb-4" />
+            <Logo className="w-64 mb-4" />
             
             <div className="flex items-center justify-center w-24 h-24 rounded-full bg-red-100 mb-6">
               <Ban className="h-12 w-12 text-red-500" />
@@ -70,6 +70,10 @@ export default function AccessDeniedPage() {
                   </p>
                 </div>
               </div>
+            </div>
+            
+            <div className="mt-6 border-t border-gray-200 pt-6 flex justify-center items-center">
+              <Logo variant="cesurg" className="h-10 mx-auto" />
             </div>
           </CardContent>
           

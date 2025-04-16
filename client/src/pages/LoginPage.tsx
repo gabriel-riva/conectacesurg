@@ -132,11 +132,7 @@ export default function LoginPage() {
       <div className="w-full max-w-md z-10 relative">
         <Card className="border-0 shadow-2xl">
           <CardContent className="pt-8 pb-6 px-6 flex flex-col items-center">
-            <Logo className="w-56 mb-6" />
-            
-            <div className="flex justify-center items-center mb-8 mt-2">
-              <Logo variant="cesurg" className="h-10 mx-auto" />
-            </div>
+            <Logo className="w-64 mb-6" />
             
             <p className="text-gray-600 mb-8 text-center text-sm">
               Faça login com sua conta institucional para acessar o portal.
@@ -164,6 +160,10 @@ export default function LoginPage() {
               <p className="mt-2 text-xs">
                 Se você não consegue acessar, entre em contato com o administrador para solicitar acesso.
               </p>
+            </div>
+            
+            <div className="mt-6 border-t border-gray-200 pt-6 flex justify-center items-center">
+              <Logo variant="cesurg" className="h-10 mx-auto" />
             </div>
             
             {/* Opções de Desenvolvimento */}
