@@ -97,7 +97,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // If user doesn't exist in our database, don't allow login
       if (!existingUser) {
         console.log(`⛔ Login negado: ${email} não está pré-cadastrado no sistema`);
-        return done(new Error('User not registered. Please contact your administrator.'), undefined);
+        // Instead of generic error, store the email in the request for the next middleware
+        return done(null, false, { message: 'access_denied', email });
       }
       
       const userData = {
@@ -222,17 +223,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log("🔄 Callback do Google OAuth recebido");
       next();
     },
-    passport.authenticate('google', { 
-      failureRedirect: '/?error=auth_failed',
-      session: true
-    }),
-    (req, res) => {
-      // Log autenticação bem-sucedida
-      console.log("✅ Autenticação bem-sucedida, redirecionando para dashboard");
-      console.log(`👤 Usuário: ${(req.user as any)?.name || 'Desconhecido'}`);
-      
-      // Successful authentication, redirect to dashboard
-      res.redirect('/dashboard');
+    (req, res, next) => {
+      passport.authenticate('google', (err, user, info) => {
+        if (err) {
+          console.error("Erro na autenticação:", err);
+          return res.redirect('/?error=auth_failed');
+        }
+        
+        // Access denied for user not registered in the system
+        if (!user && info && info.message === 'access_denied') {
+          console.log(`⛔ Redirecionando para página de acesso negado, email: ${info.email}`);
+          return res.redirect(`/access-denied?email=${encodeURIComponent(info.email)}`);
+        }
+        
+        // Other authentication failures
+        if (!user) {
+          return res.redirect('/?error=auth_failed');
+        }
+        
+        // Login successful user
+        req.login(user, (loginErr) => {
+          if (loginErr) {
+            console.error("Erro ao criar sessão:", loginErr);
+            return res.redirect('/?error=auth_failed');
+          }
+          
+          // Log autenticação bem-sucedida
+          console.log("✅ Autenticação bem-sucedida, redirecionando para dashboard");
+          console.log(`👤 Usuário: ${user?.name || 'Desconhecido'}`);
+          
+          // Successful authentication, redirect to dashboard
+          return res.redirect('/dashboard');
+        });
+      })(req, res, next);
     }
   );
 
