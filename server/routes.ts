@@ -292,19 +292,60 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to fetch users" });
     }
   });
+  
+  // Atenção! Esta rota deve estar antes das rotas dinâmicas como "/api/users/:id" por conflito de rotas
+  // Filtrar usuários por grupo ou retornar todos os usuários se groupId não for fornecido
+  app.get("/api/users/filter", checkAdmin, async (req, res) => {
+    try {
+      const groupId = req.query.groupId ? parseInt(req.query.groupId as string) : null;
+      
+      // Verificar se o grupo ID é válido quando fornecido
+      if (groupId !== null && isNaN(groupId)) {
+        console.error(`ID de grupo inválido: ${req.query.groupId}`);
+        return res.status(400).json({ message: "Invalid group ID" });
+      }
+      
+      if (groupId) {
+        // Se o groupId foi fornecido, retorna usuários desse grupo
+        console.log(`Buscando usuários do grupo com ID: ${groupId}`);
+        const users = await storage.getGroupUsers(groupId);
+        console.log(`Filtrando usuários do grupo ${groupId}: Encontrados ${users.length} usuários`);
+        return res.json(users);
+      } else {
+        // Se não foi fornecido groupId, retorna todos os usuários
+        const users = await storage.getAllUsers();
+        console.log(`Retornando todos os usuários: Encontrados ${users.length} usuários`);
+        return res.json(users);
+      }
+    } catch (error) {
+      console.error("Erro ao filtrar usuários por grupo:", error);
+      res.status(500).json({ message: "Failed to filter users by group" });
+    }
+  });
 
   // Get a specific user by ID - admin only
   app.get("/api/users/:id", checkAdmin, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
+      
+      // Verificar se o ID é um número válido
+      if (isNaN(id)) {
+        console.error(`ID inválido: ${req.params.id}`);
+        return res.status(400).json({ message: "Invalid user ID" });
+      }
+      
+      console.log(`Buscando usuário com ID: ${id}`);
       const user = await storage.getUser(id);
       
       if (!user) {
+        console.log(`Usuário com ID ${id} não encontrado`);
         return res.status(404).json({ message: "User not found" });
       }
       
+      console.log(`Usuário encontrado: ${user.name}`);
       res.json(user);
     } catch (error) {
+      console.error("Error getting user by ID:", error);
       res.status(500).json({ message: "Failed to fetch user" });
     }
   });
@@ -514,13 +555,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Atenção! Esta rota deve estar antes das rotas dinâmicas como "/api/users/:id" por conflito de rotas
   // Filtrar usuários por grupo ou retornar todos os usuários se groupId não for fornecido
   app.get("/api/users/filter", checkAdmin, async (req, res) => {
     try {
       const groupId = req.query.groupId ? parseInt(req.query.groupId as string) : null;
       
+      // Verificar se o grupo ID é válido quando fornecido
+      if (groupId !== null && isNaN(groupId)) {
+        console.error(`ID de grupo inválido: ${req.query.groupId}`);
+        return res.status(400).json({ message: "Invalid group ID" });
+      }
+      
       if (groupId) {
         // Se o groupId foi fornecido, retorna usuários desse grupo
+        console.log(`Buscando usuários do grupo com ID: ${groupId}`);
         const users = await storage.getGroupUsers(groupId);
         console.log(`Filtrando usuários do grupo ${groupId}: Encontrados ${users.length} usuários`);
         return res.json(users);
