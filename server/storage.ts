@@ -345,7 +345,7 @@ export class DatabaseStorage implements IStorage {
 
   async getUserGroups(userId: number): Promise<Group[]> {
     try {
-      const userGroupRecords = await db
+      const userGroupRecords: { groupId: number }[] = await db
         .select({
           groupId: userGroups.groupId
         })
@@ -356,11 +356,11 @@ export class DatabaseStorage implements IStorage {
         return [];
       }
 
-      const groupIds = userGroupRecords.map(record => record.groupId);
+      const groupIds = userGroupRecords.map((record: { groupId: number }) => record.groupId);
       
       // Using a more specialized query to get all groups that match the group IDs
-      const userGroups = await Promise.all(
-        groupIds.map(async (groupId) => {
+      const groupsList = await Promise.all(
+        groupIds.map(async (groupId: number) => {
           const [group] = await db
             .select()
             .from(groups)
@@ -369,7 +369,7 @@ export class DatabaseStorage implements IStorage {
         })
       );
 
-      return userGroups.filter(Boolean) as Group[];
+      return groupsList.filter(Boolean) as Group[];
     } catch (error) {
       console.error("Error getting user groups:", error);
       return [];
@@ -378,7 +378,7 @@ export class DatabaseStorage implements IStorage {
 
   async getGroupUsers(groupId: number): Promise<User[]> {
     try {
-      const groupUserRecords = await db
+      const groupUserRecords: { userId: number }[] = await db
         .select({
           userId: userGroups.userId
         })
@@ -389,11 +389,11 @@ export class DatabaseStorage implements IStorage {
         return [];
       }
 
-      const userIds = groupUserRecords.map(record => record.userId);
+      const userIds = groupUserRecords.map((record: { userId: number }) => record.userId);
       
       // Using a more specialized query to get all users that match the user IDs
-      const groupUsers = await Promise.all(
-        userIds.map(async (userId) => {
+      const usersList = await Promise.all(
+        userIds.map(async (userId: number) => {
           const [user] = await db
             .select()
             .from(users)
@@ -402,7 +402,7 @@ export class DatabaseStorage implements IStorage {
         })
       );
 
-      return groupUsers.filter(Boolean) as User[];
+      return usersList.filter(Boolean) as User[];
     } catch (error) {
       console.error("Error getting group users:", error);
       return [];
