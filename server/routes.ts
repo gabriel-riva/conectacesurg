@@ -1,7 +1,7 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertUserSchema, insertGoogleUserSchema } from "@shared/schema";
+import { insertUserSchema, insertGoogleUserSchema, insertGroupSchema } from "@shared/schema";
 import { ZodError } from "zod";
 import session from "express-session";
 import passport from "passport";
@@ -345,6 +345,149 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ message: "User deleted successfully" });
     } catch (error) {
       res.status(500).json({ message: "Failed to delete user" });
+    }
+  });
+
+  // Group management routes
+  // Get all groups - admin only
+  app.get("/api/groups", checkAdmin, async (req, res) => {
+    try {
+      const groups = await storage.getAllGroups();
+      res.json(groups);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch groups" });
+    }
+  });
+
+  // Get a specific group - admin only
+  app.get("/api/groups/:id", checkAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const group = await storage.getGroup(id);
+      
+      if (!group) {
+        return res.status(404).json({ message: "Group not found" });
+      }
+      
+      res.json(group);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch group" });
+    }
+  });
+
+  // Create a new group - admin only
+  app.post("/api/groups", checkAdmin, async (req, res) => {
+    try {
+      const groupData = insertGroupSchema.parse(req.body);
+      const group = await storage.createGroup(groupData);
+      res.status(201).json(group);
+    } catch (error) {
+      if (error instanceof ZodError) {
+        return res.status(400).json({ 
+          message: "Validation error", 
+          errors: error.errors 
+        });
+      }
+      res.status(500).json({ message: "Failed to create group" });
+    }
+  });
+
+  // Update a group - admin only
+  app.patch("/api/groups/:id", checkAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const groupData = req.body;
+      
+      // For safety, only allow name and description updates through this endpoint
+      const sanitizedData = {
+        name: groupData.name,
+        description: groupData.description
+      };
+      
+      const updatedGroup = await storage.updateGroup(id, sanitizedData);
+      
+      if (!updatedGroup) {
+        return res.status(404).json({ message: "Group not found" });
+      }
+      
+      res.json(updatedGroup);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update group" });
+    }
+  });
+
+  // Delete a group - admin only
+  app.delete("/api/groups/:id", checkAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const deleted = await storage.deleteGroup(id);
+      
+      if (!deleted) {
+        return res.status(404).json({ message: "Group not found" });
+      }
+      
+      res.json({ message: "Group deleted successfully" });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete group" });
+    }
+  });
+
+  // User-Group relationship routes
+  // Get all groups a user belongs to
+  app.get("/api/users/:id/groups", checkAdmin, async (req, res) => {
+    try {
+      const userId = parseInt(req.params.id);
+      const groups = await storage.getUserGroups(userId);
+      res.json(groups);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch user groups" });
+    }
+  });
+
+  // Get all users in a group
+  app.get("/api/groups/:id/users", checkAdmin, async (req, res) => {
+    try {
+      const groupId = parseInt(req.params.id);
+      const users = await storage.getGroupUsers(groupId);
+      res.json(users);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch group users" });
+    }
+  });
+
+  // Add a user to a group
+  app.post("/api/users/:userId/groups/:groupId", checkAdmin, async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const groupId = parseInt(req.params.groupId);
+      
+      const success = await storage.addUserToGroup(userId, groupId);
+      
+      if (!success) {
+        return res.status(400).json({ message: "Failed to add user to group" });
+      }
+      
+      res.status(201).json({ message: "User added to group successfully" });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to add user to group" });
+    }
+  });
+
+  // Remove a user from a group
+  app.delete("/api/users/:userId/groups/:groupId", checkAdmin, async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const groupId = parseInt(req.params.groupId);
+      
+      const success = await storage.removeUserFromGroup(userId, groupId);
+      
+      if (!success) {
+        return res.status(404).json({ message: "User-group relationship not found" });
+      }
+      
+      res.json({ message: "User removed from group successfully" });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to remove user from group" });
     }
   });
 

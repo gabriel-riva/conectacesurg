@@ -1,8 +1,19 @@
-import { users, type User, type InsertUser, type InsertGoogleUser } from "@shared/schema";
+import { 
+  users, 
+  groups, 
+  userGroups,
+  type User, 
+  type InsertUser, 
+  type InsertGoogleUser,
+  type Group,
+  type InsertGroup,
+  type UserGroup
+} from "@shared/schema";
 import { db } from "./db";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 
 export interface IStorage {
+  // User related methods
   getUser(id: number): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
   getUserByGoogleId(googleId: string): Promise<User | undefined>;
@@ -12,6 +23,19 @@ export interface IStorage {
   getAllUsers(): Promise<User[]>;
   deleteUser(id: number): Promise<boolean>;
   updateUserRole(id: number, role: string): Promise<User | undefined>;
+  
+  // Group related methods
+  createGroup(group: InsertGroup): Promise<Group>;
+  getAllGroups(): Promise<Group[]>;
+  getGroup(id: number): Promise<Group | undefined>;
+  updateGroup(id: number, group: Partial<InsertGroup>): Promise<Group | undefined>;
+  deleteGroup(id: number): Promise<boolean>;
+  
+  // User Group relationship methods
+  addUserToGroup(userId: number, groupId: number): Promise<boolean>;
+  removeUserFromGroup(userId: number, groupId: number): Promise<boolean>;
+  getUserGroups(userId: number): Promise<Group[]>;
+  getGroupUsers(groupId: number): Promise<User[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -193,6 +217,195 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error("Error updating user with Google info:", error);
       throw new Error("Failed to update user with Google information");
+    }
+  }
+
+  // Group methods
+  async createGroup(group: InsertGroup): Promise<Group> {
+    try {
+      const [newGroup] = await db
+        .insert(groups)
+        .values(group)
+        .returning();
+      
+      return newGroup;
+    } catch (error) {
+      console.error("Error creating group:", error);
+      throw new Error("Failed to create group");
+    }
+  }
+
+  async getAllGroups(): Promise<Group[]> {
+    try {
+      return await db.select().from(groups);
+    } catch (error) {
+      console.error("Error getting all groups:", error);
+      return [];
+    }
+  }
+
+  async getGroup(id: number): Promise<Group | undefined> {
+    try {
+      const [group] = await db.select().from(groups).where(eq(groups.id, id));
+      return group;
+    } catch (error) {
+      console.error("Error getting group by ID:", error);
+      return undefined;
+    }
+  }
+
+  async updateGroup(id: number, groupData: Partial<InsertGroup>): Promise<Group | undefined> {
+    try {
+      const [updatedGroup] = await db
+        .update(groups)
+        .set(groupData)
+        .where(eq(groups.id, id))
+        .returning();
+      
+      return updatedGroup;
+    } catch (error) {
+      console.error("Error updating group:", error);
+      return undefined;
+    }
+  }
+
+  async deleteGroup(id: number): Promise<boolean> {
+    try {
+      const result = await db.delete(groups).where(eq(groups.id, id)).returning();
+      return result.length > 0;
+    } catch (error) {
+      console.error("Error deleting group:", error);
+      return false;
+    }
+  }
+
+  // User Group relationship methods
+  async addUserToGroup(userId: number, groupId: number): Promise<boolean> {
+    try {
+      // Check if user exists
+      const user = await this.getUser(userId);
+      if (!user) {
+        throw new Error(`User with ID ${userId} not found`);
+      }
+
+      // Check if group exists
+      const group = await this.getGroup(groupId);
+      if (!group) {
+        throw new Error(`Group with ID ${groupId} not found`);
+      }
+
+      // Check if relation already exists
+      const [existingRelation] = await db
+        .select()
+        .from(userGroups)
+        .where(
+          and(
+            eq(userGroups.userId, userId),
+            eq(userGroups.groupId, groupId)
+          )
+        );
+
+      if (existingRelation) {
+        return true; // Relation already exists
+      }
+
+      // Add user to group
+      await db
+        .insert(userGroups)
+        .values({
+          userId,
+          groupId,
+        });
+
+      return true;
+    } catch (error) {
+      console.error("Error adding user to group:", error);
+      return false;
+    }
+  }
+
+  async removeUserFromGroup(userId: number, groupId: number): Promise<boolean> {
+    try {
+      const result = await db
+        .delete(userGroups)
+        .where(
+          and(
+            eq(userGroups.userId, userId),
+            eq(userGroups.groupId, groupId)
+          )
+        )
+        .returning();
+
+      return result.length > 0;
+    } catch (error) {
+      console.error("Error removing user from group:", error);
+      return false;
+    }
+  }
+
+  async getUserGroups(userId: number): Promise<Group[]> {
+    try {
+      const userGroupRecords = await db
+        .select({
+          groupId: userGroups.groupId
+        })
+        .from(userGroups)
+        .where(eq(userGroups.userId, userId));
+
+      if (userGroupRecords.length === 0) {
+        return [];
+      }
+
+      const groupIds = userGroupRecords.map(record => record.groupId);
+      
+      // Using a more specialized query to get all groups that match the group IDs
+      const userGroups = await Promise.all(
+        groupIds.map(async (groupId) => {
+          const [group] = await db
+            .select()
+            .from(groups)
+            .where(eq(groups.id, groupId));
+          return group;
+        })
+      );
+
+      return userGroups.filter(Boolean) as Group[];
+    } catch (error) {
+      console.error("Error getting user groups:", error);
+      return [];
+    }
+  }
+
+  async getGroupUsers(groupId: number): Promise<User[]> {
+    try {
+      const groupUserRecords = await db
+        .select({
+          userId: userGroups.userId
+        })
+        .from(userGroups)
+        .where(eq(userGroups.groupId, groupId));
+
+      if (groupUserRecords.length === 0) {
+        return [];
+      }
+
+      const userIds = groupUserRecords.map(record => record.userId);
+      
+      // Using a more specialized query to get all users that match the user IDs
+      const groupUsers = await Promise.all(
+        userIds.map(async (userId) => {
+          const [user] = await db
+            .select()
+            .from(users)
+            .where(eq(users.id, userId));
+          return user;
+        })
+      );
+
+      return groupUsers.filter(Boolean) as User[];
+    } catch (error) {
+      console.error("Error getting group users:", error);
+      return [];
     }
   }
 }
