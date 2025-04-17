@@ -39,7 +39,7 @@ export function Header() {
       <div className="container mx-auto px-4">
         <div className={`flex items-center justify-between ${isDevelopment ? 'pt-6 pb-4' : 'py-4'}`}>
           <div className="flex items-center">
-            <Logo variant="white" className="h-10" />
+            <Logo variant="white" className="h-8" />
             {isDevelopment && (
               <Badge 
                 variant="outline" 
@@ -51,31 +51,26 @@ export function Header() {
           </div>
           
           <nav className="hidden md:flex space-x-8">
-            <Link href="/dashboard" className={`flex items-center text-white hover:text-secondary transition-colors ${location === '/dashboard' ? 'text-secondary' : ''}`}>
+            <Link href="/dashboard" className={`menu-item ${location === '/dashboard' ? 'text-secondary' : ''}`}>
               <img src={inicioIcon} alt="Início" className="w-5 h-5 mr-2" />
               Início
             </Link>
-            <Link href="/materiais" className={`flex items-center text-white hover:text-secondary transition-colors ${location === '/materiais' ? 'text-secondary' : ''}`}>
+            <Link href="/materiais" className={`menu-item ${location === '/materiais' ? 'text-secondary' : ''}`}>
               <img src={materiaisIcon} alt="Materiais" className="w-5 h-5 mr-2" />
               Materiais
             </Link>
-            <Link href="/ideias" className={`flex items-center text-white hover:text-secondary transition-colors ${location === '/ideias' ? 'text-secondary' : ''}`}>
+            <Link href="/ideias" className={`menu-item ${location === '/ideias' ? 'text-secondary' : ''}`}>
               <img src={ideiasIcon} alt="Ideias" className="w-5 h-5 mr-2" />
               Ideias
             </Link>
-            <Link href="/comunidade" className={`flex items-center text-white hover:text-secondary transition-colors ${location === '/comunidade' ? 'text-secondary' : ''}`}>
+            <Link href="/comunidade" className={`menu-item ${location === '/comunidade' ? 'text-secondary' : ''}`}>
               <img src={comunidadeIcon} alt="Comunidade" className="w-5 h-5 mr-2" />
               Comunidade
             </Link>
-            <Link href="/gamificacao" className={`flex items-center text-white hover:text-secondary transition-colors ${location === '/gamificacao' ? 'text-secondary' : ''}`}>
+            <Link href="/gamificacao" className={`menu-item ${location === '/gamificacao' ? 'text-secondary' : ''}`}>
               <img src={gamificacaoIcon} alt="Gamificação" className="w-5 h-5 mr-2" />
               Gamificação
             </Link>
-            {isAdmin && (
-              <Link href="/admin" className={`flex items-center text-white hover:text-secondary transition-colors ${location === '/admin' ? 'text-secondary' : ''}`}>
-                Admin
-              </Link>
-            )}
           </nav>
           
           <div className="flex items-center space-x-4">
@@ -98,31 +93,26 @@ export function Header() {
         {/* Mobile navigation menu */}
         {isMobileMenuOpen && (
           <div className="md:hidden py-4 space-y-2">
-            <Link href="/dashboard" className="flex items-center py-2 text-white hover:text-secondary transition-colors">
+            <Link href="/dashboard" className="menu-item py-2">
               <img src={inicioIcon} alt="Início" className="w-5 h-5 mr-2" />
               Início
             </Link>
-            <Link href="/materiais" className="flex items-center py-2 text-white hover:text-secondary transition-colors">
+            <Link href="/materiais" className="menu-item py-2">
               <img src={materiaisIcon} alt="Materiais" className="w-5 h-5 mr-2" />
               Materiais
             </Link>
-            <Link href="/ideias" className="flex items-center py-2 text-white hover:text-secondary transition-colors">
+            <Link href="/ideias" className="menu-item py-2">
               <img src={ideiasIcon} alt="Ideias" className="w-5 h-5 mr-2" />
               Ideias
             </Link>
-            <Link href="/comunidade" className="flex items-center py-2 text-white hover:text-secondary transition-colors">
+            <Link href="/comunidade" className="menu-item py-2">
               <img src={comunidadeIcon} alt="Comunidade" className="w-5 h-5 mr-2" />
               Comunidade
             </Link>
-            <Link href="/gamificacao" className="flex items-center py-2 text-white hover:text-secondary transition-colors">
+            <Link href="/gamificacao" className="menu-item py-2">
               <img src={gamificacaoIcon} alt="Gamificação" className="w-5 h-5 mr-2" />
               Gamificação
             </Link>
-            {isAdmin && (
-              <Link href="/admin" className="flex items-center py-2 text-white hover:text-secondary transition-colors">
-                Admin
-              </Link>
-            )}
           </div>
         )}
       </div>

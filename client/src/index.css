@@ -4,7 +4,7 @@
 
 @layer base {
   :root {
-    --font-sans: "Inter", sans-serif;
+    --font-sans: "Urbanist", sans-serif;
     
     --background: 0 0% 100%;
     --foreground: 222.2 84% 4.9%;
@@ -57,5 +57,9 @@
 
   .card {
     @apply bg-white p-6 rounded-lg shadow-md;
+  }
+  
+  .menu-item {
+    @apply flex items-center font-medium text-white hover:text-secondary transition-colors tracking-wide;
   }
 }
