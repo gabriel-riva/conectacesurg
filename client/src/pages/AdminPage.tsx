@@ -14,6 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AddGroupModal } from "@/components/AddGroupModal";
 import { UserGroupsModal } from "@/components/UserGroupsModal";
 import { EditUserModal } from "@/components/EditUserModal";
+import { EditGroupModal } from "@/components/EditGroupModal";
 import { 
   AlertDialog,
   AlertDialogAction,
@@ -36,6 +37,8 @@ export default function AdminPage() {
   const [groupToDelete, setGroupToDelete] = useState<number | null>(null);
   const [isUserEditModalOpen, setIsUserEditModalOpen] = useState(false);
   const [userToEdit, setUserToEdit] = useState<number | null>(null);
+  const [isGroupEditModalOpen, setIsGroupEditModalOpen] = useState(false);
+  const [groupToEdit, setGroupToEdit] = useState<number | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedGroupFilter, setSelectedGroupFilter] = useState<number | null>(null);
   const { toast } = useToast();
@@ -148,6 +151,11 @@ export default function AdminPage() {
   const handleEditUser = (userId: number) => {
     setUserToEdit(userId);
     setIsUserEditModalOpen(true);
+  };
+  
+  const handleEditGroup = (groupId: number) => {
+    setGroupToEdit(groupId);
+    setIsGroupEditModalOpen(true);
   };
 
   const handleUserGroups = useCallback((userId: number) => {
@@ -417,6 +425,7 @@ export default function AdminPage() {
                                       size="icon" 
                                       className="h-8 w-8 text-blue-600 hover:text-blue-900 hover:bg-blue-50" 
                                       title="Editar"
+                                      onClick={() => handleEditGroup(group.id)}
                                     >
                                       <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -517,6 +526,21 @@ export default function AdminPage() {
             queryClient.invalidateQueries({ queryKey: ['/api/users'] });
             setIsUserEditModalOpen(false);
             setUserToEdit(null);
+          }}
+        />
+      )}
+
+      {isGroupEditModalOpen && groupToEdit && (
+        <EditGroupModal
+          groupId={groupToEdit}
+          onClose={() => {
+            setIsGroupEditModalOpen(false);
+            setGroupToEdit(null);
+          }}
+          onGroupUpdated={() => {
+            queryClient.invalidateQueries({ queryKey: ['/api/groups'] });
+            setIsGroupEditModalOpen(false);
+            setGroupToEdit(null);
           }}
         />
       )}
