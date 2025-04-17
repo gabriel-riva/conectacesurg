@@ -54,7 +54,17 @@ export function UserGroupsModal({ userId, onClose }: UserGroupsModalProps) {
       await apiRequest("POST", `/api/users/${userId}/groups/${groupId}`);
     },
     onSuccess: () => {
+      // Invalidar a consulta específica dos grupos deste usuário
       queryClient.invalidateQueries({ queryKey: ['/api/users', userId, 'groups'] });
+      
+      // Invalidar consultas de filtro para atualizar a UI
+      queryClient.invalidateQueries({ queryKey: ['/api/users/filter'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/users'] });
+      
+      toast({
+        title: "Grupo adicionado",
+        description: "O usuário foi adicionado ao grupo com sucesso.",
+      });
     },
     onError: () => {
       toast({
@@ -71,7 +81,17 @@ export function UserGroupsModal({ userId, onClose }: UserGroupsModalProps) {
       await apiRequest("DELETE", `/api/users/${userId}/groups/${groupId}`);
     },
     onSuccess: () => {
+      // Invalidar a consulta específica dos grupos deste usuário
       queryClient.invalidateQueries({ queryKey: ['/api/users', userId, 'groups'] });
+      
+      // Invalidar consultas de filtro para atualizar a UI
+      queryClient.invalidateQueries({ queryKey: ['/api/users/filter'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/users'] });
+      
+      toast({
+        title: "Grupo removido",
+        description: "O usuário foi removido do grupo com sucesso.",
+      });
     },
     onError: () => {
       toast({
