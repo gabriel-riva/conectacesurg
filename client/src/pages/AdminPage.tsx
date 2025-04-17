@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import React, { useState, useCallback, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Header } from "@/components/Header";
 import { Button } from "@/components/ui/button";
@@ -26,6 +26,10 @@ import {
   AlertDialogTitle
 } from "@/components/ui/alert-dialog";
 
+// Tipos para a ordenação
+type SortColumn = 'name' | 'email' | 'role' | null;
+type SortDirection = 'asc' | 'desc';
+
 export default function AdminPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [isUserModalOpen, setIsUserModalOpen] = useState(false);
@@ -41,6 +45,8 @@ export default function AdminPage() {
   const [groupToEdit, setGroupToEdit] = useState<number | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedGroupFilter, setSelectedGroupFilter] = useState<number | null>(null);
+  const [sortColumn, setSortColumn] = useState<SortColumn>(null);
+  const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
   const { toast } = useToast();
 
   // Fetch users - Usar endpoint filter quando um grupo está selecionado
@@ -221,11 +227,40 @@ export default function AdminPage() {
     });
   };
 
+  // Função para lidar com o clique no cabeçalho da coluna para ordenação
+  const handleSortClick = (column: SortColumn) => {
+    if (sortColumn === column) {
+      // Se a coluna atual já está selecionada, alterna a direção
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      // Se uma nova coluna foi selecionada, define-a como a coluna de ordenação
+      // e redefine a direção para 'asc'
+      setSortColumn(column);
+      setSortDirection('asc');
+    }
+  };
+
   // Filter users based on search term
   const filteredUsers = users.filter(user => 
     user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     user.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  // Sort filtered users
+  const sortedUsers = useMemo(() => {
+    if (!sortColumn) return filteredUsers;
+
+    return [...filteredUsers].sort((a, b) => {
+      const valueA = a[sortColumn]?.toString().toLowerCase() || '';
+      const valueB = b[sortColumn]?.toString().toLowerCase() || '';
+      
+      if (sortDirection === 'asc') {
+        return valueA.localeCompare(valueB);
+      } else {
+        return valueB.localeCompare(valueA);
+      }
+    });
+  }, [filteredUsers, sortColumn, sortDirection]);
 
   // Filter groups based on search term
   const filteredGroups = groups.filter(group => 
@@ -329,23 +364,62 @@ export default function AdminPage() {
                       <table className="min-w-full divide-y divide-gray-200">
                         <thead className="bg-gray-50">
                           <tr>
-                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nome</th>
-                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Função</th>
+                            <th 
+                              scope="col" 
+                              className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                              onClick={() => handleSortClick('name')}
+                            >
+                              <div className="flex items-center">
+                                Nome
+                                {sortColumn === 'name' && (
+                                  <span className="ml-1">
+                                    {sortDirection === 'asc' ? '↑' : '↓'}
+                                  </span>
+                                )}
+                              </div>
+                            </th>
+                            <th 
+                              scope="col" 
+                              className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                              onClick={() => handleSortClick('email')}
+                            >
+                              <div className="flex items-center">
+                                Email
+                                {sortColumn === 'email' && (
+                                  <span className="ml-1">
+                                    {sortDirection === 'asc' ? '↑' : '↓'}
+                                  </span>
+                                )}
+                              </div>
+                            </th>
+                            <th 
+                              scope="col" 
+                              className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                              onClick={() => handleSortClick('role')}
+                            >
+                              <div className="flex items-center">
+                                Função
+                                {sortColumn === 'role' && (
+                                  <span className="ml-1">
+                                    {sortDirection === 'asc' ? '↑' : '↓'}
+                                  </span>
+                                )}
+                              </div>
+                            </th>
                             <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                             <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Grupos</th>
                             <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>
                           </tr>
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
-                          {filteredUsers.length === 0 ? (
+                          {sortedUsers.length === 0 ? (
                             <tr>
                               <td colSpan={6} className="px-6 py-4 text-center text-sm text-gray-500">
                                 Nenhum usuário encontrado
                               </td>
                             </tr>
                           ) : (
-                            filteredUsers.map((user) => (
+                            sortedUsers.map((user) => (
                               <tr key={user.id}>
                                 <td className="px-6 py-4 whitespace-nowrap">
                                   <div className="flex items-center">
