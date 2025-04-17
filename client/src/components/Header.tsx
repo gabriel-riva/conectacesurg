@@ -47,7 +47,9 @@ export function Header() {
       <div className="container mx-auto px-4">
         <div className={`flex items-center justify-between ${isDevelopment ? 'pt-6 pb-4' : 'py-4'}`}>
           <div className="flex items-center">
-            <Logo variant="white" className="h-8" />
+            <Link href="/dashboard">
+              <Logo variant="white" className="h-8 cursor-pointer" />
+            </Link>
             {isDevelopment && (
               <Badge 
                 variant="outline" 
