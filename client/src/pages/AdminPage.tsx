@@ -316,7 +316,7 @@ export default function AdminPage() {
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap">
                                   <div className="text-sm text-gray-900">
-                                    {new Date(group.createdAt).toLocaleDateString('pt-BR')}
+                                    {group.createdAt ? new Date(group.createdAt).toLocaleDateString('pt-BR') : 'Data não disponível'}
                                   </div>
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">

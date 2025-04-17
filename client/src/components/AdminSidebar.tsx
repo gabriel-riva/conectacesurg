@@ -1,27 +1,12 @@
 import { Link, useLocation } from "wouter";
 import { Logo } from "@/components/ui/logo";
 
-// Item da barra lateral
-interface AdminMenuItemProps {
+// Interface de item de menu
+interface MenuItem {
   href: string;
   label: string;
   icon: React.ReactNode;
-  isActive: boolean;
 }
-
-const AdminMenuItem = ({ href, label, icon, isActive }: AdminMenuItemProps) => (
-  <li className="group/menu-item relative">
-    <Link 
-      href={href} 
-      className={`flex items-center p-2 w-full rounded-md hover:bg-gray-100 ${
-        isActive ? 'bg-primary/10 text-primary font-medium' : 'text-gray-700'
-      }`}
-    >
-      <span className="mr-3">{icon}</span>
-      <span>{label}</span>
-    </Link>
-  </li>
-);
 
 export function AdminSidebar() {
   const [location] = useLocation();
