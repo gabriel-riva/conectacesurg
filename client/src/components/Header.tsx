@@ -6,6 +6,13 @@ import { UserDropdown } from "@/components/UserDropdown";
 import { Logo } from "@/components/ui/logo";
 import { Badge } from "@/components/ui/badge";
 
+// Importing icons
+import inicioIcon from "@assets/icone_inicio.png";
+import materiaisIcon from "@assets/icone_materiais.png";
+import ideiasIcon from "@assets/icone_ideias.png";
+import comunidadeIcon from "@assets/icone_comunidade.png";
+import gamificacaoIcon from "@assets/icone_gamificacao.png";
+
 export function Header() {
   const [location] = useLocation();
   const { user } = useAuth();
@@ -45,23 +52,38 @@ export function Header() {
           
           <nav className="hidden md:flex space-x-8">
             <Link href="/dashboard">
-              <a className={`text-white hover:text-secondary transition-colors ${location === '/dashboard' ? 'text-secondary' : ''}`}>
-                Home
+              <a className={`flex items-center text-white hover:text-secondary transition-colors ${location === '/dashboard' ? 'text-secondary' : ''}`}>
+                <img src={inicioIcon} alt="Início" className="w-5 h-5 mr-2" />
+                Início
               </a>
             </Link>
-            <Link href="#ideias">
-              <a className="text-white hover:text-secondary transition-colors">
+            <Link href="/materiais">
+              <a className={`flex items-center text-white hover:text-secondary transition-colors ${location === '/materiais' ? 'text-secondary' : ''}`}>
+                <img src={materiaisIcon} alt="Materiais" className="w-5 h-5 mr-2" />
+                Materiais
+              </a>
+            </Link>
+            <Link href="/ideias">
+              <a className={`flex items-center text-white hover:text-secondary transition-colors ${location === '/ideias' ? 'text-secondary' : ''}`}>
+                <img src={ideiasIcon} alt="Ideias" className="w-5 h-5 mr-2" />
                 Ideias
               </a>
             </Link>
-            <Link href="#conteudos">
-              <a className="text-white hover:text-secondary transition-colors">
-                Conteúdos
+            <Link href="/comunidade">
+              <a className={`flex items-center text-white hover:text-secondary transition-colors ${location === '/comunidade' ? 'text-secondary' : ''}`}>
+                <img src={comunidadeIcon} alt="Comunidade" className="w-5 h-5 mr-2" />
+                Comunidade
+              </a>
+            </Link>
+            <Link href="/gamificacao">
+              <a className={`flex items-center text-white hover:text-secondary transition-colors ${location === '/gamificacao' ? 'text-secondary' : ''}`}>
+                <img src={gamificacaoIcon} alt="Gamificação" className="w-5 h-5 mr-2" />
+                Gamificação
               </a>
             </Link>
             {isAdmin && (
               <Link href="/admin">
-                <a className={`text-white hover:text-secondary transition-colors ${location === '/admin' ? 'text-secondary' : ''}`}>
+                <a className={`flex items-center text-white hover:text-secondary transition-colors ${location === '/admin' ? 'text-secondary' : ''}`}>
                   Admin
                 </a>
               </Link>
@@ -89,23 +111,38 @@ export function Header() {
         {isMobileMenuOpen && (
           <div className="md:hidden py-4 space-y-2">
             <Link href="/dashboard">
-              <a className="block py-2 text-white hover:text-secondary transition-colors">
-                Home
+              <a className="flex items-center py-2 text-white hover:text-secondary transition-colors">
+                <img src={inicioIcon} alt="Início" className="w-5 h-5 mr-2" />
+                Início
               </a>
             </Link>
-            <Link href="#ideias">
-              <a className="block py-2 text-white hover:text-secondary transition-colors">
+            <Link href="/materiais">
+              <a className="flex items-center py-2 text-white hover:text-secondary transition-colors">
+                <img src={materiaisIcon} alt="Materiais" className="w-5 h-5 mr-2" />
+                Materiais
+              </a>
+            </Link>
+            <Link href="/ideias">
+              <a className="flex items-center py-2 text-white hover:text-secondary transition-colors">
+                <img src={ideiasIcon} alt="Ideias" className="w-5 h-5 mr-2" />
                 Ideias
               </a>
             </Link>
-            <Link href="#conteudos">
-              <a className="block py-2 text-white hover:text-secondary transition-colors">
-                Conteúdos
+            <Link href="/comunidade">
+              <a className="flex items-center py-2 text-white hover:text-secondary transition-colors">
+                <img src={comunidadeIcon} alt="Comunidade" className="w-5 h-5 mr-2" />
+                Comunidade
+              </a>
+            </Link>
+            <Link href="/gamificacao">
+              <a className="flex items-center py-2 text-white hover:text-secondary transition-colors">
+                <img src={gamificacaoIcon} alt="Gamificação" className="w-5 h-5 mr-2" />
+                Gamificação
               </a>
             </Link>
             {isAdmin && (
               <Link href="/admin">
-                <a className="block py-2 text-white hover:text-secondary transition-colors">
+                <a className="flex items-center py-2 text-white hover:text-secondary transition-colors">
                   Admin
                 </a>
               </Link>
