@@ -437,6 +437,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to update user role" });
     }
   });
+  
+  // Update user status (active/inactive) - admin only
+  app.patch("/api/users/:id/status", checkAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { isActive } = req.body;
+      
+      if (typeof isActive !== 'boolean') {
+        return res.status(400).json({ message: "isActive must be a boolean value" });
+      }
+      
+      // Não permitir desativar superadmin
+      const user = await storage.getUser(id);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      if (user.role === "superadmin") {
+        return res.status(403).json({ message: "Cannot deactivate superadmin account" });
+      }
+      
+      const updatedUser = await storage.updateUserStatus(id, isActive);
+      
+      if (!updatedUser) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      res.json(updatedUser);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update user status" });
+    }
+  });
 
   // Delete user - admin only
   app.delete("/api/users/:id", checkAdmin, async (req, res) => {

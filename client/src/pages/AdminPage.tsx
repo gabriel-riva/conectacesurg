@@ -69,6 +69,24 @@ export default function AdminPage() {
   const { data: groups = [], isLoading: isLoadingGroups } = useQuery<Group[]>({
     queryKey: ['/api/groups'],
   });
+  
+  // Buscar os grupos de cada usuário
+  const { data: userGroupMapping = {}, isLoading: isLoadingUserGroups } = useQuery<Record<number, Group[]>>({
+    queryKey: ['/api/users/groups/mapping', users],
+    queryFn: async () => {
+      // Criar um mapeamento de usuário para seus grupos
+      const mapping: Record<number, Group[]> = {};
+      
+      for (const user of users) {
+        const response = await apiRequest<Group[]>('GET', `/api/users/${user.id}/groups`);
+        mapping[user.id] = response;
+      }
+      
+      return mapping;
+    },
+    // Só buscar quando tiver usuários carregados
+    enabled: users.length > 0,
+  });
 
   // Delete user mutation
   const deleteUserMutation = useMutation({
@@ -86,6 +104,27 @@ export default function AdminPage() {
       toast({
         title: "Erro",
         description: "Não foi possível remover o usuário.",
+        variant: "destructive",
+      });
+    },
+  });
+  
+  // Toggle user status mutation
+  const toggleUserStatusMutation = useMutation({
+    mutationFn: async ({ userId, isActive }: { userId: number; isActive: boolean }) => {
+      await apiRequest("PATCH", `/api/users/${userId}/status`, { isActive });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/users'] });
+      toast({
+        title: "Status atualizado",
+        description: "O status do usuário foi atualizado com sucesso.",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Erro",
+        description: "Não foi possível atualizar o status do usuário.",
         variant: "destructive",
       });
     },
@@ -162,6 +201,23 @@ export default function AdminPage() {
     setSelectedUserId(userId);
     setIsUserGroupsModalOpen(true);
   }, []);
+  
+  const toggleUserStatus = (user: User) => {
+    if (user.role === "superadmin") {
+      toast({
+        title: "Operação não permitida",
+        description: "Não é possível desativar o superadmin.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    const newStatus = !user.isActive;
+    toggleUserStatusMutation.mutate({ 
+      userId: user.id, 
+      isActive: newStatus 
+    });
+  };
 
   // Filter users based on search term
   const filteredUsers = users.filter(user => 
@@ -306,14 +362,39 @@ export default function AdminPage() {
                                   </div>
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap">
-                                  <Badge variant="outline" className="bg-green-100 text-green-800 border-0">
-                                    Ativo
-                                  </Badge>
+                                  {user.isActive === false ? (
+                                    <Badge variant="outline" className="bg-red-100 text-red-800 border-0">
+                                      Inativo
+                                    </Badge>
+                                  ) : (
+                                    <Badge variant="outline" className="bg-green-100 text-green-800 border-0">
+                                      Ativo
+                                    </Badge>
+                                  )}
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                   <div className="flex space-x-2">
                                     {user.role !== "superadmin" && (
                                       <>
+                                        {/* Botão para ativar/desativar usuário */}
+                                        <Button 
+                                          variant="ghost" 
+                                          size="icon" 
+                                          className={`h-8 w-8 ${user.isActive ? 'text-orange-600 hover:text-orange-900 hover:bg-orange-50' : 'text-teal-600 hover:text-teal-900 hover:bg-teal-50'}`} 
+                                          title={user.isActive ? "Desativar Usuário" : "Ativar Usuário"}
+                                          onClick={() => toggleUserStatus(user)}
+                                          disabled={toggleUserStatusMutation.isPending}
+                                        >
+                                          {user.isActive ? (
+                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+                                            </svg>
+                                          ) : (
+                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                            </svg>
+                                          )}
+                                        </Button>
                                         <Button 
                                           variant="ghost" 
                                           size="icon" 
