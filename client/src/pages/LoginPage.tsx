@@ -140,7 +140,7 @@ export default function LoginPage() {
 
             <Button
               variant="outline"
-              className="flex items-center justify-center w-full gap-2 bg-white border border-gray-300 rounded-md py-6 px-4 text-gray-700 hover:bg-gray-50 transition-all duration-200"
+              className="flex items-center justify-center w-full gap-2 bg-white border border-gray-300 rounded-md py-6 px-4 text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-all duration-200"
               onClick={handleGoogleLogin}
               disabled={isLoading}
             >
