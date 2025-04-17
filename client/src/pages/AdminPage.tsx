@@ -44,14 +44,20 @@ export default function AdminPage() {
   const { data: users = [], isLoading: isLoadingUsers } = useQuery<User[]>({
     queryKey: ['/api/users', selectedGroupFilter],
     queryFn: async () => {
-      if (selectedGroupFilter) {
-        const res = await fetch(`/api/users/filter?groupId=${selectedGroupFilter}`);
-        if (!res.ok) throw new Error('Failed to fetch filtered users');
-        return res.json();
-      } else {
-        const res = await fetch('/api/users');
-        if (!res.ok) throw new Error('Failed to fetch users');
-        return res.json();
+      try {
+        // Se um grupo estiver selecionado, usamos o endpoint de filtro
+        if (selectedGroupFilter) {
+          console.log(`Buscando usuários do grupo: ${selectedGroupFilter}`);
+          // Usar o apiRequest do QueryClient para garantir o gerenciamento de autenticação correto
+          return await apiRequest("GET", `/api/users/filter?groupId=${selectedGroupFilter}`);
+        } else {
+          console.log("Buscando todos os usuários");
+          // Usar o apiRequest do QueryClient para garantir o gerenciamento de autenticação correto
+          return await apiRequest("GET", `/api/users`);
+        }
+      } catch (error) {
+        console.error("Erro ao buscar usuários:", error);
+        throw error;
       }
     }
   });

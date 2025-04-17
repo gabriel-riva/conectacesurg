@@ -56,7 +56,13 @@ export function EditUserModal({ userId, onClose, onUserUpdated }: EditUserModalP
   const { toast } = useToast();
 
   // Carregar dados do usuário
-  const { data: user, isLoading: isLoadingUser } = useQuery({
+  const { data: user, isLoading: isLoadingUser } = useQuery<{
+    id: number;
+    name: string;
+    email: string;
+    role: string;
+    photoUrl: string | null;
+  }>({
     queryKey: [`/api/users/${userId}`],
     enabled: !!userId,
   });

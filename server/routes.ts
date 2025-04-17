@@ -522,13 +522,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (groupId) {
         // Se o groupId foi fornecido, retorna usuários desse grupo
         const users = await storage.getGroupUsers(groupId);
+        console.log(`Filtrando usuários do grupo ${groupId}: Encontrados ${users.length} usuários`);
         return res.json(users);
       } else {
         // Se não foi fornecido groupId, retorna todos os usuários
         const users = await storage.getAllUsers();
+        console.log(`Retornando todos os usuários: Encontrados ${users.length} usuários`);
         return res.json(users);
       }
     } catch (error) {
+      console.error("Erro ao filtrar usuários por grupo:", error);
       res.status(500).json({ message: "Failed to filter users by group" });
     }
   });

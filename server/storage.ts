@@ -399,31 +399,26 @@ export class DatabaseStorage implements IStorage {
 
   async getGroupUsers(groupId: number): Promise<User[]> {
     try {
-      const groupUserRecords: { userId: number }[] = await db
+      console.log(`Buscando usuários para o grupo ${groupId}`);
+      
+      // Usando um JOIN para obter todos os usuários de um grupo em uma única consulta
+      const usersList = await db
         .select({
-          userId: userGroups.userId
+          id: users.id,
+          email: users.email,
+          name: users.name,
+          role: users.role,
+          photoUrl: users.photoUrl,
+          googleId: users.googleId,
+          createdAt: users.createdAt
         })
         .from(userGroups)
+        .innerJoin(users, eq(userGroups.userId, users.id))
         .where(eq(userGroups.groupId, groupId));
-
-      if (groupUserRecords.length === 0) {
-        return [];
-      }
-
-      const userIds = groupUserRecords.map((record: { userId: number }) => record.userId);
       
-      // Using a more specialized query to get all users that match the user IDs
-      const usersList = await Promise.all(
-        userIds.map(async (userId: number) => {
-          const [user] = await db
-            .select()
-            .from(users)
-            .where(eq(users.id, userId));
-          return user;
-        })
-      );
-
-      return usersList.filter(Boolean) as User[];
+      console.log(`Encontrados ${usersList.length} usuários no grupo ${groupId}`);
+      
+      return usersList as User[];
     } catch (error) {
       console.error("Error getting group users:", error);
       return [];
