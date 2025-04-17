@@ -291,11 +291,13 @@ export default function AdminPage() {
                             }}
                           >
                             <option value="">Todos os usuários</option>
-                            {groups.map((group) => (
-                              <option key={group.id} value={group.id}>
-                                {group.name}
-                              </option>
-                            ))}
+                            {[...groups]
+                              .sort((a, b) => a.name.localeCompare(b.name))
+                              .map((group) => (
+                                <option key={group.id} value={group.id}>
+                                  {group.name}
+                                </option>
+                              ))}
                           </select>
                         </div>
                       )}
@@ -329,13 +331,14 @@ export default function AdminPage() {
                             <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
                             <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Função</th>
                             <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Grupos</th>
                             <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>
                           </tr>
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
                           {filteredUsers.length === 0 ? (
                             <tr>
-                              <td colSpan={5} className="px-6 py-4 text-center text-sm text-gray-500">
+                              <td colSpan={6} className="px-6 py-4 text-center text-sm text-gray-500">
                                 Nenhum usuário encontrado
                               </td>
                             </tr>
@@ -371,6 +374,25 @@ export default function AdminPage() {
                                       Ativo
                                     </Badge>
                                   )}
+                                </td>
+                                <td className="px-6 py-4">
+                                  <div className="flex flex-wrap gap-1">
+                                    {isLoadingUserGroups ? (
+                                      <span className="text-xs text-gray-500">Carregando...</span>
+                                    ) : userGroupMapping[user.id]?.length > 0 ? (
+                                      userGroupMapping[user.id].map(group => (
+                                        <Badge 
+                                          key={group.id} 
+                                          variant="secondary"
+                                          className="bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100"
+                                        >
+                                          {group.name}
+                                        </Badge>
+                                      ))
+                                    ) : (
+                                      <span className="text-xs text-gray-500">Nenhum grupo</span>
+                                    )}
+                                  </div>
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                   <div className="flex space-x-2">

@@ -61,6 +61,9 @@ export function UserGroupsModal({ userId, onClose }: UserGroupsModalProps) {
       queryClient.invalidateQueries({ queryKey: ['/api/users/filter'] });
       queryClient.invalidateQueries({ queryKey: ['/api/users'] });
       
+      // Invalidar o mapeamento de grupos de usuários para atualizar os badges na tabela
+      queryClient.invalidateQueries({ queryKey: ['/api/users/groups/mapping'] });
+      
       toast({
         title: "Grupo adicionado",
         description: "O usuário foi adicionado ao grupo com sucesso.",
@@ -87,6 +90,9 @@ export function UserGroupsModal({ userId, onClose }: UserGroupsModalProps) {
       // Invalidar consultas de filtro para atualizar a UI
       queryClient.invalidateQueries({ queryKey: ['/api/users/filter'] });
       queryClient.invalidateQueries({ queryKey: ['/api/users'] });
+      
+      // Invalidar o mapeamento de grupos de usuários para atualizar os badges na tabela
+      queryClient.invalidateQueries({ queryKey: ['/api/users/groups/mapping'] });
       
       toast({
         title: "Grupo removido",
