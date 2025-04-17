@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Header } from "@/components/Header";
 import { Button } from "@/components/ui/button";
@@ -13,6 +13,16 @@ import { AdminSidebar } from "@/components/AdminSidebar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AddGroupModal } from "@/components/AddGroupModal";
 import { UserGroupsModal } from "@/components/UserGroupsModal";
+import { 
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle
+} from "@/components/ui/alert-dialog";
 
 export default function AdminPage() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -21,6 +31,11 @@ export default function AdminPage() {
   const [isUserGroupsModalOpen, setIsUserGroupsModalOpen] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState("usuarios");
+  const [userToDelete, setUserToDelete] = useState<number | null>(null);
+  const [groupToDelete, setGroupToDelete] = useState<number | null>(null);
+  const [isUserEditModalOpen, setIsUserEditModalOpen] = useState(false);
+  const [userToEdit, setUserToEdit] = useState<number | null>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const { toast } = useToast();
 
   // Fetch users
@@ -86,21 +101,40 @@ export default function AdminPage() {
   };
 
   const handleDeleteUser = (userId: number) => {
-    if (window.confirm("Tem certeza que deseja remover este usuário?")) {
-      deleteUserMutation.mutate(userId);
+    setUserToDelete(userId);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const confirmDeleteUser = () => {
+    if (userToDelete) {
+      deleteUserMutation.mutate(userToDelete);
+      setUserToDelete(null);
+      setIsDeleteDialogOpen(false);
     }
   };
 
   const handleDeleteGroup = (groupId: number) => {
-    if (window.confirm("Tem certeza que deseja remover este grupo?")) {
-      deleteGroupMutation.mutate(groupId);
+    setGroupToDelete(groupId);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const confirmDeleteGroup = () => {
+    if (groupToDelete) {
+      deleteGroupMutation.mutate(groupToDelete);
+      setGroupToDelete(null);
+      setIsDeleteDialogOpen(false);
     }
   };
 
-  const handleUserGroups = (userId: number) => {
+  const handleEditUser = (userId: number) => {
+    setUserToEdit(userId);
+    setIsUserEditModalOpen(true);
+  };
+
+  const handleUserGroups = useCallback((userId: number) => {
     setSelectedUserId(userId);
     setIsUserGroupsModalOpen(true);
-  };
+  }, []);
 
   // Filter users based on search term
   const filteredUsers = users.filter(user => 
@@ -241,6 +275,7 @@ export default function AdminPage() {
                                           size="icon" 
                                           className="h-8 w-8 text-blue-600 hover:text-blue-900 hover:bg-blue-50" 
                                           title="Editar"
+                                          onClick={() => handleEditUser(user.id)}
                                         >
                                           <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -422,6 +457,63 @@ export default function AdminPage() {
           }}
         />
       )}
+
+      {/* Modal de edição - será implementado  */}
+      {isUserEditModalOpen && userToEdit && (
+        <AlertDialog
+          open={isUserEditModalOpen}
+          onOpenChange={(isOpen) => {
+            if (!isOpen) {
+              setIsUserEditModalOpen(false);
+              setUserToEdit(null);
+            }
+          }}
+        >
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Editar Usuário</AlertDialogTitle>
+              <AlertDialogDescription>
+                Funcionalidade de edição será implementada em breve.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Fechar</AlertDialogCancel>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      )}
+
+      {/* Diálogo de confirmação de exclusão */}
+      <AlertDialog 
+        open={isDeleteDialogOpen} 
+        onOpenChange={(isOpen) => {
+          if (!isOpen) {
+            setIsDeleteDialogOpen(false);
+            setUserToDelete(null);
+            setGroupToDelete(null);
+          }
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+            <AlertDialogDescription>
+              {userToDelete 
+                ? "Tem certeza que deseja remover este usuário? Esta ação não pode ser desfeita."
+                : "Tem certeza que deseja remover este grupo? Esta ação não pode ser desfeita."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={userToDelete ? confirmDeleteUser : confirmDeleteGroup}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              Confirmar exclusão
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
