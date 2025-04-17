@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useAuth } from "@/lib/auth";
 import { useToast } from "@/hooks/use-toast";
-import { useLocation } from "wouter";
+import { useLocation, Link } from "wouter";
 
 export function UserDropdown() {
   const { user, logout } = useAuth();
@@ -9,6 +9,8 @@ export function UserDropdown() {
   const [, setLocation] = useLocation();
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  
+  const isAdmin = user?.role === "superadmin" || user?.role === "admin";
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -65,12 +67,19 @@ export function UserDropdown() {
           </div>
           <a href="#" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Perfil</a>
           <a href="#" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Configurações</a>
-          <button 
-            onClick={handleLogout}
-            className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
-          >
-            Sair
-          </button>
+          {isAdmin && (
+            <Link href="/admin" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 font-medium text-primary">
+              Painel Admin
+            </Link>
+          )}
+          <div className="border-t mt-1 pt-1">
+            <button 
+              onClick={handleLogout}
+              className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
+            >
+              Sair
+            </button>
+          </div>
         </div>
       )}
     </div>
