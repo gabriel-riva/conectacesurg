@@ -1,4 +1,4 @@
-import type { Express, Request, Response, NextFunction } from "express";
+import express, { type Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertUserSchema, insertGoogleUserSchema, insertGroupSchema } from "@shared/schema";
@@ -9,6 +9,7 @@ import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 import MemoryStore from "memorystore";
 import connectPgSimple from "connect-pg-simple";
 import { pool } from "./db";
+import communityRoutes from "./community";
 
 // Create PostgreSQL session store for production or memory store for development
 const createSessionStore = () => {
@@ -629,6 +630,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to remove user from group" });
     }
   });
+
+  // Adicionar rotas da comunidade
+  app.use('/api/community', communityRoutes);
+  
+  // Configurar acesso estático para a pasta de uploads
+  app.use('/uploads', express.static('uploads'));
 
   const httpServer = createServer(app);
   return httpServer;
