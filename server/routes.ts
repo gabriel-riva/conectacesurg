@@ -326,6 +326,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Update user - admin only
+  app.patch("/api/users/:id", checkAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const userData = req.body;
+      
+      // Validar o email
+      if (userData.email && !userData.email.endsWith('@cesurg.com')) {
+        return res.status(400).json({ message: "O email deve pertencer ao domínio @cesurg.com" });
+      }
+      
+      // Verificar se o usuário existe
+      const existingUser = await storage.getUser(id);
+      if (!existingUser) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      // Permitir apenas atualização de nome, email e role
+      const sanitizedData = {
+        name: userData.name || existingUser.name,
+        email: userData.email || existingUser.email,
+        role: userData.role || existingUser.role
+      };
+      
+      // Validar o papel do usuário
+      if (sanitizedData.role !== "user" && sanitizedData.role !== "admin") {
+        return res.status(400).json({ message: "Invalid role value" });
+      }
+      
+      // Não permitir alterar superadmin
+      if (existingUser.role === "superadmin") {
+        return res.status(403).json({ message: "Cannot modify superadmin user" });
+      }
+      
+      // Atualizar usuário
+      const updatedUser = await storage.updateUser(id, sanitizedData);
+      
+      res.json(updatedUser);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update user" });
+    }
+  });
+
   // Update user role - admin only
   app.patch("/api/users/:id/role", checkAdmin, async (req, res) => {
     try {

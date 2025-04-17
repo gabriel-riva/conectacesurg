@@ -23,6 +23,7 @@ export interface IStorage {
   getAllUsers(): Promise<User[]>;
   deleteUser(id: number): Promise<boolean>;
   updateUserRole(id: number, role: string): Promise<User | undefined>;
+  updateUser(id: number, userData: Partial<InsertUser>): Promise<User | undefined>;
   
   // Group related methods
   createGroup(group: InsertGroup): Promise<Group>;
@@ -217,6 +218,26 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error("Error updating user with Google info:", error);
       throw new Error("Failed to update user with Google information");
+    }
+  }
+
+  async updateUser(id: number, userData: Partial<InsertUser>): Promise<User | undefined> {
+    try {
+      // Ensure email is lowercase if provided
+      const normalizedData = userData.email
+        ? { ...userData, email: userData.email.toLowerCase() }
+        : userData;
+        
+      const [updatedUser] = await db
+        .update(users)
+        .set(normalizedData)
+        .where(eq(users.id, id))
+        .returning();
+        
+      return updatedUser;
+    } catch (error) {
+      console.error("Error updating user:", error);
+      return undefined;
     }
   }
 
