@@ -50,7 +50,7 @@ export function UserDropdown() {
         className="flex items-center space-x-2 focus:outline-none"
         onClick={() => setIsOpen(!isOpen)}
       >
-        <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center text-white">
+        <div className="w-8 h-8 rounded-full bg-conecta-green flex items-center justify-center text-white">
           {user.name.charAt(0)}
         </div>
         <span className="hidden md:inline-block text-sm">{user.name.split(' ')[0]}</span>
@@ -68,7 +68,7 @@ export function UserDropdown() {
           <a href="#" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Perfil</a>
           <a href="#" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Configurações</a>
           {isAdmin && (
-            <Link href="/admin" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 font-medium text-primary">
+            <Link href="/admin" className="block px-4 py-2 text-sm hover:bg-gray-100 font-medium text-conecta-blue">
               Painel Admin
             </Link>
           )}

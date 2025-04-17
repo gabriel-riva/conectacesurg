@@ -28,7 +28,7 @@ export function Header() {
   };
 
   return (
-    <header className="bg-primary text-white shadow-md relative">
+    <header className="bg-conecta-blue text-white shadow-md relative">
       {/* Indicador de ambiente de desenvolvimento */}
       {isDevelopment && (
         <div className="absolute top-0 left-0 right-0 bg-yellow-500 text-black text-xs text-center py-0.5">
@@ -51,23 +51,23 @@ export function Header() {
           </div>
           
           <nav className="hidden md:flex space-x-8">
-            <Link href="/dashboard" className={`menu-item ${location === '/dashboard' ? 'text-secondary' : ''}`}>
+            <Link href="/dashboard" className={`menu-item ${location === '/dashboard' ? 'text-conecta-green' : ''}`}>
               <img src={inicioIcon} alt="Início" className="w-5 h-5 mr-2" />
               Início
             </Link>
-            <Link href="/materiais" className={`menu-item ${location === '/materiais' ? 'text-secondary' : ''}`}>
+            <Link href="/materiais" className={`menu-item ${location === '/materiais' ? 'text-conecta-green' : ''}`}>
               <img src={materiaisIcon} alt="Materiais" className="w-5 h-5 mr-2" />
               Materiais
             </Link>
-            <Link href="/ideias" className={`menu-item ${location === '/ideias' ? 'text-secondary' : ''}`}>
+            <Link href="/ideias" className={`menu-item ${location === '/ideias' ? 'text-conecta-green' : ''}`}>
               <img src={ideiasIcon} alt="Ideias" className="w-5 h-5 mr-2" />
               Ideias
             </Link>
-            <Link href="/comunidade" className={`menu-item ${location === '/comunidade' ? 'text-secondary' : ''}`}>
+            <Link href="/comunidade" className={`menu-item ${location === '/comunidade' ? 'text-conecta-green' : ''}`}>
               <img src={comunidadeIcon} alt="Comunidade" className="w-5 h-5 mr-2" />
               Comunidade
             </Link>
-            <Link href="/gamificacao" className={`menu-item ${location === '/gamificacao' ? 'text-secondary' : ''}`}>
+            <Link href="/gamificacao" className={`menu-item ${location === '/gamificacao' ? 'text-conecta-green' : ''}`}>
               <img src={gamificacaoIcon} alt="Gamificação" className="w-5 h-5 mr-2" />
               Gamificação
             </Link>
