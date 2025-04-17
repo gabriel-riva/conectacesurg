@@ -83,11 +83,11 @@ export function Header() {
               isActive={location === '/ideias'}
             />
             <MenuItem 
-              href="/comunidade"
+              href="/community"
               icon={comunidadeIcon}
               iconHover={comunidadeIconVerde}
               label="Comunidade"
-              isActive={location === '/comunidade'}
+              isActive={location === '/community'}
             />
             <MenuItem 
               href="/gamificacao"
@@ -143,11 +143,11 @@ export function Header() {
               className="py-2"
             />
             <MenuItem 
-              href="/comunidade"
+              href="/community"
               icon={comunidadeIcon}
               iconHover={comunidadeIconVerde}
               label="Comunidade"
-              isActive={location === '/comunidade'}
+              isActive={location === '/community'}
               className="py-2"
             />
             <MenuItem 

@@ -6,6 +6,7 @@ import NotFound from "@/pages/not-found";
 import LoginPage from "@/pages/LoginPage";
 import Dashboard from "@/pages/Dashboard";
 import AdminPage from "@/pages/AdminPage";
+import CommunityPage from "@/pages/CommunityPage";
 import AccessDeniedPage from "@/pages/AccessDeniedPage";
 import { AuthProvider } from "./providers/AuthProvider";
 import { useAuth } from "./lib/auth";
@@ -42,6 +43,9 @@ function Router() {
       </Route>
       <Route path="/admin">
         {() => <ProtectedRoute component={AdminPage} adminOnly={true} />}
+      </Route>
+      <Route path="/community">
+        {() => <ProtectedRoute component={CommunityPage} />}
       </Route>
       <Route component={NotFound} />
     </Switch>
