@@ -23,6 +23,7 @@ export interface IStorage {
   getAllUsers(): Promise<User[]>;
   deleteUser(id: number): Promise<boolean>;
   updateUserRole(id: number, role: string): Promise<User | undefined>;
+  updateUserStatus(id: number, isActive: boolean): Promise<User | undefined>;
   updateUser(id: number, userData: Partial<InsertUser>): Promise<User | undefined>;
   
   // Group related methods
@@ -191,6 +192,21 @@ export class DatabaseStorage implements IStorage {
       return updatedUser;
     } catch (error) {
       console.error("Error updating user role:", error);
+      return undefined;
+    }
+  }
+  
+  async updateUserStatus(id: number, isActive: boolean): Promise<User | undefined> {
+    try {
+      const [updatedUser] = await db
+        .update(users)
+        .set({ isActive })
+        .where(eq(users.id, id))
+        .returning();
+      
+      return updatedUser;
+    } catch (error) {
+      console.error("Error updating user status:", error);
       return undefined;
     }
   }

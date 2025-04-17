@@ -241,6 +241,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.redirect('/?error=auth_failed');
         }
         
+        // Check if user is active
+        if (user.isActive === false) {
+          console.log(`⛔ Usuário inativo tentando fazer login: ${user.email}`);
+          return res.redirect('/?error=account_inactive');
+        }
+        
         // Login successful user
         req.login(user, (loginErr) => {
           if (loginErr) {
