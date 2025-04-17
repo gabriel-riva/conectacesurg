@@ -95,6 +95,7 @@ export default function AdminPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/users'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/users/groups/mapping'] });
       toast({
         title: "Usuário removido",
         description: "O usuário foi removido com sucesso.",
@@ -137,6 +138,7 @@ export default function AdminPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/groups'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/users/groups/mapping'] });
       toast({
         title: "Grupo removido",
         description: "O grupo foi removido com sucesso.",
@@ -380,15 +382,17 @@ export default function AdminPage() {
                                     {isLoadingUserGroups ? (
                                       <span className="text-xs text-gray-500">Carregando...</span>
                                     ) : userGroupMapping[user.id]?.length > 0 ? (
-                                      userGroupMapping[user.id].map(group => (
-                                        <Badge 
-                                          key={group.id} 
-                                          variant="secondary"
-                                          className="bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100"
-                                        >
-                                          {group.name}
-                                        </Badge>
-                                      ))
+                                      [...userGroupMapping[user.id]]
+                                        .sort((a, b) => a.name.localeCompare(b.name))
+                                        .map(group => (
+                                          <Badge 
+                                            key={group.id} 
+                                            variant="secondary"
+                                            className="bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100"
+                                          >
+                                            {group.name}
+                                          </Badge>
+                                        ))
                                     ) : (
                                       <span className="text-xs text-gray-500">Nenhum grupo</span>
                                     )}
@@ -508,7 +512,9 @@ export default function AdminPage() {
                               </td>
                             </tr>
                           ) : (
-                            filteredGroups.map((group) => (
+                            [...filteredGroups]
+                              .sort((a, b) => a.name.localeCompare(b.name))
+                              .map((group) => (
                               <tr key={group.id}>
                                 <td className="px-6 py-4 whitespace-nowrap">
                                   <div className="text-sm font-medium text-gray-900">{group.name}</div>
@@ -627,6 +633,7 @@ export default function AdminPage() {
           }}
           onUserUpdated={() => {
             queryClient.invalidateQueries({ queryKey: ['/api/users'] });
+            queryClient.invalidateQueries({ queryKey: ['/api/users/groups/mapping'] });
             setIsUserEditModalOpen(false);
             setUserToEdit(null);
           }}
@@ -642,6 +649,7 @@ export default function AdminPage() {
           }}
           onGroupUpdated={() => {
             queryClient.invalidateQueries({ queryKey: ['/api/groups'] });
+            queryClient.invalidateQueries({ queryKey: ['/api/users/groups/mapping'] });
             setIsGroupEditModalOpen(false);
             setGroupToEdit(null);
           }}
