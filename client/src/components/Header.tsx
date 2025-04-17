@@ -5,6 +5,7 @@ import { useAuth } from "@/lib/auth";
 import { UserDropdown } from "@/components/UserDropdown";
 import { Logo } from "@/components/ui/logo";
 import { Badge } from "@/components/ui/badge";
+import { MenuItem } from "@/components/MenuItem";
 
 // Importing icons
 import inicioIcon from "@assets/icone_inicio.png";
@@ -12,6 +13,13 @@ import materiaisIcon from "@assets/icone_materiais.png";
 import ideiasIcon from "@assets/icone_ideias.png";
 import comunidadeIcon from "@assets/icone_comunidade.png";
 import gamificacaoIcon from "@assets/icone_gamificacao.png";
+
+// Importing green icons
+import inicioIconVerde from "@assets/icone_inicio_verde.png";
+import materiaisIconVerde from "@assets/icone_materiais_verde.png";
+import ideiasIconVerde from "@assets/icone_ideias_verde.png";
+import comunidadeIconVerde from "@assets/icone_comunidade_verde.png";
+import gamificacaoIconVerde from "@assets/icone_gamificacao_verde.png";
 
 export function Header() {
   const [location] = useLocation();
@@ -51,26 +59,41 @@ export function Header() {
           </div>
           
           <nav className="hidden md:flex space-x-8">
-            <Link href="/dashboard" className={`menu-item ${location === '/dashboard' ? 'text-conecta-green' : ''}`}>
-              <img src={inicioIcon} alt="Início" className="w-5 h-5 mr-2" />
-              Início
-            </Link>
-            <Link href="/materiais" className={`menu-item ${location === '/materiais' ? 'text-conecta-green' : ''}`}>
-              <img src={materiaisIcon} alt="Materiais" className="w-5 h-5 mr-2" />
-              Materiais
-            </Link>
-            <Link href="/ideias" className={`menu-item ${location === '/ideias' ? 'text-conecta-green' : ''}`}>
-              <img src={ideiasIcon} alt="Ideias" className="w-5 h-5 mr-2" />
-              Ideias
-            </Link>
-            <Link href="/comunidade" className={`menu-item ${location === '/comunidade' ? 'text-conecta-green' : ''}`}>
-              <img src={comunidadeIcon} alt="Comunidade" className="w-5 h-5 mr-2" />
-              Comunidade
-            </Link>
-            <Link href="/gamificacao" className={`menu-item ${location === '/gamificacao' ? 'text-conecta-green' : ''}`}>
-              <img src={gamificacaoIcon} alt="Gamificação" className="w-5 h-5 mr-2" />
-              Gamificação
-            </Link>
+            <MenuItem 
+              href="/dashboard"
+              icon={inicioIcon}
+              iconHover={inicioIconVerde}
+              label="Início"
+              isActive={location === '/dashboard'}
+            />
+            <MenuItem 
+              href="/materiais"
+              icon={materiaisIcon}
+              iconHover={materiaisIconVerde}
+              label="Materiais"
+              isActive={location === '/materiais'}
+            />
+            <MenuItem 
+              href="/ideias"
+              icon={ideiasIcon}
+              iconHover={ideiasIconVerde}
+              label="Ideias"
+              isActive={location === '/ideias'}
+            />
+            <MenuItem 
+              href="/comunidade"
+              icon={comunidadeIcon}
+              iconHover={comunidadeIconVerde}
+              label="Comunidade"
+              isActive={location === '/comunidade'}
+            />
+            <MenuItem 
+              href="/gamificacao"
+              icon={gamificacaoIcon}
+              iconHover={gamificacaoIconVerde}
+              label="Gamificação"
+              isActive={location === '/gamificacao'}
+            />
           </nav>
           
           <div className="flex items-center space-x-4">
@@ -93,26 +116,46 @@ export function Header() {
         {/* Mobile navigation menu */}
         {isMobileMenuOpen && (
           <div className="md:hidden py-4 space-y-2">
-            <Link href="/dashboard" className="menu-item py-2">
-              <img src={inicioIcon} alt="Início" className="w-5 h-5 mr-2" />
-              Início
-            </Link>
-            <Link href="/materiais" className="menu-item py-2">
-              <img src={materiaisIcon} alt="Materiais" className="w-5 h-5 mr-2" />
-              Materiais
-            </Link>
-            <Link href="/ideias" className="menu-item py-2">
-              <img src={ideiasIcon} alt="Ideias" className="w-5 h-5 mr-2" />
-              Ideias
-            </Link>
-            <Link href="/comunidade" className="menu-item py-2">
-              <img src={comunidadeIcon} alt="Comunidade" className="w-5 h-5 mr-2" />
-              Comunidade
-            </Link>
-            <Link href="/gamificacao" className="menu-item py-2">
-              <img src={gamificacaoIcon} alt="Gamificação" className="w-5 h-5 mr-2" />
-              Gamificação
-            </Link>
+            <MenuItem 
+              href="/dashboard"
+              icon={inicioIcon}
+              iconHover={inicioIconVerde}
+              label="Início"
+              isActive={location === '/dashboard'}
+              className="py-2"
+            />
+            <MenuItem 
+              href="/materiais"
+              icon={materiaisIcon}
+              iconHover={materiaisIconVerde}
+              label="Materiais"
+              isActive={location === '/materiais'}
+              className="py-2"
+            />
+            <MenuItem 
+              href="/ideias"
+              icon={ideiasIcon}
+              iconHover={ideiasIconVerde}
+              label="Ideias"
+              isActive={location === '/ideias'}
+              className="py-2"
+            />
+            <MenuItem 
+              href="/comunidade"
+              icon={comunidadeIcon}
+              iconHover={comunidadeIconVerde}
+              label="Comunidade"
+              isActive={location === '/comunidade'}
+              className="py-2"
+            />
+            <MenuItem 
+              href="/gamificacao"
+              icon={gamificacaoIcon}
+              iconHover={gamificacaoIconVerde}
+              label="Gamificação"
+              isActive={location === '/gamificacao'}
+              className="py-2"
+            />
           </div>
         )}
       </div>
