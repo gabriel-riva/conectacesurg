@@ -13,6 +13,7 @@ import { AdminSidebar } from "@/components/AdminSidebar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AddGroupModal } from "@/components/AddGroupModal";
 import { UserGroupsModal } from "@/components/UserGroupsModal";
+import { EditUserModal } from "@/components/EditUserModal";
 import { 
   AlertDialog,
   AlertDialogAction,
@@ -36,11 +37,23 @@ export default function AdminPage() {
   const [isUserEditModalOpen, setIsUserEditModalOpen] = useState(false);
   const [userToEdit, setUserToEdit] = useState<number | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [selectedGroupFilter, setSelectedGroupFilter] = useState<number | null>(null);
   const { toast } = useToast();
 
-  // Fetch users
+  // Fetch users - Usar endpoint filter quando um grupo está selecionado
   const { data: users = [], isLoading: isLoadingUsers } = useQuery<User[]>({
-    queryKey: ['/api/users'],
+    queryKey: ['/api/users', selectedGroupFilter],
+    queryFn: async () => {
+      if (selectedGroupFilter) {
+        const res = await fetch(`/api/users/filter?groupId=${selectedGroupFilter}`);
+        if (!res.ok) throw new Error('Failed to fetch filtered users');
+        return res.json();
+      } else {
+        const res = await fetch('/api/users');
+        if (!res.ok) throw new Error('Failed to fetch users');
+        return res.json();
+      }
+    }
   });
 
   // Fetch groups
@@ -191,17 +204,45 @@ export default function AdminPage() {
                 <CardContent className="pt-6">
                   <div className="flex flex-col md:flex-row justify-between items-center mb-6">
                     <h2 className="text-lg font-semibold text-primary mb-4 md:mb-0">Usuários Registrados</h2>
-                    <div className="relative w-full md:w-auto">
-                      <Input
-                        type="text"
-                        placeholder="Buscar usuários..."
-                        className="w-full md:w-64 pl-10 pr-4"
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                      />
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400 absolute left-3 top-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                      </svg>
+                    <div className="flex flex-col md:flex-row gap-4 w-full md:w-auto items-end">
+                      {/* Filtro por grupo */}
+                      {!isLoadingGroups && groups.length > 0 && (
+                        <div className="w-full md:w-64">
+                          <label htmlFor="group-filter" className="block text-sm font-medium text-gray-700 mb-1">
+                            Filtrar por grupo
+                          </label>
+                          <select
+                            id="group-filter"
+                            className="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm h-10 px-3"
+                            value={selectedGroupFilter?.toString() || ""}
+                            onChange={(e) => {
+                              const value = e.target.value;
+                              setSelectedGroupFilter(value ? parseInt(value) : null);
+                            }}
+                          >
+                            <option value="">Todos os usuários</option>
+                            {groups.map((group) => (
+                              <option key={group.id} value={group.id}>
+                                {group.name}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
+                      
+                      {/* Campo de busca */}
+                      <div className="relative w-full md:w-64">
+                        <Input
+                          type="text"
+                          placeholder="Buscar usuários..."
+                          className="w-full pl-10 pr-4"
+                          value={searchTerm}
+                          onChange={(e) => setSearchTerm(e.target.value)}
+                        />
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400 absolute left-3 top-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                      </div>
                     </div>
                   </div>
                   
@@ -460,27 +501,18 @@ export default function AdminPage() {
 
       {/* Modal de edição - será implementado  */}
       {isUserEditModalOpen && userToEdit && (
-        <AlertDialog
-          open={isUserEditModalOpen}
-          onOpenChange={(isOpen) => {
-            if (!isOpen) {
-              setIsUserEditModalOpen(false);
-              setUserToEdit(null);
-            }
+        <EditUserModal
+          userId={userToEdit}
+          onClose={() => {
+            setIsUserEditModalOpen(false);
+            setUserToEdit(null);
           }}
-        >
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Editar Usuário</AlertDialogTitle>
-              <AlertDialogDescription>
-                Funcionalidade de edição será implementada em breve.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Fechar</AlertDialogCancel>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+          onUserUpdated={() => {
+            queryClient.invalidateQueries({ queryKey: ['/api/users'] });
+            setIsUserEditModalOpen(false);
+            setUserToEdit(null);
+          }}
+        />
       )}
 
       {/* Diálogo de confirmação de exclusão */}

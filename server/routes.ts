@@ -513,6 +513,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to fetch group users" });
     }
   });
+  
+  // Filtrar usuários por grupo ou retornar todos os usuários se groupId não for fornecido
+  app.get("/api/users/filter", checkAdmin, async (req, res) => {
+    try {
+      const groupId = req.query.groupId ? parseInt(req.query.groupId as string) : null;
+      
+      if (groupId) {
+        // Se o groupId foi fornecido, retorna usuários desse grupo
+        const users = await storage.getGroupUsers(groupId);
+        return res.json(users);
+      } else {
+        // Se não foi fornecido groupId, retorna todos os usuários
+        const users = await storage.getAllUsers();
+        return res.json(users);
+      }
+    } catch (error) {
+      res.status(500).json({ message: "Failed to filter users by group" });
+    }
+  });
 
   // Add a user to a group
   app.post("/api/users/:userId/groups/:groupId", checkAdmin, async (req, res) => {
