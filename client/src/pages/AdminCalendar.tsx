@@ -176,10 +176,7 @@ export default function AdminCalendar() {
         formData.append("image", selectedImage);
       }
 
-      return apiRequest(`/api/calendar/${data.id}`, {
-        method: "PUT",
-        body: formData,
-      });
+      return apiRequest("PUT", `/api/calendar/${data.id}`, formData);
     },
     onSuccess: () => {
       toast({

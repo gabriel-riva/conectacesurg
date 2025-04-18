@@ -204,6 +204,10 @@ router.put("/:id", isAdmin, upload.single("image"), async (req: Request, res: Re
     // Atualizar evento
     const updatedEvent = await storage.updateCalendarEvent(id, updateData);
     
+    if (!updatedEvent) {
+      return res.status(500).json({ error: "Falha ao atualizar o evento" });
+    }
+    
     res.json(updatedEvent);
   } catch (error) {
     console.error("Erro ao atualizar evento:", error);
