@@ -216,14 +216,14 @@ export default function CommunityPage() {
       groupForm.reset();
       setCreateGroupOpen(false);
       toast({
-        title: 'Group created',
-        description: 'Your group has been created successfully.',
+        title: 'Grupo criado',
+        description: 'Seu grupo foi criado com sucesso.',
       });
     },
     onError: (error: any) => {
       toast({
-        title: 'Error',
-        description: error.message || 'Failed to create group. Please try again.',
+        title: 'Erro',
+        description: error.message || 'Falha ao criar o grupo. Por favor, tente novamente.',
         variant: 'destructive',
       });
     },
@@ -238,14 +238,14 @@ export default function CommunityPage() {
       queryClient.invalidateQueries({ queryKey: ['/api/community/conversations'] });
       messageForm.reset();
       toast({
-        title: 'Message sent',
-        description: 'Your message has been sent successfully.',
+        title: 'Mensagem enviada',
+        description: 'Sua mensagem foi enviada com sucesso.',
       });
     },
     onError: (error: any) => {
       toast({
-        title: 'Error',
-        description: error.message || 'Failed to send message. Please try again.',
+        title: 'Erro',
+        description: error.message || 'Falha ao enviar mensagem. Por favor, tente novamente.',
         variant: 'destructive',
       });
     },
@@ -807,9 +807,9 @@ export default function CommunityPage() {
       <Dialog open={createGroupOpen} onOpenChange={setCreateGroupOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Create a New Group</DialogTitle>
+            <DialogTitle>Criar um Novo Grupo</DialogTitle>
             <DialogDescription>
-              Create a group to connect and share with other members.
+              Crie um grupo para conectar e compartilhar com outros membros.
             </DialogDescription>
           </DialogHeader>
           
@@ -820,9 +820,9 @@ export default function CommunityPage() {
                 name="name"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Name</FormLabel>
+                    <FormLabel>Nome</FormLabel>
                     <FormControl>
-                      <Input {...field} placeholder="Group name" />
+                      <Input {...field} placeholder="Nome do grupo" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -834,9 +834,9 @@ export default function CommunityPage() {
                 name="description"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Description</FormLabel>
+                    <FormLabel>Descrição</FormLabel>
                     <FormControl>
-                      <Textarea {...field} placeholder="Describe your group" />
+                      <Textarea {...field} placeholder="Descreva seu grupo" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -856,7 +856,7 @@ export default function CommunityPage() {
                         className="rounded border-gray-300 text-primary focus:ring-primary"
                       />
                     </FormControl>
-                    <FormLabel className="font-normal">Private group (only visible to members)</FormLabel>
+                    <FormLabel className="font-normal">Grupo privado (visível apenas para membros)</FormLabel>
                   </FormItem>
                 )}
               />
@@ -874,7 +874,7 @@ export default function CommunityPage() {
                         className="rounded border-gray-300 text-primary focus:ring-primary"
                       />
                     </FormControl>
-                    <FormLabel className="font-normal">Require admin approval to join</FormLabel>
+                    <FormLabel className="font-normal">Exigir aprovação de administrador para entrar</FormLabel>
                   </FormItem>
                 )}
               />
@@ -885,10 +885,10 @@ export default function CommunityPage() {
                   variant="outline" 
                   onClick={() => setCreateGroupOpen(false)}
                 >
-                  Cancel
+                  Cancelar
                 </Button>
                 <Button type="submit" disabled={createGroupMutation.isPending}>
-                  {createGroupMutation.isPending ? 'Creating...' : 'Create Group'}
+                  {createGroupMutation.isPending ? 'Criando...' : 'Criar Grupo'}
                 </Button>
               </DialogFooter>
             </form>
@@ -1004,14 +1004,14 @@ function PostCard({
                 onClick={onLike}
               >
                 <ThumbsUp className="h-4 w-4 mr-1" />
-                <span>{post.likeCount || 0} Likes</span>
+                <span>{post.likeCount || 0} Curtidas</span>
               </button>
               <button 
                 className="flex items-center hover:text-primary"
                 onClick={() => setShowComments(!showComments)}
               >
                 <MessageCircle className="h-4 w-4 mr-1" />
-                <span>{post.commentCount || 0} Comments</span>
+                <span>{post.commentCount || 0} Comentários</span>
               </button>
             </div>
           </div>
@@ -1042,7 +1042,7 @@ function PostCard({
             </div>
           ) : (
             <div className="text-center py-2 text-gray-500 text-sm">
-              No comments yet. Be the first to comment!
+              Nenhum comentário ainda. Seja o primeiro a comentar!
             </div>
           )}
           
@@ -1056,11 +1056,11 @@ function PostCard({
           >
             <Input
               {...commentForm.register('content')}
-              placeholder="Write a comment..."
+              placeholder="Escreva um comentário..."
               className="flex-1"
             />
             <Button type="submit" size="sm" className="ml-2">
-              Post
+              Enviar
             </Button>
           </form>
           {commentForm.formState.errors.content && (

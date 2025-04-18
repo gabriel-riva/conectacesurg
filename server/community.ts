@@ -369,17 +369,20 @@ router.post('/groups', async (req: Request, res: Response) => {
     }
     
     // Create the group
+    const userId = parseInt(req.user.id.toString());
+    console.log('ID do usuário para creator_id:', userId);
+    
     const [group] = await db.insert(groups).values({
       name,
       description: description || null,
-      creatorId: req.user.id,
+      creatorId: userId,
       isPrivate: isPrivate === true,
       requiresApproval: requiresApproval === true,
     }).returning();
     
     // Add creator as an admin of the group
     await db.insert(userGroups).values({
-      userId: req.user.id,
+      userId: userId,
       groupId: group.id,
       isAdmin: true,
       status: 'approved',
