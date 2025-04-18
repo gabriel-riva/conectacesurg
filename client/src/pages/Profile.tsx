@@ -54,9 +54,10 @@ export default function Profile() {
   const [uploadingDocuments, setUploadingDocuments] = useState(false);
 
   // Buscar dados do perfil
-  const { data: profile, isLoading } = useQuery({
+  const { data: profile, isLoading } = useQuery<any>({
     queryKey: ['/api/profile'],
-    enabled: !!user
+    enabled: !!user,
+    refetchOnWindowFocus: false,
   });
 
   // Formulário de perfil
