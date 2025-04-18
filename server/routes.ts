@@ -13,6 +13,7 @@ import communityRoutes from "./community";
 import ideasRoutes from "./ideas-fixed-final";
 import aiRouter from "./ai";
 import profileRouter from "./profile";
+import utilityLinksRouter from "./utilityLinks";
 
 // Create PostgreSQL session store for production or memory store for development
 const createSessionStore = () => {

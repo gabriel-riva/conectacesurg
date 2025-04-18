@@ -7,6 +7,7 @@ import {
   aiPromptAgents,
   aiConversations,
   aiMessages,
+  utilityLinks,
   type User, 
   type InsertUser, 
   type InsertGoogleUser,
@@ -18,6 +19,8 @@ import {
   type AiConversation,
   type AiMessage,
   type InsertAiAgent,
+  type UtilityLink,
+  type InsertUtilityLink,
   type InsertAiPrompt,
   type InsertAiConversation,
   type InsertAiMessage
@@ -877,6 +880,65 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error("Error creating AI message:", error);
       throw new Error("Failed to create AI message");
+    }
+  }
+
+  // Utility Links methods
+  async getAllUtilityLinks(): Promise<UtilityLink[]> {
+    try {
+      return await db.select().from(utilityLinks).orderBy(utilityLinks.order);
+    } catch (error) {
+      console.error("Error getting all utility links:", error);
+      return [];
+    }
+  }
+
+  async getUtilityLink(id: number): Promise<UtilityLink | undefined> {
+    try {
+      const [link] = await db.select().from(utilityLinks).where(eq(utilityLinks.id, id));
+      return link;
+    } catch (error) {
+      console.error("Error getting utility link by ID:", error);
+      return undefined;
+    }
+  }
+
+  async createUtilityLink(link: InsertUtilityLink): Promise<UtilityLink> {
+    try {
+      const [newLink] = await db
+        .insert(utilityLinks)
+        .values(link)
+        .returning();
+      
+      return newLink;
+    } catch (error) {
+      console.error("Error creating utility link:", error);
+      throw new Error("Failed to create utility link");
+    }
+  }
+
+  async updateUtilityLink(id: number, linkData: Partial<InsertUtilityLink>): Promise<UtilityLink | undefined> {
+    try {
+      const [updatedLink] = await db
+        .update(utilityLinks)
+        .set(linkData)
+        .where(eq(utilityLinks.id, id))
+        .returning();
+      
+      return updatedLink;
+    } catch (error) {
+      console.error("Error updating utility link:", error);
+      return undefined;
+    }
+  }
+
+  async deleteUtilityLink(id: number): Promise<boolean> {
+    try {
+      const result = await db.delete(utilityLinks).where(eq(utilityLinks.id, id)).returning();
+      return result.length > 0;
+    } catch (error) {
+      console.error("Error deleting utility link:", error);
+      return false;
     }
   }
 }
