@@ -55,13 +55,14 @@ type MessageFormValues = z.infer<typeof messageFormSchema>;
 
 export default function CommunityPage() {
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState('feed');
   const [createGroupOpen, setCreateGroupOpen] = useState(false);
   const [searchResults, setSearchResults] = useState<Post[]>([]);
+  const [showSearchResults, setShowSearchResults] = useState(false);
   const [activeConversation, setActiveConversation] = useState<number | null>(null);
   const [mediaFiles, setMediaFiles] = useState<File[]>([]);
   const [mediaType, setMediaType] = useState<string | null>(null);
   const [isSearching, setIsSearching] = useState(false);
+  const [showMessagesPanel, setShowMessagesPanel] = useState(false);
   const mediaInputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -295,7 +296,7 @@ export default function CommunityPage() {
     onSuccess: (data) => {
       setSearchResults(data);
       setIsSearching(false);
-      setActiveTab('search');
+      setShowSearchResults(true);
     },
     onError: (error: any) => {
       setIsSearching(false);
@@ -398,6 +399,147 @@ export default function CommunityPage() {
       <Header />
       
       <div className="container mx-auto px-4 py-6 flex-1 flex">
+        {/* Left sidebar - Messages section */}
+        <div className="w-80 min-w-80 space-y-6 mr-4">
+          {/* Messages tab button */}
+          <button 
+            className={`w-full p-3 rounded-lg bg-white shadow flex items-center justify-center font-medium ${showMessagesPanel ? 'bg-primary text-white' : ''}`}
+            onClick={() => setShowMessagesPanel(!showMessagesPanel)}
+          >
+            <MessageSquare className="h-5 w-5 mr-2" />
+            Mensagens
+          </button>
+          
+          {/* Messages panel */}
+          {showMessagesPanel && (
+            <Card className="p-4">
+              <h3 className="text-lg font-semibold mb-4">Mensagens</h3>
+              {isLoadingConversations ? (
+                <div className="text-center py-6">Carregando mensagens...</div>
+              ) : (
+                <>
+                  {activeConversation === null ? (
+                    <>
+                      {conversations.length === 0 ? (
+                        <div className="text-center py-6 text-gray-500">
+                          Nenhuma conversa ainda.
+                        </div>
+                      ) : (
+                        <ScrollArea className="h-[calc(100vh-300px)]">
+                          <div className="space-y-2">
+                            {conversations.map((conversation) => (
+                              <div 
+                                key={conversation.id}
+                                className="flex items-center p-2 rounded-md cursor-pointer hover:bg-gray-100"
+                                onClick={() => setActiveConversation(conversation.id)}
+                              >
+                                <Avatar className="h-10 w-10 mr-3">
+                                  <div className="bg-primary text-white h-full w-full flex items-center justify-center">
+                                    {getOtherUser(conversation).charAt(0)}
+                                  </div>
+                                </Avatar>
+                                <div className="flex-1 min-w-0">
+                                  <div className="font-medium">{getOtherUser(conversation)}</div>
+                                  <div className="text-xs text-gray-500 truncate">
+                                    {conversation.lastMessageText || 'Iniciar uma conversa'}
+                                  </div>
+                                </div>
+                                <div className="text-xs text-gray-400">
+                                  {conversation.lastMessageAt ? formatTime(conversation.lastMessageAt) : ''}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </ScrollArea>
+                      )}
+                    </>
+                  ) : (
+                    <div className="flex flex-col h-[calc(100vh-300px)]">
+                      <div className="flex items-center p-2 border-b">
+                        <button 
+                          className="mr-2 text-gray-500" 
+                          onClick={() => setActiveConversation(null)}
+                        >
+                          <ArrowUp className="h-4 w-4 transform -rotate-90" />
+                        </button>
+                        <div className="font-medium flex-1">
+                          {conversations.find(c => c.id === activeConversation) 
+                            ? getOtherUser(conversations.find(c => c.id === activeConversation)!)
+                            : 'Conversa'}
+                        </div>
+                      </div>
+                      
+                      <ScrollArea className="flex-1 p-2">
+                        <div className="space-y-2">
+                          {isLoadingMessages ? (
+                            <div className="text-center py-6">Carregando mensagens...</div>
+                          ) : messages.length === 0 ? (
+                            <div className="text-center py-6 text-gray-500">
+                              Nenhuma mensagem ainda. Inicie uma conversa!
+                            </div>
+                          ) : (
+                            <>
+                              {messages.map((message) => (
+                                <div 
+                                  key={message.id}
+                                  className={`flex ${message.senderId === user?.id ? 'justify-end' : 'justify-start'}`}
+                                >
+                                  <div 
+                                    className={`max-w-[80%] p-3 rounded-lg ${
+                                      message.senderId === user?.id 
+                                        ? 'bg-primary text-white' 
+                                        : 'bg-gray-100'
+                                    }`}
+                                  >
+                                    <div className="text-sm">{message.content}</div>
+                                    <div className={`text-xs mt-1 ${
+                                      message.senderId === user?.id 
+                                        ? 'text-white/70' 
+                                        : 'text-gray-500'
+                                    }`}>
+                                      {formatTime(message.createdAt)}
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+                              <div ref={messagesEndRef} />
+                            </>
+                          )}
+                        </div>
+                      </ScrollArea>
+                      
+                      <div className="p-2 border-t mt-auto">
+                        <Form {...messageForm}>
+                          <form onSubmit={messageForm.handleSubmit(onMessageSubmit)} className="flex items-center">
+                            <FormField
+                              control={messageForm.control}
+                              name="content"
+                              render={({ field }) => (
+                                <FormItem className="flex-1">
+                                  <FormControl>
+                                    <Input
+                                      {...field}
+                                      placeholder="Digite uma mensagem..."
+                                      className="rounded-full"
+                                    />
+                                  </FormControl>
+                                </FormItem>
+                              )}
+                            />
+                            <Button type="submit" size="icon" className="ml-2" disabled={sendMessageMutation.isPending}>
+                              <Send className="h-4 w-4" />
+                            </Button>
+                          </form>
+                        </Form>
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+            </Card>
+          )}
+        </div>
+        
         {/* Main content area */}
         <div className="flex-1 space-y-6 mr-4">
           {/* Search bar */}
@@ -555,23 +697,18 @@ export default function CommunityPage() {
             />
           </Card>
           
-          {/* Content Tabs */}
-          <Tabs defaultValue="feed" value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid grid-cols-2">
-              <TabsTrigger value="feed">Feed</TabsTrigger>
-              <TabsTrigger value="search">Resultados da Pesquisa</TabsTrigger>
-            </TabsList>
-            
-            {/* Feed Tab */}
-            <TabsContent value="feed" className="space-y-4 mt-4">
-              {isLoadingPosts ? (
-                <div className="text-center py-10">Carregando publicações...</div>
-              ) : posts.length === 0 ? (
-                <div className="text-center py-10 text-gray-500">
-                  Nenhuma publicação ainda. Seja o primeiro a publicar!
-                </div>
-              ) : (
-                posts.map((post) => (
+          {/* Feed content */}
+          <div className="space-y-4">
+            {isLoadingPosts ? (
+              <div className="text-center py-10">Carregando publicações...</div>
+            ) : posts.length === 0 ? (
+              <div className="text-center py-10 text-gray-500">
+                Nenhuma publicação ainda. Seja o primeiro a publicar!
+              </div>
+            ) : (
+              posts
+                .filter(post => selectedGroupId === null || post.groupId === selectedGroupId)
+                .map((post) => (
                   <PostCard 
                     key={post.id} 
                     post={post} 
@@ -580,36 +717,49 @@ export default function CommunityPage() {
                     onLike={() => likeMutation.mutate({ postId: post.id })}
                   />
                 ))
-              )}
-            </TabsContent>
-            
-            {/* Search Results Tab */}
-            <TabsContent value="search" className="space-y-4 mt-4">
-              {isSearching ? (
-                <div className="text-center py-10">Pesquisando...</div>
-              ) : searchResults.length === 0 ? (
-                <div className="text-center py-10 text-gray-500">
-                  Nenhum resultado encontrado. Tente um termo de pesquisa diferente.
-                </div>
-              ) : (
-                searchResults.map((post) => (
-                  <PostCard 
-                    key={post.id} 
-                    post={post} 
-                    onCommentSubmit={onCommentSubmit}
-                    commentForm={commentForm}
-                    onLike={() => likeMutation.mutate({ postId: post.id })}
-                    highlightSearch={searchForm.getValues().query}
-                  />
-                ))
-              )}
-            </TabsContent>
-          </Tabs>
+            )}
+          </div>
+          
+          {/* Search Results Dialog */}
+          <Dialog open={showSearchResults} onOpenChange={setShowSearchResults}>
+            <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Resultados da Pesquisa: {searchForm.getValues().query}</DialogTitle>
+                <DialogDescription>
+                  Encontrados {searchResults.length} resultados para sua pesquisa.
+                </DialogDescription>
+              </DialogHeader>
+              
+              <div className="space-y-4 py-4">
+                {isSearching ? (
+                  <div className="text-center py-10">Pesquisando...</div>
+                ) : searchResults.length === 0 ? (
+                  <div className="text-center py-10 text-gray-500">
+                    Nenhum resultado encontrado. Tente um termo de pesquisa diferente.
+                  </div>
+                ) : (
+                  searchResults.map((post) => (
+                    <PostCard 
+                      key={post.id} 
+                      post={post} 
+                      onCommentSubmit={onCommentSubmit}
+                      commentForm={commentForm}
+                      onLike={() => likeMutation.mutate({ postId: post.id })}
+                      highlightSearch={searchForm.getValues().query}
+                    />
+                  ))
+                )}
+              </div>
+              
+              <DialogFooter>
+                <Button onClick={() => setShowSearchResults(false)}>Fechar</Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </div>
         
-        {/* Right sidebar */}
+        {/* Right sidebar - Groups section */}
         <div className="w-80 min-w-80 space-y-6">
-          {/* Groups section */}
           <Card className="p-4">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold">Meus Grupos</h3>
@@ -626,7 +776,7 @@ export default function CommunityPage() {
                 Você ainda não está em nenhum grupo.
               </div>
             ) : (
-              <ScrollArea className="h-[220px]">
+              <ScrollArea className="h-[calc(100vh-300px)]">
                 <div className="space-y-2">
                   <div 
                     className={`flex items-center p-2 rounded-md cursor-pointer hover:bg-gray-100 ${selectedGroupId === null ? 'bg-gray-100' : ''}`}
@@ -671,133 +821,6 @@ export default function CommunityPage() {
                   })}
                 </div>
               </ScrollArea>
-            )}
-          </Card>
-          
-          {/* Messages section */}
-          <Card className="p-4">
-            <h3 className="text-lg font-semibold mb-4">Mensagens</h3>
-            {isLoadingConversations ? (
-              <div className="text-center py-6">Carregando mensagens...</div>
-            ) : (
-              <>
-                {activeConversation === null ? (
-                  <>
-                    {conversations.length === 0 ? (
-                      <div className="text-center py-6 text-gray-500">
-                        Nenhuma conversa ainda.
-                      </div>
-                    ) : (
-                      <ScrollArea className="h-[300px]">
-                        <div className="space-y-2">
-                          {conversations.map((conversation) => (
-                            <div 
-                              key={conversation.id}
-                              className="flex items-center p-2 rounded-md cursor-pointer hover:bg-gray-100"
-                              onClick={() => setActiveConversation(conversation.id)}
-                            >
-                              <Avatar className="h-10 w-10 mr-3">
-                                <div className="bg-primary text-white h-full w-full flex items-center justify-center">
-                                  {getOtherUser(conversation).charAt(0)}
-                                </div>
-                              </Avatar>
-                              <div className="flex-1 min-w-0">
-                                <div className="font-medium">{getOtherUser(conversation)}</div>
-                                <div className="text-xs text-gray-500 truncate">
-                                  {conversation.lastMessageText || 'Iniciar uma conversa'}
-                                </div>
-                              </div>
-                              <div className="text-xs text-gray-400">
-                                {conversation.lastMessageAt ? formatTime(conversation.lastMessageAt) : ''}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </ScrollArea>
-                    )}
-                  </>
-                ) : (
-                  <div className="flex flex-col h-[300px]">
-                    <div className="flex items-center p-2 border-b">
-                      <button 
-                        className="mr-2 text-gray-500" 
-                        onClick={() => setActiveConversation(null)}
-                      >
-                        <ArrowUp className="h-4 w-4 transform -rotate-90" />
-                      </button>
-                      <div className="font-medium flex-1">
-                        {conversations.find(c => c.id === activeConversation) 
-                          ? getOtherUser(conversations.find(c => c.id === activeConversation)!)
-                          : 'Conversa'}
-                      </div>
-                    </div>
-                    
-                    <ScrollArea className="flex-1 p-2">
-                      <div className="space-y-2">
-                        {isLoadingMessages ? (
-                          <div className="text-center py-6">Carregando mensagens...</div>
-                        ) : messages.length === 0 ? (
-                          <div className="text-center py-6 text-gray-500">
-                            Nenhuma mensagem ainda. Inicie uma conversa!
-                          </div>
-                        ) : (
-                          <>
-                            {messages.map((message) => (
-                              <div 
-                                key={message.id}
-                                className={`flex ${message.senderId === user?.id ? 'justify-end' : 'justify-start'}`}
-                              >
-                                <div 
-                                  className={`max-w-[80%] p-3 rounded-lg ${
-                                    message.senderId === user?.id 
-                                      ? 'bg-primary text-white' 
-                                      : 'bg-gray-100'
-                                  }`}
-                                >
-                                  <div className="text-sm">{message.content}</div>
-                                  <div className={`text-xs mt-1 ${
-                                    message.senderId === user?.id 
-                                      ? 'text-white/70' 
-                                      : 'text-gray-500'
-                                  }`}>
-                                    {formatTime(message.createdAt)}
-                                  </div>
-                                </div>
-                              </div>
-                            ))}
-                            <div ref={messagesEndRef} />
-                          </>
-                        )}
-                      </div>
-                    </ScrollArea>
-                    
-                    <div className="p-2 border-t mt-auto">
-                      <Form {...messageForm}>
-                        <form onSubmit={messageForm.handleSubmit(onMessageSubmit)} className="flex items-center">
-                          <FormField
-                            control={messageForm.control}
-                            name="content"
-                            render={({ field }) => (
-                              <FormItem className="flex-1">
-                                <FormControl>
-                                  <Input
-                                    {...field}
-                                    placeholder="Digite uma mensagem..."
-                                    className="rounded-full"
-                                  />
-                                </FormControl>
-                              </FormItem>
-                            )}
-                          />
-                          <Button type="submit" size="icon" className="ml-2" disabled={sendMessageMutation.isPending}>
-                            <Send className="h-4 w-4" />
-                          </Button>
-                        </form>
-                      </Form>
-                    </div>
-                  </div>
-                )}
-              </>
             )}
           </Card>
         </div>
