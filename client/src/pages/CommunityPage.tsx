@@ -1187,16 +1187,118 @@ export default function CommunityPage() {
                         
                         <div className="space-y-2 border-t pt-4 mt-4">
                           <h4 className="font-medium">Opções de administrador</h4>
-                          <Button variant="outline" size="sm" className="w-full justify-start">
-                            <UserPlus className="h-4 w-4 mr-2" />
-                            Gerenciar membros
-                          </Button>
-                          <Button variant="outline" size="sm" className="w-full justify-start text-red-500 hover:text-red-700 hover:bg-red-50">
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                            </svg>
-                            Excluir grupo
-                          </Button>
+                          <Dialog>
+                            <DialogTrigger asChild>
+                              <Button variant="outline" size="sm" className="w-full justify-start">
+                                <UserPlus className="h-4 w-4 mr-2" />
+                                Gerenciar membros
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent className="sm:max-w-md">
+                              <DialogHeader>
+                                <DialogTitle>Gerenciar Membros</DialogTitle>
+                                <DialogDescription>
+                                  Gerencie os membros do grupo "{userGroups.find(g => g.id === selectedGroupId)?.name}".
+                                </DialogDescription>
+                              </DialogHeader>
+                              <div className="space-y-4 py-4">
+                                <div className="flex justify-between items-center mb-2">
+                                  <h3 className="text-sm font-medium">Membros do Grupo</h3>
+                                  <Button variant="ghost" size="sm" className="text-xs">
+                                    <UserPlus className="h-3 w-3 mr-1" />
+                                    Adicionar
+                                  </Button>
+                                </div>
+                                
+                                <div className="border rounded-md">
+                                  <div className="p-3 flex items-center justify-between border-b">
+                                    <div className="flex items-center">
+                                      <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center mr-2">
+                                        <UserIcon className="h-4 w-4 text-primary" />
+                                      </div>
+                                      <div>
+                                        <div className="text-sm font-medium">Você</div>
+                                        <div className="text-xs text-muted-foreground">Administrador</div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                  
+                                  <div className="p-4 text-center text-sm text-muted-foreground">
+                                    Nenhum outro membro no grupo ainda.
+                                  </div>
+                                </div>
+                                
+                                <div className="mt-4">
+                                  <h3 className="text-sm font-medium mb-2">Solicitações Pendentes</h3>
+                                  <div className="border rounded-md p-4 text-center text-sm text-muted-foreground">
+                                    Nenhuma solicitação pendente.
+                                  </div>
+                                </div>
+                              </div>
+                              <DialogFooter>
+                                <DialogClose asChild>
+                                  <Button type="button">Fechar</Button>
+                                </DialogClose>
+                              </DialogFooter>
+                            </DialogContent>
+                          </Dialog>
+                          
+                          <Dialog>
+                            <DialogTrigger asChild>
+                              <Button variant="outline" size="sm" className="w-full justify-start text-red-500 hover:text-red-700 hover:bg-red-50">
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                                Solicitar exclusão
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent>
+                              <DialogHeader>
+                                <DialogTitle>Solicitar Exclusão do Grupo</DialogTitle>
+                                <DialogDescription>
+                                  Você está solicitando a exclusão do grupo "{userGroups.find(g => g.id === selectedGroupId)?.name}". 
+                                  Esta solicitação será enviada aos administradores do sistema para aprovação.
+                                </DialogDescription>
+                              </DialogHeader>
+                              <div className="py-4">
+                                <div className="space-y-4">
+                                  <div className="p-3 bg-amber-50 border border-amber-200 rounded-md text-amber-700 text-sm">
+                                    <AlertTriangle className="h-4 w-4 inline-block mr-2" />
+                                    Esta ação não pode ser desfeita. Todos os conteúdos do grupo serão removidos.
+                                  </div>
+                                  
+                                  <div>
+                                    <label className="block text-sm font-medium mb-1">Motivo da solicitação</label>
+                                    <Textarea 
+                                      placeholder="Explique brevemente por que deseja excluir este grupo" 
+                                      className="w-full"
+                                    />
+                                  </div>
+                                </div>
+                              </div>
+                              <DialogFooter className="flex space-x-2 justify-end">
+                                <DialogClose asChild>
+                                  <Button variant="outline">Cancelar</Button>
+                                </DialogClose>
+                                <Button 
+                                  variant="destructive"
+                                  onClick={() => {
+                                    toast({
+                                      title: "Solicitação enviada",
+                                      description: "Sua solicitação de exclusão do grupo foi enviada aos administradores.",
+                                      duration: 5000,
+                                    });
+                                    // Fechar o diálogo programaticamente
+                                    document.querySelector('[data-state="open"]')?.dispatchEvent(
+                                      new KeyboardEvent('keydown', { key: 'Escape' })
+                                    );
+                                  }}
+                                >
+                                  Enviar solicitação
+                                </Button>
+                              </DialogFooter>
+                            </DialogContent>
+                          </Dialog>
                         </div>
                       </div>
                       
