@@ -74,8 +74,9 @@ router.get("/", async (req: Request, res: Response) => {
 // Buscar próximos eventos (default = 30 dias)
 router.get("/upcoming", async (req: Request, res: Response) => {
   try {
-    const limit = req.query.limit ? parseInt(req.query.limit as string) : undefined;
-    const days = req.query.days ? parseInt(req.query.days as string) : 30;
+    // Usar um limite maior para mostrar mais eventos na interface
+    const limit = req.query.limit ? parseInt(req.query.limit as string) : 10;
+    const days = req.query.days ? parseInt(req.query.days as string) : 365; // Aumentado para mostrar eventos futuros
     
     if (isNaN(days) || days < 0 || days > 365) {
       return res.status(400).json({ error: "Parâmetro 'days' inválido. Deve ser um número entre 0 e 365." });
