@@ -12,6 +12,7 @@ import IdeasPage from "@/pages/IdeasPage";
 import AccessDeniedPage from "@/pages/AccessDeniedPage";
 import AIPage from "@/pages/AIPage";
 import AdminAIPage from "@/pages/AdminAIPage";
+import LinksPage from "@/pages/admin/LinksPage";
 import Profile from "@/pages/Profile";
 import { AuthProvider } from "./providers/AuthProvider";
 import { useAuth } from "./lib/auth";
