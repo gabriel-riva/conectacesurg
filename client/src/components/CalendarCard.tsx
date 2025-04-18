@@ -13,9 +13,11 @@ import {
   DialogTitle,
   DialogTrigger
 } from "@/components/ui/dialog";
+import { CalendarClock, MapPin } from "lucide-react";
 
 export function CalendarCard() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   
   const { data: events = [], isLoading } = useQuery({
     queryKey: ["/api/calendar/upcoming"],
@@ -34,9 +36,12 @@ export function CalendarCard() {
   });
 
   // Formatar data para exibição
-  const formatEventDate = (dateString: string) => {
+  const formatEventDate = (dateString: string, detailed = false) => {
     try {
       const date = new Date(dateString);
+      if (detailed) {
+        return format(date, "EEEE, dd 'de' MMMM 'de' yyyy", { locale: ptBR });
+      }
       return format(date, "dd/MM/yy", { locale: ptBR });
     } catch (error) {
       return dateString;
@@ -70,12 +75,54 @@ export function CalendarCard() {
             ) : (
               <>
                 {events.map((event) => (
-                  <div key={event.id} className="border-t border-gray-100 pt-1 mb-1">
-                    <div className="text-xs text-muted-foreground">
-                      {formatEventDate(event.eventDate)} - {event.eventTime}
-                    </div>
-                    <div className="font-medium text-sm">{event.title}</div>
-                  </div>
+                  <Dialog key={event.id}>
+                    <DialogTrigger asChild>
+                      <div className="border-t border-gray-100 pt-1 mb-1 cursor-pointer hover:bg-slate-50 rounded p-1">
+                        <div className="text-xs text-muted-foreground">
+                          {formatEventDate(event.eventDate)} - {event.eventTime}
+                        </div>
+                        <div className="font-medium text-sm">{event.title}</div>
+                      </div>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>{event.title}</DialogTitle>
+                      </DialogHeader>
+                      <div className="space-y-4 mt-4">
+                        <div className="flex items-start gap-2">
+                          <CalendarClock className="h-5 w-5 text-primary mt-0.5" />
+                          <div>
+                            <div className="font-medium">Data e Hora</div>
+                            <div className="text-muted-foreground">
+                              {formatEventDate(event.eventDate, true)} - {event.eventTime}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex items-start gap-2">
+                          <MapPin className="h-5 w-5 text-primary mt-0.5" />
+                          <div>
+                            <div className="font-medium">Local</div>
+                            <div className="text-muted-foreground">{event.location}</div>
+                          </div>
+                        </div>
+                        <div className="pt-2">
+                          <div className="font-medium mb-1">Descrição</div>
+                          <div className="text-sm text-muted-foreground">
+                            {event.description}
+                          </div>
+                        </div>
+                        {event.imageUrl && (
+                          <div className="pt-2">
+                            <img
+                              src={event.imageUrl}
+                              alt={event.title}
+                              className="rounded-md max-h-[300px] w-auto mx-auto object-contain"
+                            />
+                          </div>
+                        )}
+                      </div>
+                    </DialogContent>
+                  </Dialog>
                 ))}
               </>
             )}
