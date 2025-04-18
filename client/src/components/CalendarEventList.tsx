@@ -18,7 +18,7 @@ import { Calendar as CalendarIcon, Clock, MapPin } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function CalendarEventList() {
-  const [selectedTab, setSelectedTab] = useState("proximos");
+  const [selectedTab, setSelectedTab] = useState("todos");
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
 
@@ -34,11 +34,12 @@ export default function CalendarEventList() {
     },
   });
 
-  // Buscar próximos eventos (30 dias)
+  // Buscar próximos eventos
   const { data: upcomingEvents = [], isLoading: isLoadingUpcoming } = useQuery({
     queryKey: ["/api/calendar/upcoming"],
     queryFn: async () => {
-      const response = await fetch("/api/calendar/upcoming");
+      // Buscar eventos com limite maior para mostrar mais eventos
+      const response = await fetch("/api/calendar/upcoming?limit=10&days=365");
       if (!response.ok) {
         throw new Error("Erro ao buscar próximos eventos do calendário");
       }
@@ -74,7 +75,7 @@ export default function CalendarEventList() {
 
         <TabsContent value="proximos" className="mt-4">
           <div className="text-sm text-muted-foreground mb-4">
-            Mostrando eventos para os próximos 30 dias
+            Mostrando eventos para os próximos 365 dias
           </div>
           {renderEventList()}
         </TabsContent>
