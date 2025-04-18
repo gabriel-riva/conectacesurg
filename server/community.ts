@@ -345,13 +345,14 @@ router.get('/groups/admin', async (req: Request, res: Response) => {
   }
 });
 
-router.post('/groups', async (req: Request, res: Response) => {
+router.post('/groups', upload.single('image'), async (req: Request, res: Response) => {
   try {
     if (!req.user) {
       return res.status(401).json({ error: 'Unauthorized' });
     }
     
     console.log('Usuário criando grupo:', req.user);
+    console.log('Req body:', req.body);
     
     const { name, description, isPrivate, requiresApproval } = req.body;
     
@@ -372,12 +373,20 @@ router.post('/groups', async (req: Request, res: Response) => {
     const userId = parseInt(req.user.id.toString());
     console.log('ID do usuário para creator_id:', userId);
     
+    // Processando a imagem se enviada
+    let imageUrl = null;
+    if (req.file) {
+      imageUrl = `/uploads/${req.file.filename}`;
+      console.log('Imagem do grupo salva em:', imageUrl);
+    }
+
     const [group] = await db.insert(groups).values({
       name,
       description: description || null,
       creatorId: userId,
       isPrivate: isPrivate === true,
       requiresApproval: requiresApproval === true,
+      imageUrl: imageUrl,
     }).returning();
     
     // Add creator as an admin of the group
