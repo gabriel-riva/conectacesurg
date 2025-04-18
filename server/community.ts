@@ -90,10 +90,7 @@ router.get('/posts', async (req: Request, res: Response) => {
     // Get groups the user is in
     const userGroupsData = await db.select({ groupId: userGroups.groupId })
       .from(userGroups)
-      .where(and(
-        eq(userGroups.userId, userId),
-        eq(userGroups.status, 'approved')
-      ));
+      .where(eq(userGroups.userId, userId));
     
     const groupIds = userGroupsData.map(g => g.groupId);
     
@@ -297,10 +294,7 @@ router.get('/groups/user', async (req: Request, res: Response) => {
     
     // Get groups where user is a member
     const userGroupsData = await db.query.userGroups.findMany({
-      where: and(
-        eq(userGroups.userId, req.user.id),
-        eq(userGroups.status, 'approved')
-      ),
+      where: eq(userGroups.userId, req.user.id),
       with: {
         group: true
       }
@@ -366,16 +360,16 @@ router.post('/groups', async (req: Request, res: Response) => {
     const [group] = await db.insert(groups).values({
       name,
       description: description || null,
-      creatorId: req.user.id,
-      isPrivate: isPrivate === true,
-      requiresApproval: requiresApproval === true,
+      creator_id: req.user.id,
+      is_private: isPrivate === true,
+      requires_approval: requiresApproval === true,
     }).returning();
     
     // Add creator as an admin of the group
     await db.insert(userGroups).values({
-      userId: req.user.id,
-      groupId: group.id,
-      isAdmin: true,
+      user_id: req.user.id,
+      group_id: group.id,
+      is_admin: true,
       status: 'approved',
     });
     
@@ -629,10 +623,7 @@ router.get('/search', async (req: Request, res: Response) => {
     // Get groups the user is in
     const userGroupsData = await db.select({ groupId: userGroups.groupId })
       .from(userGroups)
-      .where(and(
-        eq(userGroups.userId, req.user.id),
-        eq(userGroups.status, 'approved')
-      ));
+      .where(eq(userGroups.userId, req.user.id));
     
     const groupIds = userGroupsData.map(g => g.groupId);
     
