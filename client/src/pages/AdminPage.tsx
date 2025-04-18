@@ -304,6 +304,7 @@ export default function AdminPage() {
             <TabsList className="mb-4">
               <TabsTrigger value="usuarios">Usuários</TabsTrigger>
               <TabsTrigger value="grupos">Grupos</TabsTrigger>
+              <TabsTrigger value="ideias">Ideias</TabsTrigger>
               <TabsTrigger value="acessos">Acessos</TabsTrigger>
             </TabsList>
             
@@ -638,6 +639,10 @@ export default function AdminPage() {
                   )}
                 </CardContent>
               </Card>
+            </TabsContent>
+            
+            <TabsContent value="ideias">
+              <AdminIdeas />
             </TabsContent>
             
             <TabsContent value="acessos">
