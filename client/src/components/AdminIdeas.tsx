@@ -362,7 +362,7 @@ export function AdminIdeas() {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-primary">Gerenciamento de Ideias</h2>
+        {/* Título removido para evitar duplicação */}
       </div>
       
       {/* Filtros e busca */}
