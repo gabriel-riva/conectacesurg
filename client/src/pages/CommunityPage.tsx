@@ -260,8 +260,8 @@ export default function CommunityPage() {
     },
     onError: (error: any) => {
       toast({
-        title: 'Error',
-        description: error.message || 'Failed to like post. Please try again.',
+        title: 'Erro',
+        description: error.message || 'Falha ao curtir a publicação. Por favor, tente novamente.',
         variant: 'destructive',
       });
     },
@@ -274,14 +274,14 @@ export default function CommunityPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/community/groups/user'] });
       toast({
-        title: 'Joined group',
-        description: 'You have successfully joined the group.',
+        title: 'Entrou no grupo',
+        description: 'Você entrou no grupo com sucesso.',
       });
     },
     onError: (error: any) => {
       toast({
-        title: 'Error',
-        description: error.message || 'Failed to join group. Please try again.',
+        title: 'Erro',
+        description: error.message || 'Falha ao entrar no grupo. Por favor, tente novamente.',
         variant: 'destructive',
       });
     },
@@ -300,8 +300,8 @@ export default function CommunityPage() {
     onError: (error: any) => {
       setIsSearching(false);
       toast({
-        title: 'Error',
-        description: error.message || 'Failed to search. Please try again.',
+        title: 'Erro',
+        description: error.message || 'Falha na pesquisa. Por favor, tente novamente.',
         variant: 'destructive',
       });
     },
@@ -525,7 +525,7 @@ export default function CommunityPage() {
                   <div className="flex items-center">
                     {selectedGroupId ? (
                       <Badge variant="outline" className="mr-2">
-                        {userGroups.find(g => g.id === selectedGroupId)?.name || 'Group'}
+                        {userGroups.find(g => g.id === selectedGroupId)?.name || 'Grupo'}
                       </Badge>
                     ) : null}
                     <Button type="submit" disabled={createPostMutation.isPending}>
@@ -637,7 +637,7 @@ export default function CommunityPage() {
                   >
                     <Globe className="h-5 w-5 mr-2 text-primary" />
                     <div className="flex-1">
-                      <div className="font-medium">General Feed</div>
+                      <div className="font-medium">Feed Geral</div>
                     </div>
                   </div>
                   
@@ -676,16 +676,16 @@ export default function CommunityPage() {
           
           {/* Messages section */}
           <Card className="p-4">
-            <h3 className="text-lg font-semibold mb-4">Messages</h3>
+            <h3 className="text-lg font-semibold mb-4">Mensagens</h3>
             {isLoadingConversations ? (
-              <div className="text-center py-6">Loading messages...</div>
+              <div className="text-center py-6">Carregando mensagens...</div>
             ) : (
               <>
                 {activeConversation === null ? (
                   <>
                     {conversations.length === 0 ? (
                       <div className="text-center py-6 text-gray-500">
-                        No conversations yet.
+                        Nenhuma conversa ainda.
                       </div>
                     ) : (
                       <ScrollArea className="h-[300px]">
@@ -704,7 +704,7 @@ export default function CommunityPage() {
                               <div className="flex-1 min-w-0">
                                 <div className="font-medium">{getOtherUser(conversation)}</div>
                                 <div className="text-xs text-gray-500 truncate">
-                                  {conversation.lastMessageText || 'Start a conversation'}
+                                  {conversation.lastMessageText || 'Iniciar uma conversa'}
                                 </div>
                               </div>
                               <div className="text-xs text-gray-400">
