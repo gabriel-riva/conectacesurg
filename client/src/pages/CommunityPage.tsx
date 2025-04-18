@@ -454,7 +454,7 @@ export default function CommunityPage() {
                 {/* Media preview */}
                 {mediaFiles.length > 0 && (
                   <div className="border rounded-md p-3 bg-gray-50">
-                    <div className="text-sm font-medium mb-2">Media ({mediaFiles.length}):</div>
+                    <div className="text-sm font-medium mb-2">Mídia ({mediaFiles.length}):</div>
                     <div className="flex flex-wrap gap-2">
                       {mediaFiles.map((file, index) => (
                         <div key={index} className="relative">
