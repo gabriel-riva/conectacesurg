@@ -134,6 +134,10 @@ export default function AdminCalendar() {
       formData.append("location", data.location);
       formData.append("isActive", data.isActive.toString());
       
+      if (data.externalUrl) {
+        formData.append("externalUrl", data.externalUrl);
+      }
+      
       if (selectedImage) {
         formData.append("image", selectedImage);
       }
@@ -169,6 +173,10 @@ export default function AdminCalendar() {
       formData.append("eventTime", data.values.eventTime);
       formData.append("location", data.values.location);
       formData.append("isActive", data.values.isActive.toString());
+      
+      if (data.values.externalUrl) {
+        formData.append("externalUrl", data.values.externalUrl);
+      }
       
       if (selectedImage) {
         formData.append("image", selectedImage);
@@ -226,6 +234,7 @@ export default function AdminCalendar() {
       eventDate: format(new Date(), "yyyy-MM-dd"),
       eventTime: "14:00",
       location: "",
+      externalUrl: "",
       isActive: true,
     });
     setSelectedImage(null);
@@ -241,6 +250,7 @@ export default function AdminCalendar() {
       eventDate: event.eventDate,
       eventTime: event.eventTime,
       location: event.location,
+      externalUrl: event.externalUrl || "",
       isActive: event.isActive,
     });
     setPreviewUrl(event.imageUrl || null);
