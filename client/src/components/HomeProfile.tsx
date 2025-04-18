@@ -36,28 +36,32 @@ export function HomeProfile() {
   return (
     <Card className="h-[280px] flex flex-col">
       <CardContent className="p-6 flex-grow">
-        <div className="flex flex-col items-center">
+        <div className="flex flex-col">
           <h2 className="text-xl font-semibold mb-4">Meu Perfil</h2>
           
-          <div className="mb-4">
-            <Avatar className="h-24 w-24 border-2 border-primary">
+          <div className="flex items-center mb-4">
+            <Avatar className="h-14 w-14 border-2 border-primary">
               <AvatarImage 
                 src={user.photoUrl || undefined} 
                 alt={user.name} 
               />
-              <AvatarFallback className="text-lg">
+              <AvatarFallback className="text-sm">
                 {getInitials(user.name)}
               </AvatarFallback>
             </Avatar>
+            
+            <div className="ml-4">
+              <h3 className="font-semibold">{user.name}</h3>
+              <p className="text-gray-500 text-sm">{user.email}</p>
+            </div>
           </div>
           
-          <div className="text-center mb-4">
-            <h3 className="text-lg font-semibold">{user.name}</h3>
-            <p className="text-gray-500 text-sm mb-1">{user.email}</p>
-            <Badge className="mt-1">{user.role}</Badge>
+          {/* Área vazia para futuras adições */}
+          <div className="flex-grow mb-4">
+            {/* Espaço reservado para futuro conteúdo */}
           </div>
           
-          <Button asChild className="w-full" variant="outline">
+          <Button asChild className="w-full mt-auto" variant="outline">
             <Link href="/profile">Ver Perfil Completo</Link>
           </Button>
         </div>
