@@ -1,6 +1,6 @@
 import express, { Request, Response } from 'express';
 import multer from 'multer';
-import { storage } from './storage';
+import { storage as dbStorage } from './storage';
 import { db } from './db';
 import * as schema from '@shared/schema';
 import { and, asc, desc, eq, inArray, like, sql } from 'drizzle-orm';
@@ -223,7 +223,7 @@ router.get('/my', isAuthenticated, async (req: Request, res: Response) => {
     } else {
       // 'all' - ideias que o usuário criou ou é responsável
       query = query.where(
-        sql`${schema.ideas.creator_id} = ${userId} OR ${schema.ideas.responsible_id} = ${userId}`
+        sql`${schema.ideas.creatorId} = ${userId} OR ${schema.ideas.responsibleId} = ${userId}`
       );
     }
     
