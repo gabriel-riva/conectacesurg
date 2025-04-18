@@ -21,29 +21,29 @@ import { ArrowUp, ImageIcon, FileTextIcon, FilmIcon, LinkIcon, FileIcon, Send, S
 import type { Post, Comment, Group, User, Message, Conversation } from '@shared/schema';
 import { format } from 'date-fns';
 
-// Form schemas
+// Schemas dos formulários
 const postFormSchema = z.object({
-  content: z.string().min(1, { message: 'Post content is required' }),
+  content: z.string().min(1, { message: 'O conteúdo da publicação é obrigatório' }),
   groupId: z.number().optional(),
 });
 
 const commentFormSchema = z.object({
-  content: z.string().min(1, { message: 'Comment content is required' }),
+  content: z.string().min(1, { message: 'O conteúdo do comentário é obrigatório' }),
 });
 
 const searchFormSchema = z.object({
-  query: z.string().min(1, { message: 'Search query is required' }),
+  query: z.string().min(1, { message: 'Digite algo para pesquisar' }),
 });
 
 const groupFormSchema = z.object({
-  name: z.string().min(3, { message: 'Group name must be at least 3 characters' }),
+  name: z.string().min(3, { message: 'O nome do grupo deve ter pelo menos 3 caracteres' }),
   description: z.string().optional(),
   isPrivate: z.boolean().default(false),
   requiresApproval: z.boolean().default(false),
 });
 
 const messageFormSchema = z.object({
-  content: z.string().min(1, { message: 'Message content is required' }),
+  content: z.string().min(1, { message: 'A mensagem é obrigatória' }),
 });
 
 // Type definitions for form values
@@ -163,14 +163,14 @@ export default function CommunityPage() {
       setMediaFiles([]);
       setMediaType(null);
       toast({
-        title: 'Post created',
-        description: 'Your post has been published successfully.',
+        title: 'Publicação criada',
+        description: 'Sua publicação foi enviada com sucesso.',
       });
     },
     onError: (error: any) => {
       toast({
-        title: 'Error',
-        description: error.message || 'Failed to create post. Please try again.',
+        title: 'Erro',
+        description: error.message || 'Falha ao criar a publicação. Por favor, tente novamente.',
         variant: 'destructive',
       });
     },
@@ -430,7 +430,7 @@ export default function CommunityPage() {
                           <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                           <Input
                             {...field}
-                            placeholder="Search posts and discussions..."
+                            placeholder="Pesquisar publicações e discussões..."
                             className="pl-10"
                           />
                         </div>
@@ -440,7 +440,7 @@ export default function CommunityPage() {
                   )}
                 />
                 <Button type="submit" variant="default" className="ml-2" disabled={isSearching}>
-                  {isSearching ? 'Searching...' : 'Search'}
+                  {isSearching ? 'Pesquisando...' : 'Pesquisar'}
                 </Button>
               </form>
             </Form>
@@ -458,7 +458,7 @@ export default function CommunityPage() {
                       <FormControl>
                         <Textarea
                           {...field}
-                          placeholder="What's on your mind?"
+                          placeholder="O que você está pensando?"
                           className="min-h-[100px] resize-none"
                         />
                       </FormControl>
@@ -510,7 +510,7 @@ export default function CommunityPage() {
                       className="text-gray-500 hover:text-primary flex items-center"
                     >
                       <ImageIcon className="h-5 w-5 mr-1" />
-                      <span className="text-sm">Image</span>
+                      <span className="text-sm">Imagem</span>
                     </button>
                     <button 
                       type="button" 
@@ -518,7 +518,7 @@ export default function CommunityPage() {
                       className="text-gray-500 hover:text-primary flex items-center"
                     >
                       <FilmIcon className="h-5 w-5 mr-1" />
-                      <span className="text-sm">Video</span>
+                      <span className="text-sm">Vídeo</span>
                     </button>
                     <button 
                       type="button" 
