@@ -199,8 +199,8 @@ export default function CommunityPage() {
     },
     onError: (error: any) => {
       toast({
-        title: 'Error',
-        description: error.message || 'Failed to add comment. Please try again.',
+        title: 'Erro',
+        description: error.message || 'Falha ao adicionar comentário. Por favor, tente novamente.',
         variant: 'destructive',
       });
     },
@@ -620,10 +620,10 @@ export default function CommunityPage() {
             </div>
             
             {isLoadingGroups ? (
-              <div className="text-center py-6">Loading groups...</div>
+              <div className="text-center py-6">Carregando grupos...</div>
             ) : userGroups.length === 0 ? (
               <div className="text-center py-6 text-gray-500">
-                You're not in any groups yet.
+                Você ainda não está em nenhum grupo.
               </div>
             ) : (
               <ScrollArea className="h-[220px]">
@@ -990,7 +990,7 @@ function PostCard({
                     return (
                       <div key={index} className="flex items-center p-2 bg-gray-100 rounded-md">
                         <FileIcon className="h-5 w-5 mr-2 text-gray-500" />
-                        <span className="text-sm">Attachment {index + 1}</span>
+                        <span className="text-sm">Anexo {index + 1}</span>
                       </div>
                     );
                   }
