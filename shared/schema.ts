@@ -214,6 +214,17 @@ export const aiMessages = pgTable("ai_messages", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+export const utilityLinks = pgTable("utility_links", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  url: text("url").notNull(),
+  logoUrl: text("logo_url"),
+  order: integer("order").default(0),
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({
   userGroups: many(userGroups),
@@ -554,10 +565,17 @@ export const insertAiMessageSchema = createInsertSchema(aiMessages).omit({
   createdAt: true,
 });
 
+export const insertUtilityLinkSchema = createInsertSchema(utilityLinks).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 // Types
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type UpdateProfile = z.infer<typeof updateProfileSchema>;
 export type InsertGoogleUser = z.infer<typeof insertGoogleUserSchema>;
+export type InsertUtilityLink = z.infer<typeof insertUtilityLinkSchema>;
 export type InsertGroup = z.infer<typeof insertGroupSchema>;
 export type InsertUserGroup = z.infer<typeof insertUserGroupSchema>;
 export type InsertPost = z.infer<typeof insertPostSchema>;
@@ -592,3 +610,4 @@ export type AiPrompt = typeof aiPrompts.$inferSelect;
 export type AiPromptAgent = typeof aiPromptAgents.$inferSelect;
 export type AiConversation = typeof aiConversations.$inferSelect;
 export type AiMessage = typeof aiMessages.$inferSelect;
+export type UtilityLink = typeof utilityLinks.$inferSelect;

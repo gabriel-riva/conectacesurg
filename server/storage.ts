@@ -83,6 +83,13 @@ export interface IStorage {
   // AI Message methods
   getAiConversationMessages(conversationId: number): Promise<AiMessage[]>;
   createAiMessage(message: InsertAiMessage): Promise<AiMessage>;
+  
+  // Utility Links methods
+  getAllUtilityLinks(): Promise<UtilityLink[]>;
+  getUtilityLink(id: number): Promise<UtilityLink | undefined>;
+  createUtilityLink(link: InsertUtilityLink): Promise<UtilityLink>;
+  updateUtilityLink(id: number, linkData: Partial<InsertUtilityLink>): Promise<UtilityLink | undefined>;
+  deleteUtilityLink(id: number): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
