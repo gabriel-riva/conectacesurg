@@ -752,6 +752,19 @@ export default function AdminPage({ activeTab: initialActiveTab }: { activeTab?:
           }}
         />
       )}
+      
+      {isUserDocumentsModalOpen && selectedUserId && (
+        <UserDocumentsModal 
+          userId={selectedUserId}
+          userName={selectedUserName}
+          isOpen={isUserDocumentsModalOpen}
+          onClose={() => {
+            setIsUserDocumentsModalOpen(false);
+            setSelectedUserId(null);
+            setSelectedUserName("");
+          }}
+        />
+      )}
 
       {/* Diálogo de confirmação de exclusão */}
       <AlertDialog 
