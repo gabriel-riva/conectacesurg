@@ -137,10 +137,7 @@ export default function AdminCalendar() {
         formData.append("image", selectedImage);
       }
 
-      return apiRequest("/api/calendar", {
-        method: "POST",
-        body: formData,
-      });
+      return apiRequest("POST", "/api/calendar", formData);
     },
     onSuccess: () => {
       toast({
@@ -200,9 +197,7 @@ export default function AdminCalendar() {
   // Mutação para excluir um evento
   const deleteEventMutation = useMutation({
     mutationFn: async (id: number) => {
-      return apiRequest(`/api/calendar/${id}`, {
-        method: "DELETE",
-      });
+      return apiRequest("DELETE", `/api/calendar/${id}`);
     },
     onSuccess: () => {
       toast({
