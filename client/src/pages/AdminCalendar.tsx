@@ -72,6 +72,7 @@ const eventFormSchema = z.object({
   eventDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Data inválida"),
   eventTime: z.string().regex(/^\d{2}:\d{2}$/, "Formato de hora inválido (HH:MM)"),
   location: z.string().min(3, "O local deve ter pelo menos 3 caracteres"),
+  externalUrl: z.string().url("URL inválida").optional().or(z.literal("")),
   isActive: z.boolean().default(true),
   image: z.instanceof(File).optional(),
 });

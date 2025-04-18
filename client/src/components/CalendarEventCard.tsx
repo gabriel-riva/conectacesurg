@@ -3,9 +3,10 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { CalendarEvent } from "@shared/schema";
-import { CalendarClock, CalendarIcon, MapPin } from "lucide-react";
-import { format, isAfter } from "date-fns";
+import { CalendarClock, CalendarIcon, MapPin, ExternalLink } from "lucide-react";
+import { format, isAfter, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import googleCalendarIcon from "@assets/Google_Icons-03-512.webp";
 import { useQuery } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -224,13 +225,33 @@ export function CalendarEventCard({ event }: CalendarEventCardProps) {
   // Formatar data para exibição
   const formattedDate = formatEventDate(event.eventDate);
   
+  // Criar URL do Google Calendar
+  const googleCalendarUrl = createGoogleCalendarUrl(event);
+  
+  // Função para parar a propagação do evento de clique
+  const handleClickWithoutClosing = (e: React.MouseEvent) => {
+    e.stopPropagation();
+  };
+  
   return (
     <Dialog>
       <DialogTrigger asChild>
         <Card className="cursor-pointer hover:shadow-md transition-all duration-300 transform hover:-translate-y-1">
           <CardContent className="p-4">
             <div className="mb-2">
-              <h3 className="font-bold text-lg">{event.title}</h3>
+              <div className="flex justify-between items-start">
+                <h3 className="font-bold text-lg">{event.title}</h3>
+                <a 
+                  href={googleCalendarUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={handleClickWithoutClosing}
+                  className="ml-2 flex-shrink-0"
+                  title="Adicionar ao Google Calendar"
+                >
+                  <img src={googleCalendarIcon} alt="Google Calendar" className="w-6 h-6" />
+                </a>
+              </div>
               <div className="flex items-center text-sm text-muted-foreground mb-1">
                 <CalendarClock className="mr-1 h-4 w-4" />
                 <span>{formattedDate} - {event.eventTime}</span>
@@ -285,6 +306,32 @@ export function CalendarEventCard({ event }: CalendarEventCardProps) {
               />
             </div>
           )}
+          
+          <div className="pt-4 flex items-center justify-between gap-2">
+            <a 
+              href={googleCalendarUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-2 text-sm text-primary hover:underline"
+              onClick={handleClickWithoutClosing}
+            >
+              <img src={googleCalendarIcon} alt="Google Calendar" className="w-5 h-5" />
+              Adicionar ao Google Calendar
+            </a>
+            
+            {event.externalUrl && (
+              <a 
+                href={event.externalUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1 text-sm text-primary hover:underline"
+                onClick={handleClickWithoutClosing}
+              >
+                <ExternalLink className="h-4 w-4" />
+                Mais detalhes
+              </a>
+            )}
+          </div>
         </div>
       </DialogContent>
     </Dialog>
@@ -301,5 +348,38 @@ function formatEventDate(dateString: string, detailed = false) {
     return format(date, "dd/MM/yyyy", { locale: ptBR });
   } catch (error) {
     return dateString;
+  }
+}
+
+// Função para criar URL do Google Calendar
+function createGoogleCalendarUrl(event: CalendarEvent) {
+  try {
+    // Parse da data e hora
+    const eventDate = new Date(event.eventDate);
+    const [hours, minutes] = event.eventTime.split(':');
+    const startDate = new Date(eventDate);
+    startDate.setHours(parseInt(hours), parseInt(minutes), 0);
+    
+    // Define a data de término como 1 hora após o início
+    const endDate = new Date(startDate);
+    endDate.setHours(endDate.getHours() + 1);
+    
+    // Formatando datas para o formato do Google Calendar (YYYYMMDDTHHMMSS)
+    const formatGoogleCalendarDate = (date: Date) => {
+      return format(date, "yyyyMMdd'T'HHmmss");
+    };
+    
+    const params = new URLSearchParams({
+      action: 'TEMPLATE',
+      text: event.title,
+      dates: `${formatGoogleCalendarDate(startDate)}/${formatGoogleCalendarDate(endDate)}`,
+      details: event.description,
+      location: event.location,
+    });
+    
+    return `https://calendar.google.com/calendar/render?${params.toString()}`;
+  } catch (error) {
+    console.error('Erro ao criar URL do Google Calendar:', error);
+    return '#';
   }
 }
