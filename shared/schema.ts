@@ -233,6 +233,7 @@ export const calendarEvents = pgTable("calendar_events", {
   eventTime: text("event_time").notNull(),
   location: text("location").notNull(),
   imageUrl: text("image_url"),
+  externalUrl: text("external_url"),
   creatorId: integer("creator_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
   isActive: boolean("is_active").notNull().default(true),
   createdAt: timestamp("created_at").defaultNow(),

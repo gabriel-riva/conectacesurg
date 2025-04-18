@@ -137,6 +137,7 @@ router.post("/", isAdmin, upload.single("image"), async (req: Request, res: Resp
       ...req.body,
       isActive: req.body.isActive === "true",
       imageUrl: req.file ? `/uploads/${req.file.filename}` : null,
+      externalUrl: req.body.externalUrl || null,
       userId: user.id
     };
     
@@ -186,6 +187,7 @@ router.put("/:id", isAdmin, upload.single("image"), async (req: Request, res: Re
     const updateData = {
       ...req.body,
       isActive: req.body.isActive === "true",
+      externalUrl: req.body.externalUrl || null,
     };
     
     // Adicionar imageUrl se houver uma nova imagem
