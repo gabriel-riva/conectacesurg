@@ -14,6 +14,8 @@ import AIPage from "@/pages/AIPage";
 import AdminAIPage from "@/pages/AdminAIPage";
 import LinksPage from "@/pages/admin/LinksPage";
 import Profile from "@/pages/Profile";
+import CalendarPage from "@/pages/CalendarPage";
+import AdminCalendar from "@/pages/AdminCalendar";
 import { AuthProvider } from "./providers/AuthProvider";
 import { useAuth } from "./lib/auth";
 
@@ -72,11 +74,17 @@ function Router() {
       <Route path="/admin/links">
         {() => <ProtectedRoute component={LinksPage} adminOnly={true} />}
       </Route>
+      <Route path="/admin/calendar">
+        {() => <ProtectedRoute component={AdminCalendar} adminOnly={true} />}
+      </Route>
       <Route path="/dashboard">
         {() => <ProtectedRoute component={Dashboard} />}
       </Route>
       <Route path="/profile">
         {() => <ProtectedRoute component={Profile} />}
+      </Route>
+      <Route path="/calendar">
+        {() => <ProtectedRoute component={CalendarPage} />}
       </Route>
       <Route path="/access-denied" component={AccessDeniedPage} />
       <Route path="/" component={LoginPage} />
