@@ -53,9 +53,15 @@ const upload = multer({
 
 // Middleware para verificar se o usuário é admin
 const isAdmin = (req: Request, res: Response, next: Function) => {
-  if (req.session.user && (req.session.user.role === "admin" || req.session.user.role === "superadmin")) {
+  if (!req.isAuthenticated()) {
+    return res.status(401).json({ error: "Não autenticado" });
+  }
+  
+  const user = req.user as any;
+  if (user.role === "admin" || user.role === "superadmin") {
     return next();
   }
+  
   return res.status(403).json({ error: "Acesso negado. Permissão de administrador necessária." });
 };
 
@@ -64,11 +70,13 @@ router.get("/", async (req: Request, res: Response) => {
   try {
     const links = await storage.getAllUtilityLinks();
     // Filtrar apenas links ativos para usuários regulares
-    if (req.session.user && (req.session.user.role === "admin" || req.session.user.role === "superadmin")) {
-      return res.json(links);
-    } else {
-      return res.json(links.filter(link => link.isActive));
+    if (req.isAuthenticated()) {
+      const user = req.user as any;
+      if (user.role === "admin" || user.role === "superadmin") {
+        return res.json(links);
+      }
     }
+    return res.json(links.filter(link => link.isActive));
   } catch (error) {
     console.error("Erro ao buscar links úteis:", error);
     return res.status(500).json({ error: "Erro ao buscar links úteis" });
