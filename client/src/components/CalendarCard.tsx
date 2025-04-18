@@ -6,7 +6,6 @@ export function CalendarCard() {
     { id: 1, date: "17/04/25", time: "18:30h", title: "Evento UniDois Três" },
     { id: 2, date: "17/04/25", time: "19:45h", title: "Evento UniDois Três" },
     { id: 3, date: "17/04/25", time: "18:30h", title: "Evento UniDois Três" },
-    { id: 4, date: "17/04/25", time: "18:30h", title: "Evento UniDois Três" },
   ];
 
   return (
@@ -14,9 +13,9 @@ export function CalendarCard() {
       <CardHeader className="pb-2">
         <CardTitle>Calendário</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-2 flex-grow overflow-y-auto">
+      <CardContent className="space-y-4 flex-grow">
         {events.map((event) => (
-          <div key={event.id} className="text-sm">
+          <div key={event.id} className="border-t border-gray-100 pt-2">
             <div className="text-xs text-muted-foreground">{event.date} - {event.time}</div>
             <div className="font-medium">{event.title}</div>
           </div>
