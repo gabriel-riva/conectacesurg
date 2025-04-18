@@ -57,16 +57,14 @@ export function UtilityLinksManager() {
   // Mutation para criar link
   const createMutation = useMutation({
     mutationFn: async (data: FormData) => {
-      const response = await apiRequest<UtilityLink>("POST", "/api/utility-links", data, {
-        skipContentType: true,
-      });
+      const response = await apiRequest<UtilityLink>("POST", "/api/utility-links", data);
       return response;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/utility-links'] });
       toast({
         title: "Link criado",
-        description: "O link útil foi criado com sucesso.",
+        description: "O link útil foi criado com sucesso."
       });
       resetForm();
       setIsAddDialogOpen(false);
@@ -84,9 +82,7 @@ export function UtilityLinksManager() {
   // Mutation para atualizar link
   const updateMutation = useMutation({
     mutationFn: async ({ id, data }: { id: number; data: FormData }) => {
-      const response = await apiRequest<UtilityLink>("PUT", `/api/utility-links/${id}`, data, {
-        skipContentType: true,
-      });
+      const response = await apiRequest<UtilityLink>("PUT", `/api/utility-links/${id}`, data);
       return response;
     },
     onSuccess: () => {
@@ -136,9 +132,7 @@ export function UtilityLinksManager() {
       const formData = new FormData();
       formData.append("isActive", isActive.toString());
       
-      const response = await apiRequest<UtilityLink>("PUT", `/api/utility-links/${id}`, formData, {
-        skipContentType: true,
-      });
+      const response = await apiRequest<UtilityLink>("PUT", `/api/utility-links/${id}`, formData);
       return response;
     },
     onSuccess: () => {
@@ -164,9 +158,7 @@ export function UtilityLinksManager() {
       const formData = new FormData();
       formData.append("order", order.toString());
       
-      const response = await apiRequest<UtilityLink>("PUT", `/api/utility-links/${id}`, formData, {
-        skipContentType: true,
-      });
+      const response = await apiRequest<UtilityLink>("PUT", `/api/utility-links/${id}`, formData);
       return response;
     },
     onSuccess: () => {
@@ -289,7 +281,7 @@ export function UtilityLinksManager() {
   }
 
   // Ordenar links por ordem
-  const sortedLinks = [...(links || [])].sort((a, b) => a.order - b.order);
+  const sortedLinks = [...(links || [])].sort((a, b) => (a.order || 0) - (b.order || 0));
 
   return (
     <Card>
