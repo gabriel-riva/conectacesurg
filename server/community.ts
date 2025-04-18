@@ -360,16 +360,16 @@ router.post('/groups', async (req: Request, res: Response) => {
     const [group] = await db.insert(groups).values({
       name,
       description: description || null,
-      creator_id: req.user.id,
-      is_private: isPrivate === true,
-      requires_approval: requiresApproval === true,
+      creatorId: req.user.id,
+      isPrivate: isPrivate === true,
+      requiresApproval: requiresApproval === true,
     }).returning();
     
     // Add creator as an admin of the group
     await db.insert(userGroups).values({
-      user_id: req.user.id,
-      group_id: group.id,
-      is_admin: true,
+      userId: req.user.id,
+      groupId: group.id,
+      isAdmin: true,
       status: 'approved',
     });
     
