@@ -223,6 +223,8 @@ export const usersRelations = relations(users, ({ many }) => ({
   ideaVotes: many(ideaVotes),
   ideaComments: many(ideaComments),
   ideaVolunteers: many(ideaVolunteers),
+  aiPrompts: many(aiPrompts, { relationName: "creator" }),
+  aiConversations: many(aiConversations),
 }));
 
 export const groupsRelations = relations(groups, ({ many, one }) => ({
@@ -371,6 +373,50 @@ export const ideaVolunteersRelations = relations(ideaVolunteers, ({ one }) => ({
   }),
 }));
 
+export const aiAgentsRelations = relations(aiAgents, ({ many }) => ({
+  conversations: many(aiConversations),
+  promptAgents: many(aiPromptAgents),
+}));
+
+export const aiPromptsRelations = relations(aiPrompts, ({ one, many }) => ({
+  creator: one(users, {
+    fields: [aiPrompts.creatorId],
+    references: [users.id],
+    relationName: "creator"
+  }),
+  promptAgents: many(aiPromptAgents),
+}));
+
+export const aiPromptAgentsRelations = relations(aiPromptAgents, ({ one }) => ({
+  prompt: one(aiPrompts, {
+    fields: [aiPromptAgents.promptId],
+    references: [aiPrompts.id],
+  }),
+  agent: one(aiAgents, {
+    fields: [aiPromptAgents.agentId],
+    references: [aiAgents.id],
+  }),
+}));
+
+export const aiConversationsRelations = relations(aiConversations, ({ one, many }) => ({
+  user: one(users, {
+    fields: [aiConversations.userId],
+    references: [users.id],
+  }),
+  agent: one(aiAgents, {
+    fields: [aiConversations.agentId],
+    references: [aiAgents.id],
+  }),
+  messages: many(aiMessages),
+}));
+
+export const aiMessagesRelations = relations(aiMessages, ({ one }) => ({
+  conversation: one(aiConversations, {
+    fields: [aiMessages.conversationId],
+    references: [aiConversations.id],
+  }),
+}));
+
 // Schemas
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
@@ -452,6 +498,31 @@ export const insertIdeaVolunteerSchema = createInsertSchema(ideaVolunteers).omit
   createdAt: true,
 });
 
+export const insertAiAgentSchema = createInsertSchema(aiAgents).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertAiPromptSchema = createInsertSchema(aiPrompts).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertAiPromptAgentSchema = createInsertSchema(aiPromptAgents);
+
+export const insertAiConversationSchema = createInsertSchema(aiConversations).omit({
+  id: true,
+  lastMessageAt: true,
+  createdAt: true,
+});
+
+export const insertAiMessageSchema = createInsertSchema(aiMessages).omit({
+  id: true,
+  createdAt: true,
+});
+
 // Types
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type InsertGoogleUser = z.infer<typeof insertGoogleUserSchema>;
@@ -466,6 +537,11 @@ export type InsertIdea = z.infer<typeof insertIdeaSchema>;
 export type InsertIdeaVote = z.infer<typeof insertIdeaVoteSchema>;
 export type InsertIdeaComment = z.infer<typeof insertIdeaCommentSchema>;
 export type InsertIdeaVolunteer = z.infer<typeof insertIdeaVolunteerSchema>;
+export type InsertAiAgent = z.infer<typeof insertAiAgentSchema>;
+export type InsertAiPrompt = z.infer<typeof insertAiPromptSchema>;
+export type InsertAiPromptAgent = z.infer<typeof insertAiPromptAgentSchema>;
+export type InsertAiConversation = z.infer<typeof insertAiConversationSchema>;
+export type InsertAiMessage = z.infer<typeof insertAiMessageSchema>;
 
 export type User = typeof users.$inferSelect;
 export type Group = typeof groups.$inferSelect;
@@ -479,3 +555,8 @@ export type Idea = typeof ideas.$inferSelect;
 export type IdeaVote = typeof ideaVotes.$inferSelect;
 export type IdeaComment = typeof ideaComments.$inferSelect;
 export type IdeaVolunteer = typeof ideaVolunteers.$inferSelect;
+export type AiAgent = typeof aiAgents.$inferSelect;
+export type AiPrompt = typeof aiPrompts.$inferSelect;
+export type AiPromptAgent = typeof aiPromptAgents.$inferSelect;
+export type AiConversation = typeof aiConversations.$inferSelect;
+export type AiMessage = typeof aiMessages.$inferSelect;

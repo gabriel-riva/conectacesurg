@@ -13,6 +13,7 @@ import materiaisIcon from "@assets/icone_materiais.png";
 import ideiasIcon from "@assets/icone_ideias.png";
 import comunidadeIcon from "@assets/icone_comunidade.png";
 import gamificacaoIcon from "@assets/icone_gamificacao.png";
+import iaIcon from "@assets/icone_ia.png";
 
 // Importing green icons
 import inicioIconVerde from "@assets/icone_inicio_verde.png";
@@ -20,6 +21,7 @@ import materiaisIconVerde from "@assets/icone_materiais_verde.png";
 import ideiasIconVerde from "@assets/icone_ideias_verde.png";
 import comunidadeIconVerde from "@assets/icone_comunidade_verde.png";
 import gamificacaoIconVerde from "@assets/icone_gamificacao_verde.png";
+import iaIconVerde from "@assets/icone_ia_verde.png";
 
 export function Header() {
   const [location] = useLocation();
@@ -96,6 +98,13 @@ export function Header() {
               label="Gamificação"
               isActive={location === '/gamificacao'}
             />
+            <MenuItem 
+              href="/ai"
+              icon={iaIcon}
+              iconHover={iaIconVerde}
+              label="IA"
+              isActive={location.startsWith('/ai')}
+            />
           </nav>
           
           <div className="flex items-center space-x-4">
@@ -156,6 +165,14 @@ export function Header() {
               iconHover={gamificacaoIconVerde}
               label="Gamificação"
               isActive={location === '/gamificacao'}
+              className="py-2"
+            />
+            <MenuItem 
+              href="/ai"
+              icon={iaIcon}
+              iconHover={iaIconVerde}
+              label="IA"
+              isActive={location.startsWith('/ai')}
               className="py-2"
             />
           </div>
