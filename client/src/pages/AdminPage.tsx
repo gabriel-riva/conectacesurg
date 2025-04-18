@@ -31,13 +31,13 @@ import {
 type SortColumn = 'name' | 'email' | 'role' | null;
 type SortDirection = 'asc' | 'desc';
 
-export default function AdminPage() {
+export default function AdminPage({ activeTab: initialActiveTab }: { activeTab?: string }) {
   const [searchTerm, setSearchTerm] = useState("");
   const [isUserModalOpen, setIsUserModalOpen] = useState(false);
   const [isGroupModalOpen, setIsGroupModalOpen] = useState(false);
   const [isUserGroupsModalOpen, setIsUserGroupsModalOpen] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
-  const [activeTab, setActiveTab] = useState("usuarios");
+  const [activeTab, setActiveTab] = useState(initialActiveTab || "usuarios");
   const [userToDelete, setUserToDelete] = useState<number | null>(null);
   const [groupToDelete, setGroupToDelete] = useState<number | null>(null);
   const [isUserEditModalOpen, setIsUserEditModalOpen] = useState(false);
@@ -300,7 +300,7 @@ export default function AdminPage() {
             ) : null}
           </div>
           
-          <Tabs defaultValue="usuarios" className="w-full" onValueChange={setActiveTab}>
+          <Tabs defaultValue={activeTab} className="w-full" onValueChange={setActiveTab}>
             <TabsList className="mb-4">
               <TabsTrigger value="usuarios">Usuários</TabsTrigger>
               <TabsTrigger value="grupos">Grupos</TabsTrigger>

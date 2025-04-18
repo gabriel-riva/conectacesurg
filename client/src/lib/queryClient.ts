@@ -8,14 +8,31 @@ async function throwIfResNotOk(res: Response) {
 }
 
 export async function apiRequest<T = Response>(
-  method: string,
-  url: string,
+  methodOrUrl: string,
+  urlOrData?: string | unknown,
   data?: unknown | undefined,
 ): Promise<T> {
+  // Detecta se está usando a assinatura antiga (método, url, data) ou nova (url, data)
+  let method: string;
+  let url: string;
+  let bodyData: unknown | undefined;
+  
+  if (urlOrData && typeof urlOrData === 'string') {
+    // Formato antigo: apiRequest(método, url, data)
+    method = methodOrUrl;
+    url = urlOrData;
+    bodyData = data;
+  } else {
+    // Novo formato: apiRequest(url, data)
+    method = 'GET';
+    url = methodOrUrl;
+    bodyData = urlOrData;
+  }
+  
   const res = await fetch(url, {
     method,
-    headers: data ? { "Content-Type": "application/json" } : {},
-    body: data ? JSON.stringify(data) : undefined,
+    headers: bodyData ? { "Content-Type": "application/json" } : {},
+    body: bodyData ? JSON.stringify(bodyData) : undefined,
     credentials: "include",
   });
 
