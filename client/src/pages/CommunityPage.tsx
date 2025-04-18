@@ -629,12 +629,10 @@ export default function CommunityPage() {
           <Card className="p-4">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold">My Groups</h3>
-              <DialogTrigger asChild onClick={() => setCreateGroupOpen(true)}>
-                <Button variant="outline" size="sm">
-                  <PlusCircle className="h-4 w-4 mr-1" />
-                  Create
-                </Button>
-              </DialogTrigger>
+              <Button variant="outline" size="sm" onClick={() => setCreateGroupOpen(true)}>
+                <PlusCircle className="h-4 w-4 mr-1" />
+                Create
+              </Button>
             </div>
             
             {isLoadingGroups ? (
