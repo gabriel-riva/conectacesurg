@@ -66,9 +66,11 @@ export function HomeProfile() {
             {/* Espaço reservado para futuro conteúdo */}
           </div>
           
-          <Button asChild className="w-full mt-auto" variant="outline">
-            <Link href="/profile">Ver Perfil Completo</Link>
-          </Button>
+          <div className="mt-2 pt-2 text-right border-t border-gray-100">
+            <Link href="/profile" className="text-[#0D8A43] text-sm hover:underline">
+              Ver tudo
+            </Link>
+          </div>
         </div>
       </CardContent>
     </Card>

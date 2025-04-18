@@ -80,28 +80,28 @@ export function UtilityLinks() {
         </CardTitle>
       </CardHeader>
       <CardContent className="p-4" style={{ height: "calc(500px - 54px)" }}>
-        <ul className="space-y-3">
+        <ul className="space-y-1">
           {links.map((link) => (
             <li key={link.id}>
               <a 
                 href={getProcessedUrl(link.url)} 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="flex items-center p-2 hover:bg-gray-50 rounded-md transition-colors group"
+                className="flex items-center py-1 px-2 hover:bg-gray-50 rounded-md transition-colors group"
               >
                 {link.logoUrl ? (
                   <img 
                     src={link.logoUrl} 
                     alt={link.title} 
-                    className="w-8 h-8 object-contain mr-3"
+                    className="w-6 h-6 object-contain mr-2"
                   />
                 ) : (
-                  <div className="w-8 h-8 flex items-center justify-center bg-gray-100 rounded-full mr-3">
-                    <ExternalLink className="w-4 h-4 text-gray-500" />
+                  <div className="w-6 h-6 flex items-center justify-center bg-gray-100 rounded-full mr-2">
+                    <ExternalLink className="w-3 h-3 text-gray-500" />
                   </div>
                 )}
-                <span className="flex-1 font-medium">{link.title}</span>
-                <ExternalLink className="w-4 h-4 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+                <span className="flex-1 font-medium text-sm">{link.title}</span>
+                <ExternalLink className="w-3 h-3 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity" />
               </a>
             </li>
           ))}
