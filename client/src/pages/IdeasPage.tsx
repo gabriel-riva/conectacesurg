@@ -506,10 +506,7 @@ const CreateIdeaDialog = ({ isOpen, onClose, onCreated }: { isOpen: boolean; onC
         });
       }
       
-      return apiRequest('/api/ideas', {
-        method: 'POST',
-        body: formData,
-      });
+      return apiRequest('POST', '/api/ideas', formData);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/ideas'] });
