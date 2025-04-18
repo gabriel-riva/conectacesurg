@@ -676,6 +676,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Adicionar rotas de perfil de usuário
   app.use('/api/profile', profileRouter);
   
+  // Adicionar rotas de links úteis
+  app.use('/api/utility-links', utilityLinksRouter);
+  
   // Configurar acesso estático para a pasta de uploads
   app.use('/uploads', express.static('uploads'));
 

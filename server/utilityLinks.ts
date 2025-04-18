@@ -5,6 +5,19 @@ import multer from "multer";
 import fs from "fs";
 import path from "path";
 import { randomUUID } from "crypto";
+import { Session } from "express-session";
+
+// Extensão da interface Session para incluir user
+declare module "express-session" {
+  interface Session {
+    user?: {
+      id: number;
+      role: string;
+      name: string;
+      email: string;
+    };
+  }
+}
 
 const router = Router();
 
