@@ -12,6 +12,7 @@ import { pool } from "./db";
 import communityRoutes from "./community";
 import ideasRoutes from "./ideas-fixed-final";
 import aiRouter from "./ai";
+import profileRouter from "./profile";
 
 // Create PostgreSQL session store for production or memory store for development
 const createSessionStore = () => {
@@ -639,6 +640,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Adicionar rotas do programa de ideias
   app.use('/api/ideas', ideasRoutes);
   app.use('/api/ai', aiRouter);
+  
+  // Adicionar rotas de perfil de usuário
+  app.use('/api/profile', profileRouter);
   
   // Configurar acesso estático para a pasta de uploads
   app.use('/uploads', express.static('uploads'));

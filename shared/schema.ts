@@ -12,6 +12,15 @@ export const users = pgTable("users", {
   googleId: text("google_id").unique(),
   photoUrl: text("photo_url"),
   isActive: boolean("is_active").notNull().default(true),
+  // Novos campos para perfil
+  address: text("address"),
+  city: text("city"),
+  state: text("state"),
+  zipCode: text("zip_code"),
+  phoneNumbers: text("phone_numbers").array(),
+  secondaryEmail: text("secondary_email"),
+  emergencyContact: jsonb("emergency_contact").$type<{name: string, phone: string, relationship: string}>(),
+  documents: jsonb("documents").$type<{name: string, url: string, type: string, description: string}[]>().default([]),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -424,11 +433,33 @@ export const insertUserSchema = createInsertSchema(users).omit({
   googleId: true,
   createdAt: true,
   updatedAt: true,
+  emergencyContact: true,
+  documents: true,
+  phoneNumbers: true,
 }).extend({
   email: z.string().email().refine(
     (email) => email.endsWith('@cesurg.com'), 
     { message: "Only @cesurg.com emails are allowed" }
   )
+});
+
+export const updateProfileSchema = createInsertSchema(users).omit({
+  id: true,
+  email: true, // Email principal não pode ser alterado
+  role: true,
+  password: true,
+  googleId: true,
+  isActive: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  secondaryEmail: z.string().email().optional(),
+  phoneNumbers: z.array(z.string()).optional(),
+  emergencyContact: z.object({
+    name: z.string(),
+    phone: z.string(),
+    relationship: z.string()
+  }).optional(),
 });
 
 export const insertGoogleUserSchema = createInsertSchema(users).pick({
@@ -525,6 +556,7 @@ export const insertAiMessageSchema = createInsertSchema(aiMessages).omit({
 
 // Types
 export type InsertUser = z.infer<typeof insertUserSchema>;
+export type UpdateProfile = z.infer<typeof updateProfileSchema>;
 export type InsertGoogleUser = z.infer<typeof insertGoogleUserSchema>;
 export type InsertGroup = z.infer<typeof insertGroupSchema>;
 export type InsertUserGroup = z.infer<typeof insertUserGroupSchema>;
