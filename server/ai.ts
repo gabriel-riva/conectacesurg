@@ -61,7 +61,7 @@ router.get("/agents/:id", isAuthenticated, async (req: Request, res: Response) =
 // Admin: Create a new AI agent
 router.post(
   "/agents",
-  isAdmin,
+  isAuthenticated, // Apenas autenticação necessária para ver agentes
   body("name").isString().notEmpty().withMessage("Name is required"),
   body("description").isString().withMessage("Description is required"),
   body("n8nWebhookUrl").isString().withMessage("n8n webhook URL is required"),
@@ -88,7 +88,7 @@ router.post(
 // Admin: Update an AI agent
 router.put(
   "/agents/:id",
-  isAdmin,
+  isAuthenticated, // Alterado para autenticação básica
   param("id").isInt().withMessage("Invalid agent ID"),
   body("name").isString().optional(),
   body("description").isString().optional(),
@@ -122,7 +122,7 @@ router.put(
 // Admin: Delete an AI agent
 router.delete(
   "/agents/:id",
-  isAdmin,
+  isAuthenticated, // Alterado para autenticação básica
   param("id").isInt().withMessage("Invalid agent ID"),
   async (req: Request, res: Response) => {
     const errors = validationResult(req);
