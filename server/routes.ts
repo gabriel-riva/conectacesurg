@@ -10,7 +10,7 @@ import MemoryStore from "memorystore";
 import connectPgSimple from "connect-pg-simple";
 import { pool } from "./db";
 import communityRoutes from "./community";
-import ideasRoutes from "./ideas-fixed";
+import ideasRoutes from "./ideas-fixed-new";
 
 // Create PostgreSQL session store for production or memory store for development
 const createSessionStore = () => {
