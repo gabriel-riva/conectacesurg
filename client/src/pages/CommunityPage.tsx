@@ -290,10 +290,7 @@ export default function CommunityPage() {
   const searchMutation = useMutation({
     mutationFn: async (query: string) => {
       setIsSearching(true);
-      const response = await apiRequest(`/api/community/search?q=${encodeURIComponent(query)}`, {
-        method: 'GET',
-      });
-      return response.json();
+      return await apiRequest('GET', `/api/community/search?q=${encodeURIComponent(query)}`);
     },
     onSuccess: (data) => {
       setSearchResults(data);
