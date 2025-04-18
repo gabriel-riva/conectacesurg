@@ -388,7 +388,7 @@ export function AdminIdeas() {
               </div>
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Todos</SelectItem>
+              <SelectItem value="todos">Todos</SelectItem>
               <SelectItem value="nova">Nova</SelectItem>
               <SelectItem value="em_avaliacao">Em avaliação</SelectItem>
               <SelectItem value="priorizada">Priorizada</SelectItem>
@@ -941,23 +941,27 @@ export function AdminIdeas() {
                       ) : users && users.length > 0 ? (
                         users.map((user: any) => (
                           <div key={user.id} className="flex items-center space-x-2 py-1">
-                            <Checkbox
-                              id={`user-${user.id}`}
-                              checked={field.value?.includes(user.id.toString())}
-                              onCheckedChange={(checked) => {
-                                const currentValue = field.value || [];
-                                const userId = user.id.toString();
-                                
-                                if (checked) {
-                                  assignForm.setValue("userIds", [...currentValue, userId]);
-                                } else {
-                                  assignForm.setValue(
-                                    "userIds",
-                                    currentValue.filter((id) => id !== userId)
-                                  );
-                                }
-                              }}
-                            />
+                            <div className="flex items-center h-4 w-4">
+                              <input
+                                type="checkbox"
+                                id={`user-${user.id}`}
+                                checked={field.value?.includes(user.id.toString())}
+                                onChange={(e) => {
+                                  const checked = e.target.checked;
+                                  const currentValue = field.value || [];
+                                  const userId = user.id.toString();
+                                  
+                                  if (checked) {
+                                    assignForm.setValue("userIds", [...currentValue, userId]);
+                                  } else {
+                                    assignForm.setValue(
+                                      "userIds",
+                                      currentValue.filter((id) => id !== userId)
+                                    );
+                                  }
+                                }}
+                              />
+                            </div>
                             <label
                               htmlFor={`user-${user.id}`}
                               className="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex items-center gap-2"
