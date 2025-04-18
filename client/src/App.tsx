@@ -69,6 +69,9 @@ function Router() {
       <Route path="/admin/acessos">
         {() => <ProtectedRoute component={AdminPage} adminOnly={true} activeTab="acessos" />}
       </Route>
+      <Route path="/admin/links">
+        {() => <ProtectedRoute component={LinksPage} adminOnly={true} />}
+      </Route>
       <Route path="/dashboard">
         {() => <ProtectedRoute component={Dashboard} />}
       </Route>
