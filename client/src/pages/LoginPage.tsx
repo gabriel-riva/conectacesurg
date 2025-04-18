@@ -140,7 +140,7 @@ export default function LoginPage() {
 
             <Button
               variant="outline"
-              className="flex items-center justify-center w-full gap-2 bg-white border border-gray-300 rounded-md py-6 px-4 text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-all duration-200"
+              className="flex items-center justify-center gap-2 bg-white border border-gray-300 rounded-md py-2 px-6 text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-all duration-200 mx-auto"
               onClick={handleGoogleLogin}
               disabled={isLoading}
             >
@@ -154,12 +154,6 @@ export default function LoginPage() {
             </Button>
             
             <div className="mt-8 text-sm text-gray-500 text-center">
-              <p>
-                Apenas usuários <strong>pré-cadastrados</strong> com e-mail institucional <strong>@cesurg.com</strong> possuem acesso.
-              </p>
-              <p className="mt-2 text-xs">
-                Se você não consegue acessar, entre em contato com o administrador para solicitar acesso.
-              </p>
             </div>
             
             <div className="mt-6 border-t border-gray-200 pt-6 flex justify-center items-center">
