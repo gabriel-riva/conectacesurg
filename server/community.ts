@@ -754,7 +754,7 @@ router.get('/group-invites', async (req: Request, res: Response) => {
       isPrivate: invite.group.isPrivate,
       requiresApproval: invite.group.requiresApproval,
       createdAt: invite.joinedAt,
-      invitedBy: invite.group.creator.name
+      invitedBy: invite.group.creator?.name || 'Administrador'
     }));
 
     res.json(formattedInvites);
