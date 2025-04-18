@@ -65,6 +65,7 @@ export default function CommunityPage() {
   const [mediaType, setMediaType] = useState<string | null>(null);
   const [isSearching, setIsSearching] = useState(false);
   const [showMessagesPanel, setShowMessagesPanel] = useState(false);
+  const [invitingUserId, setInvitingUserId] = useState<number | null>(null);
   const mediaInputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -160,6 +161,17 @@ export default function CommunityPage() {
   // Get pending group invites
   const { data: pendingInvites = [], isLoading: isLoadingInvites } = useQuery<any[]>({
     queryKey: ['/api/community/group-invites'],
+  });
+  
+  // Get group members for the active dialog
+  const [activeGroupForMembers, setActiveGroupForMembers] = useState<number | null>(null);
+  const { data: groupMembers = [], isLoading: isLoadingGroupMembers } = useQuery<UserType[]>({
+    queryKey: ['/api/community/groups', activeGroupForMembers, 'members'],
+    enabled: activeGroupForMembers !== null,
+    queryFn: async () => {
+      if (activeGroupForMembers === null) return [];
+      return await apiRequest('GET', `/api/community/groups/${activeGroupForMembers}/members`);
+    }
   });
 
   // Get messages for active conversation
@@ -427,6 +439,8 @@ export default function CommunityPage() {
     onSuccess: () => {
       // Limpar a pesquisa após sucesso no convite
       setUserSearchQuery('');
+      // Resetar o ID do usuário sendo convidado
+      setInvitingUserId(null);
       
       toast({
         title: 'Convite enviado',
@@ -434,6 +448,9 @@ export default function CommunityPage() {
       });
     },
     onError: (error: any) => {
+      // Resetar o ID do usuário sendo convidado em caso de erro também
+      setInvitingUserId(null);
+      
       toast({
         title: 'Erro',
         description: error.message || 'Falha ao enviar o convite. Por favor, tente novamente.',
@@ -1236,6 +1253,7 @@ export default function CommunityPage() {
                                                           size="sm" 
                                                           onClick={() => {
                                                             if (selectedGroupId) {
+                                                              setInvitingUserId(user.id);
                                                               inviteUserMutation.mutate({ 
                                                                 groupId: selectedGroupId, 
                                                                 userId: user.id 
@@ -1248,9 +1266,9 @@ export default function CommunityPage() {
                                                               });
                                                             }
                                                           }}
-                                                          disabled={inviteUserMutation.isPending}
+                                                          disabled={inviteUserMutation.isPending && invitingUserId === user.id}
                                                         >
-                                                          {inviteUserMutation.isPending ? "Enviando..." : "Convidar"}
+                                                          {inviteUserMutation.isPending && invitingUserId === user.id ? "Enviando..." : "Convidar"}
                                                         </Button>
                                                       </div>
                                                     ))}
