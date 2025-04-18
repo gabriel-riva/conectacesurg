@@ -797,10 +797,7 @@ export class DatabaseStorage implements IStorage {
     try {
       const [newConversation] = await db
         .insert(aiConversations)
-        .values({
-          ...conversation,
-          lastMessageAt: new Date()
-        })
+        .values(conversation)
         .returning();
       
       return newConversation;
@@ -812,10 +809,11 @@ export class DatabaseStorage implements IStorage {
 
   async updateAiConversationLastMessage(id: number, preview: string): Promise<boolean> {
     try {
+      const now = new Date();
       const result = await db
         .update(aiConversations)
         .set({
-          lastMessageAt: new Date()
+          lastMessageAt: now
         })
         .where(eq(aiConversations.id, id))
         .returning();
@@ -865,10 +863,7 @@ export class DatabaseStorage implements IStorage {
     try {
       const [newMessage] = await db
         .insert(aiMessages)
-        .values({
-          ...message,
-          createdAt: new Date()
-        })
+        .values(message)
         .returning();
       
       return newMessage;
