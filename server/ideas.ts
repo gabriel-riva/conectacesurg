@@ -306,7 +306,7 @@ router.get('/:id', isAuthenticated, async (req: Request, res: Response) => {
     const ideaResult = await db.select()
       .from(schema.ideas)
       .leftJoin(schema.users, eq(schema.ideas.creatorId, schema.users.id), 'creator')
-      .leftJoin(schema.users, eq(schema.ideas.responsibleId, schema.users.id), 'responsible')
+      .leftJoin(schema.users, eq(schema.ideas.responsibleId, schema.users.id), 'responsible_user')
       .leftJoin(schema.groups, eq(schema.ideas.groupId, schema.groups.id))
       .where(eq(schema.ideas.id, ideaId))
       .limit(1);

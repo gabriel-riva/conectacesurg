@@ -6,6 +6,7 @@ import NotFound from "@/pages/not-found";
 import LoginPage from "@/pages/LoginPage";
 import Dashboard from "@/pages/Dashboard";
 import AdminPage from "@/pages/AdminPage";
+import AdminIdeasPage from "@/pages/AdminIdeasPage";
 import CommunityPage from "@/pages/CommunityPage";
 import IdeasPage from "@/pages/IdeasPage";
 import AccessDeniedPage from "@/pages/AccessDeniedPage";
@@ -47,7 +48,7 @@ function Router() {
         {() => <ProtectedRoute component={AdminPage} adminOnly={true} />}
       </Route>
       <Route path="/admin/ideas">
-        {() => <ProtectedRoute component={AdminPage} adminOnly={true} activeTab="ideias" />}
+        {() => <ProtectedRoute component={AdminIdeasPage} adminOnly={true} />}
       </Route>
       <Route path="/admin/usuarios">
         {() => <ProtectedRoute component={AdminPage} adminOnly={true} activeTab="usuarios" />}
