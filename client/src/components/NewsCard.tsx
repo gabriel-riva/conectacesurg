@@ -5,14 +5,14 @@ export function NewsCard() {
   const noticias: any[] = [];
 
   return (
-    <Card className="h-[300px] flex flex-col shadow-md hover:shadow-lg transition-shadow duration-300 border-none overflow-hidden">
+    <Card className="h-[500px] flex flex-col shadow-md hover:shadow-lg transition-shadow duration-300 border-none overflow-hidden">
       <CardHeader className="pb-2 bg-gradient-to-r from-primary/5 to-transparent">
         <CardTitle className="text-primary/90 flex items-center">
           <span className="inline-block w-1 h-5 bg-primary rounded mr-2"></span>
           Últimas Notícias
         </CardTitle>
       </CardHeader>
-      <CardContent className="p-4 flex flex-col" style={{ height: "calc(300px - 54px)" }}>
+      <CardContent className="p-4 flex flex-col" style={{ height: "calc(500px - 54px)" }}>
         <div className="overflow-y-auto" style={{ maxHeight: "calc(100% - 30px)" }}>
           {noticias.length > 0 ? (
             noticias.map((noticia, index) => (

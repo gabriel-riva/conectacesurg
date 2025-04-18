@@ -72,14 +72,14 @@ export function UtilityLinks() {
 
   // Renderizar os links
   return (
-    <Card className="h-[280px] shadow-md hover:shadow-lg transition-shadow duration-300 border-none overflow-hidden">
+    <Card className="h-[700px] shadow-md hover:shadow-lg transition-shadow duration-300 border-none overflow-hidden">
       <CardHeader className="pb-2 bg-gradient-to-r from-primary/5 to-transparent">
         <CardTitle className="text-primary/90 flex items-center">
           <span className="inline-block w-1 h-5 bg-primary rounded mr-2"></span>
           Links Úteis
         </CardTitle>
       </CardHeader>
-      <CardContent className="p-4" style={{ height: "calc(280px - 54px)" }}>
+      <CardContent className="p-4" style={{ height: "calc(700px - 54px)" }}>
         <ul className="space-y-3">
           {links.map((link) => (
             <li key={link.id}>
