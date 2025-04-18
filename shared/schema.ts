@@ -40,6 +40,20 @@ export const userGroups = pgTable("user_groups", {
   };
 });
 
+export const notifications = pgTable("notifications", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  type: text("type").notNull(), // 'group_invite', 'comment', 'like', etc.
+  title: text("title").notNull(),
+  message: text("message").notNull(),
+  relatedId: integer("related_id"), // ID do grupo, post, etc. relacionado
+  relatedType: text("related_type"), // 'group', 'post', 'comment', etc.
+  fromUserId: integer("from_user_id").references(() => users.id),
+  isRead: boolean("is_read").notNull().default(false),
+  actionTaken: boolean("action_taken").notNull().default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 export const posts = pgTable("posts", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
@@ -103,6 +117,8 @@ export const usersRelations = relations(users, ({ many }) => ({
   posts: many(posts),
   comments: many(comments),
   likes: many(likes),
+  notifications: many(notifications),
+  sentNotifications: many(notifications, { relationName: "fromUser" }),
   sentMessages: many(messages, { relationName: "sender" }),
   receivedMessages: many(messages, { relationName: "receiver" }),
   conversationsAsUser1: many(conversations, { relationName: "user1" }),
