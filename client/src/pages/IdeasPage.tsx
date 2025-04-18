@@ -506,6 +506,7 @@ const CreateIdeaDialog = ({ isOpen, onClose, onCreated }: { isOpen: boolean; onC
         });
       }
       
+      // Usando a assinatura correta: apiRequest(método, url, data)
       return apiRequest('POST', '/api/ideas', formData);
     },
     onSuccess: () => {
@@ -539,8 +540,8 @@ const CreateIdeaDialog = ({ isOpen, onClose, onCreated }: { isOpen: boolean; onC
       });
     }
     
-    // Enviar o FormData em vez do objeto values
-    createIdeaMutation.mutate(formData as any);
+    // Usar o formato apiRequest('POST', url, data) para enviar o FormData
+    createIdeaMutation.mutate(values);
   }
   
   return (
