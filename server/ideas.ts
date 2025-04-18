@@ -80,7 +80,7 @@ router.get('/', isAuthenticated, async (req: Request, res: Response) => {
     
     const offset = (Number(page) - 1) * Number(limit);
     let query = db.select().from(schema.ideas)
-      .leftJoin(schema.users, eq(schema.ideas.creatorId, schema.users.id))
+      .leftJoin(schema.users, eq(schema.ideas.creatorId, schema.users.id), 'creator')
       .leftJoin(schema.users, eq(schema.ideas.responsibleId, schema.users.id), 'responsible')
       .leftJoin(schema.groups, eq(schema.ideas.groupId, schema.groups.id));
     
@@ -228,7 +228,7 @@ router.get('/my', isAuthenticated, async (req: Request, res: Response) => {
     const userId = req.user!.id;
     
     let query = db.select().from(schema.ideas)
-      .leftJoin(schema.users, eq(schema.ideas.creatorId, schema.users.id))
+      .leftJoin(schema.users, eq(schema.ideas.creatorId, schema.users.id), 'creator')
       .leftJoin(schema.users, eq(schema.ideas.responsibleId, schema.users.id), 'responsible')
       .leftJoin(schema.groups, eq(schema.ideas.groupId, schema.groups.id));
     
@@ -305,7 +305,7 @@ router.get('/:id', isAuthenticated, async (req: Request, res: Response) => {
     
     const ideaResult = await db.select()
       .from(schema.ideas)
-      .leftJoin(schema.users, eq(schema.ideas.creatorId, schema.users.id))
+      .leftJoin(schema.users, eq(schema.ideas.creatorId, schema.users.id), 'creator')
       .leftJoin(schema.users, eq(schema.ideas.responsibleId, schema.users.id), 'responsible')
       .leftJoin(schema.groups, eq(schema.ideas.groupId, schema.groups.id))
       .where(eq(schema.ideas.id, ideaId))

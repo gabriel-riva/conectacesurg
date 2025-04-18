@@ -43,11 +43,20 @@ function Router() {
       <Route path="/community">
         {() => <ProtectedRoute component={CommunityPage} />}
       </Route>
-      <Route path="/admin/:section*">
-        {(params) => {
-          const section = params.section || "";
-          return <ProtectedRoute component={AdminPage} adminOnly={true} activeTab={section === "ideas" ? "ideias" : undefined} />;
-        }}
+      <Route path="/admin">
+        {() => <ProtectedRoute component={AdminPage} adminOnly={true} />}
+      </Route>
+      <Route path="/admin/ideas">
+        {() => <ProtectedRoute component={AdminPage} adminOnly={true} activeTab="ideias" />}
+      </Route>
+      <Route path="/admin/usuarios">
+        {() => <ProtectedRoute component={AdminPage} adminOnly={true} activeTab="usuarios" />}
+      </Route>
+      <Route path="/admin/grupos">
+        {() => <ProtectedRoute component={AdminPage} adminOnly={true} activeTab="grupos" />}
+      </Route>
+      <Route path="/admin/acessos">
+        {() => <ProtectedRoute component={AdminPage} adminOnly={true} activeTab="acessos" />}
       </Route>
       <Route path="/dashboard">
         {() => <ProtectedRoute component={Dashboard} />}
