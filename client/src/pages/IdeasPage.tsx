@@ -494,18 +494,7 @@ const CreateIdeaDialog = ({ isOpen, onClose, onCreated }: { isOpen: boolean; onC
   });
   
   const createIdeaMutation = useMutation({
-    mutationFn: async (values: CreateIdeaFormValues) => {
-      const formData = new FormData();
-      formData.append('title', values.title);
-      formData.append('description', values.description);
-      formData.append('takeResponsibility', values.takeResponsibility ? 'true' : 'false');
-      
-      if (values.attachments) {
-        Array.from(values.attachments).forEach((file) => {
-          formData.append('attachments', file);
-        });
-      }
-      
+    mutationFn: async (formData: FormData) => {
       // Usando a assinatura correta: apiRequest(método, url, data)
       return apiRequest('POST', '/api/ideas', formData);
     },
@@ -540,8 +529,8 @@ const CreateIdeaDialog = ({ isOpen, onClose, onCreated }: { isOpen: boolean; onC
       });
     }
     
-    // Usar o formato apiRequest('POST', url, data) para enviar o FormData
-    createIdeaMutation.mutate(values);
+    // Precisamos passar o FormData para a mutação, não o values
+    createIdeaMutation.mutate(formData as any);
   }
   
   return (
