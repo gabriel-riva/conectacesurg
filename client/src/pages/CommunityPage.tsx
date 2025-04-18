@@ -40,6 +40,7 @@ const groupFormSchema = z.object({
   description: z.string().optional(),
   isPrivate: z.boolean().default(false),
   requiresApproval: z.boolean().default(false),
+  imageUrl: z.string().optional(),
 });
 
 const messageFormSchema = z.object({
@@ -70,6 +71,8 @@ export default function CommunityPage() {
 
   // Group management
   const [selectedGroupId, setSelectedGroupId] = useState<number | null>(null);
+  const [groupImageFile, setGroupImageFile] = useState<File | null>(null);
+  const groupImageInputRef = useRef<HTMLInputElement>(null);
 
   // Forms
   const postForm = useForm<PostFormValues>({

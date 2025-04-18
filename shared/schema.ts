@@ -23,6 +23,7 @@ export const groups = pgTable("groups", {
   creatorId: integer("creator_id").notNull().references(() => users.id),
   isPrivate: boolean("is_private").notNull().default(false),
   requiresApproval: boolean("requires_approval").notNull().default(false),
+  imageUrl: text("image_url"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
