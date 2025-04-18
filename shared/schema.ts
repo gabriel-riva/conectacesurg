@@ -156,6 +156,55 @@ export const conversations = pgTable("conversations", {
   };
 });
 
+export const aiAgents = pgTable("ai_agents", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description").notNull(),
+  imageUrl: text("image_url"),
+  n8nWebhookUrl: text("n8n_webhook_url"),
+  n8nApiKey: text("n8n_api_key"),
+  active: boolean("active").notNull().default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const aiPrompts = pgTable("ai_prompts", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  content: text("content").notNull(),
+  creatorId: integer("creator_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  isPublic: boolean("is_public").notNull().default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const aiPromptAgents = pgTable("ai_prompt_agents", {
+  promptId: integer("prompt_id").notNull().references(() => aiPrompts.id, { onDelete: 'cascade' }),
+  agentId: integer("agent_id").notNull().references(() => aiAgents.id, { onDelete: 'cascade' }),
+}, (table) => {
+  return {
+    pk: primaryKey({ columns: [table.promptId, table.agentId] }),
+  };
+});
+
+export const aiConversations = pgTable("ai_conversations", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  agentId: integer("agent_id").notNull().references(() => aiAgents.id, { onDelete: 'cascade' }),
+  title: text("title").notNull(),
+  lastMessageAt: timestamp("last_message_at").defaultNow(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const aiMessages = pgTable("ai_messages", {
+  id: serial("id").primaryKey(),
+  conversationId: integer("conversation_id").notNull().references(() => aiConversations.id, { onDelete: 'cascade' }),
+  content: text("content").notNull(),
+  isFromUser: boolean("is_from_user").notNull(),
+  attachments: jsonb("attachments").$type<{name: string, url: string, type: string}[]>().default([]),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({
   userGroups: many(userGroups),
