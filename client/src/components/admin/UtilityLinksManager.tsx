@@ -182,7 +182,7 @@ export function UtilityLinksManager() {
   // Handler para mover link para cima
   const handleMoveUp = (link: UtilityLink, index: number) => {
     if (index > 0 && links) {
-      const newOrder = links[index - 1].order;
+      const newOrder = links[index - 1].order || 0;
       changeOrderMutation.mutate({ id: link.id, order: newOrder });
     }
   };
@@ -190,7 +190,7 @@ export function UtilityLinksManager() {
   // Handler para mover link para baixo
   const handleMoveDown = (link: UtilityLink, index: number) => {
     if (links && index < links.length - 1) {
-      const newOrder = links[index + 1].order;
+      const newOrder = links[index + 1].order || 0;
       changeOrderMutation.mutate({ id: link.id, order: newOrder });
     }
   };

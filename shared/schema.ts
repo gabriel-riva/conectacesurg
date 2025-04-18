@@ -225,6 +225,8 @@ export const utilityLinks = pgTable("utility_links", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Tipos e esquemas para o UtilityLink estão definidos abaixo junto com os outros esquemas
+
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({
   userGroups: many(userGroups),

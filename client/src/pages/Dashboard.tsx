@@ -3,13 +3,11 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useAuth } from "@/lib/auth";
 import { HomeProfile } from "@/components/HomeProfile";
 import { UtilityLinks } from "@/components/UtilityLinks";
-import { UtilityLinksManager } from "@/components/admin/UtilityLinksManager";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CalendarIcon, MessageSquare, FileText } from "lucide-react";
 
 export default function Dashboard() {
   const { user } = useAuth();
-  const isAdmin = user?.role === "admin" || user?.role === "superadmin";
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
@@ -29,13 +27,6 @@ export default function Dashboard() {
           
           {/* Coluna 2 e 3: Conteúdo principal */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Administração de Links Úteis (apenas para admin) */}
-            {isAdmin && (
-              <div className="mb-6">
-                <UtilityLinksManager />
-              </div>
-            )}
-            
             {/* Em breve: Tabs para Calendário, Anúncios e Notícias */}
             <Card>
               <CardContent className="p-6">
