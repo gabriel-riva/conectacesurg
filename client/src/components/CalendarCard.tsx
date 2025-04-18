@@ -13,7 +13,8 @@ import {
   DialogTitle,
   DialogTrigger
 } from "@/components/ui/dialog";
-import { CalendarClock, MapPin } from "lucide-react";
+import { CalendarClock, MapPin, ExternalLink } from "lucide-react";
+import googleCalendarIcon from "@assets/Google_Icons-03-512.webp";
 
 export function CalendarCard() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -46,6 +47,44 @@ export function CalendarCard() {
     } catch (error) {
       return dateString;
     }
+  };
+  
+  // Função para criar URL do Google Calendar
+  const createGoogleCalendarUrl = (event: CalendarEvent) => {
+    try {
+      // Parse da data e hora
+      const eventDate = new Date(event.eventDate);
+      const [hours, minutes] = event.eventTime.split(':');
+      const startDate = new Date(eventDate);
+      startDate.setHours(parseInt(hours), parseInt(minutes), 0);
+      
+      // Define a data de término como 1 hora após o início
+      const endDate = new Date(startDate);
+      endDate.setHours(endDate.getHours() + 1);
+      
+      // Formatando datas para o formato do Google Calendar (YYYYMMDDTHHMMSS)
+      const formatGoogleCalendarDate = (date: Date) => {
+        return format(date, "yyyyMMdd'T'HHmmss");
+      };
+      
+      const params = new URLSearchParams({
+        action: 'TEMPLATE',
+        text: event.title,
+        dates: `${formatGoogleCalendarDate(startDate)}/${formatGoogleCalendarDate(endDate)}`,
+        details: event.description,
+        location: event.location,
+      });
+      
+      return `https://calendar.google.com/calendar/render?${params.toString()}`;
+    } catch (error) {
+      console.error('Erro ao criar URL do Google Calendar:', error);
+      return '#';
+    }
+  };
+  
+  // Função para parar a propagação do evento de clique
+  const handleClickWithoutClosing = (e: React.MouseEvent) => {
+    e.stopPropagation();
   };
 
   return (

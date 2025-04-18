@@ -38,7 +38,9 @@ import {
   ImageIcon,
   Check,
   X,
+  ExternalLink,
 } from "lucide-react";
+import { ExternalUrlField } from "@/components/CalendarFormFields";
 import { apiRequest } from "@/lib/queryClient";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -82,6 +84,12 @@ type EventFormValues = z.infer<typeof eventFormSchema>;
 import { Header } from "@/components/Header";
 import { AdminSidebar } from "@/components/AdminSidebar";
 
+// Função auxiliar para formatar datas
+const formatDate = (dateString: string) => {
+  const date = new Date(dateString);
+  return format(date, "dd 'de' MMMM 'de' yyyy", { locale: ptBR });
+};
+
 export default function AdminCalendar() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -102,6 +110,7 @@ export default function AdminCalendar() {
       eventDate: format(new Date(), "yyyy-MM-dd"),
       eventTime: "14:00",
       location: "",
+      externalUrl: "",
       isActive: true,
     },
   });
@@ -474,6 +483,8 @@ export default function AdminCalendar() {
                 )}
               />
 
+              <ExternalUrlField form={form} />
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
@@ -634,6 +645,8 @@ export default function AdminCalendar() {
                 )}
               />
 
+              <ExternalUrlField form={form} />
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
@@ -653,10 +666,10 @@ export default function AdminCalendar() {
                 />
 
                 <div>
-                  <Label htmlFor="editImage">Imagem (opcional)</Label>
+                  <Label htmlFor="image-edit">Imagem (opcional)</Label>
                   <div className="mt-1 flex items-center">
                     <Input
-                      id="editImage"
+                      id="image-edit"
                       type="file"
                       accept="image/*"
                       onChange={handleImageChange}
@@ -694,7 +707,7 @@ export default function AdminCalendar() {
                   type="submit"
                   disabled={updateEventMutation.isPending}
                 >
-                  {updateEventMutation.isPending ? "Atualizando..." : "Atualizar Evento"}
+                  {updateEventMutation.isPending ? "Salvando..." : "Salvar Alterações"}
                 </Button>
               </DialogFooter>
             </form>
@@ -702,40 +715,27 @@ export default function AdminCalendar() {
         </DialogContent>
       </Dialog>
 
-      {/* Diálogo de confirmação de exclusão */}
+      {/* Diálogo de confirmação para exclusão */}
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
+            <AlertDialogTitle>Tem certeza?</AlertDialogTitle>
             <AlertDialogDescription>
-              Tem certeza que deseja excluir o evento "{currentEvent?.title}"? 
-              Esta ação não pode ser desfeita.
+              Esta ação não pode ser desfeita. Isso excluirá permanentemente o evento "{currentEvent?.title}" do calendário.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setIsDeleteDialogOpen(false)}>
-              Cancelar
-            </AlertDialogCancel>
-            <AlertDialogAction onClick={() => {
-              if (currentEvent) {
-                deleteEventMutation.mutate(currentEvent.id);
-              }
-            }} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-              {deleteEventMutation.isPending ? "Excluindo..." : "Excluir Evento"}
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => currentEvent && deleteEventMutation.mutate(currentEvent.id)}
+              disabled={deleteEventMutation.isPending}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleteEventMutation.isPending ? "Excluindo..." : "Sim, excluir evento"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
     </div>
   );
-}
-
-// Função para formatar data
-function formatDate(dateString: string) {
-  try {
-    const date = new Date(dateString);
-    return format(date, "dd/MM/yyyy", { locale: ptBR });
-  } catch (error) {
-    return dateString;
-  }
 }
