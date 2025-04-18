@@ -1,237 +1,262 @@
-import { Router, Request, Response } from "express";
-import { storage } from "./storage";
-import { InsertCalendarEvent, insertCalendarEventSchema } from "@shared/schema";
+import express, { Request, Response } from "express";
 import multer from "multer";
-import { ZodError } from "zod";
 import path from "path";
 import fs from "fs";
+import { storage } from "./storage";
+import { insertCalendarEventSchema } from "@shared/schema";
 
-const router = Router();
+const router = express.Router();
 
 // Configuração do multer para upload de imagens
-const storage_multer = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const uploadDir = path.join(process.cwd(), "uploads/calendar");
-    
-    // Criar pasta se não existir
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
-    }
-    
-    cb(null, uploadDir);
-  },
-  filename: (req, file, cb) => {
-    // Gerar nome de arquivo único
-    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-    const ext = path.extname(file.originalname);
-    cb(null, `event-${uniqueSuffix}${ext}`);
-  }
-});
-
-// Filtro para aceitar apenas imagens
-const fileFilter = (req: Request, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
-  if (file.mimetype.startsWith("image/")) {
-    cb(null, true);
-  } else {
-    cb(null, false);
-  }
-};
-
 const upload = multer({
-  storage: storage_multer,
-  fileFilter,
+  storage: multer.diskStorage({
+    destination: (req, file, cb) => {
+      const uploadDir = "./uploads";
+      // Criar pasta se não existir
+      if (!fs.existsSync(uploadDir)) {
+        fs.mkdirSync(uploadDir, { recursive: true });
+      }
+      cb(null, uploadDir);
+    },
+    filename: (req, file, cb) => {
+      const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+      const ext = path.extname(file.originalname);
+      cb(null, uniqueSuffix + ext);
+    },
+  }),
   limits: {
-    fileSize: 5 * 1024 * 1024, // 5MB
+    fileSize: 5 * 1024 * 1024, // limite de 5MB
+  },
+  fileFilter: (req, file, cb) => {
+    // Verificar se é uma imagem
+    if (!file.mimetype.startsWith("image/")) {
+      return cb(new Error("Apenas imagens são permitidas"));
+    }
+    cb(null, true);
   },
 });
 
-// Middleware para verificar se o usuário está autenticado
+// Middleware para verificar autenticação
 const isAuthenticated = (req: Request, res: Response, next: Function) => {
-  if (req.session && req.session.user) {
-    return next();
+  if (!req.isAuthenticated()) {
+    return res.status(401).json({ error: "Não autenticado" });
   }
-  return res.status(401).json({ error: "Não autorizado. Faça login para continuar." });
+  next();
 };
 
-// Middleware para verificar se o usuário é admin
+// Middleware para verificar se é administrador
 const isAdmin = (req: Request, res: Response, next: Function) => {
-  if (req.session && req.session.user && (req.session.user.role === "admin" || req.session.user.role === "superadmin")) {
-    return next();
+  if (!req.isAuthenticated()) {
+    return res.status(401).json({ error: "Não autenticado" });
   }
-  return res.status(403).json({ error: "Acesso negado. Apenas administradores podem executar esta ação." });
+  
+  const user = req.user as any;
+  if (user.role !== "admin" && user.role !== "superadmin") {
+    return res.status(403).json({ error: "Sem permissão" });
+  }
+  
+  next();
 };
 
-// Obter todos os eventos do calendário
+// Buscar todos os eventos
 router.get("/", async (req: Request, res: Response) => {
   try {
     const includeInactive = req.query.includeInactive === "true";
-    // Se o usuário for admin, pode ver eventos inativos também
-    const isAdminUser = req.session?.user?.role === "admin" || req.session?.user?.role === "superadmin";
     
-    const events = await storage.getAllCalendarEvents(isAdminUser ? includeInactive : false);
+    const events = await storage.getCalendarEvents(includeInactive);
     res.json(events);
   } catch (error) {
-    console.error("Error fetching calendar events:", error);
+    console.error("Erro ao buscar eventos do calendário:", error);
     res.status(500).json({ error: "Erro ao buscar eventos do calendário" });
   }
 });
 
-// Obter eventos do calendário futuros
+// Buscar próximos eventos (default = 30 dias)
 router.get("/upcoming", async (req: Request, res: Response) => {
   try {
-    const events = await storage.getUpcomingCalendarEvents();
+    const limit = req.query.limit ? parseInt(req.query.limit as string) : undefined;
+    const days = req.query.days ? parseInt(req.query.days as string) : 30;
+    
+    if (isNaN(days) || days < 0 || days > 365) {
+      return res.status(400).json({ error: "Parâmetro 'days' inválido. Deve ser um número entre 0 e 365." });
+    }
+    
+    if (limit !== undefined && (isNaN(limit) || limit < 1)) {
+      return res.status(400).json({ error: "Parâmetro 'limit' inválido. Deve ser um número positivo." });
+    }
+    
+    const today = new Date();
+    const endDate = new Date();
+    endDate.setDate(today.getDate() + days);
+    
+    today.setHours(0, 0, 0, 0);
+    
+    const events = await storage.getUpcomingCalendarEvents(
+      today.toISOString().split("T")[0],
+      endDate.toISOString().split("T")[0],
+      limit
+    );
+    
     res.json(events);
   } catch (error) {
-    console.error("Error fetching upcoming calendar events:", error);
-    res.status(500).json({ error: "Erro ao buscar eventos futuros do calendário" });
+    console.error("Erro ao buscar próximos eventos:", error);
+    res.status(500).json({ error: "Erro ao buscar próximos eventos" });
   }
 });
 
-// Obter um evento específico do calendário
+// Buscar evento específico pelo ID
 router.get("/:id", async (req: Request, res: Response) => {
   try {
-    const eventId = parseInt(req.params.id);
-    if (isNaN(eventId)) {
-      return res.status(400).json({ error: "ID do evento inválido" });
+    const id = parseInt(req.params.id);
+    
+    if (isNaN(id)) {
+      return res.status(400).json({ error: "ID inválido" });
     }
     
-    const event = await storage.getCalendarEvent(eventId);
+    const event = await storage.getCalendarEventById(id);
+    
     if (!event) {
       return res.status(404).json({ error: "Evento não encontrado" });
     }
     
     res.json(event);
   } catch (error) {
-    console.error("Error fetching calendar event:", error);
-    res.status(500).json({ error: "Erro ao buscar evento do calendário" });
+    console.error("Erro ao buscar evento:", error);
+    res.status(500).json({ error: "Erro ao buscar evento" });
   }
 });
 
-// Criar um novo evento no calendário (admin)
+// Criar novo evento (apenas admin)
 router.post("/", isAdmin, upload.single("image"), async (req: Request, res: Response) => {
   try {
-    // Extrair dados do formulário
-    const eventData: Partial<InsertCalendarEvent> = {
-      title: req.body.title,
-      description: req.body.description,
-      eventDate: req.body.eventDate,
-      eventTime: req.body.eventTime,
-      location: req.body.location,
-      creatorId: req.session!.user!.id,
-      isActive: req.body.isActive === "true" || req.body.isActive === true,
+    const user = req.user as any;
+    
+    // Parse do corpo da requisição
+    const eventData = {
+      ...req.body,
+      isActive: req.body.isActive === "true",
+      imageUrl: req.file ? `/uploads/${req.file.filename}` : null,
+      userId: user.id
     };
     
-    // Adicionar URL da imagem se foi enviada
-    if (req.file) {
-      eventData.imageUrl = `/uploads/calendar/${req.file.filename}`;
-    }
-    
     // Validar dados
-    try {
-      insertCalendarEventSchema.parse(eventData);
-    } catch (error) {
-      if (error instanceof ZodError) {
-        return res.status(400).json({ 
-          error: "Dados inválidos", 
-          details: error.errors 
-        });
-      }
-      throw error;
-    }
+    const validData = insertCalendarEventSchema.parse(eventData);
     
     // Criar evento
-    const newEvent = await storage.createCalendarEvent(eventData as InsertCalendarEvent);
+    const newEvent = await storage.createCalendarEvent(validData);
+    
     res.status(201).json(newEvent);
   } catch (error) {
-    console.error("Error creating calendar event:", error);
-    res.status(500).json({ error: "Erro ao criar evento do calendário" });
+    console.error("Erro ao criar evento:", error);
+    // Remover arquivo de imagem em caso de erro
+    if (req.file) {
+      try {
+        fs.unlinkSync(req.file.path);
+      } catch (err) {
+        console.error("Erro ao remover arquivo de imagem:", err);
+      }
+    }
+    
+    if (error instanceof Error) {
+      res.status(400).json({ error: error.message });
+    } else {
+      res.status(500).json({ error: "Erro ao criar evento" });
+    }
   }
 });
 
-// Atualizar um evento do calendário (admin)
+// Atualizar evento existente (apenas admin)
 router.put("/:id", isAdmin, upload.single("image"), async (req: Request, res: Response) => {
   try {
-    const eventId = parseInt(req.params.id);
-    if (isNaN(eventId)) {
-      return res.status(400).json({ error: "ID do evento inválido" });
+    const id = parseInt(req.params.id);
+    
+    if (isNaN(id)) {
+      return res.status(400).json({ error: "ID inválido" });
     }
     
     // Verificar se o evento existe
-    const existingEvent = await storage.getCalendarEvent(eventId);
+    const existingEvent = await storage.getCalendarEventById(id);
+    
     if (!existingEvent) {
       return res.status(404).json({ error: "Evento não encontrado" });
     }
     
-    // Extrair dados do formulário
-    const eventData: Partial<InsertCalendarEvent> = {};
+    // Montar dados para atualização
+    const updateData = {
+      ...req.body,
+      isActive: req.body.isActive === "true",
+    };
     
-    if (req.body.title) eventData.title = req.body.title;
-    if (req.body.description) eventData.description = req.body.description;
-    if (req.body.eventDate) eventData.eventDate = req.body.eventDate;
-    if (req.body.eventTime) eventData.eventTime = req.body.eventTime;
-    if (req.body.location) eventData.location = req.body.location;
-    if (req.body.isActive !== undefined) {
-      eventData.isActive = req.body.isActive === "true" || req.body.isActive === true;
-    }
-    
-    // Adicionar URL da imagem se foi enviada
+    // Adicionar imageUrl se houver uma nova imagem
     if (req.file) {
-      eventData.imageUrl = `/uploads/calendar/${req.file.filename}`;
+      updateData.imageUrl = `/uploads/${req.file.filename}`;
       
-      // Remover imagem antiga
-      if (existingEvent.imageUrl) {
-        const oldImagePath = path.join(process.cwd(), existingEvent.imageUrl.replace(/^\//, ""));
-        if (fs.existsSync(oldImagePath)) {
-          fs.unlinkSync(oldImagePath);
+      // Remover imagem antiga se existir
+      if (existingEvent.imageUrl && fs.existsSync(`.${existingEvent.imageUrl}`)) {
+        try {
+          fs.unlinkSync(`.${existingEvent.imageUrl}`);
+        } catch (err) {
+          console.error("Erro ao remover imagem antiga:", err);
         }
       }
     }
     
     // Atualizar evento
-    const updatedEvent = await storage.updateCalendarEvent(eventId, eventData);
-    if (!updatedEvent) {
-      return res.status(500).json({ error: "Erro ao atualizar evento do calendário" });
-    }
+    const updatedEvent = await storage.updateCalendarEvent(id, updateData);
     
     res.json(updatedEvent);
   } catch (error) {
-    console.error("Error updating calendar event:", error);
-    res.status(500).json({ error: "Erro ao atualizar evento do calendário" });
+    console.error("Erro ao atualizar evento:", error);
+    
+    // Remover arquivo de imagem em caso de erro
+    if (req.file) {
+      try {
+        fs.unlinkSync(req.file.path);
+      } catch (err) {
+        console.error("Erro ao remover arquivo de imagem:", err);
+      }
+    }
+    
+    if (error instanceof Error) {
+      res.status(400).json({ error: error.message });
+    } else {
+      res.status(500).json({ error: "Erro ao atualizar evento" });
+    }
   }
 });
 
-// Excluir um evento do calendário (admin)
+// Excluir evento (apenas admin)
 router.delete("/:id", isAdmin, async (req: Request, res: Response) => {
   try {
-    const eventId = parseInt(req.params.id);
-    if (isNaN(eventId)) {
-      return res.status(400).json({ error: "ID do evento inválido" });
+    const id = parseInt(req.params.id);
+    
+    if (isNaN(id)) {
+      return res.status(400).json({ error: "ID inválido" });
     }
     
     // Verificar se o evento existe
-    const existingEvent = await storage.getCalendarEvent(eventId);
-    if (!existingEvent) {
+    const event = await storage.getCalendarEventById(id);
+    
+    if (!event) {
       return res.status(404).json({ error: "Evento não encontrado" });
     }
     
-    // Remover imagem associada
-    if (existingEvent.imageUrl) {
-      const imagePath = path.join(process.cwd(), existingEvent.imageUrl.replace(/^\//, ""));
-      if (fs.existsSync(imagePath)) {
-        fs.unlinkSync(imagePath);
+    // Remover imagem associada, se existir
+    if (event.imageUrl && fs.existsSync(`.${event.imageUrl}`)) {
+      try {
+        fs.unlinkSync(`.${event.imageUrl}`);
+      } catch (err) {
+        console.error("Erro ao remover imagem do evento:", err);
       }
     }
     
     // Excluir evento
-    const deleted = await storage.deleteCalendarEvent(eventId);
-    if (!deleted) {
-      return res.status(500).json({ error: "Erro ao excluir evento do calendário" });
-    }
+    await storage.deleteCalendarEvent(id);
     
     res.status(204).send();
   } catch (error) {
-    console.error("Error deleting calendar event:", error);
-    res.status(500).json({ error: "Erro ao excluir evento do calendário" });
+    console.error("Erro ao excluir evento:", error);
+    res.status(500).json({ error: "Erro ao excluir evento" });
   }
 });
 
