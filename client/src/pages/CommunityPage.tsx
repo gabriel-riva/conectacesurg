@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/lib/auth';
 import { Button } from '@/components/ui/button';
@@ -78,10 +78,24 @@ export default function CommunityPage() {
   const [showAllGroups, setShowAllGroups] = useState(false);
   
   // Buscar todos os usuários para o modal de adicionar membros
-  const { data: allUsers = [], isLoading: isLoadingUsers } = useQuery<any[]>({
+  const { data: allUsers = [], isLoading: isLoadingUsers } = useQuery<UserType[]>({
     queryKey: ['/api/auth/dev-user-list'],
     enabled: true,
   });
+  
+  // Estado para filtrar usuários na pesquisa do modal de adicionar membros
+  const [userSearchQuery, setUserSearchQuery] = useState('');
+  
+  // Filtrar usuários com base na pesquisa
+  const filteredUsers = useMemo(() => {
+    if (!userSearchQuery.trim()) return allUsers;
+    
+    const query = userSearchQuery.toLowerCase();
+    return allUsers.filter(user => 
+      user.name?.toLowerCase().includes(query) || 
+      user.email?.toLowerCase().includes(query)
+    );
+  }, [allUsers, userSearchQuery]);
 
   // Forms
   const postForm = useForm<PostFormValues>({
@@ -1192,16 +1206,18 @@ export default function CommunityPage() {
                                                     <Input
                                                       placeholder="Pesquisar usuários..."
                                                       className="mb-2"
+                                                      value={userSearchQuery}
+                                                      onChange={(e) => setUserSearchQuery(e.target.value)}
                                                     />
                                                   </div>
                                                   <div className="border rounded-md max-h-60 overflow-y-auto">
                                                     {isLoadingUsers && (
                                                       <div className="text-center py-4">Carregando usuários...</div>
                                                     )} 
-                                                    {!isLoadingUsers && allUsers.length === 0 && (
+                                                    {!isLoadingUsers && filteredUsers.length === 0 && (
                                                       <div className="text-center py-4 text-gray-500">Nenhum usuário encontrado</div>
                                                     )}
-                                                    {!isLoadingUsers && allUsers.length > 0 && allUsers.map(user => (
+                                                    {!isLoadingUsers && filteredUsers.length > 0 && filteredUsers.map(user => (
                                                       <div key={user.id} className="flex items-center justify-between p-2 border-b hover:bg-gray-50">
                                                         <div className="flex items-center">
                                                           <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center mr-2">
