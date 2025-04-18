@@ -323,8 +323,8 @@ export default function Profile() {
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
-      <div className="container max-w-6xl py-8">
-        <h1 className="text-3xl font-bold mb-6">Meu Perfil</h1>
+      <div className="container max-w-6xl py-8 mx-auto px-4">
+        <h1 className="text-3xl font-bold mb-6 text-center">Meu Perfil</h1>
 
         <Tabs defaultValue="informacoes">
           <TabsList className="mb-6">

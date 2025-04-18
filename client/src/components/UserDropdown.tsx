@@ -50,8 +50,18 @@ export function UserDropdown() {
         className="flex items-center space-x-2 focus:outline-none"
         onClick={() => setIsOpen(!isOpen)}
       >
-        <div className="w-8 h-8 rounded-full bg-conecta-green flex items-center justify-center text-white">
-          {user.name.charAt(0)}
+        <div className="w-8 h-8 rounded-full overflow-hidden flex items-center justify-center">
+          {user.photoUrl ? (
+            <img 
+              src={user.photoUrl} 
+              alt={user.name} 
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <div className="w-full h-full bg-conecta-green text-white flex items-center justify-center">
+              {user.name.charAt(0)}
+            </div>
+          )}
         </div>
         <span className="hidden md:inline-block text-sm">{user.name.split(' ')[0]}</span>
         <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
