@@ -1360,9 +1360,19 @@ export default function CommunityPage() {
                                                     {groupMembers.map((member) => (
                                                       <div key={member.id} className="p-3 flex items-center justify-between border-b">
                                                         <div className="flex items-center">
-                                                          <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center mr-2 text-white">
-                                                            {member.name ? member.name.charAt(0).toUpperCase() : <UserIcon className="h-4 w-4" />}
-                                                          </div>
+                                                          {member.avatarUrl ? (
+                                                            <div className="w-8 h-8 rounded-full mr-2 overflow-hidden">
+                                                              <img 
+                                                                src={member.avatarUrl} 
+                                                                alt={member.name || 'Usuário'} 
+                                                                className="w-full h-full object-cover"
+                                                              />
+                                                            </div>
+                                                          ) : (
+                                                            <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center mr-2 text-white">
+                                                              {member.name ? member.name.charAt(0).toUpperCase() : <UserIcon className="h-4 w-4" />}
+                                                            </div>
+                                                          )}
                                                           <div>
                                                             <div className="text-sm font-medium">
                                                               {member.id === user?.id ? 'Você' : member.name}
