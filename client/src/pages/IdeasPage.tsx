@@ -527,7 +527,20 @@ const CreateIdeaDialog = ({ isOpen, onClose, onCreated }: { isOpen: boolean; onC
   });
   
   function onSubmit(values: CreateIdeaFormValues) {
-    createIdeaMutation.mutate(values);
+    // Criar FormData aqui para envio
+    const formData = new FormData();
+    formData.append('title', values.title);
+    formData.append('description', values.description);
+    formData.append('takeResponsibility', values.takeResponsibility ? 'true' : 'false');
+    
+    if (values.attachments) {
+      Array.from(values.attachments).forEach((file) => {
+        formData.append('attachments', file);
+      });
+    }
+    
+    // Enviar o FormData em vez do objeto values
+    createIdeaMutation.mutate(formData as any);
   }
   
   return (

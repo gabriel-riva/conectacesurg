@@ -29,10 +29,23 @@ export async function apiRequest<T = Response>(
     bodyData = urlOrData;
   }
   
+  let headers = {};
+  let body;
+  
+  // Verificar se bodyData é FormData
+  if (bodyData instanceof FormData) {
+    // Não definimos content-type para FormData, o navegador cuida disso
+    body = bodyData;
+  } else if (bodyData) {
+    // Para dados normais, usamos JSON
+    headers = { "Content-Type": "application/json" };
+    body = JSON.stringify(bodyData);
+  }
+  
   const res = await fetch(url, {
     method,
-    headers: bodyData ? { "Content-Type": "application/json" } : {},
-    body: bodyData ? JSON.stringify(bodyData) : undefined,
+    headers,
+    body,
     credentials: "include",
   });
 

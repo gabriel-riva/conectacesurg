@@ -426,8 +426,17 @@ router.get('/:id', isAuthenticated, async (req: Request, res: Response) => {
 // POST /api/ideas - Criar uma nova ideia
 router.post('/', isAuthenticated, upload.array('attachments', 5), async (req: Request, res: Response) => {
   try {
+    // Vamos adicionar logs para depuração
+    console.log("Corpo da requisição:", req.body);
+    console.log("Arquivos:", req.files);
+    
     const { title, description, takeResponsibility } = req.body;
     const userId = req.user!.id;
+    
+    console.log("Título:", title);
+    console.log("Descrição:", description);
+    console.log("Responsabilidade:", takeResponsibility);
+    console.log("ID do usuário:", userId);
     
     // Validar dados básicos
     if (!title || !description) {
