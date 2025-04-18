@@ -152,7 +152,19 @@ export default function CommunityPage() {
         });
       }
       
-      return await apiRequest('POST', '/api/community/posts', formDataWithMedia);
+      // Para FormData, não podemos usar apiRequest pois ela aplica JSON.stringify
+      const res = await fetch('/api/community/posts', {
+        method: 'POST',
+        body: formDataWithMedia,
+        credentials: 'include'
+      });
+      
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(`${res.status}: ${text || res.statusText}`);
+      }
+      
+      return await res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/community/posts'] });
@@ -175,13 +187,7 @@ export default function CommunityPage() {
 
   const createCommentMutation = useMutation({
     mutationFn: async ({ postId, content }: { postId: number; content: string }) => {
-      return await apiRequest(`/api/community/posts/${postId}/comments`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ content }),
-      });
+      return await apiRequest('POST', `/api/community/posts/${postId}/comments`, { content });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/community/posts'] });
@@ -202,13 +208,7 @@ export default function CommunityPage() {
 
   const createGroupMutation = useMutation({
     mutationFn: async (formData: GroupFormValues) => {
-      return await apiRequest('/api/community/groups', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
-      });
+      return await apiRequest('POST', '/api/community/groups', formData);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/community/groups/user'] });
@@ -231,13 +231,7 @@ export default function CommunityPage() {
 
   const sendMessageMutation = useMutation({
     mutationFn: async ({ receiverId, content }: { receiverId: number; content: string }) => {
-      return await apiRequest('/api/community/messages', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ receiverId, content }),
-      });
+      return await apiRequest('POST', '/api/community/messages', { receiverId, content });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/community/messages', activeConversation] });
@@ -259,9 +253,7 @@ export default function CommunityPage() {
 
   const likeMutation = useMutation({
     mutationFn: async ({ postId }: { postId: number }) => {
-      return await apiRequest(`/api/community/posts/${postId}/like`, {
-        method: 'POST',
-      });
+      return await apiRequest('POST', `/api/community/posts/${postId}/like`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/community/posts'] });
@@ -277,9 +269,7 @@ export default function CommunityPage() {
 
   const joinGroupMutation = useMutation({
     mutationFn: async ({ groupId }: { groupId: number }) => {
-      return await apiRequest(`/api/community/groups/${groupId}/join`, {
-        method: 'POST',
-      });
+      return await apiRequest('POST', `/api/community/groups/${groupId}/join`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/community/groups/user'] });
