@@ -906,12 +906,15 @@ router.post('/groups/:groupId/invite', async (req: Request, res: Response) => {
     // Criar notificação para o usuário convidado
     await db.insert(notifications).values({
       userId: userId,
-      type: 'group_invite',
+      type: 'GROUP_INVITE',
       title: 'Convite para grupo',
-      message: `Você foi convidado para participar do grupo "${group.name}"`,
+      message: `Você foi convidado para o grupo ${group.name}`,
       relatedId: groupId,
       relatedType: 'group',
-      fromUserId: req.user.id
+      fromUserId: req.user.id,
+      isRead: false,
+      actionTaken: false,
+      createdAt: new Date()
     });
 
     res.json({ success: true, message: 'Convite enviado com sucesso' });
@@ -966,12 +969,15 @@ router.post('/group-invites/test', async (req: Request, res: Response) => {
       // Criar uma notificação para o usuário
       await db.insert(notifications).values({
         userId: userId,
-        type: 'group_invite',
+        type: 'GROUP_INVITE',
         title: 'Convite para grupo (TESTE)',
-        message: `Você foi convidado para participar do grupo "${group.name}"`,
+        message: `Você foi convidado para o grupo ${group.name}`,
         relatedId: groupId,
         relatedType: 'group',
-        fromUserId: group.creatorId
+        fromUserId: group.creatorId,
+        isRead: false,
+        actionTaken: false,
+        createdAt: new Date()
       });
     }
     
