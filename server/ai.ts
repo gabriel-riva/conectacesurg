@@ -236,7 +236,8 @@ router.put(
     try {
       const promptId = parseInt(req.params.id);
       const { agentIds, ...promptData } = req.body;
-      const userId = req.session.user?.id;
+      const user = req.user as any;
+      const userId = user?.id;
       
       if (!userId) {
         return res.status(401).json({ error: "User not authenticated" });
@@ -249,7 +250,7 @@ router.put(
         return res.status(404).json({ error: "AI prompt not found" });
       }
       
-      const isAdmin = req.session.user?.role === "admin" || req.session.user?.role === "superadmin";
+      const isAdmin = user?.role === "admin" || user?.role === "superadmin";
       
       if (existingPrompt.creatorId !== userId && !isAdmin) {
         return res.status(403).json({ error: "You don't have permission to update this prompt" });
@@ -293,7 +294,8 @@ router.delete(
 
     try {
       const promptId = parseInt(req.params.id);
-      const userId = req.session.user?.id;
+      const user = req.user as any;
+      const userId = user?.id;
       
       if (!userId) {
         return res.status(401).json({ error: "User not authenticated" });
@@ -306,7 +308,7 @@ router.delete(
         return res.status(404).json({ error: "AI prompt not found" });
       }
       
-      const isAdmin = req.session.user?.role === "admin" || req.session.user?.role === "superadmin";
+      const isAdmin = user?.role === "admin" || user?.role === "superadmin";
       
       if (existingPrompt.creatorId !== userId && !isAdmin) {
         return res.status(403).json({ error: "You don't have permission to delete this prompt" });
@@ -329,7 +331,8 @@ router.delete(
 // Get user's AI conversations
 router.get("/conversations", isAuthenticated, async (req: Request, res: Response) => {
   try {
-    const userId = req.session.user?.id;
+    const user = req.user as any;
+    const userId = user?.id;
     
     if (!userId) {
       return res.status(401).json({ error: "User not authenticated" });
@@ -356,7 +359,8 @@ router.post(
     }
 
     try {
-      const userId = req.session.user?.id;
+      const user = req.user as any;
+      const userId = user?.id;
       
       if (!userId) {
         return res.status(401).json({ error: "User not authenticated" });
