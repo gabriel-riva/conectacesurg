@@ -40,6 +40,52 @@ export const userGroups = pgTable("user_groups", {
   };
 });
 
+export const ideas = pgTable("ideas", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  status: text("status").notNull().default("nova"), // 'nova', 'em_avaliacao', 'priorizada', 'em_execucao', 'concluida', 'rejeitada'
+  creatorId: integer("creator_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  responsibleId: integer("responsible_id").references(() => users.id),
+  groupId: integer("group_id").references(() => groups.id),
+  attachments: jsonb("attachments").$type<{name: string, url: string, type: string}[]>().default([]),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const ideaVotes = pgTable("idea_votes", {
+  userId: integer("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  ideaId: integer("idea_id").notNull().references(() => ideas.id, { onDelete: 'cascade' }),
+  vote: integer("vote").notNull(), // 1 for upvote, -1 for downvote
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => {
+  return {
+    pk: primaryKey({ columns: [table.userId, table.ideaId] }),
+  };
+});
+
+export const ideaComments = pgTable("idea_comments", {
+  id: serial("id").primaryKey(),
+  ideaId: integer("idea_id").notNull().references(() => ideas.id, { onDelete: 'cascade' }),
+  userId: integer("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  content: text("content").notNull(),
+  parentId: integer("parent_id").references(() => ideaComments.id, { onDelete: 'cascade' }),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const ideaVolunteers = pgTable("idea_volunteers", {
+  userId: integer("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  ideaId: integer("idea_id").notNull().references(() => ideas.id, { onDelete: 'cascade' }),
+  message: text("message"),
+  status: text("status").notNull().default("pendente"), // 'pendente', 'aprovado', 'rejeitado'
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => {
+  return {
+    pk: primaryKey({ columns: [table.userId, table.ideaId] }),
+  };
+});
+
 export const notifications = pgTable("notifications", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
@@ -123,11 +169,17 @@ export const usersRelations = relations(users, ({ many }) => ({
   receivedMessages: many(messages, { relationName: "receiver" }),
   conversationsAsUser1: many(conversations, { relationName: "user1" }),
   conversationsAsUser2: many(conversations, { relationName: "user2" }),
+  createdIdeas: many(ideas, { relationName: "creator" }),
+  responsibleForIdeas: many(ideas, { relationName: "responsible" }),
+  ideaVotes: many(ideaVotes),
+  ideaComments: many(ideaComments),
+  ideaVolunteers: many(ideaVolunteers),
 }));
 
 export const groupsRelations = relations(groups, ({ many, one }) => ({
   userGroups: many(userGroups),
   posts: many(posts),
+  ideas: many(ideas),
   creator: one(users, {
     fields: [groups.creatorId],
     references: [users.id],
@@ -212,6 +264,64 @@ export const conversationsRelations = relations(conversations, ({ one, many }) =
   }),
 }));
 
+export const ideasRelations = relations(ideas, ({ one, many }) => ({
+  creator: one(users, {
+    fields: [ideas.creatorId],
+    references: [users.id],
+    relationName: "creator"
+  }),
+  responsible: one(users, {
+    fields: [ideas.responsibleId],
+    references: [users.id],
+    relationName: "responsible"
+  }),
+  group: one(groups, {
+    fields: [ideas.groupId],
+    references: [groups.id],
+  }),
+  votes: many(ideaVotes),
+  comments: many(ideaComments),
+  volunteers: many(ideaVolunteers),
+}));
+
+export const ideaVotesRelations = relations(ideaVotes, ({ one }) => ({
+  user: one(users, {
+    fields: [ideaVotes.userId],
+    references: [users.id],
+  }),
+  idea: one(ideas, {
+    fields: [ideaVotes.ideaId],
+    references: [ideas.id],
+  }),
+}));
+
+export const ideaCommentsRelations = relations(ideaComments, ({ one, many }) => ({
+  user: one(users, {
+    fields: [ideaComments.userId],
+    references: [users.id],
+  }),
+  idea: one(ideas, {
+    fields: [ideaComments.ideaId],
+    references: [ideas.id],
+  }),
+  parent: one(ideaComments, {
+    fields: [ideaComments.parentId],
+    references: [ideaComments.id],
+  }),
+  replies: many(ideaComments, { relationName: 'parent' }),
+}));
+
+export const ideaVolunteersRelations = relations(ideaVolunteers, ({ one }) => ({
+  user: one(users, {
+    fields: [ideaVolunteers.userId],
+    references: [users.id],
+  }),
+  idea: one(ideas, {
+    fields: [ideaVolunteers.ideaId],
+    references: [ideas.id],
+  }),
+}));
+
 // Schemas
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
@@ -273,6 +383,26 @@ export const insertConversationSchema = createInsertSchema(conversations).omit({
   lastMessageAt: true,
 });
 
+export const insertIdeaSchema = createInsertSchema(ideas).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertIdeaVoteSchema = createInsertSchema(ideaVotes).omit({
+  createdAt: true,
+});
+
+export const insertIdeaCommentSchema = createInsertSchema(ideaComments).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertIdeaVolunteerSchema = createInsertSchema(ideaVolunteers).omit({
+  createdAt: true,
+});
+
 // Types
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type InsertGoogleUser = z.infer<typeof insertGoogleUserSchema>;
@@ -283,6 +413,10 @@ export type InsertComment = z.infer<typeof insertCommentSchema>;
 export type InsertLike = z.infer<typeof insertLikeSchema>;
 export type InsertMessage = z.infer<typeof insertMessageSchema>;
 export type InsertConversation = z.infer<typeof insertConversationSchema>;
+export type InsertIdea = z.infer<typeof insertIdeaSchema>;
+export type InsertIdeaVote = z.infer<typeof insertIdeaVoteSchema>;
+export type InsertIdeaComment = z.infer<typeof insertIdeaCommentSchema>;
+export type InsertIdeaVolunteer = z.infer<typeof insertIdeaVolunteerSchema>;
 
 export type User = typeof users.$inferSelect;
 export type Group = typeof groups.$inferSelect;
@@ -292,3 +426,7 @@ export type Comment = typeof comments.$inferSelect;
 export type Like = typeof likes.$inferSelect;
 export type Message = typeof messages.$inferSelect;
 export type Conversation = typeof conversations.$inferSelect;
+export type Idea = typeof ideas.$inferSelect;
+export type IdeaVote = typeof ideaVotes.$inferSelect;
+export type IdeaComment = typeof ideaComments.$inferSelect;
+export type IdeaVolunteer = typeof ideaVolunteers.$inferSelect;
