@@ -864,6 +864,9 @@ router.post('/groups/:groupId/invite', async (req: Request, res: Response) => {
     const groupId = parseInt(req.params.groupId);
     const { userId } = req.body;
 
+    // Log detalhado para debugging
+    console.log(`Recebendo solicitação para convidar usuário - groupId: ${groupId}, userId: ${userId}, solicitado por: ${req.user.id}`);
+    
     if (!userId) {
       return res.status(400).json({ error: 'ID do usuário é obrigatório' });
     }
