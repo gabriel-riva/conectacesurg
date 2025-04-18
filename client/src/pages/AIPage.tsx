@@ -124,20 +124,17 @@ export default function AIPage() {
     },
   ];
 
-  // In a real app, these would be API calls
+  // Fetch real data from API
   const { data: agents = mockAgents } = useQuery({
     queryKey: ['/api/ai/agents'],
-    enabled: false, // Disable until API is implemented
   });
 
   const { data: conversations = mockConversations } = useQuery({
     queryKey: ['/api/ai/conversations'],
-    enabled: false, // Disable until API is implemented
   });
 
   const { data: prompts = mockPrompts } = useQuery({
     queryKey: ['/api/ai/prompts'],
-    enabled: false, // Disable until API is implemented
   });
 
   // Initialize messages if they are empty
@@ -183,27 +180,19 @@ export default function AIPage() {
   const handleSelectAgent = (agent: AiAgent) => {
     setSelectedAgentId(agent.id);
     
-    // Reset conversation when switching agents
+    // Reset conversation and conversation ID when switching agents
     if (selectedAgentId !== agent.id) {
       setSelectedConversationId(null);
       
-      // If there's a conversation with this agent, select it
-      const existingConversation = conversations.find(c => c.agentId === agent.id);
-      if (existingConversation) {
-        setSelectedConversationId(existingConversation.id);
-        // Here we would load the messages for this conversation
-        // For now, we'll just use our mock messages
-      } else {
-        // Create a new conversation when selecting an agent with no existing conversation
-        setMessages([{
-          id: Date.now(),
-          conversationId: 0,
-          content: `Olá! Eu sou o ${agent.name}. ${agent.description} Como posso ajudar você hoje?`,
-          isFromUser: false,
-          attachments: [],
-          createdAt: new Date(),
-        }]);
-      }
+      // Create a new conversation when selecting an agent
+      setMessages([{
+        id: Date.now(),
+        conversationId: 0,
+        content: `Olá! Eu sou o ${agent.name}. ${agent.description} Como posso ajudar você hoje?`,
+        isFromUser: false,
+        attachments: [],
+        createdAt: new Date(),
+      }]);
     }
   };
 
