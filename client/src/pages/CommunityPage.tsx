@@ -170,7 +170,16 @@ export default function CommunityPage() {
     enabled: activeGroupForMembers !== null,
     queryFn: async () => {
       if (activeGroupForMembers === null) return [];
-      return await apiRequest('GET', `/api/community/groups/${activeGroupForMembers}/members`);
+      try {
+        console.log(`Fetching members for group ${activeGroupForMembers}`);
+        const response = await apiRequest('GET', `/api/community/groups/${activeGroupForMembers}/members`);
+        console.log('Group members response:', response);
+        // Garantir que sempre retornamos um array
+        return Array.isArray(response) ? response : [];
+      } catch (error) {
+        console.error('Error fetching group members:', error);
+        return [];
+      }
     }
   });
 
@@ -393,9 +402,12 @@ export default function CommunityPage() {
     mutationFn: async (groupId: number) => {
       return await apiRequest('POST', `/api/community/group-invites/${groupId}/accept`);
     },
-    onSuccess: () => {
+    onSuccess: (_, groupId) => {
+      // Invalidar consultas relacionadas a grupos e membros
       queryClient.invalidateQueries({ queryKey: ['/api/community/group-invites'] });
       queryClient.invalidateQueries({ queryKey: ['/api/community/groups/user'] });
+      // Invalidar a consulta de membros para o grupo específico
+      queryClient.invalidateQueries({ queryKey: ['/api/community/groups', groupId, 'members'] });
       toast({
         title: 'Convite aceito',
         description: 'Você agora é membro do grupo.',

@@ -991,4 +991,63 @@ router.post('/group-invites/test', async (req: Request, res: Response) => {
   }
 });
 
+// Rota para obter os membros de um grupo
+router.get('/groups/:groupId/members', async (req: Request, res: Response) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const groupId = parseInt(req.params.groupId);
+    console.log(`Fetching members for group ${groupId}`);
+    
+    // Verificar se o grupo existe
+    const group = await db.query.groups.findFirst({
+      where: eq(groups.id, groupId)
+    });
+
+    if (!group) {
+      return res.status(404).json({ error: 'Grupo não encontrado' });
+    }
+    
+    // Verificar se o usuário é membro do grupo
+    const userMembership = await db.query.userGroups.findFirst({
+      where: and(
+        eq(userGroups.userId, req.user.id),
+        eq(userGroups.groupId, groupId),
+        eq(userGroups.status, 'approved')
+      )
+    });
+    
+    // Se o grupo for privado, apenas membros podem ver os participantes
+    if (group.isPrivate && !userMembership) {
+      return res.status(403).json({ error: 'Você não tem permissão para ver os membros deste grupo' });
+    }
+
+    // Buscar todos os membros aprovados do grupo
+    const groupMembersData = await db.select()
+      .from(userGroups)
+      .where(and(
+        eq(userGroups.groupId, groupId),
+        eq(userGroups.status, 'approved')
+      ))
+      .innerJoin(users, eq(userGroups.userId, users.id));
+    
+    // Formatar a resposta
+    const members = groupMembersData.map(item => ({
+      id: item.users.id,
+      name: item.users.name,
+      email: item.users.email,
+      role: item.user_groups.isAdmin ? 'ADMIN' : 'MEMBER',
+      joinedAt: item.user_groups.joinedAt
+    }));
+
+    console.log(`Returning ${members.length} members for group ${groupId}`);
+    res.json(members);
+  } catch (error) {
+    console.error('Error fetching group members:', error);
+    res.status(500).json({ error: 'Failed to fetch group members' });
+  }
+});
+
 export default router;
