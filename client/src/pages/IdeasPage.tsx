@@ -712,7 +712,7 @@ export default function IdeasPage() {
   // Função para limpar filtros
   const clearFilters = () => {
     setSearchQuery("");
-    setStatusFilter("");
+    setStatusFilter("todos");
     setSortBy("createdAt");
     setSortOrder("desc");
     setPage(1);
@@ -765,7 +765,7 @@ export default function IdeasPage() {
                     </div>
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Todos</SelectItem>
+                    <SelectItem value="todos">Todos</SelectItem>
                     <SelectItem value="nova">Nova</SelectItem>
                     <SelectItem value="em_avaliacao">Em avaliação</SelectItem>
                     <SelectItem value="priorizada">Priorizada</SelectItem>
