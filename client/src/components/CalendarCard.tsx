@@ -120,7 +120,19 @@ export function CalendarCard() {
                         <div className="text-xs text-muted-foreground">
                           {formatEventDate(event.eventDate)} - {event.eventTime}
                         </div>
-                        <div className="font-medium text-sm">{event.title}</div>
+                        <div className="font-medium text-sm flex items-center justify-between">
+                          <span>{event.title}</span>
+                          <a 
+                            href={createGoogleCalendarUrl(event)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={handleClickWithoutClosing}
+                            title="Adicionar ao Google Calendar"
+                            className="ml-1"
+                          >
+                            <img src={googleCalendarIcon} alt="Google Calendar" className="w-4 h-4" />
+                          </a>
+                        </div>
                       </div>
                     </DialogTrigger>
                     <DialogContent>
