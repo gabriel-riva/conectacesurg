@@ -395,7 +395,8 @@ router.get(
 
     try {
       const conversationId = parseInt(req.params.id);
-      const userId = req.session.user?.id;
+      const user = req.user as any;
+      const userId = user?.id;
       
       if (!userId) {
         return res.status(401).json({ error: "User not authenticated" });
@@ -436,7 +437,8 @@ router.post(
 
     try {
       const conversationId = parseInt(req.params.id);
-      const userId = req.session.user?.id;
+      const user = req.user as any;
+      const userId = user?.id;
       
       if (!userId) {
         return res.status(401).json({ error: "User not authenticated" });
