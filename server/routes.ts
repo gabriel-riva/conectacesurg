@@ -585,6 +585,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to fetch user groups" });
     }
   });
+  
+  // Get user documents - admin only
+  app.get("/api/users/:id/documents", checkAdmin, async (req, res) => {
+    try {
+      const userId = parseInt(req.params.id);
+      
+      // Verificar se o ID é um número válido
+      if (isNaN(userId)) {
+        console.error(`ID de usuário inválido: ${req.params.id}`);
+        return res.status(400).json({ message: "Invalid user ID" });
+      }
+      
+      console.log(`Buscando documentos do usuário com ID: ${userId}`);
+      const user = await storage.getUser(userId);
+      
+      if (!user) {
+        console.log(`Usuário com ID ${userId} não encontrado`);
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      // Retorna documentos do usuário ou array vazio
+      res.json({
+        userId: user.id,
+        userName: user.name,
+        documents: user.documents || []
+      });
+    } catch (error) {
+      console.error("Erro ao buscar documentos do usuário:", error);
+      res.status(500).json({ message: "Failed to fetch user documents" });
+    }
+  });
 
   // Get all users in a group
   app.get("/api/groups/:id/users", checkAdmin, async (req, res) => {
