@@ -3,13 +3,29 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ExternalLink } from "lucide-react";
 import { UtilityLink } from "@shared/schema";
+import { useAuth } from "@/lib/auth";
 
 export function UtilityLinks() {
+  // Obter informações do usuário logado
+  const { user } = useAuth();
+  
   // Buscar links úteis da API
   const { data: links, isLoading } = useQuery<UtilityLink[]>({
     queryKey: ['/api/utility-links'],
     refetchOnWindowFocus: false,
   });
+  
+  // Função para processar a URL do link
+  const getProcessedUrl = (url: string) => {
+    // Verificar se é um link do Gmail e substituir pelo link com o email do usuário
+    if (url.includes('mail.google.com') && user?.email) {
+      // Formatar URL do Gmail para abrir a caixa de entrada do usuário
+      return `https://mail.google.com/mail/u/${user.email}`;
+    }
+    
+    // Se não for um link especial, retorna a URL original
+    return url;
+  };
 
   // Renderizar estado de carregamento
   if (isLoading) {
@@ -53,7 +69,7 @@ export function UtilityLinks() {
           {links.map((link) => (
             <li key={link.id}>
               <a 
-                href={link.url} 
+                href={getProcessedUrl(link.url)} 
                 target="_blank" 
                 rel="noopener noreferrer"
                 className="flex items-center p-2 hover:bg-gray-50 rounded-md transition-colors group"
