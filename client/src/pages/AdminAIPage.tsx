@@ -21,33 +21,35 @@ export default function AdminAIPage() {
   const { toast } = useToast();
 
   return (
-    <div className="flex h-screen bg-background">
-      <AdminSidebar />
-      <div className="flex-1 flex flex-col">
-        <Header />
-        <div className="flex-1 p-6 overflow-auto">
-          <div className="mb-8">
-            <h1 className="text-2xl font-bold mb-2">Gerenciamento de IA</h1>
-            <p className="text-muted-foreground">
-              Configure os agentes de IA e gerencie a biblioteca de prompts.
-            </p>
+    <div className="h-screen flex flex-col">
+      <div className="flex flex-1 overflow-hidden">
+        <AdminSidebar />
+        <main className="flex-1 flex flex-col min-h-0">
+          <Header />
+          <div className="flex-1 p-8 overflow-auto bg-background">
+            <div className="mb-8">
+              <h1 className="text-3xl font-bold">Gerenciamento de IA</h1>
+              <p className="text-muted-foreground mt-2">
+                Configure os agentes de IA e gerencie a biblioteca de prompts.
+              </p>
+            </div>
+            
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+              <TabsList className="mb-6">
+                <TabsTrigger value="agentes">Agentes</TabsTrigger>
+                <TabsTrigger value="prompts">Prompts</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="agentes">
+                <AIAgentsTab />
+              </TabsContent>
+              
+              <TabsContent value="prompts">
+                <AIPromptsTab />
+              </TabsContent>
+            </Tabs>
           </div>
-          
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="mb-6">
-              <TabsTrigger value="agentes">Agentes</TabsTrigger>
-              <TabsTrigger value="prompts">Prompts</TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="agentes">
-              <AIAgentsTab />
-            </TabsContent>
-            
-            <TabsContent value="prompts">
-              <AIPromptsTab />
-            </TabsContent>
-          </Tabs>
-        </div>
+        </main>
       </div>
     </div>
   );

@@ -16,7 +16,7 @@ const upload = multer({
 
 // Middleware to check if user is authenticated
 const isAuthenticated = (req: Request, res: Response, next: Function) => {
-  if (!req.session.user) {
+  if (!req.isAuthenticated || !req.isAuthenticated() || !req.user) {
     return res.status(401).json({ error: "Unauthorized" });
   }
   next();
@@ -24,7 +24,8 @@ const isAuthenticated = (req: Request, res: Response, next: Function) => {
 
 // Middleware to check if user is admin
 const isAdmin = (req: Request, res: Response, next: Function) => {
-  if (!req.session.user || (req.session.user.role !== "admin" && req.session.user.role !== "superadmin")) {
+  const user = req.user as any;
+  if (!req.isAuthenticated || !req.isAuthenticated() || !user || (user.role !== "admin" && user.role !== "superadmin")) {
     return res.status(403).json({ error: "Forbidden" });
   }
   next();
@@ -149,7 +150,8 @@ router.delete(
 // Get all AI prompts
 router.get("/prompts", isAuthenticated, async (req: Request, res: Response) => {
   try {
-    const userId = req.session.user?.id;
+    const user = req.user as any;
+    const userId = user?.id;
     let prompts;
     
     if (req.query.includePrivate === "true" && userId) {
@@ -183,7 +185,8 @@ router.post(
 
     try {
       const { agentIds, ...promptData } = req.body;
-      const userId = req.session.user?.id;
+      const user = req.user as any;
+      const userId = user?.id;
       
       if (!userId) {
         return res.status(401).json({ error: "User not authenticated" });
