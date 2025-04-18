@@ -79,7 +79,7 @@ export default function CommunityPage() {
   
   // Buscar todos os usuários para o modal de adicionar membros
   const { data: allUsers = [], isLoading: isLoadingUsers } = useQuery<any[]>({
-    queryKey: ['/api/users'],
+    queryKey: ['/api/auth/dev-user-list'],
     enabled: true,
   });
 
