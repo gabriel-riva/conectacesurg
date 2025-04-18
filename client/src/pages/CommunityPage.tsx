@@ -74,6 +74,7 @@ export default function CommunityPage() {
   const [groupImageFile, setGroupImageFile] = useState<File | null>(null);
   const groupImageInputRef = useRef<HTMLInputElement>(null);
   const [organizationTab, setOrganizationTab] = useState<'posts' | 'documents' | 'tasks' | 'kanban'>('posts');
+  const [showAllGroups, setShowAllGroups] = useState(false);
 
   // Forms
   const postForm = useForm<PostFormValues>({
@@ -811,8 +812,8 @@ export default function CommunityPage() {
           <Card className="p-4">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold">Meus Grupos</h3>
-              <Button variant="outline" size="sm" onClick={() => setCreateGroupOpen(true)}>
-                <PlusCircle className="h-4 w-4 mr-1" />
+              <Button variant="ghost" size="sm" onClick={() => setCreateGroupOpen(true)}>
+                <Plus className="h-4 w-4 mr-1" />
                 Criar
               </Button>
             </div>
@@ -824,8 +825,8 @@ export default function CommunityPage() {
                 Você ainda não está em nenhum grupo.
               </div>
             ) : (
-              <ScrollArea className="h-[calc(100vh-300px)]">
-                <div className="space-y-2">
+              <div className={userGroups.length > 8 ? "h-[400px]" : ""}>
+                <div className="space-y-1">
                   <div 
                     className={`flex items-center p-2 rounded-md cursor-pointer hover:bg-gray-100 ${selectedGroupId === null ? 'bg-gray-100' : ''}`}
                     onClick={() => {
@@ -834,15 +835,15 @@ export default function CommunityPage() {
                       setOrganizationTab('posts');
                     }}
                   >
-                    <Avatar className="h-8 w-8 mr-2">
-                      <Globe className="h-5 w-5 text-primary" />
+                    <Avatar className="h-7 w-7 mr-2">
+                      <Globe className="h-4 w-4 text-primary" />
                     </Avatar>
                     <div className="flex-1">
-                      <div className="font-medium">Feed Geral</div>
+                      <div className="text-sm font-medium">Feed Geral</div>
                     </div>
                   </div>
                   
-                  {userGroups.map((group) => {
+                  {userGroups.slice(0, showAllGroups ? undefined : 8).map((group) => {
                     const isAdmin = adminGroups.some(g => g.id === group.id);
                     return (
                       <div 
@@ -854,7 +855,7 @@ export default function CommunityPage() {
                           setOrganizationTab('posts');
                         }}
                       >
-                        <Avatar className="h-8 w-8 mr-2">
+                        <Avatar className="h-7 w-7 mr-2">
                           {group.imageUrl ? (
                             <img 
                               src={group.imageUrl} 
@@ -862,34 +863,130 @@ export default function CommunityPage() {
                               className="h-full w-full object-cover" 
                             />
                           ) : group.isPrivate ? (
-                            <Lock className="h-5 w-5 text-gray-500" />
+                            <Lock className="h-4 w-4 text-gray-500" />
                           ) : (
-                            <Users className="h-5 w-5 text-secondary" />
+                            <Users className="h-4 w-4 text-secondary" />
                           )}
                         </Avatar>
                         <div className="flex-1">
-                          <div className="font-medium">{group.name}</div>
-                          <div className="text-xs text-gray-500 truncate">{group.description}</div>
+                          <div className="text-sm font-medium">{group.name}</div>
                         </div>
                         {isAdmin && (
-                          <Badge variant="outline" className="ml-2 bg-secondary/10 text-secondary">
+                          <Badge variant="outline" className="ml-1 bg-secondary/10 text-secondary text-xs">
                             Admin
                           </Badge>
                         )}
                       </div>
                     );
                   })}
+                  
+                  {userGroups.length > 8 && (
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={() => setShowAllGroups(!showAllGroups)}
+                      className="w-full text-xs mt-1"
+                    >
+                      {showAllGroups ? "Mostrar menos" : `Ver mais ${userGroups.length - 8} grupos`}
+                    </Button>
+                  )}
                 </div>
-              </ScrollArea>
+              </div>
             )}
           </Card>
           
           {/* Seção de organização quando um grupo está selecionado */}
           {selectedGroupId && (
             <Card className="p-4">
-              <h3 className="text-lg font-semibold mb-4">
-                {userGroups.find(g => g.id === selectedGroupId)?.name || 'Grupo'}
-              </h3>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold">
+                  {userGroups.find(g => g.id === selectedGroupId)?.name || 'Grupo'}
+                </h3>
+                
+                {adminGroups.some(g => g.id === selectedGroupId) && (
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <Button variant="ghost" size="icon" className="h-8 w-8">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <circle cx="12" cy="12" r="3"></circle>
+                          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                        </svg>
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Configurações do Grupo</DialogTitle>
+                        <DialogDescription>
+                          Gerencie as configurações e membros do seu grupo.
+                        </DialogDescription>
+                      </DialogHeader>
+                      
+                      <div className="space-y-4 py-2">
+                        <div className="flex flex-col items-center mb-4">
+                          <div 
+                            className="w-24 h-24 rounded-full border-2 border-dashed border-gray-300 flex items-center justify-center overflow-hidden mb-2 cursor-pointer"
+                            onClick={handleGroupImageUpload}
+                          >
+                            {groupImageFile ? (
+                              <img 
+                                src={URL.createObjectURL(groupImageFile)} 
+                                alt="Preview" 
+                                className="w-full h-full object-cover"
+                              />
+                            ) : userGroups.find(g => g.id === selectedGroupId)?.imageUrl ? (
+                              <img 
+                                src={userGroups.find(g => g.id === selectedGroupId)?.imageUrl || ''} 
+                                alt="Imagem do grupo" 
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <Camera className="h-8 w-8 text-gray-400" />
+                            )}
+                          </div>
+                          <Button 
+                            type="button" 
+                            variant="outline" 
+                            size="sm"
+                            onClick={handleGroupImageUpload}
+                          >
+                            Alterar imagem
+                          </Button>
+                        </div>
+                        
+                        <div className="space-y-3">
+                          <div>
+                            <FormLabel>Nome do grupo</FormLabel>
+                            <Input defaultValue={userGroups.find(g => g.id === selectedGroupId)?.name} />
+                          </div>
+                          
+                          <div>
+                            <FormLabel>Descrição</FormLabel>
+                            <Textarea defaultValue={userGroups.find(g => g.id === selectedGroupId)?.description || ''} />
+                          </div>
+                        </div>
+                        
+                        <div className="space-y-2 border-t pt-4 mt-4">
+                          <h4 className="font-medium">Opções de administrador</h4>
+                          <Button variant="outline" size="sm" className="w-full justify-start">
+                            <UserPlus className="h-4 w-4 mr-2" />
+                            Gerenciar membros
+                          </Button>
+                          <Button variant="outline" size="sm" className="w-full justify-start text-red-500 hover:text-red-700 hover:bg-red-50">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                            Excluir grupo
+                          </Button>
+                        </div>
+                      </div>
+                      
+                      <DialogFooter>
+                        <Button type="submit">Salvar alterações</Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
+                )}
+              </div>
               
               <div className="grid grid-cols-2 gap-2 mb-4">
                 <Button 
@@ -936,23 +1033,6 @@ export default function CommunityPage() {
                      organizationTab === 'tasks' ? 'de tarefas' : 
                      'kanban'} em desenvolvimento.</p>
                   <p className="text-xs mt-1">Esta seção será implementada em breve.</p>
-                </div>
-              )}
-              
-              {/* Opções administrativas para o grupo */}
-              {adminGroups.some(g => g.id === selectedGroupId) && (
-                <div className="mt-4 pt-4 border-t">
-                  <h4 className="font-medium mb-2">Opções de administrador</h4>
-                  <div className="space-y-2">
-                    <Button variant="outline" size="sm" className="w-full justify-start">
-                      <UserPlus className="h-4 w-4 mr-2" />
-                      Gerenciar membros
-                    </Button>
-                    <Button variant="outline" size="sm" className="w-full justify-start">
-                      <Camera className="h-4 w-4 mr-2" />
-                      Alterar imagem
-                    </Button>
-                  </div>
                 </div>
               )}
             </Card>
