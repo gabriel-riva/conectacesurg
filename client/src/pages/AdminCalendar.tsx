@@ -78,6 +78,9 @@ const eventFormSchema = z.object({
 
 type EventFormValues = z.infer<typeof eventFormSchema>;
 
+import { Header } from "@/components/Header";
+import { AdminSidebar } from "@/components/AdminSidebar";
+
 export default function AdminCalendar() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -280,91 +283,101 @@ export default function AdminCalendar() {
   };
 
   return (
-    <div className="container mx-auto py-8">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">Gerenciar Eventos do Calendário</h1>
-        <Button onClick={() => {
-          resetForm();
-          setIsNewDialogOpen(true);
-        }} className="flex items-center gap-1">
-          <Plus className="w-4 h-4" /> Novo Evento
-        </Button>
-      </div>
-
-      <Card className="mb-8">
-        <CardContent className="pt-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-semibold">Eventos</h2>
-            <div className="flex items-center gap-2">
-              <Switch
-                id="show-inactive"
-                checked={showInactive}
-                onCheckedChange={setShowInactive}
-              />
-              <Label htmlFor="show-inactive">Mostrar inativos</Label>
+    <div className="min-h-screen bg-background flex flex-col">
+      <Header />
+      
+      <div className="flex flex-1">
+        <AdminSidebar />
+        
+        <main className="flex-1 p-6 overflow-auto">
+          <div className="space-y-6">
+            <div className="flex justify-between items-center">
+              <h1 className="text-2xl font-bold text-primary">Gerenciar Eventos do Calendário</h1>
+              <Button onClick={() => {
+                resetForm();
+                setIsNewDialogOpen(true);
+              }} className="flex items-center gap-1">
+                <Plus className="w-4 h-4" /> Novo Evento
+              </Button>
             </div>
+            
+            <Card>
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-xl font-semibold">Eventos</h2>
+                  <div className="flex items-center gap-2">
+                    <Switch
+                      id="show-inactive"
+                      checked={showInactive}
+                      onCheckedChange={setShowInactive}
+                    />
+                    <Label htmlFor="show-inactive">Mostrar inativos</Label>
+                  </div>
+                </div>
+
+                {isLoading ? (
+                  <div className="space-y-4">
+                    <Skeleton className="h-10 w-full" />
+                    <Skeleton className="h-20 w-full" />
+                    <Skeleton className="h-20 w-full" />
+                    <Skeleton className="h-20 w-full" />
+                  </div>
+                ) : events.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    Nenhum evento encontrado. {!showInactive && "Talvez existam eventos inativos."}
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="w-[100px]">Status</TableHead>
+                          <TableHead>Título</TableHead>
+                          <TableHead>Data</TableHead>
+                          <TableHead>Hora</TableHead>
+                          <TableHead>Local</TableHead>
+                          <TableHead className="w-[100px]">Ações</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {events.map((event) => (
+                          <TableRow key={event.id}>
+                            <TableCell>
+                              {event.isActive ? (
+                                <Badge variant="default" className="bg-green-500 hover:bg-green-600">
+                                  <Check className="w-3 h-3 mr-1" /> Ativo
+                                </Badge>
+                              ) : (
+                                <Badge variant="outline" className="text-muted-foreground">
+                                  <X className="w-3 h-3 mr-1" /> Inativo
+                                </Badge>
+                              )}
+                            </TableCell>
+                            <TableCell className="font-medium">{event.title}</TableCell>
+                            <TableCell>{formatDate(event.eventDate)}</TableCell>
+                            <TableCell>{event.eventTime}</TableCell>
+                            <TableCell>{event.location}</TableCell>
+                            <TableCell>
+                              <div className="flex gap-2">
+                                <Button variant="outline" size="icon" onClick={() => handleEdit(event)}>
+                                  <Edit className="h-4 w-4" />
+                                </Button>
+                                <Button variant="destructive" size="icon" onClick={() => handleDelete(event)}>
+                                  <Trash className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </div>
-
-          {isLoading ? (
-            <div className="space-y-4">
-              <Skeleton className="h-10 w-full" />
-              <Skeleton className="h-20 w-full" />
-              <Skeleton className="h-20 w-full" />
-              <Skeleton className="h-20 w-full" />
-            </div>
-          ) : events.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              Nenhum evento encontrado. {!showInactive && "Talvez existam eventos inativos."}
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-[100px]">Status</TableHead>
-                    <TableHead>Título</TableHead>
-                    <TableHead>Data</TableHead>
-                    <TableHead>Hora</TableHead>
-                    <TableHead>Local</TableHead>
-                    <TableHead className="w-[100px]">Ações</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {events.map((event) => (
-                    <TableRow key={event.id}>
-                      <TableCell>
-                        {event.isActive ? (
-                          <Badge variant="default" className="bg-green-500 hover:bg-green-600">
-                            <Check className="w-3 h-3 mr-1" /> Ativo
-                          </Badge>
-                        ) : (
-                          <Badge variant="outline" className="text-muted-foreground">
-                            <X className="w-3 h-3 mr-1" /> Inativo
-                          </Badge>
-                        )}
-                      </TableCell>
-                      <TableCell className="font-medium">{event.title}</TableCell>
-                      <TableCell>{formatDate(event.eventDate)}</TableCell>
-                      <TableCell>{event.eventTime}</TableCell>
-                      <TableCell>{event.location}</TableCell>
-                      <TableCell>
-                        <div className="flex gap-2">
-                          <Button variant="outline" size="icon" onClick={() => handleEdit(event)}>
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button variant="destructive" size="icon" onClick={() => handleDelete(event)}>
-                            <Trash className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+        </main>
+      </div>
 
       {/* Diálogo para criar novo evento */}
       <Dialog open={isNewDialogOpen} onOpenChange={setIsNewDialogOpen}>
