@@ -130,17 +130,20 @@ export default function LoginPage() {
       )}
       
       <div className="w-full max-w-md z-10 relative">
-        <Card className="border-0 shadow-2xl">
-          <CardContent className="pt-8 pb-6 px-6 flex flex-col items-center">
-            <Logo className="w-64 mb-6" />
+        <Card className="border-0 shadow-2xl backdrop-blur-sm bg-white/90 overflow-hidden">
+          <div className="h-2 bg-gradient-to-r from-green-400 to-blue-600"></div>
+          <CardContent className="pt-8 pb-6 px-8 flex flex-col items-center">
+            <Logo className="w-56 mb-8" />
             
-            <p className="text-gray-600 mb-8 text-center text-sm">
-              Faça login com sua conta institucional para acessar o portal.
-            </p>
+            <div className="w-full border rounded-lg bg-blue-50/50 p-4 mb-8">
+              <p className="text-gray-700 text-center text-sm leading-relaxed">
+                Faça login com sua conta institucional (<span className="font-semibold text-primary">email@cesurg.com</span>) para acessar o portal.
+              </p>
+            </div>
 
             <Button
               variant="outline"
-              className="flex items-center justify-center gap-2 bg-white border border-gray-300 rounded-md py-2 px-6 text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-all duration-200 mx-auto"
+              className="flex items-center justify-center gap-3 bg-white border border-gray-300 rounded-lg py-3.5 px-8 text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-all duration-200 mx-auto shadow-sm w-2/3"
               onClick={handleGoogleLogin}
               disabled={isLoading}
             >
@@ -150,14 +153,13 @@ export default function LoginPage() {
                 <path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"></path>
                 <path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571c0.001-0.001,0.002-0.001,0.003-0.002l6.19,5.238C36.971,39.205,44,34,44,24C44,22.659,43.862,21.35,43.611,20.083z"></path>
               </svg>
-              <span>{isLoading ? "Carregando..." : "Entrar com Google"}</span>
+              <span className="font-medium text-base">{isLoading ? "Carregando..." : "Entrar com Google"}</span>
             </Button>
             
-            <div className="mt-8 text-sm text-gray-500 text-center">
-            </div>
-            
-            <div className="mt-6 border-t border-gray-200 pt-6 flex justify-center items-center">
-              <Logo variant="cesurg" className="h-10 mx-auto" />
+            <div className="mt-12 w-full">
+              <div className="border-t border-gray-200 pt-6 flex justify-center items-center">
+                <Logo variant="cesurg" className="h-12 mx-auto" />
+              </div>
             </div>
             
             {/* Opções de Desenvolvimento */}
@@ -165,7 +167,7 @@ export default function LoginPage() {
               <>
                 <Button
                   variant="outline"
-                  className="mt-8 text-xs text-gray-500"
+                  className="mt-8 text-xs text-gray-500 rounded-lg shadow-sm"
                   onClick={() => setShowDevOptions(!showDevOptions)}
                   size="sm"
                 >
@@ -173,13 +175,13 @@ export default function LoginPage() {
                 </Button>
                 
                 {showDevOptions && (
-                  <div className="mt-4 p-4 border rounded-md bg-gray-50 w-full">
-                    <div className="flex items-center justify-between mb-2">
-                      <h3 className="text-sm font-semibold">Selecione um usuário para login</h3>
+                  <div className="mt-4 p-4 border rounded-lg bg-blue-50/30 w-full shadow-sm">
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="text-sm font-semibold text-gray-700">Selecione um usuário para login</h3>
                       <Button 
                         variant="ghost" 
                         size="icon" 
-                        className="h-8 w-8" 
+                        className="h-8 w-8 rounded-lg" 
                         onClick={loadDatabaseUsers}
                         disabled={isLoadingUsers}
                       >
@@ -189,16 +191,16 @@ export default function LoginPage() {
                     
                     {isLoadingUsers ? (
                       <div className="text-center py-6">
-                        <Loader2 className="h-6 w-6 animate-spin mx-auto" />
-                        <span className="text-sm mt-2 block">Carregando usuários...</span>
+                        <Loader2 className="h-6 w-6 animate-spin mx-auto text-primary" />
+                        <span className="text-sm mt-2 block text-gray-600">Carregando usuários...</span>
                       </div>
                     ) : dbUsers.length === 0 ? (
                       <div className="text-center py-6">
-                        <span className="text-sm">Nenhum usuário cadastrado ainda.</span>
+                        <span className="text-sm text-gray-600">Nenhum usuário cadastrado ainda.</span>
                         <Button 
                           variant="outline" 
                           size="sm"
-                          className="mt-4 mx-auto"
+                          className="mt-4 mx-auto rounded-lg shadow-sm"
                           onClick={handleCreateTestUser}
                         >
                           Criar Usuário de Teste
@@ -210,16 +212,16 @@ export default function LoginPage() {
                           <a 
                             key={user.id}
                             href={`/api/auth/dev-login/${user.id}`}
-                            className="flex items-center p-3 text-sm bg-white border rounded hover:bg-gray-100 cursor-pointer"
+                            className="flex items-center p-3 text-sm bg-white border rounded-lg hover:bg-gray-50 cursor-pointer transition-colors shadow-sm"
                           >
                             <div className="flex-1">
-                              <div className="font-medium">{user.name}</div>
+                              <div className="font-medium text-gray-800">{user.name}</div>
                               <div className="text-xs text-gray-500">{user.email}</div>
                             </div>
                             <Badge variant={
                               user.role === 'superadmin' ? 'destructive' : 
                               user.role === 'admin' ? 'default' : 'outline'
-                            }>
+                            } className="rounded-lg">
                               {user.role}
                             </Badge>
                           </a>
