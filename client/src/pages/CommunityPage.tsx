@@ -217,14 +217,21 @@ export default function CommunityPage() {
       // Se temos imagem, precisamos usar FormData para upload
       if (groupImageFile) {
         const formDataWithImage = new FormData();
+        console.log("Enviando dados de grupo com FormData:", {
+          name: formData.name,
+          description: formData.description,
+          isPrivate: formData.isPrivate,
+          requiresApproval: formData.requiresApproval
+        });
+        
         formDataWithImage.append('name', formData.name);
         
         if (formData.description) {
           formDataWithImage.append('description', formData.description);
         }
         
-        formDataWithImage.append('isPrivate', formData.isPrivate.toString());
-        formDataWithImage.append('requiresApproval', formData.requiresApproval.toString());
+        formDataWithImage.append('isPrivate', formData.isPrivate ? 'true' : 'false');
+        formDataWithImage.append('requiresApproval', formData.requiresApproval ? 'true' : 'false');
         formDataWithImage.append('image', groupImageFile);
         
         // Para FormData, não podemos usar apiRequest
