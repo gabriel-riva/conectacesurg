@@ -159,6 +159,32 @@ export function CalendarCard() {
                             />
                           </div>
                         )}
+                        
+                        <div className="pt-4 flex items-center justify-between gap-2">
+                          <a 
+                            href={createGoogleCalendarUrl(event)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-2 text-sm text-primary hover:underline"
+                            onClick={handleClickWithoutClosing}
+                          >
+                            <img src={googleCalendarIcon} alt="Google Calendar" className="w-5 h-5" />
+                            Adicionar ao Google Calendar
+                          </a>
+                          
+                          {event.externalUrl && (
+                            <a 
+                              href={event.externalUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-1 text-sm text-primary hover:underline"
+                              onClick={handleClickWithoutClosing}
+                            >
+                              <ExternalLink className="h-4 w-4" />
+                              Mais detalhes
+                            </a>
+                          )}
+                        </div>
                       </div>
                     </DialogContent>
                   </Dialog>
