@@ -152,10 +152,7 @@ export default function CommunityPage() {
         });
       }
       
-      return await apiRequest('/api/community/posts', {
-        method: 'POST',
-        body: formDataWithMedia,
-      });
+      return await apiRequest('POST', '/api/community/posts', formDataWithMedia);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/community/posts'] });
@@ -526,7 +523,7 @@ export default function CommunityPage() {
                       className="text-gray-500 hover:text-primary flex items-center"
                     >
                       <FileTextIcon className="h-5 w-5 mr-1" />
-                      <span className="text-sm">Document</span>
+                      <span className="text-sm">Documento</span>
                     </button>
                     <button 
                       type="button" 
@@ -545,7 +542,7 @@ export default function CommunityPage() {
                       </Badge>
                     ) : null}
                     <Button type="submit" disabled={createPostMutation.isPending}>
-                      {createPostMutation.isPending ? 'Posting...' : 'Post'}
+                      {createPostMutation.isPending ? 'Publicando...' : 'Publicar'}
                     </Button>
                   </div>
                 </div>
@@ -575,16 +572,16 @@ export default function CommunityPage() {
           <Tabs defaultValue="feed" value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="grid grid-cols-2">
               <TabsTrigger value="feed">Feed</TabsTrigger>
-              <TabsTrigger value="search">Search Results</TabsTrigger>
+              <TabsTrigger value="search">Resultados da Pesquisa</TabsTrigger>
             </TabsList>
             
             {/* Feed Tab */}
             <TabsContent value="feed" className="space-y-4 mt-4">
               {isLoadingPosts ? (
-                <div className="text-center py-10">Loading posts...</div>
+                <div className="text-center py-10">Carregando publicações...</div>
               ) : posts.length === 0 ? (
                 <div className="text-center py-10 text-gray-500">
-                  No posts yet. Be the first to post!
+                  Nenhuma publicação ainda. Seja o primeiro a publicar!
                 </div>
               ) : (
                 posts.map((post) => (
@@ -602,10 +599,10 @@ export default function CommunityPage() {
             {/* Search Results Tab */}
             <TabsContent value="search" className="space-y-4 mt-4">
               {isSearching ? (
-                <div className="text-center py-10">Searching...</div>
+                <div className="text-center py-10">Pesquisando...</div>
               ) : searchResults.length === 0 ? (
                 <div className="text-center py-10 text-gray-500">
-                  No results found. Try a different search term.
+                  Nenhum resultado encontrado. Tente um termo de pesquisa diferente.
                 </div>
               ) : (
                 searchResults.map((post) => (
@@ -628,10 +625,10 @@ export default function CommunityPage() {
           {/* Groups section */}
           <Card className="p-4">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold">My Groups</h3>
+              <h3 className="text-lg font-semibold">Meus Grupos</h3>
               <Button variant="outline" size="sm" onClick={() => setCreateGroupOpen(true)}>
                 <PlusCircle className="h-4 w-4 mr-1" />
-                Create
+                Criar
               </Button>
             </div>
             
