@@ -1047,10 +1047,63 @@ export default function CommunityPage() {
                                         <div className="space-y-4 py-4">
                                           <div className="flex justify-between items-center mb-2">
                                             <h3 className="text-sm font-medium">Membros do Grupo</h3>
-                                            <Button variant="ghost" size="sm" className="text-xs">
-                                              <UserPlus className="h-3 w-3 mr-1" />
-                                              Adicionar
-                                            </Button>
+                                            <Dialog>
+                                              <DialogTrigger asChild>
+                                                <Button variant="ghost" size="sm" className="text-xs">
+                                                  <UserPlus className="h-3 w-3 mr-1" />
+                                                  Adicionar
+                                                </Button>
+                                              </DialogTrigger>
+                                              <DialogContent className="sm:max-w-md">
+                                                <DialogHeader>
+                                                  <DialogTitle>Adicionar Membros</DialogTitle>
+                                                  <DialogDescription>
+                                                    Selecione os usuários que deseja adicionar ao grupo.
+                                                  </DialogDescription>
+                                                </DialogHeader>
+                                                <div className="py-4">
+                                                  <div className="mb-4">
+                                                    <Input
+                                                      placeholder="Pesquisar usuários..."
+                                                      className="mb-2"
+                                                    />
+                                                  </div>
+                                                  <div className="border rounded-md max-h-60 overflow-y-auto">
+                                                    {[
+                                                      { id: 1, name: 'Admin Conecta', email: 'conecta@cesurg.com', selected: false },
+                                                      { id: 3, name: 'Josefina Souza', email: 'josefina@example.com', selected: false },
+                                                      { id: 4, name: 'Victor Lima', email: 'victor@example.com', selected: false },
+                                                      { id: 5, name: 'Mariana Costa', email: 'mariana@example.com', selected: false }
+                                                    ].map(user => (
+                                                      <div key={user.id} className="flex items-center justify-between p-2 border-b hover:bg-gray-50">
+                                                        <div className="flex items-center">
+                                                          <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center mr-2">
+                                                            <UserIcon className="h-4 w-4 text-primary" />
+                                                          </div>
+                                                          <div>
+                                                            <div className="text-sm font-medium">{user.name}</div>
+                                                            <div className="text-xs text-muted-foreground">{user.email}</div>
+                                                          </div>
+                                                        </div>
+                                                        <Button variant="outline" size="sm" onClick={() => {
+                                                          toast({
+                                                            title: "Convite enviado",
+                                                            description: `Convite enviado para ${user.name}`,
+                                                          });
+                                                        }}>
+                                                          Convidar
+                                                        </Button>
+                                                      </div>
+                                                    ))}
+                                                  </div>
+                                                </div>
+                                                <DialogFooter>
+                                                  <DialogClose asChild>
+                                                    <Button variant="outline">Fechar</Button>
+                                                  </DialogClose>
+                                                </DialogFooter>
+                                              </DialogContent>
+                                            </Dialog>
                                           </div>
                                           
                                           <div className="border rounded-md">
@@ -1079,7 +1132,9 @@ export default function CommunityPage() {
                                           </div>
                                         </div>
                                         <DialogFooter>
-                                          <Button type="button" onClick={() => {}}>Fechar</Button>
+                                          <DialogClose asChild>
+                                            <Button type="button">Fechar</Button>
+                                          </DialogClose>
                                         </DialogFooter>
                                       </DialogContent>
                                     </Dialog>
