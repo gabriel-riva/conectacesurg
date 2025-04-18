@@ -1,5 +1,4 @@
 import { Link, useLocation } from "wouter";
-import { Logo } from "@/components/ui/logo";
 
 // Interface de item de menu
 interface MenuItem {
@@ -121,8 +120,7 @@ export function AdminSidebar() {
     <div className="w-64 bg-white shadow-sm border-r min-h-screen">
       <div className="flex h-14 items-center gap-2 border-b px-3">
         <div className="flex items-center">
-          <Logo variant="colored" className="h-8 w-auto" />
-          <span className="ml-2 text-lg font-semibold">Admin</span>
+          <span className="text-lg font-semibold text-primary">Configurações</span>
         </div>
       </div>
       <div className="mt-5">
