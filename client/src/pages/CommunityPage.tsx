@@ -425,6 +425,9 @@ export default function CommunityPage() {
       return await apiRequest('POST', `/api/community/groups/${groupId}/invite`, { userId });
     },
     onSuccess: () => {
+      // Limpar a pesquisa após sucesso no convite
+      setUserSearchQuery('');
+      
       toast({
         title: 'Convite enviado',
         description: 'O convite foi enviado com sucesso.',
