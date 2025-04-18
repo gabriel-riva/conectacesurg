@@ -16,14 +16,16 @@ export function CalendarCard() {
           Calendário
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4 flex-grow">
-        {events.map((event) => (
-          <div key={event.id} className="border-t border-gray-100 pt-2">
-            <div className="text-xs text-muted-foreground">{event.date} - {event.time}</div>
-            <div className="font-medium">{event.title}</div>
-          </div>
-        ))}
-        <div className="pt-2 text-right">
+      <CardContent className="p-4 flex flex-col flex-grow">
+        <div className="overflow-y-auto flex-grow">
+          {events.map((event) => (
+            <div key={event.id} className="border-t border-gray-100 pt-2 mb-3">
+              <div className="text-xs text-muted-foreground">{event.date} - {event.time}</div>
+              <div className="font-medium">{event.title}</div>
+            </div>
+          ))}
+        </div>
+        <div className="mt-2 pt-2 text-right border-t border-gray-100">
           <a href="#" className="text-primary text-sm hover:underline">
             Ver tudo
           </a>

@@ -35,8 +35,8 @@ export function RankingCard() {
           Ranking
         </CardTitle>
       </CardHeader>
-      <CardContent className="flex-grow overflow-y-auto">
-        <div className="flex items-center justify-between mb-4">
+      <CardContent className="p-4 flex flex-col flex-grow">
+        <div className="mb-4 flex items-center justify-between">
           <div className="flex gap-2">
             <Button variant="secondary" size="sm" className="px-3 py-1 h-auto text-xs rounded-md">
               Mês
@@ -59,21 +59,29 @@ export function RankingCard() {
           </Select>
         </div>
         
-        <div className="space-y-3">
-          {users.map((user) => (
-            <div key={user.id} className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Avatar className="h-7 w-7">
-                  <AvatarImage src={user.avatar} />
-                  <AvatarFallback className="text-xs">
-                    {user.name.split(' ').map(n => n[0]).join('')}
-                  </AvatarFallback>
-                </Avatar>
-                <span className="text-sm">{user.name}</span>
+        <div className="overflow-y-auto flex-grow">
+          <div className="space-y-3">
+            {users.map((user) => (
+              <div key={user.id} className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Avatar className="h-7 w-7">
+                    <AvatarImage src={user.avatar} />
+                    <AvatarFallback className="text-xs">
+                      {user.name.split(' ').map(n => n[0]).join('')}
+                    </AvatarFallback>
+                  </Avatar>
+                  <span className="text-sm">{user.name}</span>
+                </div>
+                <span className="text-primary text-sm font-medium">{user.points}pts</span>
               </div>
-              <span className="text-primary text-sm font-medium">{user.points}pts</span>
-            </div>
-          ))}
+            ))}
+          </div>
+        </div>
+        
+        <div className="mt-2 pt-2 text-right border-t border-gray-100">
+          <a href="#" className="text-primary text-sm hover:underline">
+            Ver tudo
+          </a>
         </div>
       </CardContent>
     </Card>
