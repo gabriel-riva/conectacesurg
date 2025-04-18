@@ -20,7 +20,8 @@ import { ptBR } from "date-fns/locale";
 import { 
   Trash2, ChevronDown, ChevronUp, Search, Filter, 
   MoreHorizontal, ArrowUpDown, Loader2, CheckCircle, 
-  XCircle, AlertCircle, Edit, UserCheck, UserPlus
+  XCircle, AlertCircle, Edit, UserCheck, UserPlus,
+  FileText, Image
 } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -1147,25 +1148,7 @@ export function AdminIdeas() {
   );
 }
 
-// Componentes extras
-const Image = ({ className }: { className?: string }) => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    width="24"
-    height="24"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    className={className}
-  >
-    <rect width="18" height="18" x="3" y="3" rx="2" ry="2" />
-    <circle cx="9" cy="9" r="2" />
-    <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
-  </svg>
-);
+// Não precisamos mais do componente personalizado, pois já importamos o Image do lucide-react
 
 const SearchCircle = ({ className }: { className?: string }) => (
   <svg

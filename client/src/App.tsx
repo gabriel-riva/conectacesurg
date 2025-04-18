@@ -37,20 +37,23 @@ function ProtectedRoute({ component: Component, adminOnly = false, ...rest }: an
 function Router() {
   return (
     <Switch>
-      <Route path="/" component={LoginPage} />
-      <Route path="/access-denied" component={AccessDeniedPage} />
-      <Route path="/dashboard">
-        {() => <ProtectedRoute component={Dashboard} />}
-      </Route>
-      <Route path="/admin">
-        {() => <ProtectedRoute component={AdminPage} adminOnly={true} />}
+      <Route path="/ideas">
+        {() => <ProtectedRoute component={IdeasPage} />}
       </Route>
       <Route path="/community">
         {() => <ProtectedRoute component={CommunityPage} />}
       </Route>
-      <Route path="/ideas">
-        {() => <ProtectedRoute component={IdeasPage} />}
+      <Route path="/admin/ideas">
+        {() => <ProtectedRoute component={AdminPage} adminOnly={true} />}
       </Route>
+      <Route path="/admin">
+        {() => <ProtectedRoute component={AdminPage} adminOnly={true} />}
+      </Route>
+      <Route path="/dashboard">
+        {() => <ProtectedRoute component={Dashboard} />}
+      </Route>
+      <Route path="/access-denied" component={AccessDeniedPage} />
+      <Route path="/" component={LoginPage} />
       <Route component={NotFound} />
     </Switch>
   );
