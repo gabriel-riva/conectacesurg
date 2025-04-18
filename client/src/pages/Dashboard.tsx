@@ -12,10 +12,15 @@ export default function Dashboard() {
   const { user } = useAuth();
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50">
+    <div className="min-h-screen flex flex-col bg-gradient-to-b from-gray-50 to-gray-100">
       <Header />
       
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 py-8 relative">
+        {/* Background Pattern Element */}
+        <div className="absolute inset-0 overflow-hidden opacity-5 pointer-events-none">
+          <div className="absolute -right-80 -top-40 w-[600px] h-[600px] rounded-full bg-primary/20 blur-3xl"></div>
+          <div className="absolute -left-80 top-60 w-[600px] h-[600px] rounded-full bg-primary/20 blur-3xl"></div>
+        </div>
         {/* Layout conforme design fornecido */}
         <div className="grid grid-cols-1 lg:grid-cols-11 gap-6">
           {/* Coluna 1: Calendário e Links Úteis (3/11 da largura) */}

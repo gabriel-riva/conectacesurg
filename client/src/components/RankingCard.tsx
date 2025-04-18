@@ -28,9 +28,12 @@ export function RankingCard() {
   ];
 
   return (
-    <Card className="h-[280px] flex flex-col">
-      <CardHeader className="pb-2">
-        <CardTitle>Ranking</CardTitle>
+    <Card className="h-[280px] flex flex-col shadow-md hover:shadow-lg transition-shadow duration-300 border-none">
+      <CardHeader className="pb-2 bg-gradient-to-r from-primary/5 to-transparent">
+        <CardTitle className="text-primary/90 flex items-center">
+          <span className="inline-block w-1 h-5 bg-primary rounded mr-2"></span>
+          Ranking
+        </CardTitle>
       </CardHeader>
       <CardContent className="flex-grow overflow-y-auto">
         <div className="flex items-center justify-between mb-4">

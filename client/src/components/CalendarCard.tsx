@@ -9,9 +9,12 @@ export function CalendarCard() {
   ];
 
   return (
-    <Card className="h-[280px] flex flex-col">
-      <CardHeader className="pb-2">
-        <CardTitle>Calendário</CardTitle>
+    <Card className="h-[280px] flex flex-col shadow-md hover:shadow-lg transition-shadow duration-300 border-none">
+      <CardHeader className="pb-2 bg-gradient-to-r from-primary/5 to-transparent">
+        <CardTitle className="text-primary/90 flex items-center">
+          <span className="inline-block w-1 h-5 bg-primary rounded mr-2"></span>
+          Calendário
+        </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4 flex-grow">
         {events.map((event) => (

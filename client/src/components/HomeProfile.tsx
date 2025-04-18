@@ -1,5 +1,5 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth";
@@ -34,10 +34,15 @@ export function HomeProfile() {
   }
 
   return (
-    <Card className="h-[280px] flex flex-col">
-      <CardContent className="p-6 flex-grow">
+    <Card className="h-[280px] flex flex-col shadow-md hover:shadow-lg transition-shadow duration-300 border-none">
+      <CardHeader className="pb-2 bg-gradient-to-r from-primary/5 to-transparent">
+        <CardTitle className="text-primary/90 flex items-center">
+          <span className="inline-block w-1 h-5 bg-primary rounded mr-2"></span>
+          Meu Perfil
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="p-4 flex-grow">
         <div className="flex flex-col">
-          <h2 className="text-xl font-semibold mb-4">Meu Perfil</h2>
           
           <div className="flex items-center mb-4">
             <Avatar className="h-14 w-14 border-2 border-primary">
