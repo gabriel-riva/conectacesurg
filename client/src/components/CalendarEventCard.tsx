@@ -13,10 +13,11 @@ export function CalendarEventList() {
   const [filterFuture, setFilterFuture] = useState(true);
   
   const { data: events = [], isLoading } = useQuery({
-    queryKey: ["/api/calendar"],
+    queryKey: ["/api/calendar/upcoming"],
     queryFn: async () => {
       try {
-        const response = await fetch("/api/calendar");
+        // Usar o mesmo endpoint que o card principal, mas sem limite para mostrar todos
+        const response = await fetch("/api/calendar/upcoming?days=365");
         if (!response.ok) {
           throw new Error("Erro ao buscar eventos do calendário");
         }
