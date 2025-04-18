@@ -1192,7 +1192,12 @@ export default function CommunityPage() {
                                     <h4 className="font-medium">Opções de administrador</h4>
                                     <Dialog>
                                       <DialogTrigger asChild>
-                                        <Button variant="outline" size="sm" className="w-full justify-start">
+                                        <Button 
+                                          variant="outline" 
+                                          size="sm" 
+                                          className="w-full justify-start"
+                                          onClick={() => setActiveGroupForMembers(group.id)}
+                                        >
                                           <UserPlus className="h-4 w-4 mr-2" />
                                           Gerenciar membros
                                         </Button>
@@ -1284,21 +1289,58 @@ export default function CommunityPage() {
                                           </div>
                                           
                                           <div className="border rounded-md">
-                                            <div className="p-3 flex items-center justify-between border-b">
-                                              <div className="flex items-center">
-                                                <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center mr-2">
-                                                  <UserIcon className="h-4 w-4 text-primary" />
-                                                </div>
-                                                <div>
-                                                  <div className="text-sm font-medium">Você</div>
-                                                  <div className="text-xs text-muted-foreground">Administrador</div>
-                                                </div>
+                                            {isLoadingGroupMembers ? (
+                                              <div className="p-4 text-center">
+                                                <div className="text-sm">Carregando membros...</div>
                                               </div>
-                                            </div>
-                                            
-                                            <div className="p-4 text-center text-sm text-muted-foreground">
-                                              Nenhum outro membro no grupo ainda.
-                                            </div>
+                                            ) : (
+                                              <>
+                                                {groupMembers.length === 0 ? (
+                                                  <div className="p-4 text-center text-sm text-muted-foreground">
+                                                    Nenhum membro encontrado neste grupo.
+                                                  </div>
+                                                ) : (
+                                                  <div className="max-h-60 overflow-y-auto">
+                                                    {groupMembers.map((member) => (
+                                                      <div key={member.id} className="p-3 flex items-center justify-between border-b">
+                                                        <div className="flex items-center">
+                                                          <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center mr-2">
+                                                            <UserIcon className="h-4 w-4 text-primary" />
+                                                          </div>
+                                                          <div>
+                                                            <div className="text-sm font-medium">
+                                                              {member.id === user?.id ? 'Você' : member.name}
+                                                            </div>
+                                                            <div className="text-xs text-muted-foreground">
+                                                              {member.role === 'ADMIN' ? 'Administrador' : 'Membro'}
+                                                            </div>
+                                                          </div>
+                                                        </div>
+                                                        {member.id !== user?.id && (
+                                                          <Button size="sm" variant="ghost" className="h-8 w-8 p-0">
+                                                            <span className="sr-only">Opções</span>
+                                                            <svg
+                                                              xmlns="http://www.w3.org/2000/svg"
+                                                              viewBox="0 0 24 24"
+                                                              fill="none"
+                                                              stroke="currentColor"
+                                                              strokeWidth="2"
+                                                              strokeLinecap="round"
+                                                              strokeLinejoin="round"
+                                                              className="h-4 w-4"
+                                                            >
+                                                              <circle cx="12" cy="12" r="1" />
+                                                              <circle cx="12" cy="5" r="1" />
+                                                              <circle cx="12" cy="19" r="1" />
+                                                            </svg>
+                                                          </Button>
+                                                        )}
+                                                      </div>
+                                                    ))}
+                                                  </div>
+                                                )}
+                                              </>
+                                            )}
                                           </div>
                                           
                                           <div className="mt-4">
