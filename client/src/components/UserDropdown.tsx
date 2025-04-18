@@ -65,8 +65,9 @@ export function UserDropdown() {
             <p className="font-medium">{user.name}</p>
             <p className="text-xs text-gray-500">{user.email}</p>
           </div>
-          <a href="#" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Perfil</a>
-          <a href="#" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Configurações</a>
+          <Link href="/profile" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+            Perfil
+          </Link>
           {isAdmin && (
             <Link href="/admin" className="block px-4 py-2 text-sm hover:bg-gray-100 font-medium text-conecta-blue">
               Painel Admin

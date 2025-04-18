@@ -12,6 +12,7 @@ import IdeasPage from "@/pages/IdeasPage";
 import AccessDeniedPage from "@/pages/AccessDeniedPage";
 import AIPage from "@/pages/AIPage";
 import AdminAIPage from "@/pages/AdminAIPage";
+import Profile from "@/pages/Profile";
 import { AuthProvider } from "./providers/AuthProvider";
 import { useAuth } from "./lib/auth";
 
@@ -69,6 +70,9 @@ function Router() {
       </Route>
       <Route path="/dashboard">
         {() => <ProtectedRoute component={Dashboard} />}
+      </Route>
+      <Route path="/profile">
+        {() => <ProtectedRoute component={Profile} />}
       </Route>
       <Route path="/access-denied" component={AccessDeniedPage} />
       <Route path="/" component={LoginPage} />

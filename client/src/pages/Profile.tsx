@@ -76,6 +76,21 @@ export default function Profile() {
         relationship: ""
       },
     },
+    // Atualiza valores quando o perfil é carregado
+    values: {
+      name: profile?.name || user?.name || "",
+      address: profile?.address || "",
+      city: profile?.city || "",
+      state: profile?.state || "",
+      zipCode: profile?.zipCode || "",
+      phoneNumbers: profile?.phoneNumbers?.length ? profile.phoneNumbers : [""],
+      secondaryEmail: profile?.secondaryEmail || "",
+      emergencyContact: profile?.emergencyContact || {
+        name: "",
+        phone: "",
+        relationship: ""
+      },
+    }
   });
 
   // Mutação para atualizar perfil
