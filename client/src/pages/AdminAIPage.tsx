@@ -298,7 +298,7 @@ function AIAgentsTab() {
               </CardContent>
               <CardFooter className="border-t pt-3 flex justify-between">
                 <p className="text-xs text-muted-foreground">
-                  Criado: {agent.createdAt.toLocaleDateString()}
+                  Criado: {agent.createdAt ? new Date(agent.createdAt).toLocaleDateString() : 'Data desconhecida'}
                 </p>
                 <div className="flex items-center gap-2">
                   <span className="text-xs">Status:</span>
