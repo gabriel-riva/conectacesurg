@@ -1,0 +1,78 @@
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+
+interface RankingUser {
+  id: number;
+  name: string;
+  points: number;
+  avatar?: string;
+}
+
+export function RankingCard() {
+  // Dados de exemplo - serão substituídos por dados reais da API
+  const users: RankingUser[] = [
+    { id: 1, name: "Carla Silva", points: 30 },
+    { id: 2, name: "João Lopes", points: 30 },
+    { id: 3, name: "Rodrigo Silveira", points: 30 },
+    { id: 4, name: "Maria Domingues", points: 30 },
+    { id: 5, name: "Carlos Lira", points: 30 },
+    { id: 6, name: "Jessica Alves", points: 30 },
+  ];
+
+  return (
+    <Card className="h-full">
+      <CardHeader className="pb-3">
+        <CardTitle>Ranking</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex gap-2">
+            <Button variant="secondary" size="sm" className="px-3 py-1 h-auto text-xs rounded-md">
+              Mês
+            </Button>
+            <Button variant="outline" size="sm" className="px-3 py-1 h-auto text-xs rounded-md">
+              Ano
+            </Button>
+          </div>
+          
+          <Select defaultValue="curso">
+            <SelectTrigger className="w-32 h-7 text-xs">
+              <SelectValue placeholder="Curso" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="curso">Curso</SelectItem>
+              <SelectItem value="si">Sistemas de Informação</SelectItem>
+              <SelectItem value="direito">Direito</SelectItem>
+              <SelectItem value="adm">Administração</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        
+        <div className="space-y-3">
+          {users.map((user) => (
+            <div key={user.id} className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Avatar className="h-7 w-7">
+                  <AvatarImage src={user.avatar} />
+                  <AvatarFallback className="text-xs">
+                    {user.name.split(' ').map(n => n[0]).join('')}
+                  </AvatarFallback>
+                </Avatar>
+                <span className="text-sm">{user.name}</span>
+              </div>
+              <span className="text-primary text-sm font-medium">{user.points}pts</span>
+            </div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}

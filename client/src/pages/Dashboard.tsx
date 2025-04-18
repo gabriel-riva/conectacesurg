@@ -1,10 +1,12 @@
 import { Header } from "@/components/Header";
-import { Card, CardContent } from "@/components/ui/card";
 import { useAuth } from "@/lib/auth";
 import { HomeProfile } from "@/components/HomeProfile";
 import { UtilityLinks } from "@/components/UtilityLinks";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { CalendarIcon, MessageSquare, FileText } from "lucide-react";
+import { CalendarCard } from "@/components/CalendarCard";
+import { ChallengesCard } from "@/components/ChallengesCard";
+import { AnnouncementsCard } from "@/components/AnnouncementsCard";
+import { NewsCard } from "@/components/NewsCard";
+import { RankingCard } from "@/components/RankingCard";
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -14,70 +16,25 @@ export default function Dashboard() {
       <Header />
       
       <div className="container mx-auto px-4 py-8">
-        <h1 className="text-2xl font-bold text-primary mb-6">
-          Bem-vindo ao Portal Conecta CESURG
-        </h1>
-        
+        {/* Layout em grid: 3 colunas para desktop, 1 coluna para mobile */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Coluna 1: Perfil */}
+          {/* Coluna 1: Calendário e Links Úteis */}
           <div className="space-y-6">
-            <HomeProfile />
+            <CalendarCard />
             <UtilityLinks />
           </div>
           
-          {/* Coluna 2 e 3: Conteúdo principal */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Em breve: Tabs para Calendário, Anúncios e Notícias */}
-            <Card>
-              <CardContent className="p-6">
-                <Tabs defaultValue="calendar">
-                  <TabsList className="grid grid-cols-3 mb-6">
-                    <TabsTrigger value="calendar" className="flex items-center">
-                      <CalendarIcon className="h-4 w-4 mr-2" />
-                      <span>Calendário</span>
-                    </TabsTrigger>
-                    <TabsTrigger value="announcements" className="flex items-center">
-                      <MessageSquare className="h-4 w-4 mr-2" />
-                      <span>Anúncios</span>
-                    </TabsTrigger>
-                    <TabsTrigger value="news" className="flex items-center">
-                      <FileText className="h-4 w-4 mr-2" />
-                      <span>Notícias</span>
-                    </TabsTrigger>
-                  </TabsList>
-                  
-                  {/* Conteúdo do Calendário */}
-                  <TabsContent value="calendar" className="mt-0">
-                    <div className="border rounded-md p-4 bg-gray-50">
-                      <div className="text-center py-8">
-                        <p className="text-gray-500 mb-2">Calendário em desenvolvimento.</p>
-                        <p className="text-sm text-gray-400">O calendário de eventos será implementado em breve.</p>
-                      </div>
-                    </div>
-                  </TabsContent>
-                  
-                  {/* Conteúdo dos Anúncios */}
-                  <TabsContent value="announcements" className="mt-0">
-                    <div className="border rounded-md p-4 bg-gray-50">
-                      <div className="text-center py-8">
-                        <p className="text-gray-500 mb-2">Anúncios em desenvolvimento.</p>
-                        <p className="text-sm text-gray-400">A seção de anúncios institucionais será implementada em breve.</p>
-                      </div>
-                    </div>
-                  </TabsContent>
-                  
-                  {/* Conteúdo das Notícias */}
-                  <TabsContent value="news" className="mt-0">
-                    <div className="border rounded-md p-4 bg-gray-50">
-                      <div className="text-center py-8">
-                        <p className="text-gray-500 mb-2">Notícias em desenvolvimento.</p>
-                        <p className="text-sm text-gray-400">A seção de notícias será implementada em breve.</p>
-                      </div>
-                    </div>
-                  </TabsContent>
-                </Tabs>
-              </CardContent>
-            </Card>
+          {/* Coluna 2: Desafios, Avisos e Últimas Notícias */}
+          <div className="space-y-6">
+            <ChallengesCard />
+            <AnnouncementsCard />
+            <NewsCard />
+          </div>
+          
+          {/* Coluna 3: Perfil e Ranking */}
+          <div className="space-y-6 order-first lg:order-last">
+            <HomeProfile />
+            <RankingCard />
           </div>
         </div>
       </div>
