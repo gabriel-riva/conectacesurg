@@ -15,6 +15,7 @@ import { AddGroupModal } from "@/components/AddGroupModal";
 import { UserGroupsModal } from "@/components/UserGroupsModal";
 import { EditUserModal } from "@/components/EditUserModal";
 import { EditGroupModal } from "@/components/EditGroupModal";
+import { AdminIdeas } from "@/components/AdminIdeas";
 import { 
   AlertDialog,
   AlertDialogAction,
