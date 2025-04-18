@@ -81,7 +81,7 @@ router.get('/', isAuthenticated, async (req: Request, res: Response) => {
     const offset = (Number(page) - 1) * Number(limit);
     let query = db.select().from(schema.ideas)
       .leftJoin(schema.users, eq(schema.ideas.creatorId, schema.users.id), 'creator')
-      .leftJoin(schema.users, eq(schema.ideas.responsibleId, schema.users.id), 'responsible')
+      .leftJoin(schema.users, eq(schema.ideas.responsibleId, schema.users.id), 'responsible_user')
       .leftJoin(schema.groups, eq(schema.ideas.groupId, schema.groups.id));
     
     // Aplicar filtros
@@ -229,7 +229,7 @@ router.get('/my', isAuthenticated, async (req: Request, res: Response) => {
     
     let query = db.select().from(schema.ideas)
       .leftJoin(schema.users, eq(schema.ideas.creatorId, schema.users.id), 'creator')
-      .leftJoin(schema.users, eq(schema.ideas.responsibleId, schema.users.id), 'responsible')
+      .leftJoin(schema.users, eq(schema.ideas.responsibleId, schema.users.id), 'responsible_user')
       .leftJoin(schema.groups, eq(schema.ideas.groupId, schema.groups.id));
     
     if (type === 'created') {
