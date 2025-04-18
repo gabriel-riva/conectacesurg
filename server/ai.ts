@@ -30,7 +30,7 @@ const isAdmin = (req: Request, res: Response, next: Function) => {
   next();
 };
 
-// Get all AI agents
+// Get all AI agents - acessível para todos usuários autenticados
 router.get("/agents", isAuthenticated, async (req: Request, res: Response) => {
   try {
     const agents = await storage.getAllAiAgents();
