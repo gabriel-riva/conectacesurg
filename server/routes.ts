@@ -10,6 +10,7 @@ import MemoryStore from "memorystore";
 import connectPgSimple from "connect-pg-simple";
 import { pool } from "./db";
 import communityRoutes from "./community";
+import ideasRoutes from "./ideas";
 
 // Create PostgreSQL session store for production or memory store for development
 const createSessionStore = () => {
@@ -633,6 +634,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Adicionar rotas da comunidade
   app.use('/api/community', communityRoutes);
+  
+  // Adicionar rotas do programa de ideias
+  app.use('/api/ideas', ideasRoutes);
   
   // Configurar acesso estático para a pasta de uploads
   app.use('/uploads', express.static('uploads'));
