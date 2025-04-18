@@ -128,6 +128,9 @@ export default function AIPage() {
   const { data: agents = [] } = useQuery<AiAgent[]>({
     queryKey: ['/api/ai/agents'],
   });
+  
+  // Criar tipo seguro para evitar erros
+  const typedAgents: AiAgent[] = agents as AiAgent[];
 
   const { data: conversations = [] } = useQuery<(AiConversation & { agent: AiAgent })[]>({
     queryKey: ['/api/ai/conversations'],
@@ -185,7 +188,7 @@ export default function AIPage() {
       // Adicionar mensagem do usuário localmente para feedback imediato
       const userMessage: AIMessageType = {
         id: Date.now(),
-        conversationId: conversationId,
+        conversationId: conversationId || 0,
         content: message,
         isFromUser: true,
         attachments: [],
@@ -323,8 +326,8 @@ export default function AIPage() {
                     isFromUser={message.isFromUser}
                     timestamp={message.createdAt}
                     userName={user?.name}
-                    agentName={agents.find(a => a.id === selectedAgentId)?.name}
-                    agentImage={agents.find(a => a.id === selectedAgentId)?.imageUrl}
+                    agentName={typedAgents.find(a => a.id === selectedAgentId)?.name}
+                    agentImage={typedAgents.find(a => a.id === selectedAgentId)?.imageUrl}
                     userImage={user?.photoUrl}
                     attachments={message.attachments}
                   />
@@ -363,7 +366,7 @@ export default function AIPage() {
                 Selecione um agente para iniciar uma nova conversa ou continue uma conversa existente.
               </p>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-w-4xl">
-                {agents.map((agent) => (
+                {typedAgents.map((agent) => (
                   <button
                     key={agent.id}
                     className="flex flex-col items-center p-6 border rounded-lg hover:border-primary hover:bg-primary/5 transition-colors text-center"
@@ -394,7 +397,7 @@ export default function AIPage() {
         </div>
         
         <AIAgentsSidebar
-          agents={agents}
+          agents={typedAgents}
           selectedAgentId={selectedAgentId}
           onSelectAgent={handleSelectAgent}
         />
