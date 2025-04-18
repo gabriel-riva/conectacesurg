@@ -2,12 +2,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export function NewsCard() {
   return (
-    <Card className="h-full">
-      <CardHeader className="pb-3">
+    <Card className="h-[220px] flex flex-col">
+      <CardHeader className="pb-2">
         <CardTitle>Últimas Notícias</CardTitle>
       </CardHeader>
-      <CardContent>
-        <div className="h-40 flex items-center justify-center border rounded-md">
+      <CardContent className="flex-grow">
+        <div className="h-[120px] flex items-center justify-center border rounded-md">
           <p className="text-gray-400 text-sm">
             Não há notícias recentes
           </p>

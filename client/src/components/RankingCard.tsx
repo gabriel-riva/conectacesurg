@@ -28,11 +28,11 @@ export function RankingCard() {
   ];
 
   return (
-    <Card className="h-full">
-      <CardHeader className="pb-3">
+    <Card className="h-[280px] flex flex-col">
+      <CardHeader className="pb-2">
         <CardTitle>Ranking</CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="flex-grow overflow-y-auto">
         <div className="flex items-center justify-between mb-4">
           <div className="flex gap-2">
             <Button variant="secondary" size="sm" className="px-3 py-1 h-auto text-xs rounded-md">

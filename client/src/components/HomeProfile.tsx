@@ -34,8 +34,8 @@ export function HomeProfile() {
   }
 
   return (
-    <Card>
-      <CardContent className="p-6">
+    <Card className="h-[280px] flex flex-col">
+      <CardContent className="p-6 flex-grow">
         <div className="flex flex-col items-center">
           <h2 className="text-xl font-semibold mb-4">Meu Perfil</h2>
           

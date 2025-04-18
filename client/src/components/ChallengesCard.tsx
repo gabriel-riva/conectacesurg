@@ -10,14 +10,14 @@ interface ChallengeCardProps {
 function ChallengeItem({ title, description, image, points }: ChallengeCardProps) {
   return (
     <div className="flex flex-col rounded-md overflow-hidden border">
-      <div className="h-32 bg-gray-200 flex items-center justify-center">
-        <div className="text-center text-lg font-medium">IMAGEM</div>
+      <div className="h-24 bg-primary/10 flex items-center justify-center">
+        <div className="text-center text-sm font-medium">IMAGEM</div>
       </div>
-      <div className="p-3">
-        <h3 className="font-semibold">{title}</h3>
-        <p className="text-sm text-gray-600 mt-1">{description}</p>
-        <div className="flex justify-end mt-2">
-          <span className="text-primary text-sm font-medium">{points}pts</span>
+      <div className="p-2">
+        <h3 className="font-semibold text-sm">{title}</h3>
+        <p className="text-xs text-gray-600 mt-1 line-clamp-2">{description}</p>
+        <div className="flex justify-end mt-1">
+          <span className="text-primary text-xs font-medium">{points}pts</span>
         </div>
       </div>
     </div>
@@ -51,11 +51,11 @@ export function ChallengesCard() {
   ];
 
   return (
-    <Card className="h-full">
-      <CardHeader className="pb-3">
+    <Card className="h-[280px] flex flex-col">
+      <CardHeader className="pb-2">
         <CardTitle>Desafios</CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="flex-grow overflow-hidden">
         <div className="grid grid-cols-3 gap-4">
           {challenges.map((challenge) => (
             <ChallengeItem

@@ -10,11 +10,11 @@ export function CalendarCard() {
   ];
 
   return (
-    <Card className="h-full">
-      <CardHeader className="pb-3">
+    <Card className="h-[280px] flex flex-col">
+      <CardHeader className="pb-2">
         <CardTitle>Calendário</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-3">
+      <CardContent className="space-y-2 flex-grow overflow-y-auto">
         {events.map((event) => (
           <div key={event.id} className="text-sm">
             <div className="text-xs text-muted-foreground">{event.date} - {event.time}</div>
