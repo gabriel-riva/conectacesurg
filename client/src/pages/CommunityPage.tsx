@@ -1192,7 +1192,7 @@ export default function CommunityPage() {
                                             <h3 className="text-sm font-medium">Membros do Grupo</h3>
                                             <Dialog>
                                               <DialogTrigger asChild>
-                                                <Button variant="ghost" size="sm" className="text-xs">
+                                                <Button variant="ghost" size="sm" className="text-xs" onClick={() => setSelectedGroupId(group.id)}>
                                                   <UserPlus className="h-3 w-3 mr-1" />
                                                   Adicionar
                                                 </Button>
@@ -1201,7 +1201,7 @@ export default function CommunityPage() {
                                                 <DialogHeader>
                                                   <DialogTitle>Adicionar Membros</DialogTitle>
                                                   <DialogDescription>
-                                                    Selecione os usuários que deseja adicionar ao grupo.
+                                                    Selecione os usuários que deseja adicionar ao grupo {group.name}.
                                                   </DialogDescription>
                                                 </DialogHeader>
                                                 <div className="py-4">
