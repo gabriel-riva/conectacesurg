@@ -2,15 +2,28 @@ import {
   users, 
   groups, 
   userGroups,
+  aiAgents,
+  aiPrompts,
+  aiPromptAgents,
+  aiConversations,
+  aiMessages,
   type User, 
   type InsertUser, 
   type InsertGoogleUser,
   type Group,
   type InsertGroup,
-  type UserGroup
+  type UserGroup,
+  type AiAgent,
+  type AiPrompt,
+  type AiConversation,
+  type AiMessage,
+  type InsertAiAgent,
+  type InsertAiPrompt,
+  type InsertAiConversation,
+  type InsertAiMessage
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and } from "drizzle-orm";
+import { eq, and, or, inArray, desc, asc } from "drizzle-orm";
 
 export interface IStorage {
   // User related methods
@@ -38,6 +51,38 @@ export interface IStorage {
   removeUserFromGroup(userId: number, groupId: number): Promise<boolean>;
   getUserGroups(userId: number): Promise<Group[]>;
   getGroupUsers(groupId: number): Promise<User[]>;
+  
+  // AI Agent methods
+  getAllAiAgents(): Promise<AiAgent[]>;
+  getAiAgent(id: number): Promise<AiAgent | undefined>;
+  createAiAgent(agent: InsertAiAgent): Promise<AiAgent>;
+  updateAiAgent(id: number, agentData: Partial<InsertAiAgent>): Promise<AiAgent | undefined>;
+  deleteAiAgent(id: number): Promise<boolean>;
+  
+  // AI Prompt methods
+  getAllAiPrompts(userId?: number): Promise<AiPrompt[]>;
+  getPublicAiPrompts(): Promise<AiPrompt[]>;
+  getAiPrompt(id: number): Promise<AiPrompt | undefined>;
+  createAiPrompt(prompt: InsertAiPrompt): Promise<AiPrompt>;
+  updateAiPrompt(id: number, promptData: Partial<InsertAiPrompt>): Promise<AiPrompt | undefined>;
+  deleteAiPrompt(id: number): Promise<boolean>;
+  
+  // AI Prompt-Agent relationship methods
+  assignPromptToAgent(promptId: number, agentId: number): Promise<boolean>;
+  removePromptFromAgent(promptId: number, agentId: number): Promise<boolean>;
+  removeAllPromptAgentAssignments(promptId: number): Promise<boolean>;
+  getAgentPrompts(agentId: number): Promise<AiPrompt[]>;
+  
+  // AI Conversation methods
+  getUserAiConversations(userId: number): Promise<(AiConversation & { agent: AiAgent })[]>;
+  getAiConversation(id: number): Promise<AiConversation | undefined>;
+  createAiConversation(conversation: InsertAiConversation): Promise<AiConversation>;
+  updateAiConversationLastMessage(id: number, preview: string): Promise<boolean>;
+  deleteAiConversation(id: number): Promise<boolean>;
+  
+  // AI Message methods
+  getAiConversationMessages(conversationId: number): Promise<AiMessage[]>;
+  createAiMessage(message: InsertAiMessage): Promise<AiMessage>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -438,6 +483,398 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error("Error getting group users:", error);
       return [];
+    }
+  }
+
+  // AI Agent methods
+  async getAllAiAgents(): Promise<AiAgent[]> {
+    try {
+      return await db.select().from(aiAgents);
+    } catch (error) {
+      console.error("Error getting all AI agents:", error);
+      return [];
+    }
+  }
+
+  async getAiAgent(id: number): Promise<AiAgent | undefined> {
+    try {
+      const [agent] = await db
+        .select()
+        .from(aiAgents)
+        .where(eq(aiAgents.id, id));
+      
+      return agent;
+    } catch (error) {
+      console.error("Error getting AI agent by ID:", error);
+      return undefined;
+    }
+  }
+
+  async createAiAgent(agent: InsertAiAgent): Promise<AiAgent> {
+    try {
+      const [newAgent] = await db
+        .insert(aiAgents)
+        .values(agent)
+        .returning();
+      
+      return newAgent;
+    } catch (error) {
+      console.error("Error creating AI agent:", error);
+      throw new Error("Failed to create AI agent");
+    }
+  }
+
+  async updateAiAgent(id: number, agentData: Partial<InsertAiAgent>): Promise<AiAgent | undefined> {
+    try {
+      const [updatedAgent] = await db
+        .update(aiAgents)
+        .set(agentData)
+        .where(eq(aiAgents.id, id))
+        .returning();
+      
+      return updatedAgent;
+    } catch (error) {
+      console.error("Error updating AI agent:", error);
+      return undefined;
+    }
+  }
+
+  async deleteAiAgent(id: number): Promise<boolean> {
+    try {
+      // First, delete any agent-prompt relationships
+      await db
+        .delete(aiPromptAgents)
+        .where(eq(aiPromptAgents.agentId, id));
+      
+      // Then, delete the agent
+      const result = await db
+        .delete(aiAgents)
+        .where(eq(aiAgents.id, id))
+        .returning();
+      
+      return result.length > 0;
+    } catch (error) {
+      console.error("Error deleting AI agent:", error);
+      return false;
+    }
+  }
+
+  // AI Prompt methods
+  async getAllAiPrompts(userId?: number): Promise<AiPrompt[]> {
+    try {
+      if (userId) {
+        // Return all prompts that are either public or created by the user
+        return await db
+          .select()
+          .from(aiPrompts)
+          .where(
+            or(
+              eq(aiPrompts.isPublic, true),
+              eq(aiPrompts.creatorId, userId)
+            )
+          );
+      }
+      
+      // Return all prompts
+      return await db.select().from(aiPrompts);
+    } catch (error) {
+      console.error("Error getting AI prompts:", error);
+      return [];
+    }
+  }
+
+  async getPublicAiPrompts(): Promise<AiPrompt[]> {
+    try {
+      return await db
+        .select()
+        .from(aiPrompts)
+        .where(eq(aiPrompts.isPublic, true));
+    } catch (error) {
+      console.error("Error getting public AI prompts:", error);
+      return [];
+    }
+  }
+
+  async getAiPrompt(id: number): Promise<AiPrompt | undefined> {
+    try {
+      const [prompt] = await db
+        .select()
+        .from(aiPrompts)
+        .where(eq(aiPrompts.id, id));
+      
+      return prompt;
+    } catch (error) {
+      console.error("Error getting AI prompt by ID:", error);
+      return undefined;
+    }
+  }
+
+  async createAiPrompt(prompt: InsertAiPrompt): Promise<AiPrompt> {
+    try {
+      const [newPrompt] = await db
+        .insert(aiPrompts)
+        .values(prompt)
+        .returning();
+      
+      return newPrompt;
+    } catch (error) {
+      console.error("Error creating AI prompt:", error);
+      throw new Error("Failed to create AI prompt");
+    }
+  }
+
+  async updateAiPrompt(id: number, promptData: Partial<InsertAiPrompt>): Promise<AiPrompt | undefined> {
+    try {
+      const [updatedPrompt] = await db
+        .update(aiPrompts)
+        .set(promptData)
+        .where(eq(aiPrompts.id, id))
+        .returning();
+      
+      return updatedPrompt;
+    } catch (error) {
+      console.error("Error updating AI prompt:", error);
+      return undefined;
+    }
+  }
+
+  async deleteAiPrompt(id: number): Promise<boolean> {
+    try {
+      // First, delete any prompt-agent relationships
+      await db
+        .delete(aiPromptAgents)
+        .where(eq(aiPromptAgents.promptId, id));
+      
+      // Then, delete the prompt
+      const result = await db
+        .delete(aiPrompts)
+        .where(eq(aiPrompts.id, id))
+        .returning();
+      
+      return result.length > 0;
+    } catch (error) {
+      console.error("Error deleting AI prompt:", error);
+      return false;
+    }
+  }
+
+  // AI Prompt-Agent relationship methods
+  async assignPromptToAgent(promptId: number, agentId: number): Promise<boolean> {
+    try {
+      // Check if the relationship already exists
+      const [existingRelation] = await db
+        .select()
+        .from(aiPromptAgents)
+        .where(
+          and(
+            eq(aiPromptAgents.promptId, promptId),
+            eq(aiPromptAgents.agentId, agentId)
+          )
+        );
+      
+      if (existingRelation) {
+        return true; // Relationship already exists
+      }
+      
+      // Create the relationship
+      await db
+        .insert(aiPromptAgents)
+        .values({
+          promptId,
+          agentId
+        });
+      
+      return true;
+    } catch (error) {
+      console.error("Error assigning prompt to agent:", error);
+      return false;
+    }
+  }
+
+  async removePromptFromAgent(promptId: number, agentId: number): Promise<boolean> {
+    try {
+      const result = await db
+        .delete(aiPromptAgents)
+        .where(
+          and(
+            eq(aiPromptAgents.promptId, promptId),
+            eq(aiPromptAgents.agentId, agentId)
+          )
+        )
+        .returning();
+      
+      return result.length > 0;
+    } catch (error) {
+      console.error("Error removing prompt from agent:", error);
+      return false;
+    }
+  }
+
+  async removeAllPromptAgentAssignments(promptId: number): Promise<boolean> {
+    try {
+      await db
+        .delete(aiPromptAgents)
+        .where(eq(aiPromptAgents.promptId, promptId));
+      
+      return true;
+    } catch (error) {
+      console.error("Error removing all prompt-agent assignments:", error);
+      return false;
+    }
+  }
+
+  async getAgentPrompts(agentId: number): Promise<AiPrompt[]> {
+    try {
+      const relations = await db
+        .select()
+        .from(aiPromptAgents)
+        .where(eq(aiPromptAgents.agentId, agentId));
+      
+      if (relations.length === 0) {
+        return [];
+      }
+      
+      const promptIds = relations.map(r => r.promptId);
+      
+      return await db
+        .select()
+        .from(aiPrompts)
+        .where(inArray(aiPrompts.id, promptIds));
+    } catch (error) {
+      console.error("Error getting agent prompts:", error);
+      return [];
+    }
+  }
+
+  // AI Conversation methods
+  async getUserAiConversations(userId: number): Promise<(AiConversation & { agent: AiAgent })[]> {
+    try {
+      const conversations = await db
+        .select()
+        .from(aiConversations)
+        .where(eq(aiConversations.userId, userId))
+        .orderBy(desc(aiConversations.lastMessageAt));
+      
+      // Fetch the associated agent for each conversation
+      const result: (AiConversation & { agent: AiAgent })[] = [];
+      
+      for (const conversation of conversations) {
+        const [agent] = await db
+          .select()
+          .from(aiAgents)
+          .where(eq(aiAgents.id, conversation.agentId));
+        
+        if (agent) {
+          result.push({
+            ...conversation,
+            agent
+          });
+        }
+      }
+      
+      return result;
+    } catch (error) {
+      console.error("Error getting user AI conversations:", error);
+      return [];
+    }
+  }
+
+  async getAiConversation(id: number): Promise<AiConversation | undefined> {
+    try {
+      const [conversation] = await db
+        .select()
+        .from(aiConversations)
+        .where(eq(aiConversations.id, id));
+      
+      return conversation;
+    } catch (error) {
+      console.error("Error getting AI conversation by ID:", error);
+      return undefined;
+    }
+  }
+
+  async createAiConversation(conversation: InsertAiConversation): Promise<AiConversation> {
+    try {
+      const [newConversation] = await db
+        .insert(aiConversations)
+        .values({
+          ...conversation,
+          lastMessageAt: new Date()
+        })
+        .returning();
+      
+      return newConversation;
+    } catch (error) {
+      console.error("Error creating AI conversation:", error);
+      throw new Error("Failed to create AI conversation");
+    }
+  }
+
+  async updateAiConversationLastMessage(id: number, preview: string): Promise<boolean> {
+    try {
+      const result = await db
+        .update(aiConversations)
+        .set({
+          lastMessageAt: new Date()
+        })
+        .where(eq(aiConversations.id, id))
+        .returning();
+      
+      return result.length > 0;
+    } catch (error) {
+      console.error("Error updating AI conversation last message:", error);
+      return false;
+    }
+  }
+
+  async deleteAiConversation(id: number): Promise<boolean> {
+    try {
+      // First, delete all messages in the conversation
+      await db
+        .delete(aiMessages)
+        .where(eq(aiMessages.conversationId, id));
+      
+      // Then, delete the conversation
+      const result = await db
+        .delete(aiConversations)
+        .where(eq(aiConversations.id, id))
+        .returning();
+      
+      return result.length > 0;
+    } catch (error) {
+      console.error("Error deleting AI conversation:", error);
+      return false;
+    }
+  }
+
+  // AI Message methods
+  async getAiConversationMessages(conversationId: number): Promise<AiMessage[]> {
+    try {
+      return await db
+        .select()
+        .from(aiMessages)
+        .where(eq(aiMessages.conversationId, conversationId))
+        .orderBy(asc(aiMessages.createdAt));
+    } catch (error) {
+      console.error("Error getting AI conversation messages:", error);
+      return [];
+    }
+  }
+
+  async createAiMessage(message: InsertAiMessage): Promise<AiMessage> {
+    try {
+      const [newMessage] = await db
+        .insert(aiMessages)
+        .values({
+          ...message,
+          createdAt: new Date()
+        })
+        .returning();
+      
+      return newMessage;
+    } catch (error) {
+      console.error("Error creating AI message:", error);
+      throw new Error("Failed to create AI message");
     }
   }
 }

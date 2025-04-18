@@ -10,6 +10,8 @@ import AdminIdeasPage from "@/pages/AdminIdeasPage";
 import CommunityPage from "@/pages/CommunityPage";
 import IdeasPage from "@/pages/IdeasPage";
 import AccessDeniedPage from "@/pages/AccessDeniedPage";
+import AIPage from "@/pages/AIPage";
+import AdminAIPage from "@/pages/AdminAIPage";
 import { AuthProvider } from "./providers/AuthProvider";
 import { useAuth } from "./lib/auth";
 
@@ -43,6 +45,12 @@ function Router() {
       </Route>
       <Route path="/community">
         {() => <ProtectedRoute component={CommunityPage} />}
+      </Route>
+      <Route path="/ai">
+        {() => <ProtectedRoute component={AIPage} />}
+      </Route>
+      <Route path="/admin/ai">
+        {() => <ProtectedRoute component={AdminAIPage} adminOnly={true} />}
       </Route>
       <Route path="/admin">
         {() => <ProtectedRoute component={AdminPage} adminOnly={true} />}
