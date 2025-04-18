@@ -28,7 +28,7 @@ import {
   type CalendarEvent,
   type InsertCalendarEvent
 } from "@shared/schema";
-import { db } from "./db";
+import { db, pool } from "./db";
 import { eq, and, or, inArray, desc, asc, gte, lte } from "drizzle-orm";
 
 export interface IStorage {
@@ -971,21 +971,17 @@ export class DatabaseStorage implements IStorage {
   
   async getUpcomingCalendarEvents(startDate: string, endDate: string, limit?: number): Promise<CalendarEvent[]> {
     try {
-      // Query básica com os filtros de data
-      const baseQuery = `
+      // Usar a pool diretamente para executar a query SQL
+      const query = `
         SELECT * FROM calendar_events 
         WHERE is_active = true 
         AND event_date >= $1
         AND event_date <= $2
         ORDER BY event_date ASC
+        ${limit ? `LIMIT ${limit}` : ''}
       `;
       
-      // Adicionar limite se especificado
-      const query = limit ? `${baseQuery} LIMIT ${limit}` : baseQuery;
-      
-      // Executar a query com os parâmetros
-      const { rows } = await db.$client.query(query, [startDate, endDate]);
-      
+      const { rows } = await pool.query(query, [startDate, endDate]);
       return rows as CalendarEvent[];
     } catch (error) {
       console.error("Error getting upcoming calendar events:", error);
