@@ -163,11 +163,13 @@ function AIAgentsTab() {
   const handleSaveAgent = async (agent: Partial<AiAgent>) => {
     try {
       if (selectedAgent) {
-        // Atualizar agente existente
-        await apiRequest('PUT', `/api/ai/agents/${selectedAgent.id}`, agent);
+        // Atualizar agente existente - remover campos de data para evitar erros
+        const { createdAt, updatedAt, ...agentWithoutDates } = agent;
+        await apiRequest('PUT', `/api/ai/agents/${selectedAgent.id}`, agentWithoutDates);
       } else {
-        // Criar novo agente
-        await apiRequest('POST', '/api/ai/agents', agent);
+        // Criar novo agente - não incluir datas, o backend vai gerar automaticamente
+        const { createdAt, updatedAt, ...agentWithoutDates } = agent;
+        await apiRequest('POST', '/api/ai/agents', agentWithoutDates);
       }
       
       // Recarregar a lista de agentes
@@ -426,7 +428,7 @@ function AgentFormDialog({
               <Input
                 id="imageUrl"
                 name="imageUrl"
-                value={formData.imageUrl}
+                value={formData.imageUrl || ''}
                 onChange={handleChange}
                 placeholder="https://exemplo.com/imagem.jpg"
               />
@@ -436,7 +438,7 @@ function AgentFormDialog({
               <Input
                 id="n8nWebhookUrl"
                 name="n8nWebhookUrl"
-                value={formData.n8nWebhookUrl}
+                value={formData.n8nWebhookUrl || ''}
                 onChange={handleChange}
                 placeholder="https://n8n.exemplo.com/webhook/meu-agente"
                 required
@@ -448,7 +450,7 @@ function AgentFormDialog({
                 id="n8nApiKey"
                 name="n8nApiKey"
                 type="password"
-                value={formData.n8nApiKey}
+                value={formData.n8nApiKey || ''}
                 onChange={handleChange}
                 required
               />
