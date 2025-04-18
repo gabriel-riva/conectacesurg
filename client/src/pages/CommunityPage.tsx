@@ -17,7 +17,7 @@ import * as z from 'zod';
 import { Header } from '@/components/Header';
 import { apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowUp, ImageIcon, FileTextIcon, FilmIcon, LinkIcon, FileIcon, Send, Search, MessageCircle, ThumbsUp, UserPlus, Users, Globe, Lock, MessageSquare, X, PlusCircle, Bell, Camera, FileText, ListTodo, LayoutGrid, Plus, AlertTriangle, User as UserIcon } from 'lucide-react';
+import { ArrowUp, ImageIcon, FileTextIcon, FilmIcon, LinkIcon, FileIcon, Send, Search, MessageCircle, ThumbsUp, UserPlus, Users, Globe, Lock, LogOut, MessageSquare, X, PlusCircle, Bell, Camera, FileText, ListTodo, LayoutGrid, Plus, AlertTriangle, User as UserIcon } from 'lucide-react';
 import type { Post, Comment, Group, Message, Conversation } from '@shared/schema';
 import type { User as UserType } from '@shared/schema';
 import { format } from 'date-fns';
@@ -883,33 +883,87 @@ export default function CommunityPage() {
                     return (
                       <div 
                         key={group.id}
-                        className={`flex items-center p-2 rounded-md cursor-pointer hover:bg-gray-100 ${selectedGroupId === group.id ? 'bg-gray-100' : ''}`}
-                        onClick={() => {
-                          setSelectedGroupId(group.id);
-                          postForm.setValue('groupId', group.id);
-                          setOrganizationTab('posts');
-                        }}
+                        className={`flex items-center p-2 rounded-md ${selectedGroupId === group.id ? 'bg-gray-100' : 'hover:bg-gray-100'}`}
                       >
-                        <div className="w-7 h-7 rounded-full overflow-hidden flex items-center justify-center mr-2">
-                          {group.imageUrl ? (
-                            <img 
-                              src={group.imageUrl} 
-                              alt={group.name} 
-                              className="h-full w-full object-cover" 
-                            />
-                          ) : group.isPrivate ? (
-                            <div className="bg-gray-200 w-full h-full flex items-center justify-center">
-                              <Lock className="h-4 w-4 text-gray-500" />
-                            </div>
-                          ) : (
-                            <div className="bg-green-100 w-full h-full flex items-center justify-center">
-                              <Users className="h-4 w-4 text-secondary" />
-                            </div>
-                          )}
+                        <div 
+                          className="flex items-center flex-1 cursor-pointer"
+                          onClick={() => {
+                            setSelectedGroupId(group.id);
+                            postForm.setValue('groupId', group.id);
+                            setOrganizationTab('posts');
+                          }}
+                        >
+                          <div className="w-7 h-7 rounded-full overflow-hidden flex items-center justify-center mr-2">
+                            {group.imageUrl ? (
+                              <img 
+                                src={group.imageUrl} 
+                                alt={group.name} 
+                                className="h-full w-full object-cover" 
+                              />
+                            ) : group.isPrivate ? (
+                              <div className="bg-gray-200 w-full h-full flex items-center justify-center">
+                                <Lock className="h-4 w-4 text-gray-500" />
+                              </div>
+                            ) : (
+                              <div className="bg-green-100 w-full h-full flex items-center justify-center">
+                                <Users className="h-4 w-4 text-secondary" />
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex-1">
+                            <span className="text-sm font-medium">{group.name}</span>
+                          </div>
                         </div>
-                        <div className="flex-1 flex items-center">
-                          <span className="text-sm font-medium">{group.name}</span>
-                        </div>
+                        
+                        {/* Botão para sair do grupo */}
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className="h-6 w-6 mr-1" 
+                              onClick={(e) => e.stopPropagation()}
+                              title="Sair do grupo"
+                            >
+                              <LogOut className="h-3.5 w-3.5 text-gray-500" />
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent>
+                            <DialogHeader>
+                              <DialogTitle>Sair do Grupo</DialogTitle>
+                              <DialogDescription>
+                                Você tem certeza que deseja sair do grupo "{group.name}"?
+                              </DialogDescription>
+                            </DialogHeader>
+                            <div className="py-4">
+                              {isAdmin && (
+                                <div className="p-3 bg-amber-50 border border-amber-200 rounded-md text-amber-700 mb-4">
+                                  <AlertTriangle className="h-4 w-4 inline-block mr-2" />
+                                  Você é administrador deste grupo. Se sair, perderá acesso às configurações administrativas.
+                                </div>
+                              )}
+                              <p>Ao sair do grupo, você não terá mais acesso ao conteúdo compartilhado. Esta ação não pode ser desfeita.</p>
+                            </div>
+                            <DialogFooter>
+                              <DialogClose asChild>
+                                <Button variant="outline">Cancelar</Button>
+                              </DialogClose>
+                              <Button 
+                                variant="destructive"
+                                onClick={() => {
+                                  // Aqui seria a chamada para a API para remover o usuário do grupo
+                                  toast({
+                                    title: "Grupo abandonado",
+                                    description: `Você saiu do grupo "${group.name}"`,
+                                    duration: 5000,
+                                  });
+                                }}
+                              >
+                                Sair do grupo
+                              </Button>
+                            </DialogFooter>
+                          </DialogContent>
+                        </Dialog>
                         {isAdmin && (
                           <div className="flex items-center space-x-1">
                             <Badge variant="outline" className="bg-secondary/10 text-secondary text-xs">
@@ -1204,10 +1258,64 @@ export default function CommunityPage() {
                               <div className="space-y-4 py-4">
                                 <div className="flex justify-between items-center mb-2">
                                   <h3 className="text-sm font-medium">Membros do Grupo</h3>
-                                  <Button variant="ghost" size="sm" className="text-xs">
-                                    <UserPlus className="h-3 w-3 mr-1" />
-                                    Adicionar
-                                  </Button>
+                                  <Dialog>
+                                    <DialogTrigger asChild>
+                                      <Button variant="ghost" size="sm" className="text-xs">
+                                        <UserPlus className="h-3 w-3 mr-1" />
+                                        Adicionar
+                                      </Button>
+                                    </DialogTrigger>
+                                    <DialogContent className="sm:max-w-md">
+                                      <DialogHeader>
+                                        <DialogTitle>Adicionar Membros</DialogTitle>
+                                        <DialogDescription>
+                                          Selecione os usuários que deseja adicionar ao grupo.
+                                        </DialogDescription>
+                                      </DialogHeader>
+                                      <div className="py-4">
+                                        <div className="mb-4">
+                                          <Input
+                                            placeholder="Pesquisar usuários..."
+                                            className="mb-2"
+                                          />
+                                        </div>
+                                        <div className="border rounded-md max-h-60 overflow-y-auto">
+                                          {/* Lista de usuários simulada - em produção seria obtida da API */}
+                                          {[
+                                            { id: 1, name: 'Admin Conecta', email: 'conecta@cesurg.com', selected: false },
+                                            { id: 3, name: 'Josefina Souza', email: 'josefina@example.com', selected: false },
+                                            { id: 4, name: 'Victor Lima', email: 'victor@example.com', selected: false },
+                                            { id: 5, name: 'Mariana Costa', email: 'mariana@example.com', selected: false }
+                                          ].map(user => (
+                                            <div key={user.id} className="flex items-center justify-between p-2 border-b hover:bg-gray-50">
+                                              <div className="flex items-center">
+                                                <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center mr-2">
+                                                  <UserIcon className="h-4 w-4 text-primary" />
+                                                </div>
+                                                <div>
+                                                  <div className="text-sm font-medium">{user.name}</div>
+                                                  <div className="text-xs text-muted-foreground">{user.email}</div>
+                                                </div>
+                                              </div>
+                                              <Button variant="outline" size="sm" onClick={() => {
+                                                toast({
+                                                  title: "Convite enviado",
+                                                  description: `Convite enviado para ${user.name}`,
+                                                });
+                                              }}>
+                                                Convidar
+                                              </Button>
+                                            </div>
+                                          ))}
+                                        </div>
+                                      </div>
+                                      <DialogFooter>
+                                        <DialogClose asChild>
+                                          <Button variant="outline">Fechar</Button>
+                                        </DialogClose>
+                                      </DialogFooter>
+                                    </DialogContent>
+                                  </Dialog>
                                 </div>
                                 
                                 <div className="border rounded-md">
