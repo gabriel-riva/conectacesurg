@@ -77,14 +77,14 @@ function Router() {
       <Route path="/admin/calendar">
         {() => <ProtectedRoute component={AdminCalendar} adminOnly={true} />}
       </Route>
+      <Route path="/calendar">
+        {() => <ProtectedRoute component={CalendarPage} />}
+      </Route>
       <Route path="/dashboard">
         {() => <ProtectedRoute component={Dashboard} />}
       </Route>
       <Route path="/profile">
         {() => <ProtectedRoute component={Profile} />}
-      </Route>
-      <Route path="/calendar">
-        {() => <ProtectedRoute component={CalendarPage} />}
       </Route>
       <Route path="/access-denied" component={AccessDeniedPage} />
       <Route path="/" component={LoginPage} />

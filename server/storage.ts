@@ -29,7 +29,7 @@ import {
   type InsertCalendarEvent
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, or, inArray, desc, asc } from "drizzle-orm";
+import { eq, and, or, inArray, desc, asc, gte, lte } from "drizzle-orm";
 
 export interface IStorage {
   // User related methods
@@ -98,9 +98,9 @@ export interface IStorage {
   deleteUtilityLink(id: number): Promise<boolean>;
   
   // Calendar Event methods
-  getAllCalendarEvents(includeInactive?: boolean): Promise<CalendarEvent[]>;
-  getUpcomingCalendarEvents(): Promise<CalendarEvent[]>;
-  getCalendarEvent(id: number): Promise<CalendarEvent | undefined>;
+  getCalendarEvents(includeInactive?: boolean): Promise<CalendarEvent[]>;
+  getUpcomingCalendarEvents(startDate: string, endDate: string, limit?: number): Promise<CalendarEvent[]>;
+  getCalendarEventById(id: number): Promise<CalendarEvent | undefined>;
   createCalendarEvent(event: InsertCalendarEvent): Promise<CalendarEvent>;
   updateCalendarEvent(id: number, eventData: Partial<InsertCalendarEvent>): Promise<CalendarEvent | undefined>;
   deleteCalendarEvent(id: number): Promise<boolean>;
@@ -971,23 +971,22 @@ export class DatabaseStorage implements IStorage {
   
   async getUpcomingCalendarEvents(startDate: string, endDate: string, limit?: number): Promise<CalendarEvent[]> {
     try {
-      let query = db
-        .select()
-        .from(calendarEvents)
-        .where(
-          and(
-            eq(calendarEvents.isActive, true),
-            gte(calendarEvents.eventDate, startDate),
-            lte(calendarEvents.eventDate, endDate)
-          )
-        )
-        .orderBy(asc(calendarEvents.eventDate));
+      // Query básica com os filtros de data
+      const baseQuery = `
+        SELECT * FROM calendar_events 
+        WHERE is_active = true 
+        AND event_date >= $1
+        AND event_date <= $2
+        ORDER BY event_date ASC
+      `;
       
-      if (limit !== undefined) {
-        query = query.limit(limit);
-      }
+      // Adicionar limite se especificado
+      const query = limit ? `${baseQuery} LIMIT ${limit}` : baseQuery;
       
-      return await query;
+      // Executar a query com os parâmetros
+      const { rows } = await db.$client.query(query, [startDate, endDate]);
+      
+      return rows as CalendarEvent[];
     } catch (error) {
       console.error("Error getting upcoming calendar events:", error);
       return [];
