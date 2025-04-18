@@ -76,6 +76,12 @@ export default function CommunityPage() {
   const groupImageInputRef = useRef<HTMLInputElement>(null);
   const [organizationTab, setOrganizationTab] = useState<'posts' | 'documents' | 'tasks' | 'kanban'>('posts');
   const [showAllGroups, setShowAllGroups] = useState(false);
+  
+  // Buscar todos os usuários para o modal de adicionar membros
+  const { data: allUsers = [], isLoading: isLoadingUsers } = useQuery<any[]>({
+    queryKey: ['/api/users'],
+    enabled: true,
+  });
 
   // Forms
   const postForm = useForm<PostFormValues>({
@@ -394,6 +400,26 @@ export default function CommunityPage() {
       toast({
         title: 'Erro',
         description: error.message || 'Falha ao recusar o convite. Por favor, tente novamente.',
+        variant: 'destructive',
+      });
+    },
+  });
+  
+  // Mutation para convidar usuário para grupo
+  const inviteUserMutation = useMutation({
+    mutationFn: async ({ groupId, userId }: { groupId: number; userId: number }) => {
+      return await apiRequest('POST', `/api/community/groups/${groupId}/invite`, { userId });
+    },
+    onSuccess: () => {
+      toast({
+        title: 'Convite enviado',
+        description: 'O convite foi enviado com sucesso.',
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Erro',
+        description: error.message || 'Falha ao enviar o convite. Por favor, tente novamente.',
         variant: 'destructive',
       });
     },
@@ -1169,12 +1195,13 @@ export default function CommunityPage() {
                                                     />
                                                   </div>
                                                   <div className="border rounded-md max-h-60 overflow-y-auto">
-                                                    {[
-                                                      { id: 1, name: 'Admin Conecta', email: 'conecta@cesurg.com', selected: false },
-                                                      { id: 3, name: 'Josefina Souza', email: 'josefina@example.com', selected: false },
-                                                      { id: 4, name: 'Victor Lima', email: 'victor@example.com', selected: false },
-                                                      { id: 5, name: 'Mariana Costa', email: 'mariana@example.com', selected: false }
-                                                    ].map(user => (
+                                                    {isLoadingUsers && (
+                                                      <div className="text-center py-4">Carregando usuários...</div>
+                                                    )} 
+                                                    {!isLoadingUsers && allUsers.length === 0 && (
+                                                      <div className="text-center py-4 text-gray-500">Nenhum usuário encontrado</div>
+                                                    )}
+                                                    {!isLoadingUsers && allUsers.length > 0 && allUsers.map(user => (
                                                       <div key={user.id} className="flex items-center justify-between p-2 border-b hover:bg-gray-50">
                                                         <div className="flex items-center">
                                                           <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center mr-2">
@@ -1185,13 +1212,26 @@ export default function CommunityPage() {
                                                             <div className="text-xs text-muted-foreground">{user.email}</div>
                                                           </div>
                                                         </div>
-                                                        <Button variant="outline" size="sm" onClick={() => {
-                                                          toast({
-                                                            title: "Convite enviado",
-                                                            description: `Convite enviado para ${user.name}`,
-                                                          });
-                                                        }}>
-                                                          Convidar
+                                                        <Button 
+                                                          variant="outline" 
+                                                          size="sm" 
+                                                          onClick={() => {
+                                                            if (selectedGroupId) {
+                                                              inviteUserMutation.mutate({ 
+                                                                groupId: selectedGroupId, 
+                                                                userId: user.id 
+                                                              });
+                                                            } else {
+                                                              toast({
+                                                                title: "Erro",
+                                                                description: "Selecione um grupo primeiro",
+                                                                variant: "destructive"
+                                                              });
+                                                            }
+                                                          }}
+                                                          disabled={inviteUserMutation.isPending}
+                                                        >
+                                                          {inviteUserMutation.isPending ? "Enviando..." : "Convidar"}
                                                         </Button>
                                                       </div>
                                                     ))}
