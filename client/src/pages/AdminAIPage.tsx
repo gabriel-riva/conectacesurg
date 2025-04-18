@@ -14,6 +14,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { useToast } from "@/hooks/use-toast";
 import { AiAgent, AiPrompt } from "@/shared/schema";
 import { Edit, Trash, Plus, Search } from "lucide-react";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 
 export default function AdminAIPage() {
   const [activeTab, setActiveTab] = useState("agentes");
@@ -97,10 +98,9 @@ function AIAgentsTab() {
     },
   ];
 
-  // In a real app, this would be an API call
-  const { data: agents = mockAgents } = useQuery({
-    queryKey: ['/api/admin/ai/agents'],
-    enabled: false, // Disable until API is implemented
+  // Buscar dados reais da API
+  const { data: agents = mockAgents, refetch: refetchAgents } = useQuery({
+    queryKey: ['/api/ai/agents'],
   });
 
   const filteredAgents = agents.filter(agent => 
@@ -113,35 +113,81 @@ function AIAgentsTab() {
     setIsEditAgentOpen(true);
   };
 
-  const handleDeleteAgent = (agentId: number) => {
-    // In a real app, this would be an API call
-    toast({
-      title: "Agente excluído",
-      description: "O agente foi excluído com sucesso.",
-      variant: "default",
-    });
+  const handleDeleteAgent = async (agentId: number) => {
+    try {
+      await apiRequest('DELETE', `/api/ai/agents/${agentId}`);
+      
+      // Recarregar a lista de agentes
+      await refetchAgents();
+      
+      toast({
+        title: "Agente excluído",
+        description: "O agente foi excluído com sucesso.",
+        variant: "default",
+      });
+    } catch (error) {
+      console.error("Erro ao excluir agente:", error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível excluir o agente. Tente novamente.",
+        variant: "destructive",
+      });
+    }
   };
 
-  const handleToggleAgentStatus = (agentId: number, newStatus: boolean) => {
-    // In a real app, this would be an API call
-    toast({
-      title: newStatus ? "Agente ativado" : "Agente desativado",
-      description: `O agente foi ${newStatus ? "ativado" : "desativado"} com sucesso.`,
-      variant: "default",
-    });
+  const handleToggleAgentStatus = async (agentId: number, newStatus: boolean) => {
+    try {
+      // Atualizar apenas o status do agente
+      await apiRequest('PUT', `/api/ai/agents/${agentId}`, { active: newStatus });
+      
+      // Recarregar a lista de agentes
+      await refetchAgents();
+      
+      toast({
+        title: newStatus ? "Agente ativado" : "Agente desativado",
+        description: `O agente foi ${newStatus ? "ativado" : "desativado"} com sucesso.`,
+        variant: "default",
+      });
+    } catch (error) {
+      console.error("Erro ao alterar status do agente:", error);
+      toast({
+        title: "Erro",
+        description: `Não foi possível ${newStatus ? "ativar" : "desativar"} o agente. Tente novamente.`,
+        variant: "destructive",
+      });
+    }
   };
 
-  const handleSaveAgent = (agent: Partial<AiAgent>) => {
-    // In a real app, this would be an API call
-    toast({
-      title: selectedAgent ? "Agente atualizado" : "Agente criado",
-      description: `O agente foi ${selectedAgent ? "atualizado" : "criado"} com sucesso.`,
-      variant: "default",
-    });
-    
-    setIsAddAgentOpen(false);
-    setIsEditAgentOpen(false);
-    setSelectedAgent(null);
+  const handleSaveAgent = async (agent: Partial<AiAgent>) => {
+    try {
+      if (selectedAgent) {
+        // Atualizar agente existente
+        await apiRequest('PUT', `/api/ai/agents/${selectedAgent.id}`, agent);
+      } else {
+        // Criar novo agente
+        await apiRequest('POST', '/api/ai/agents', agent);
+      }
+      
+      // Recarregar a lista de agentes
+      await refetchAgents();
+      
+      toast({
+        title: selectedAgent ? "Agente atualizado" : "Agente criado",
+        description: `O agente foi ${selectedAgent ? "atualizado" : "criado"} com sucesso.`,
+        variant: "default",
+      });
+    } catch (error) {
+      console.error("Erro ao salvar agente:", error);
+      toast({
+        title: "Erro",
+        description: `Não foi possível ${selectedAgent ? "atualizar" : "criar"} o agente. Tente novamente.`,
+        variant: "destructive",
+      });
+    } finally {
+      setIsAddAgentOpen(false);
+      setIsEditAgentOpen(false);
+      setSelectedAgent(null);
+    }
   };
 
   return (
