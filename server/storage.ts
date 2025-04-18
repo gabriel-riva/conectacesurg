@@ -8,6 +8,7 @@ import {
   aiConversations,
   aiMessages,
   utilityLinks,
+  calendarEvents,
   type User, 
   type InsertUser, 
   type InsertGoogleUser,
@@ -23,7 +24,9 @@ import {
   type InsertUtilityLink,
   type InsertAiPrompt,
   type InsertAiConversation,
-  type InsertAiMessage
+  type InsertAiMessage,
+  type CalendarEvent,
+  type InsertCalendarEvent
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, or, inArray, desc, asc } from "drizzle-orm";
@@ -93,6 +96,14 @@ export interface IStorage {
   createUtilityLink(link: InsertUtilityLink): Promise<UtilityLink>;
   updateUtilityLink(id: number, linkData: Partial<InsertUtilityLink>): Promise<UtilityLink | undefined>;
   deleteUtilityLink(id: number): Promise<boolean>;
+  
+  // Calendar Event methods
+  getAllCalendarEvents(includeInactive?: boolean): Promise<CalendarEvent[]>;
+  getUpcomingCalendarEvents(): Promise<CalendarEvent[]>;
+  getCalendarEvent(id: number): Promise<CalendarEvent | undefined>;
+  createCalendarEvent(event: InsertCalendarEvent): Promise<CalendarEvent>;
+  updateCalendarEvent(id: number, eventData: Partial<InsertCalendarEvent>): Promise<CalendarEvent | undefined>;
+  deleteCalendarEvent(id: number): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {

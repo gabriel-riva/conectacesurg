@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, primaryKey, jsonb, uniqueIndex } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, primaryKey, jsonb, uniqueIndex, date } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { relations } from "drizzle-orm";
@@ -225,6 +225,20 @@ export const utilityLinks = pgTable("utility_links", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+export const calendarEvents = pgTable("calendar_events", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  eventDate: date("event_date").notNull(),
+  eventTime: text("event_time").notNull(),
+  location: text("location").notNull(),
+  imageUrl: text("image_url"),
+  creatorId: integer("creator_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Tipos e esquemas para o UtilityLink estão definidos abaixo junto com os outros esquemas
 
 // Relations
@@ -247,6 +261,7 @@ export const usersRelations = relations(users, ({ many }) => ({
   ideaVolunteers: many(ideaVolunteers),
   aiPrompts: many(aiPrompts, { relationName: "creator" }),
   aiConversations: many(aiConversations),
+  calendarEvents: many(calendarEvents, { relationName: "creator" }),
 }));
 
 export const groupsRelations = relations(groups, ({ many, one }) => ({
@@ -439,6 +454,14 @@ export const aiMessagesRelations = relations(aiMessages, ({ one }) => ({
   }),
 }));
 
+export const calendarEventsRelations = relations(calendarEvents, ({ one }) => ({
+  creator: one(users, {
+    fields: [calendarEvents.creatorId],
+    references: [users.id],
+    relationName: "creator"
+  }),
+}));
+
 // Schemas
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
@@ -573,11 +596,18 @@ export const insertUtilityLinkSchema = createInsertSchema(utilityLinks).omit({
   updatedAt: true,
 });
 
+export const insertCalendarEventSchema = createInsertSchema(calendarEvents).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 // Types
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type UpdateProfile = z.infer<typeof updateProfileSchema>;
 export type InsertGoogleUser = z.infer<typeof insertGoogleUserSchema>;
 export type InsertUtilityLink = z.infer<typeof insertUtilityLinkSchema>;
+export type InsertCalendarEvent = z.infer<typeof insertCalendarEventSchema>;
 export type InsertGroup = z.infer<typeof insertGroupSchema>;
 export type InsertUserGroup = z.infer<typeof insertUserGroupSchema>;
 export type InsertPost = z.infer<typeof insertPostSchema>;
@@ -613,3 +643,4 @@ export type AiPromptAgent = typeof aiPromptAgents.$inferSelect;
 export type AiConversation = typeof aiConversations.$inferSelect;
 export type AiMessage = typeof aiMessages.$inferSelect;
 export type UtilityLink = typeof utilityLinks.$inferSelect;
+export type CalendarEvent = typeof calendarEvents.$inferSelect;
