@@ -19,14 +19,14 @@ export function CalendarCard() {
       <CardContent className="p-4 flex flex-col" style={{ height: "calc(280px - 54px)" }}>
         <div className="overflow-y-auto flex-grow" style={{ maxHeight: "calc(100% - 30px)" }}>
           {events.map((event) => (
-            <div key={event.id} className="border-t border-gray-100 pt-2 mb-3">
+            <div key={event.id} className="border-t border-gray-100 pt-1 mb-1">
               <div className="text-xs text-muted-foreground">{event.date} - {event.time}</div>
-              <div className="font-medium">{event.title}</div>
+              <div className="font-medium text-sm">{event.title}</div>
             </div>
           ))}
         </div>
         <div className="mt-2 pt-2 text-right border-t border-gray-100">
-          <a href="#" className="text-primary text-sm hover:underline">
+          <a href="#" className="text-[#0D8A43] text-sm hover:underline">
             Ver tudo
           </a>
         </div>
