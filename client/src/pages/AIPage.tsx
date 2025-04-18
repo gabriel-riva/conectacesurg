@@ -125,16 +125,23 @@ export default function AIPage() {
   ];
 
   // Fetch real data from API
-  const { data: agents = mockAgents } = useQuery({
+  const { data: agents = [] } = useQuery({
     queryKey: ['/api/ai/agents'],
   });
 
-  const { data: conversations = mockConversations } = useQuery({
+  const { data: conversations = [] } = useQuery({
     queryKey: ['/api/ai/conversations'],
   });
 
-  const { data: prompts = mockPrompts } = useQuery({
+  const { data: prompts = [] } = useQuery({
     queryKey: ['/api/ai/prompts'],
+    queryFn: async () => {
+      const response = await fetch('/api/ai/prompts?includePrivate=true');
+      if (!response.ok) {
+        throw new Error('Failed to fetch prompts');
+      }
+      return response.json();
+    }
   });
 
   // Initialize messages if they are empty
@@ -149,32 +156,93 @@ export default function AIPage() {
 
     setIsLoading(true);
     
-    // Add user message to chat
-    const userMessage: AIMessageType = {
-      id: Date.now(),
-      conversationId: selectedConversationId || 0,
-      content: message,
-      isFromUser: true,
-      attachments: [],
-      createdAt: new Date(),
-    };
-    
-    setMessages(prev => [...prev, userMessage]);
-    
-    // Simulate API response
-    setTimeout(() => {
-      const agentMessage: AIMessageType = {
-        id: Date.now() + 1,
-        conversationId: selectedConversationId || 0,
-        content: `Recebi sua mensagem: "${message}". Em um sistema real, essa mensagem seria processada pelo agente de IA selecionado através do n8n.`,
-        isFromUser: false,
+    try {
+      // Se não existe uma conversa, crie uma
+      let conversationId = selectedConversationId;
+      
+      if (!conversationId) {
+        // Cria uma nova conversa
+        const createConversationResponse = await fetch('/api/ai/conversations', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            agentId: selectedAgentId,
+            title: message.substring(0, 50) + (message.length > 50 ? '...' : ''),
+          }),
+        });
+        
+        if (!createConversationResponse.ok) {
+          throw new Error('Falha ao criar conversa');
+        }
+        
+        const newConversation = await createConversationResponse.json();
+        conversationId = newConversation.id;
+        setSelectedConversationId(conversationId);
+      }
+      
+      // Adicionar mensagem do usuário localmente para feedback imediato
+      const userMessage: AIMessageType = {
+        id: Date.now(),
+        conversationId: conversationId,
+        content: message,
+        isFromUser: true,
         attachments: [],
         createdAt: new Date(),
       };
       
-      setMessages(prev => [...prev, agentMessage]);
+      setMessages(prev => [...prev, userMessage]);
+      
+      // Enviar a mensagem para o servidor
+      const sendMessageResponse = await fetch(`/api/ai/conversations/${conversationId}/messages`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          content: message,
+          isFromUser: true,
+          // Os anexos seriam processados aqui com upload
+        }),
+      });
+      
+      if (!sendMessageResponse.ok) {
+        throw new Error('Falha ao enviar mensagem');
+      }
+      
+      // Simular resposta do agente - em produção, isso viria do webhook do n8n
+      // Em uma implementação real, o frontend esperaria por uma resposta de webhook ou faria polling
+      setTimeout(async () => {
+        const agentMessage: AIMessageType = {
+          id: Date.now() + 1,
+          conversationId: conversationId || 0,
+          content: `Recebi sua mensagem: "${message}". Em um sistema real, essa mensagem seria processada pelo agente de IA selecionado através do n8n.`,
+          isFromUser: false,
+          attachments: [],
+          createdAt: new Date(),
+        };
+        
+        setMessages(prev => [...prev, agentMessage]);
+        
+        // Simular o envio da resposta do agente para o servidor
+        await fetch(`/api/ai/conversations/${conversationId}/messages`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            content: agentMessage.content,
+            isFromUser: false,
+          }),
+        });
+        
+        setIsLoading(false);
+      }, 1500);
+    } catch (error) {
+      console.error('Erro ao processar mensagem:', error);
       setIsLoading(false);
-    }, 1500);
+    }
   };
 
   const handleSelectAgent = (agent: AiAgent) => {
@@ -199,8 +267,22 @@ export default function AIPage() {
   const handleSelectConversation = (conversation: AiConversation) => {
     setSelectedConversationId(conversation.id);
     setSelectedAgentId(conversation.agentId);
-    // Here we would load the messages for this conversation
-    // For now, we'll just use our mock messages
+    
+    // Buscar mensagens para essa conversa
+    fetch(`/api/ai/conversations/${conversation.id}/messages`)
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Falha ao buscar mensagens');
+        }
+        return response.json();
+      })
+      .then(data => {
+        setMessages(data || []);
+      })
+      .catch(error => {
+        console.error('Erro ao buscar mensagens:', error);
+        setMessages([]);
+      });
   };
 
   const handleNewConversation = () => {
