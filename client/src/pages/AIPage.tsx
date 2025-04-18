@@ -125,15 +125,15 @@ export default function AIPage() {
   ];
 
   // Fetch real data from API
-  const { data: agents = [] } = useQuery({
+  const { data: agents = [] } = useQuery<AiAgent[]>({
     queryKey: ['/api/ai/agents'],
   });
 
-  const { data: conversations = [] } = useQuery({
+  const { data: conversations = [] } = useQuery<(AiConversation & { agent: AiAgent })[]>({
     queryKey: ['/api/ai/conversations'],
   });
 
-  const { data: prompts = [] } = useQuery({
+  const { data: prompts = [] } = useQuery<AiPrompt[]>({
     queryKey: ['/api/ai/prompts'],
     queryFn: async () => {
       const response = await fetch('/api/ai/prompts?includePrivate=true');
@@ -144,12 +144,12 @@ export default function AIPage() {
     }
   });
 
-  // Initialize messages if they are empty
-  React.useEffect(() => {
-    if (messages.length === 0) {
-      setMessages(mockMessages);
-    }
-  }, [messages]);
+  // Na implementação real, não inicializamos com mensagens de teste
+  // React.useEffect(() => {
+  //   if (messages.length === 0) {
+  //     setMessages(mockMessages);
+  //   }
+  // }, [messages]);
 
   const handleSubmitMessage = async (message: string, attachments: File[]) => {
     if (!selectedAgentId) return;

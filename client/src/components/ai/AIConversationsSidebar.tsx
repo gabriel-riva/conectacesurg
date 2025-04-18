@@ -87,7 +87,9 @@ function ConversationItem({
   onClick,
 }: ConversationItemProps) {
   // Format date to show just the day if it's today, or the date if it's older
-  const formatDate = (date: Date) => {
+  const formatDate = (date: Date | null) => {
+    if (!date) return '';
+    
     const today = new Date();
     const conversationDate = new Date(date);
     

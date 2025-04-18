@@ -5,12 +5,12 @@ import { cn } from "@/lib/utils";
 interface AIMessageProps {
   content: string;
   isFromUser: boolean;
-  timestamp: Date;
+  timestamp: Date | null;
   userName?: string;
   agentName?: string;
-  agentImage?: string;
-  userImage?: string;
-  attachments?: Array<{name: string, url: string, type: string}>;
+  agentImage?: string | null;
+  userImage?: string | null;
+  attachments?: Array<{name: string, url: string, type: string}> | null;
 }
 
 export function AIMessage({
@@ -23,7 +23,9 @@ export function AIMessage({
   userImage,
   attachments = []
 }: AIMessageProps) {
-  const hasAttachments = attachments.length > 0;
+  // Use um valor padrão de array vazio se attachments for null
+  const safeAttachments = attachments || [];
+  const hasAttachments = safeAttachments.length > 0;
   
   return (
     <div className={cn(
@@ -33,7 +35,7 @@ export function AIMessage({
     )}>
       <Avatar className="h-8 w-8">
         <AvatarImage 
-          src={isFromUser ? userImage : agentImage} 
+          src={isFromUser ? (userImage || undefined) : (agentImage || undefined)} 
           alt={isFromUser ? (userName || "Você") : (agentName || "IA")} 
         />
         <AvatarFallback>
@@ -47,7 +49,7 @@ export function AIMessage({
             {isFromUser ? (userName || "Você") : (agentName || "Assistente IA")}
           </span>
           <span className="text-xs text-muted-foreground">
-            {new Date(timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+            {timestamp ? new Date(timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : ''}
           </span>
         </div>
         
@@ -64,7 +66,7 @@ export function AIMessage({
         
         {hasAttachments && (
           <div className="flex flex-wrap gap-2 mt-2">
-            {attachments.map((attachment, index) => (
+            {safeAttachments.map((attachment, index) => (
               <AttachmentPreview key={index} attachment={attachment} />
             ))}
           </div>
