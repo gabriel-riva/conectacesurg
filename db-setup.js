@@ -1,29 +1,18 @@
-// Script to push database schema changes
-import { drizzle } from 'drizzle-orm/neon-serverless';
-import { Pool, neonConfig } from '@neondatabase/serverless';
-import { migrate } from 'drizzle-orm/neon-serverless/migrator';
-import ws from 'ws';
-import * as schema from './shared/schema.ts';
+// Configuração simples de banco de dados com node-postgres
+import pkg from 'pg';
+const { Pool } = pkg;
 
-neonConfig.webSocketConstructor = ws;
-
-async function main() {
-  console.log('Starting database schema push...');
+async function setupDatabase() {
+  console.log('Inicializando configuração do banco de dados...');
   
-  if (!process.env.DATABASE_URL) {
-    throw new Error(
-      "DATABASE_URL must be set. Did you forget to provision a database?",
-    );
-  }
+  // Conectar ao banco de dados
+  const pool = new Pool({
+    connectionString: process.env.DATABASE_URL
+  });
 
-  // Create a Postgres connection
-  const pool = new Pool({ connectionString: process.env.DATABASE_URL });
-  const db = drizzle({ client: pool, schema });
-  
   try {
-    console.log('Connected to database, creating schema...');
-    
-    // Create the users table (if it doesn't exist)
+    // Criar tabelas necessárias
+    console.log('Criando tabela de usuários...');
     await pool.query(`
       CREATE TABLE IF NOT EXISTS users (
         id SERIAL PRIMARY KEY,
@@ -39,11 +28,11 @@ async function main() {
       );
     `);
     
-    // Create the groups table (if it doesn't exist)
+    console.log('Criando tabela de grupos...');
     await pool.query(`
       CREATE TABLE IF NOT EXISTS groups (
         id SERIAL PRIMARY KEY,
-        name TEXT NOT NULL UNIQUE,
+        name TEXT NOT NULL,
         description TEXT,
         creator_id INTEGER NOT NULL REFERENCES users(id),
         is_private BOOLEAN NOT NULL DEFAULT FALSE,
@@ -53,7 +42,7 @@ async function main() {
       );
     `);
     
-    // Create the user_groups table (if it doesn't exist)
+    console.log('Criando tabela de usuários-grupos...');
     await pool.query(`
       CREATE TABLE IF NOT EXISTS user_groups (
         user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -65,7 +54,7 @@ async function main() {
       );
     `);
     
-    // Create the posts table (if it doesn't exist)
+    console.log('Criando tabela de posts...');
     await pool.query(`
       CREATE TABLE IF NOT EXISTS posts (
         id SERIAL PRIMARY KEY,
@@ -79,7 +68,7 @@ async function main() {
       );
     `);
     
-    // Create the comments table (if it doesn't exist)
+    console.log('Criando tabela de comentários...');
     await pool.query(`
       CREATE TABLE IF NOT EXISTS comments (
         id SERIAL PRIMARY KEY,
@@ -93,32 +82,18 @@ async function main() {
       );
     `);
     
-    // Create the likes table (if it doesn't exist)
+    console.log('Criando tabela de curtidas...');
     await pool.query(`
       CREATE TABLE IF NOT EXISTS likes (
+        id SERIAL PRIMARY KEY,
         user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
         post_id INTEGER REFERENCES posts(id) ON DELETE CASCADE,
         comment_id INTEGER REFERENCES comments(id) ON DELETE CASCADE,
-        created_at TIMESTAMP DEFAULT NOW(),
-        PRIMARY KEY (user_id, COALESCE(post_id, comment_id))
-      );
-    `);
-    
-    // Create the messages table (if it doesn't exist)
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS messages (
-        id SERIAL PRIMARY KEY,
-        sender_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-        receiver_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-        content TEXT NOT NULL,
-        media_url TEXT,
-        media_type TEXT,
-        is_read BOOLEAN NOT NULL DEFAULT FALSE,
         created_at TIMESTAMP DEFAULT NOW()
       );
     `);
     
-    // Create the conversations table (if it doesn't exist)
+    console.log('Criando tabela de conversas...');
     await pool.query(`
       CREATE TABLE IF NOT EXISTS conversations (
         id SERIAL PRIMARY KEY,
@@ -130,16 +105,47 @@ async function main() {
       );
     `);
     
-    console.log('Database schema created successfully!');
+    console.log('Criando tabela de mensagens...');
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS messages (
+        id SERIAL PRIMARY KEY,
+        conversation_id INTEGER NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
+        sender_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        content TEXT NOT NULL,
+        media_url TEXT,
+        media_type TEXT,
+        is_read BOOLEAN NOT NULL DEFAULT FALSE,
+        created_at TIMESTAMP DEFAULT NOW()
+      );
+    `);
+
+    console.log('Tabelas criadas com sucesso!');
+    
+    // Verificar se existe pelo menos um usuário admin
+    const { rows } = await pool.query('SELECT COUNT(*) FROM users WHERE role = $1', ['superadmin']);
+    
+    if (parseInt(rows[0].count) === 0) {
+      console.log('Criando usuário superadmin padrão...');
+      await pool.query(`
+        INSERT INTO users (name, email, role) 
+        VALUES ('Admin Conecta', 'conecta@cesurg.com', 'superadmin')
+        ON CONFLICT (email) DO NOTHING
+      `);
+      console.log('Usuário superadmin criado com sucesso!');
+    } else {
+      console.log('Usuário superadmin já existe, pulando criação.');
+    }
+
+    console.log('Configuração do banco de dados concluída com sucesso!');
   } catch (error) {
-    console.error('Error creating database schema:', error);
+    console.error('Erro ao configurar o banco de dados:', error);
     throw error;
   } finally {
     await pool.end();
   }
 }
 
-main().catch(err => {
-  console.error('Failed to push database schema:', err);
+setupDatabase().catch(err => {
+  console.error('Falha na configuração do banco de dados:', err);
   process.exit(1);
 });
