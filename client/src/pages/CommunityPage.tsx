@@ -136,6 +136,11 @@ export default function CommunityPage() {
   const { data: conversations = [], isLoading: isLoadingConversations } = useQuery<Conversation[]>({
     queryKey: ['/api/community/conversations'],
   });
+  
+  // Get pending group invites
+  const { data: pendingInvites = [], isLoading: isLoadingInvites } = useQuery<any[]>({
+    queryKey: ['/api/community/group-invites'],
+  });
 
   // Get messages for active conversation
   const { data: messages = [], isLoading: isLoadingMessages } = useQuery<Message[]>({
@@ -346,6 +351,49 @@ export default function CommunityPage() {
       toast({
         title: 'Erro',
         description: error.message || 'Falha na pesquisa. Por favor, tente novamente.',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  // Mutation para aceitar convite de grupo
+  const acceptInviteMutation = useMutation({
+    mutationFn: async (groupId: number) => {
+      return await apiRequest('POST', `/api/community/group-invites/${groupId}/accept`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/community/group-invites'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/community/groups/user'] });
+      toast({
+        title: 'Convite aceito',
+        description: 'Você agora é membro do grupo.',
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Erro',
+        description: error.message || 'Falha ao aceitar o convite. Por favor, tente novamente.',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  // Mutation para recusar convite de grupo
+  const rejectInviteMutation = useMutation({
+    mutationFn: async (groupId: number) => {
+      return await apiRequest('POST', `/api/community/group-invites/${groupId}/reject`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/community/group-invites'] });
+      toast({
+        title: 'Convite recusado',
+        description: 'O convite foi recusado com sucesso.',
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Erro',
+        description: error.message || 'Falha ao recusar o convite. Por favor, tente novamente.',
         variant: 'destructive',
       });
     },
@@ -900,7 +948,7 @@ export default function CommunityPage() {
               )}
             </div>
             
-            <Separator className="my-4" />
+            <div className="border-t my-4"></div>
             
             {isLoadingGroups ? (
               <div className="text-center py-6">Carregando grupos...</div>

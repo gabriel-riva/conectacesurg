@@ -5,7 +5,7 @@ import fs from 'fs';
 import { v4 as uuidv4 } from 'uuid';
 import { storage } from './storage';
 import { db } from './db';
-import { posts, comments, likes, groups, users, userGroups, messages, conversations, User } from '@shared/schema';
+import { posts, comments, likes, groups, users, userGroups, messages, conversations, notifications, User } from '@shared/schema';
 import { eq, desc, asc, and, or, isNull, inArray, sql, ilike } from 'drizzle-orm';
 
 // Extender o tipo Request do Express para incluir o usuário
@@ -721,6 +721,203 @@ router.get('/search', async (req: Request, res: Response) => {
   } catch (error) {
     console.error('Error searching:', error);
     res.status(500).json({ error: 'Failed to perform search' });
+  }
+});
+
+// Rota para buscar convites de grupo pendentes para o usuário
+router.get('/group-invites', async (req: Request, res: Response) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    // Buscar convites de grupo (são entradas na tabela user_groups com status 'pending')
+    const pendingInvites = await db.query.userGroups.findMany({
+      where: and(
+        eq(userGroups.userId, req.user.id),
+        eq(userGroups.status, 'pending')
+      ),
+      with: {
+        group: {
+          with: {
+            creator: true
+          }
+        }
+      }
+    });
+
+    const formattedInvites = pendingInvites.map(invite => ({
+      id: invite.groupId,
+      name: invite.group.name,
+      description: invite.group.description,
+      imageUrl: invite.group.imageUrl,
+      isPrivate: invite.group.isPrivate,
+      requiresApproval: invite.group.requiresApproval,
+      createdAt: invite.joinedAt,
+      invitedBy: invite.group.creator.name
+    }));
+
+    res.json(formattedInvites);
+  } catch (error) {
+    console.error('Error fetching group invites:', error);
+    res.status(500).json({ error: 'Failed to fetch group invites' });
+  }
+});
+
+// Rota para aceitar um convite de grupo
+router.post('/group-invites/:groupId/accept', async (req: Request, res: Response) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const groupId = parseInt(req.params.groupId);
+    
+    // Verificar se o convite existe
+    const invite = await db.query.userGroups.findFirst({
+      where: and(
+        eq(userGroups.userId, req.user.id),
+        eq(userGroups.groupId, groupId),
+        eq(userGroups.status, 'pending')
+      )
+    });
+
+    if (!invite) {
+      return res.status(404).json({ error: 'Convite não encontrado' });
+    }
+
+    // Atualizar status para 'approved'
+    await db.update(userGroups)
+      .set({ status: 'approved' })
+      .where(and(
+        eq(userGroups.userId, req.user.id),
+        eq(userGroups.groupId, groupId)
+      ));
+
+    // Criar notificação para o criador do grupo
+    const group = await db.query.groups.findFirst({
+      where: eq(groups.id, groupId)
+    });
+
+    if (group) {
+      await db.insert(notifications).values({
+        userId: group.creatorId,
+        type: 'group_accepted',
+        title: 'Novo membro no grupo',
+        message: `${req.user.name || 'Um usuário'} aceitou o convite para o grupo "${group.name}"`,
+        relatedId: groupId,
+        relatedType: 'group',
+        fromUserId: req.user.id
+      });
+    }
+
+    res.json({ success: true, message: 'Convite aceito com sucesso' });
+  } catch (error) {
+    console.error('Error accepting group invite:', error);
+    res.status(500).json({ error: 'Failed to accept group invite' });
+  }
+});
+
+// Rota para recusar um convite de grupo
+router.post('/group-invites/:groupId/reject', async (req: Request, res: Response) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const groupId = parseInt(req.params.groupId);
+    
+    // Verificar se o convite existe
+    const invite = await db.query.userGroups.findFirst({
+      where: and(
+        eq(userGroups.userId, req.user.id),
+        eq(userGroups.groupId, groupId),
+        eq(userGroups.status, 'pending')
+      )
+    });
+
+    if (!invite) {
+      return res.status(404).json({ error: 'Convite não encontrado' });
+    }
+
+    // Remover o convite
+    await db.delete(userGroups)
+      .where(and(
+        eq(userGroups.userId, req.user.id),
+        eq(userGroups.groupId, groupId)
+      ));
+
+    res.json({ success: true, message: 'Convite recusado com sucesso' });
+  } catch (error) {
+    console.error('Error rejecting group invite:', error);
+    res.status(500).json({ error: 'Failed to reject group invite' });
+  }
+});
+
+// Rota para convidar um usuário para um grupo
+router.post('/groups/:groupId/invite', async (req: Request, res: Response) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const groupId = parseInt(req.params.groupId);
+    const { userId } = req.body;
+
+    if (!userId) {
+      return res.status(400).json({ error: 'ID do usuário é obrigatório' });
+    }
+
+    // Verificar se o usuário que está convidando é admin do grupo
+    const isAdmin = await isUserGroupAdmin(req.user.id, groupId);
+    if (!isAdmin) {
+      return res.status(403).json({ error: 'Apenas administradores podem convidar usuários' });
+    }
+
+    // Verificar se o usuário já está no grupo
+    const userInGroup = await db.query.userGroups.findFirst({
+      where: and(
+        eq(userGroups.userId, userId),
+        eq(userGroups.groupId, groupId)
+      )
+    });
+
+    if (userInGroup) {
+      return res.status(400).json({ error: 'Usuário já está no grupo ou já foi convidado' });
+    }
+
+    // Obter informações do grupo
+    const group = await db.query.groups.findFirst({
+      where: eq(groups.id, groupId)
+    });
+
+    if (!group) {
+      return res.status(404).json({ error: 'Grupo não encontrado' });
+    }
+
+    // Criar o convite (entrada em user_groups com status 'pending')
+    await db.insert(userGroups).values({
+      userId: userId,
+      groupId: groupId,
+      status: 'pending',
+      isAdmin: false
+    });
+
+    // Criar notificação para o usuário convidado
+    await db.insert(notifications).values({
+      userId: userId,
+      type: 'group_invite',
+      title: 'Convite para grupo',
+      message: `Você foi convidado para participar do grupo "${group.name}"`,
+      relatedId: groupId,
+      relatedType: 'group',
+      fromUserId: req.user.id
+    });
+
+    res.json({ success: true, message: 'Convite enviado com sucesso' });
+  } catch (error) {
+    console.error('Error inviting user to group:', error);
+    res.status(500).json({ error: 'Failed to invite user to group' });
   }
 });
 
