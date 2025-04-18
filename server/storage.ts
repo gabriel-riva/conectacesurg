@@ -954,7 +954,7 @@ export class DatabaseStorage implements IStorage {
   }
   
   // Calendar Event methods
-  async getAllCalendarEvents(includeInactive: boolean = false): Promise<CalendarEvent[]> {
+  async getCalendarEvents(includeInactive: boolean = false): Promise<CalendarEvent[]> {
     try {
       let query = db.select().from(calendarEvents);
       
@@ -969,27 +969,32 @@ export class DatabaseStorage implements IStorage {
     }
   }
   
-  async getUpcomingCalendarEvents(): Promise<CalendarEvent[]> {
+  async getUpcomingCalendarEvents(startDate: string, endDate: string, limit?: number): Promise<CalendarEvent[]> {
     try {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      
-      return await db
+      let query = db
         .select()
         .from(calendarEvents)
         .where(
           and(
-            eq(calendarEvents.isActive, true)
+            eq(calendarEvents.isActive, true),
+            gte(calendarEvents.eventDate, startDate),
+            lte(calendarEvents.eventDate, endDate)
           )
         )
         .orderBy(asc(calendarEvents.eventDate));
+      
+      if (limit !== undefined) {
+        query = query.limit(limit);
+      }
+      
+      return await query;
     } catch (error) {
       console.error("Error getting upcoming calendar events:", error);
       return [];
     }
   }
   
-  async getCalendarEvent(id: number): Promise<CalendarEvent | undefined> {
+  async getCalendarEventById(id: number): Promise<CalendarEvent | undefined> {
     try {
       const [event] = await db
         .select()
