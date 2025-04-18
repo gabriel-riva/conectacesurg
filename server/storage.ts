@@ -952,6 +952,99 @@ export class DatabaseStorage implements IStorage {
       return false;
     }
   }
+  
+  // Calendar Event methods
+  async getAllCalendarEvents(includeInactive: boolean = false): Promise<CalendarEvent[]> {
+    try {
+      let query = db.select().from(calendarEvents);
+      
+      if (!includeInactive) {
+        query = query.where(eq(calendarEvents.isActive, true));
+      }
+      
+      return await query.orderBy(desc(calendarEvents.eventDate));
+    } catch (error) {
+      console.error("Error getting all calendar events:", error);
+      return [];
+    }
+  }
+  
+  async getUpcomingCalendarEvents(): Promise<CalendarEvent[]> {
+    try {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      return await db
+        .select()
+        .from(calendarEvents)
+        .where(
+          and(
+            eq(calendarEvents.isActive, true)
+          )
+        )
+        .orderBy(asc(calendarEvents.eventDate));
+    } catch (error) {
+      console.error("Error getting upcoming calendar events:", error);
+      return [];
+    }
+  }
+  
+  async getCalendarEvent(id: number): Promise<CalendarEvent | undefined> {
+    try {
+      const [event] = await db
+        .select()
+        .from(calendarEvents)
+        .where(eq(calendarEvents.id, id));
+      
+      return event;
+    } catch (error) {
+      console.error("Error getting calendar event by ID:", error);
+      return undefined;
+    }
+  }
+  
+  async createCalendarEvent(event: InsertCalendarEvent): Promise<CalendarEvent> {
+    try {
+      const [newEvent] = await db
+        .insert(calendarEvents)
+        .values(event)
+        .returning();
+      
+      return newEvent;
+    } catch (error) {
+      console.error("Error creating calendar event:", error);
+      throw new Error("Failed to create calendar event");
+    }
+  }
+  
+  async updateCalendarEvent(id: number, eventData: Partial<InsertCalendarEvent>): Promise<CalendarEvent | undefined> {
+    try {
+      const [updatedEvent] = await db
+        .update(calendarEvents)
+        .set(eventData)
+        .where(eq(calendarEvents.id, id))
+        .returning();
+      
+      return updatedEvent;
+    } catch (error) {
+      console.error("Error updating calendar event:", error);
+      return undefined;
+    }
+  }
+  
+  async deleteCalendarEvent(id: number): Promise<boolean> {
+    try {
+      const result = await db
+        .delete(calendarEvents)
+        .where(eq(calendarEvents.id, id))
+        .returning();
+      
+      return result.length > 0;
+    } catch (error) {
+      console.error("Error deleting calendar event:", error);
+      return false;
+    }
+  }
 }
 
 // Export a new instance of DatabaseStorage
