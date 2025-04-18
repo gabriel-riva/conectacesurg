@@ -728,17 +728,17 @@ export default function CommunityPage() {
                       <div className="font-medium flex-1">
                         {conversations.find(c => c.id === activeConversation) 
                           ? getOtherUser(conversations.find(c => c.id === activeConversation)!)
-                          : 'Conversation'}
+                          : 'Conversa'}
                       </div>
                     </div>
                     
                     <ScrollArea className="flex-1 p-2">
                       <div className="space-y-2">
                         {isLoadingMessages ? (
-                          <div className="text-center py-6">Loading messages...</div>
+                          <div className="text-center py-6">Carregando mensagens...</div>
                         ) : messages.length === 0 ? (
                           <div className="text-center py-6 text-gray-500">
-                            No messages yet. Start a conversation!
+                            Nenhuma mensagem ainda. Inicie uma conversa!
                           </div>
                         ) : (
                           <>
@@ -782,7 +782,7 @@ export default function CommunityPage() {
                                 <FormControl>
                                   <Input
                                     {...field}
-                                    placeholder="Type a message..."
+                                    placeholder="Digite uma mensagem..."
                                     className="rounded-full"
                                   />
                                 </FormControl>
@@ -946,12 +946,12 @@ function PostCard({
           <div className="flex-1">
             <div className="flex items-center justify-between">
               <div>
-                <div className="font-medium">{post.user?.name || 'User'}</div>
+                <div className="font-medium">{post.user?.name || 'Usuário'}</div>
                 <div className="text-xs text-gray-500">{formatPostDate(post.createdAt)}</div>
               </div>
               {post.groupId && (
                 <Badge variant="outline">
-                  {post.group?.name || 'Group'}
+                  {post.group?.name || 'Grupo'}
                 </Badge>
               )}
             </div>
@@ -1031,7 +1031,7 @@ function PostCard({
                     </div>
                   </Avatar>
                   <div className="flex-1 bg-white rounded-md p-3 text-sm">
-                    <div className="font-medium">{comment.user?.name || 'User'}</div>
+                    <div className="font-medium">{comment.user?.name || 'Usuário'}</div>
                     <div>{comment.content}</div>
                     <div className="text-xs text-gray-500 mt-1">
                       {format(new Date(comment.createdAt), 'dd MMM yyyy, HH:mm')}
