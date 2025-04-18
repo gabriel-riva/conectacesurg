@@ -474,7 +474,7 @@ export default function CommunityPage() {
   // Mutation para alterar o status de admin de um membro
   const toggleAdminMutation = useMutation({
     mutationFn: async ({ groupId, userId }: { groupId: number; userId: number }) => {
-      return await apiRequest('POST', `/api/community/groups/${groupId}/members/${userId}/toggle-admin`);
+      return await apiRequest<{isAdmin: boolean, message: string}>('POST', `/api/community/groups/${groupId}/members/${userId}/toggle-admin`);
     },
     onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['/api/community/groups', variables.groupId, 'members'] });
@@ -496,7 +496,7 @@ export default function CommunityPage() {
   // Mutation para remover um membro do grupo
   const removeMemberMutation = useMutation({
     mutationFn: async ({ groupId, userId }: { groupId: number; userId: number }) => {
-      return await apiRequest('DELETE', `/api/community/groups/${groupId}/members/${userId}`);
+      return await apiRequest<{success: boolean, message: string}>('DELETE', `/api/community/groups/${groupId}/members/${userId}`);
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['/api/community/groups', variables.groupId, 'members'] });

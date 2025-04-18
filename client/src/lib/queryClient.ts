@@ -23,7 +23,12 @@ export async function apiRequest<T = Response>(
   
   // Se T não é Response, tenta fazer parse para JSON
   if (res.headers.get('content-type')?.includes('application/json')) {
-    return res.json() as Promise<T>;
+    try {
+      return res.json() as Promise<T>;
+    } catch (error) {
+      console.error('Error parsing JSON in apiRequest:', error);
+      return {} as T;
+    }
   }
   
   return res as unknown as T;
@@ -44,7 +49,12 @@ export const getQueryFn: <T>(options: {
     }
 
     await throwIfResNotOk(res);
-    return await res.json();
+    try {
+      return await res.json();
+    } catch (error) {
+      console.error('Error parsing JSON response:', error);
+      return [];
+    }
   };
 
 export const queryClient = new QueryClient({
