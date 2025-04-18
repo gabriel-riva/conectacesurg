@@ -97,7 +97,14 @@ router.get("/:id", async (req: Request, res: Response) => {
     }
 
     // Verificar se o link está ativo ou se o usuário é admin
-    if (!link.isActive && !(req.session.user && (req.session.user.role === "admin" || req.session.user.role === "superadmin"))) {
+    if (!link.isActive) {
+      if (req.isAuthenticated()) {
+        const user = req.user as any;
+        if (user.role === "admin" || user.role === "superadmin") {
+          // Admin/superadmin pode ver links inativos
+          return res.json(link);
+        }
+      }
       return res.status(404).json({ error: "Link não encontrado" });
     }
 
