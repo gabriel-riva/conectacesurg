@@ -470,6 +470,50 @@ export default function CommunityPage() {
       });
     },
   });
+  
+  // Mutation para alterar o status de admin de um membro
+  const toggleAdminMutation = useMutation({
+    mutationFn: async ({ groupId, userId }: { groupId: number; userId: number }) => {
+      return await apiRequest('POST', `/api/community/groups/${groupId}/members/${userId}/toggle-admin`);
+    },
+    onSuccess: (data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['/api/community/groups', variables.groupId, 'members'] });
+      
+      toast({
+        title: data.isAdmin ? 'Administrador adicionado' : 'Administrador removido',
+        description: data.message,
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Erro',
+        description: error.message || 'Falha ao alterar status de administrador. Por favor, tente novamente.',
+        variant: 'destructive',
+      });
+    },
+  });
+  
+  // Mutation para remover um membro do grupo
+  const removeMemberMutation = useMutation({
+    mutationFn: async ({ groupId, userId }: { groupId: number; userId: number }) => {
+      return await apiRequest('DELETE', `/api/community/groups/${groupId}/members/${userId}`);
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['/api/community/groups', variables.groupId, 'members'] });
+      
+      toast({
+        title: 'Membro removido',
+        description: 'O membro foi removido do grupo com sucesso.',
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Erro',
+        description: error.message || 'Falha ao remover membro do grupo. Por favor, tente novamente.',
+        variant: 'destructive',
+      });
+    },
+  });
 
   // Scroll to bottom of messages when new ones arrive
   useEffect(() => {
@@ -1316,8 +1360,8 @@ export default function CommunityPage() {
                                                     {groupMembers.map((member) => (
                                                       <div key={member.id} className="p-3 flex items-center justify-between border-b">
                                                         <div className="flex items-center">
-                                                          <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center mr-2">
-                                                            <UserIcon className="h-4 w-4 text-primary" />
+                                                          <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center mr-2 text-white">
+                                                            {member.name ? member.name.charAt(0).toUpperCase() : <UserIcon className="h-4 w-4" />}
                                                           </div>
                                                           <div>
                                                             <div className="text-sm font-medium">
@@ -1329,23 +1373,79 @@ export default function CommunityPage() {
                                                           </div>
                                                         </div>
                                                         {member.id !== user?.id && (
-                                                          <Button size="sm" variant="ghost" className="h-8 w-8 p-0">
-                                                            <span className="sr-only">Opções</span>
-                                                            <svg
-                                                              xmlns="http://www.w3.org/2000/svg"
-                                                              viewBox="0 0 24 24"
-                                                              fill="none"
-                                                              stroke="currentColor"
-                                                              strokeWidth="2"
-                                                              strokeLinecap="round"
-                                                              strokeLinejoin="round"
-                                                              className="h-4 w-4"
-                                                            >
-                                                              <circle cx="12" cy="12" r="1" />
-                                                              <circle cx="12" cy="5" r="1" />
-                                                              <circle cx="12" cy="19" r="1" />
-                                                            </svg>
-                                                          </Button>
+                                                          <Dialog>
+                                                            <DialogTrigger asChild>
+                                                              <Button size="sm" variant="ghost" className="h-8 w-8 p-0">
+                                                                <span className="sr-only">Opções</span>
+                                                                <svg
+                                                                  xmlns="http://www.w3.org/2000/svg"
+                                                                  viewBox="0 0 24 24"
+                                                                  fill="none"
+                                                                  stroke="currentColor"
+                                                                  strokeWidth="2"
+                                                                  strokeLinecap="round"
+                                                                  strokeLinejoin="round"
+                                                                  className="h-4 w-4"
+                                                                >
+                                                                  <circle cx="12" cy="12" r="1" />
+                                                                  <circle cx="12" cy="5" r="1" />
+                                                                  <circle cx="12" cy="19" r="1" />
+                                                                </svg>
+                                                              </Button>
+                                                            </DialogTrigger>
+                                                            <DialogContent className="sm:max-w-[425px]">
+                                                              <DialogHeader>
+                                                                <DialogTitle>Gerenciar membro</DialogTitle>
+                                                                <DialogDescription>
+                                                                  Escolha uma ação para o membro {member.name}
+                                                                </DialogDescription>
+                                                              </DialogHeader>
+                                                              <div className="grid gap-4 py-4">
+                                                                <Button 
+                                                                  onClick={() => {
+                                                                    if (!activeGroupForMembers) return;
+                                                                    
+                                                                    toggleAdminMutation.mutate({
+                                                                      groupId: activeGroupForMembers, 
+                                                                      userId: member.id
+                                                                    });
+                                                                  }}
+                                                                  variant="outline"
+                                                                  className="w-full justify-start"
+                                                                  disabled={toggleAdminMutation.isPending}
+                                                                >
+                                                                  {toggleAdminMutation.isPending 
+                                                                    ? 'Processando...' 
+                                                                    : member.role === 'ADMIN' 
+                                                                      ? 'Remover como administrador' 
+                                                                      : 'Tornar administrador'}
+                                                                </Button>
+                                                                
+                                                                <Button 
+                                                                  onClick={() => {
+                                                                    if (!activeGroupForMembers) return;
+                                                                    
+                                                                    removeMemberMutation.mutate({
+                                                                      groupId: activeGroupForMembers, 
+                                                                      userId: member.id
+                                                                    });
+                                                                  }}
+                                                                  variant="destructive"
+                                                                  className="w-full justify-start"
+                                                                  disabled={removeMemberMutation.isPending}
+                                                                >
+                                                                  {removeMemberMutation.isPending 
+                                                                    ? 'Removendo...' 
+                                                                    : 'Remover do grupo'}
+                                                                </Button>
+                                                              </div>
+                                                              <DialogFooter>
+                                                                <DialogClose asChild>
+                                                                  <Button variant="outline">Cancelar</Button>
+                                                                </DialogClose>
+                                                              </DialogFooter>
+                                                            </DialogContent>
+                                                          </Dialog>
                                                         )}
                                                       </div>
                                                     ))}

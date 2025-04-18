@@ -6,7 +6,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { storage } from './storage';
 import { db } from './db';
 import { posts, comments, likes, groups, users, userGroups, messages, conversations, notifications, User } from '@shared/schema';
-import { eq, desc, asc, and, or, isNull, inArray, sql, ilike } from 'drizzle-orm';
+import { eq, desc, asc, and, or, isNull, inArray, sql, ilike, count } from 'drizzle-orm';
 
 // Extender o tipo Request do Express para incluir o usuário
 declare global {
@@ -1047,6 +1047,158 @@ router.get('/groups/:groupId/members', async (req: Request, res: Response) => {
   } catch (error) {
     console.error('Error fetching group members:', error);
     res.status(500).json({ error: 'Failed to fetch group members' });
+  }
+});
+
+// Rota para modificar status de admin de um membro do grupo
+router.post('/groups/:groupId/members/:userId/toggle-admin', async (req: Request, res: Response) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ error: 'Não autorizado' });
+    }
+
+    const groupId = parseInt(req.params.groupId);
+    const targetUserId = parseInt(req.params.userId);
+    
+    // Verificar se o grupo existe
+    const group = await db.query.groups.findFirst({
+      where: eq(groups.id, groupId)
+    });
+
+    if (!group) {
+      return res.status(404).json({ error: 'Grupo não encontrado' });
+    }
+    
+    // Verificar se o usuário atual é admin do grupo
+    const currentUserMembership = await db.query.userGroups.findFirst({
+      where: and(
+        eq(userGroups.userId, req.user.id),
+        eq(userGroups.groupId, groupId),
+        eq(userGroups.status, 'approved'),
+        eq(userGroups.isAdmin, true)
+      )
+    });
+    
+    // Apenas admins podem modificar status de outros membros
+    if (!currentUserMembership) {
+      return res.status(403).json({ error: 'Você não tem permissão para alterar o status de membros neste grupo' });
+    }
+
+    // Verificar se o usuário alvo existe no grupo
+    const targetUserMembership = await db.query.userGroups.findFirst({
+      where: and(
+        eq(userGroups.userId, targetUserId),
+        eq(userGroups.groupId, groupId),
+        eq(userGroups.status, 'approved')
+      )
+    });
+
+    if (!targetUserMembership) {
+      return res.status(404).json({ error: 'Usuário não encontrado no grupo' });
+    }
+
+    // Alternar o status de admin
+    const newIsAdmin = !targetUserMembership.isAdmin;
+    
+    // Atualizar o registro
+    await db.update(userGroups)
+      .set({ isAdmin: newIsAdmin })
+      .where(and(
+        eq(userGroups.userId, targetUserId),
+        eq(userGroups.groupId, groupId)
+      ));
+
+    res.json({ 
+      success: true, 
+      isAdmin: newIsAdmin,
+      message: newIsAdmin 
+        ? 'Usuário foi promovido a administrador' 
+        : 'Privilégios de administrador foram removidos'
+    });
+  } catch (error) {
+    console.error('Erro ao modificar status de admin:', error);
+    res.status(500).json({ error: 'Falha ao modificar status de administrador' });
+  }
+});
+
+// Rota para remover um membro do grupo
+router.delete('/groups/:groupId/members/:userId', async (req: Request, res: Response) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ error: 'Não autorizado' });
+    }
+
+    const groupId = parseInt(req.params.groupId);
+    const targetUserId = parseInt(req.params.userId);
+    
+    // Verificar se o grupo existe
+    const group = await db.query.groups.findFirst({
+      where: eq(groups.id, groupId)
+    });
+
+    if (!group) {
+      return res.status(404).json({ error: 'Grupo não encontrado' });
+    }
+    
+    // Verificar se o usuário atual é admin do grupo
+    const currentUserMembership = await db.query.userGroups.findFirst({
+      where: and(
+        eq(userGroups.userId, req.user.id),
+        eq(userGroups.groupId, groupId),
+        eq(userGroups.status, 'approved'),
+        eq(userGroups.isAdmin, true)
+      )
+    });
+    
+    // Apenas admins podem remover membros
+    if (!currentUserMembership) {
+      return res.status(403).json({ error: 'Você não tem permissão para remover membros deste grupo' });
+    }
+
+    // Verificar se o usuário alvo existe no grupo
+    const targetUserMembership = await db.query.userGroups.findFirst({
+      where: and(
+        eq(userGroups.userId, targetUserId),
+        eq(userGroups.groupId, groupId)
+      )
+    });
+
+    if (!targetUserMembership) {
+      return res.status(404).json({ error: 'Usuário não encontrado no grupo' });
+    }
+
+    // Não permitir remover o criador do grupo (ou o único admin)
+    if (targetUserMembership.isAdmin) {
+      // Contar quantos admins existem no grupo
+      const adminCount = await db.select({ count: count() })
+        .from(userGroups)
+        .where(and(
+          eq(userGroups.groupId, groupId),
+          eq(userGroups.isAdmin, true),
+          eq(userGroups.status, 'approved')
+        ));
+        
+      if (adminCount[0].count <= 1) {
+        return res.status(400).json({ 
+          error: 'Não é possível remover o único administrador do grupo. Promova outro membro a administrador primeiro.' 
+        });
+      }
+    }
+
+    // Remover o usuário do grupo
+    await db.delete(userGroups)
+      .where(and(
+        eq(userGroups.userId, targetUserId),
+        eq(userGroups.groupId, groupId)
+      ));
+
+    res.json({ 
+      success: true, 
+      message: 'Membro removido do grupo com sucesso'
+    });
+  } catch (error) {
+    console.error('Erro ao remover membro do grupo:', error);
+    res.status(500).json({ error: 'Falha ao remover membro do grupo' });
   }
 });
 
