@@ -5,8 +5,18 @@ import fs from 'fs';
 import { v4 as uuidv4 } from 'uuid';
 import { storage } from './storage';
 import { db } from './db';
-import { posts, comments, likes, groups, users, userGroups, messages, conversations } from '@shared/schema';
+import { posts, comments, likes, groups, users, userGroups, messages, conversations, User } from '@shared/schema';
 import { eq, desc, asc, and, or, isNull, inArray, sql, ilike } from 'drizzle-orm';
+
+// Extender o tipo Request do Express para incluir o usuário
+declare global {
+  namespace Express {
+    interface User {
+      id: number;
+      // Outros campos necessários
+    }
+  }
+}
 
 const router = Router();
 
@@ -340,6 +350,8 @@ router.post('/groups', async (req: Request, res: Response) => {
     if (!req.user) {
       return res.status(401).json({ error: 'Unauthorized' });
     }
+    
+    console.log('Usuário criando grupo:', req.user);
     
     const { name, description, isPrivate, requiresApproval } = req.body;
     
