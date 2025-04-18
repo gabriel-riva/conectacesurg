@@ -921,4 +921,65 @@ router.post('/groups/:groupId/invite', async (req: Request, res: Response) => {
   }
 });
 
+// Rota de teste para criar convites de grupo (apenas para desenvolvimento)
+router.post('/group-invites/test', async (req: Request, res: Response) => {
+  try {
+    const { userId, groupId } = req.body;
+    
+    // Verificar se os parâmetros necessários estão presentes
+    if (!userId || !groupId) {
+      return res.status(400).json({ error: 'userId e groupId são obrigatórios' });
+    }
+    
+    // Verificar se o usuário já tem um convite para este grupo
+    const existingInvite = await db.query.userGroups.findFirst({
+      where: and(
+        eq(userGroups.userId, userId),
+        eq(userGroups.groupId, groupId)
+      )
+    });
+    
+    if (existingInvite) {
+      // Atualizar para status pendente
+      await db.update(userGroups)
+        .set({ status: 'pending' })
+        .where(and(
+          eq(userGroups.userId, userId),
+          eq(userGroups.groupId, groupId)
+        ));
+    } else {
+      // Criar uma nova entrada de convite
+      await db.insert(userGroups).values({
+        userId: userId,
+        groupId: groupId,
+        status: 'pending',
+        isAdmin: false
+      });
+    }
+    
+    // Obter informações do grupo
+    const group = await db.query.groups.findFirst({
+      where: eq(groups.id, groupId)
+    });
+    
+    if (group) {
+      // Criar uma notificação para o usuário
+      await db.insert(notifications).values({
+        userId: userId,
+        type: 'group_invite',
+        title: 'Convite para grupo (TESTE)',
+        message: `Você foi convidado para participar do grupo "${group.name}"`,
+        relatedId: groupId,
+        relatedType: 'group',
+        fromUserId: group.creatorId
+      });
+    }
+    
+    res.json({ success: true, message: 'Convite de teste criado com sucesso' });
+  } catch (error) {
+    console.error('Erro ao criar convite de teste:', error);
+    res.status(500).json({ error: 'Falha ao criar convite de teste' });
+  }
+});
+
 export default router;

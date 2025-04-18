@@ -900,40 +900,44 @@ export default function CommunityPage() {
                 Criar
               </Button>
             </div>
-
+            
             {/* Convites pendentes */}
-            <div className="mb-4">
-              <h4 className="text-sm font-medium text-gray-600 mb-2">Convites pendentes</h4>
-              {/* Em produção, isso viria da API */}
-              {[
-                { id: 1, name: 'Pesquisa Clínica', imageUrl: null, invitedBy: 'Admin Conecta' },
-                { id: 2, name: 'Grupo de Estudos IQV', imageUrl: null, invitedBy: 'Maria Silva' }
-              ].length > 0 ? (
+            {pendingInvites.length > 0 && (
+              <div className="mb-4">
+                <h4 className="text-sm font-medium text-gray-600 mb-2">Convites pendentes</h4>
                 <div className="space-y-2">
-                  {[
-                    { id: 1, name: 'Pesquisa Clínica', imageUrl: null, invitedBy: 'Admin Conecta' },
-                    { id: 2, name: 'Grupo de Estudos IQV', imageUrl: null, invitedBy: 'Maria Silva' }
-                  ].map(group => (
-                    <div key={group.id} className="p-2 rounded-md bg-gray-50 border">
+                  {pendingInvites.map(invite => (
+                    <div key={invite.id} className="p-2 rounded-md bg-gray-50 border">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center">
                           <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center mr-2">
-                            {group.imageUrl ? (
-                              <img src={group.imageUrl} alt={group.name} className="w-full h-full object-cover rounded-full" />
+                            {invite.imageUrl ? (
+                              <img src={invite.imageUrl} alt={invite.name} className="w-full h-full object-cover rounded-full" />
                             ) : (
                               <Users className="h-4 w-4 text-gray-500" />
                             )}
                           </div>
                           <div>
-                            <p className="text-sm font-medium">{group.name}</p>
-                            <p className="text-xs text-gray-500">Convite de {group.invitedBy}</p>
+                            <p className="text-sm font-medium">{invite.name}</p>
+                            <p className="text-xs text-gray-500">Convite de {invite.invitedBy}</p>
                           </div>
                         </div>
                         <div className="flex space-x-2">
-                          <Button variant="outline" size="sm" className="h-7 text-xs">
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="h-7 text-xs"
+                            onClick={() => rejectInviteMutation.mutate(invite.id)}
+                            disabled={rejectInviteMutation.isPending}
+                          >
                             Recusar
                           </Button>
-                          <Button size="sm" className="h-7 text-xs bg-green-600 hover:bg-green-700">
+                          <Button 
+                            size="sm" 
+                            className="h-7 text-xs bg-green-600 hover:bg-green-700"
+                            onClick={() => acceptInviteMutation.mutate(invite.id)}
+                            disabled={acceptInviteMutation.isPending}
+                          >
                             Aceitar
                           </Button>
                         </div>
@@ -941,14 +945,13 @@ export default function CommunityPage() {
                     </div>
                   ))}
                 </div>
-              ) : (
-                <div className="text-center py-2 text-xs text-gray-500">
-                  Sem convites pendentes
-                </div>
-              )}
-            </div>
-            
-            <div className="border-t my-4"></div>
+                <div className="border-t my-4"></div>
+              </div>
+            )}
+
+            {pendingInvites.length === 0 && (
+              <div className="border-t my-4"></div>
+            )}
             
             {isLoadingGroups ? (
               <div className="text-center py-6">Carregando grupos...</div>
