@@ -30,14 +30,14 @@ export function UtilityLinks() {
   // Renderizar estado de carregamento
   if (isLoading) {
     return (
-      <Card className="shadow-md border-none">
+      <Card className="h-[280px] shadow-md border-none overflow-hidden">
         <CardHeader className="pb-2 bg-gradient-to-r from-primary/5 to-transparent">
           <CardTitle className="text-primary/90 flex items-center">
             <span className="inline-block w-1 h-5 bg-primary rounded mr-2"></span>
             Links Úteis
           </CardTitle>
         </CardHeader>
-        <CardContent className="p-4">
+        <CardContent className="p-4" style={{ height: "calc(280px - 54px)" }}>
           <div className="space-y-4">
             {[1, 2, 3].map((i) => (
               <div key={i} className="flex items-center p-2">
@@ -54,14 +54,14 @@ export function UtilityLinks() {
   // Renderizar mensagem se não houver links
   if (!links || links.length === 0) {
     return (
-      <Card className="shadow-md border-none">
+      <Card className="h-[280px] shadow-md border-none overflow-hidden">
         <CardHeader className="pb-2 bg-gradient-to-r from-primary/5 to-transparent">
           <CardTitle className="text-primary/90 flex items-center">
             <span className="inline-block w-1 h-5 bg-primary rounded mr-2"></span>
             Links Úteis
           </CardTitle>
         </CardHeader>
-        <CardContent className="p-4">
+        <CardContent className="p-4" style={{ height: "calc(280px - 54px)" }}>
           <p className="text-gray-500 text-center py-4">
             Nenhum link útil disponível no momento.
           </p>
@@ -72,14 +72,14 @@ export function UtilityLinks() {
 
   // Renderizar os links
   return (
-    <Card className="shadow-md hover:shadow-lg transition-shadow duration-300 border-none">
+    <Card className="h-[280px] shadow-md hover:shadow-lg transition-shadow duration-300 border-none overflow-hidden">
       <CardHeader className="pb-2 bg-gradient-to-r from-primary/5 to-transparent">
         <CardTitle className="text-primary/90 flex items-center">
           <span className="inline-block w-1 h-5 bg-primary rounded mr-2"></span>
           Links Úteis
         </CardTitle>
       </CardHeader>
-      <CardContent className="p-4">
+      <CardContent className="p-4" style={{ height: "calc(280px - 54px)" }}>
         <ul className="space-y-3">
           {links.map((link) => (
             <li key={link.id}>

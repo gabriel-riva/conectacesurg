@@ -28,14 +28,14 @@ export function RankingCard() {
   ];
 
   return (
-    <Card className="h-[280px] flex flex-col shadow-md hover:shadow-lg transition-shadow duration-300 border-none">
+    <Card className="h-[280px] flex flex-col shadow-md hover:shadow-lg transition-shadow duration-300 border-none overflow-hidden">
       <CardHeader className="pb-2 bg-gradient-to-r from-primary/5 to-transparent">
         <CardTitle className="text-primary/90 flex items-center">
           <span className="inline-block w-1 h-5 bg-primary rounded mr-2"></span>
           Ranking
         </CardTitle>
       </CardHeader>
-      <CardContent className="p-4 flex flex-col flex-grow">
+      <CardContent className="p-4 flex flex-col" style={{ height: "calc(280px - 54px)" }}>
         <div className="mb-4 flex items-center justify-between">
           <div className="flex gap-2">
             <Button variant="secondary" size="sm" className="px-3 py-1 h-auto text-xs rounded-md">
@@ -47,7 +47,7 @@ export function RankingCard() {
           </div>
           
           <Select defaultValue="curso">
-            <SelectTrigger className="w-32 h-7 text-xs">
+            <SelectTrigger className="w-24 h-7 text-xs">
               <SelectValue placeholder="Curso" />
             </SelectTrigger>
             <SelectContent>
@@ -59,20 +59,20 @@ export function RankingCard() {
           </Select>
         </div>
         
-        <div className="overflow-y-auto flex-grow">
+        <div className="overflow-y-auto" style={{ maxHeight: "calc(100% - 60px)" }}>
           <div className="space-y-3">
             {users.map((user) => (
               <div key={user.id} className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Avatar className="h-7 w-7">
+                <div className="flex items-center gap-2 max-w-[75%]">
+                  <Avatar className="h-7 w-7 flex-shrink-0">
                     <AvatarImage src={user.avatar} />
                     <AvatarFallback className="text-xs">
                       {user.name.split(' ').map(n => n[0]).join('')}
                     </AvatarFallback>
                   </Avatar>
-                  <span className="text-sm">{user.name}</span>
+                  <span className="text-sm truncate">{user.name}</span>
                 </div>
-                <span className="text-primary text-sm font-medium">{user.points}pts</span>
+                <span className="text-primary text-sm font-medium ml-2">{user.points}pts</span>
               </div>
             ))}
           </div>

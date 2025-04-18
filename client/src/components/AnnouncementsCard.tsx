@@ -5,15 +5,15 @@ export function AnnouncementsCard() {
   const avisos: any[] = [];
 
   return (
-    <Card className="h-[280px] flex flex-col shadow-md hover:shadow-lg transition-shadow duration-300 border-none">
+    <Card className="h-[280px] flex flex-col shadow-md hover:shadow-lg transition-shadow duration-300 border-none overflow-hidden">
       <CardHeader className="pb-2 bg-gradient-to-r from-primary/5 to-transparent">
         <CardTitle className="text-primary/90 flex items-center">
           <span className="inline-block w-1 h-5 bg-primary rounded mr-2"></span>
           Avisos
         </CardTitle>
       </CardHeader>
-      <CardContent className="p-4 flex flex-col flex-grow">
-        <div className="overflow-y-auto flex-grow">
+      <CardContent className="p-4 flex flex-col" style={{ height: "calc(280px - 54px)" }}>
+        <div className="overflow-y-auto" style={{ maxHeight: "calc(100% - 30px)" }}>
           {avisos.length > 0 ? (
             avisos.map((aviso, index) => (
               <div key={index} className="border-t border-gray-100 pt-2 mb-3">
@@ -21,7 +21,7 @@ export function AnnouncementsCard() {
               </div>
             ))
           ) : (
-            <div className="h-[170px] flex flex-col items-center justify-center border-none rounded-md bg-gradient-to-br from-gray-50 to-gray-100 shadow-inner">
+            <div className="flex flex-col items-center justify-center border-none rounded-md bg-gradient-to-br from-gray-50 to-gray-100 shadow-inner" style={{ height: "170px" }}>
               <div className="text-gray-300 mb-2">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
