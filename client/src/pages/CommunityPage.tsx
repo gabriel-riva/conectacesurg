@@ -17,7 +17,7 @@ import * as z from 'zod';
 import { Header } from '@/components/Header';
 import { apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowUp, ImageIcon, FileTextIcon, FilmIcon, LinkIcon, FileIcon, Send, Search, MessageCircle, ThumbsUp, UserPlus, Users, Globe, Lock, MessageSquare, X, PlusCircle, Bell } from 'lucide-react';
+import { ArrowUp, ImageIcon, FileTextIcon, FilmIcon, LinkIcon, FileIcon, Send, Search, MessageCircle, ThumbsUp, UserPlus, Users, Globe, Lock, MessageSquare, X, PlusCircle, Bell, Camera, FileText, ListTodo, LayoutGrid, Plus } from 'lucide-react';
 import type { Post, Comment, Group, User, Message, Conversation } from '@shared/schema';
 import { format } from 'date-fns';
 
@@ -73,6 +73,7 @@ export default function CommunityPage() {
   const [selectedGroupId, setSelectedGroupId] = useState<number | null>(null);
   const [groupImageFile, setGroupImageFile] = useState<File | null>(null);
   const groupImageInputRef = useRef<HTMLInputElement>(null);
+  const [organizationTab, setOrganizationTab] = useState<'posts' | 'documents' | 'tasks' | 'kanban'>('posts');
 
   // Forms
   const postForm = useForm<PostFormValues>({
@@ -212,12 +213,42 @@ export default function CommunityPage() {
 
   const createGroupMutation = useMutation({
     mutationFn: async (formData: GroupFormValues) => {
-      return await apiRequest('POST', '/api/community/groups', formData);
+      // Se temos imagem, precisamos usar FormData para upload
+      if (groupImageFile) {
+        const formDataWithImage = new FormData();
+        formDataWithImage.append('name', formData.name);
+        
+        if (formData.description) {
+          formDataWithImage.append('description', formData.description);
+        }
+        
+        formDataWithImage.append('isPrivate', formData.isPrivate.toString());
+        formDataWithImage.append('requiresApproval', formData.requiresApproval.toString());
+        formDataWithImage.append('image', groupImageFile);
+        
+        // Para FormData, não podemos usar apiRequest
+        const res = await fetch('/api/community/groups', {
+          method: 'POST',
+          body: formDataWithImage,
+          credentials: 'include'
+        });
+        
+        if (!res.ok) {
+          const text = await res.text();
+          throw new Error(`${res.status}: ${text || res.statusText}`);
+        }
+        
+        return await res.json();
+      } else {
+        // Sem imagem, usamos o apiRequest padrão
+        return await apiRequest('POST', '/api/community/groups', formData);
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/community/groups/user'] });
       queryClient.invalidateQueries({ queryKey: ['/api/community/groups/admin'] });
       groupForm.reset();
+      setGroupImageFile(null);
       setCreateGroupOpen(false);
       toast({
         title: 'Grupo criado',
@@ -362,6 +393,20 @@ export default function CommunityPage() {
     setMediaType(type);
     if (mediaInputRef.current) {
       mediaInputRef.current.click();
+    }
+  };
+  
+  // Handle group image upload
+  const handleGroupImageUpload = () => {
+    if (groupImageInputRef.current) {
+      groupImageInputRef.current.click();
+    }
+  };
+  
+  // Handle group image selection
+  const handleGroupImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files?.length) {
+      setGroupImageFile(e.target.files[0]);
     }
   };
 
@@ -786,9 +831,12 @@ export default function CommunityPage() {
                     onClick={() => {
                       setSelectedGroupId(null);
                       postForm.setValue('groupId', undefined);
+                      setOrganizationTab('posts');
                     }}
                   >
-                    <Globe className="h-5 w-5 mr-2 text-primary" />
+                    <Avatar className="h-8 w-8 mr-2">
+                      <Globe className="h-5 w-5 text-primary" />
+                    </Avatar>
                     <div className="flex-1">
                       <div className="font-medium">Feed Geral</div>
                     </div>
@@ -803,13 +851,22 @@ export default function CommunityPage() {
                         onClick={() => {
                           setSelectedGroupId(group.id);
                           postForm.setValue('groupId', group.id);
+                          setOrganizationTab('posts');
                         }}
                       >
-                        {group.isPrivate ? (
-                          <Lock className="h-5 w-5 mr-2 text-gray-500" />
-                        ) : (
-                          <Users className="h-5 w-5 mr-2 text-secondary" />
-                        )}
+                        <Avatar className="h-8 w-8 mr-2">
+                          {group.imageUrl ? (
+                            <img 
+                              src={group.imageUrl} 
+                              alt={group.name} 
+                              className="h-full w-full object-cover" 
+                            />
+                          ) : group.isPrivate ? (
+                            <Lock className="h-5 w-5 text-gray-500" />
+                          ) : (
+                            <Users className="h-5 w-5 text-secondary" />
+                          )}
+                        </Avatar>
                         <div className="flex-1">
                           <div className="font-medium">{group.name}</div>
                           <div className="text-xs text-gray-500 truncate">{group.description}</div>
@@ -826,6 +883,80 @@ export default function CommunityPage() {
               </ScrollArea>
             )}
           </Card>
+          
+          {/* Seção de organização quando um grupo está selecionado */}
+          {selectedGroupId && (
+            <Card className="p-4">
+              <h3 className="text-lg font-semibold mb-4">
+                {userGroups.find(g => g.id === selectedGroupId)?.name || 'Grupo'}
+              </h3>
+              
+              <div className="grid grid-cols-2 gap-2 mb-4">
+                <Button 
+                  variant={organizationTab === 'posts' ? 'default' : 'outline'} 
+                  size="sm"
+                  onClick={() => setOrganizationTab('posts')}
+                  className="flex items-center justify-center"
+                >
+                  <MessageCircle className="h-4 w-4 mr-1" />
+                  Posts
+                </Button>
+                <Button 
+                  variant={organizationTab === 'documents' ? 'default' : 'outline'} 
+                  size="sm"
+                  onClick={() => setOrganizationTab('documents')}
+                  className="flex items-center justify-center"
+                >
+                  <FileText className="h-4 w-4 mr-1" />
+                  Documentos
+                </Button>
+                <Button 
+                  variant={organizationTab === 'tasks' ? 'default' : 'outline'} 
+                  size="sm"
+                  onClick={() => setOrganizationTab('tasks')}
+                  className="flex items-center justify-center"
+                >
+                  <ListTodo className="h-4 w-4 mr-1" />
+                  Tarefas
+                </Button>
+                <Button 
+                  variant={organizationTab === 'kanban' ? 'default' : 'outline'} 
+                  size="sm"
+                  onClick={() => setOrganizationTab('kanban')}
+                  className="flex items-center justify-center"
+                >
+                  <LayoutGrid className="h-4 w-4 mr-1" />
+                  Kanban
+                </Button>
+              </div>
+              
+              {organizationTab !== 'posts' && (
+                <div className="p-6 text-center text-gray-500 border rounded-md border-dashed">
+                  <p>Funcionalidade {organizationTab === 'documents' ? 'de documentos' : 
+                     organizationTab === 'tasks' ? 'de tarefas' : 
+                     'kanban'} em desenvolvimento.</p>
+                  <p className="text-xs mt-1">Esta seção será implementada em breve.</p>
+                </div>
+              )}
+              
+              {/* Opções administrativas para o grupo */}
+              {adminGroups.some(g => g.id === selectedGroupId) && (
+                <div className="mt-4 pt-4 border-t">
+                  <h4 className="font-medium mb-2">Opções de administrador</h4>
+                  <div className="space-y-2">
+                    <Button variant="outline" size="sm" className="w-full justify-start">
+                      <UserPlus className="h-4 w-4 mr-2" />
+                      Gerenciar membros
+                    </Button>
+                    <Button variant="outline" size="sm" className="w-full justify-start">
+                      <Camera className="h-4 w-4 mr-2" />
+                      Alterar imagem
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </Card>
+          )}
         </div>
       </div>
       
@@ -841,6 +972,54 @@ export default function CommunityPage() {
           
           <Form {...groupForm}>
             <form onSubmit={groupForm.handleSubmit(onGroupSubmit)} className="space-y-4">
+              {/* Campo para imagem do grupo */}
+              <div className="mb-4">
+                <FormLabel>Imagem do Grupo</FormLabel>
+                <div className="mt-2 flex flex-col items-center">
+                  <div 
+                    className="w-24 h-24 rounded-full border-2 border-dashed border-gray-300 flex items-center justify-center overflow-hidden mb-2"
+                    onClick={handleGroupImageUpload}
+                    style={{ cursor: 'pointer' }}
+                  >
+                    {groupImageFile ? (
+                      <img 
+                        src={URL.createObjectURL(groupImageFile)} 
+                        alt="Preview" 
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <Camera className="h-8 w-8 text-gray-400" />
+                    )}
+                  </div>
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    size="sm"
+                    onClick={handleGroupImageUpload}
+                  >
+                    {groupImageFile ? 'Alterar imagem' : 'Adicionar imagem'}
+                  </Button>
+                  <input
+                    type="file"
+                    ref={groupImageInputRef}
+                    className="hidden"
+                    accept="image/*"
+                    onChange={handleGroupImageChange}
+                  />
+                  {groupImageFile && (
+                    <Button 
+                      type="button" 
+                      variant="ghost" 
+                      size="sm" 
+                      className="text-red-500 mt-1"
+                      onClick={() => setGroupImageFile(null)}
+                    >
+                      Remover
+                    </Button>
+                  )}
+                </div>
+              </div>
+              
               <FormField
                 control={groupForm.control}
                 name="name"
