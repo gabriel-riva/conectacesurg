@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ExternalLink } from "lucide-react";
 import { UtilityLink } from "@shared/schema";
@@ -30,12 +30,17 @@ export function UtilityLinks() {
   // Renderizar estado de carregamento
   if (isLoading) {
     return (
-      <Card>
-        <CardContent className="p-6">
-          <h2 className="text-xl font-semibold mb-4">Links Úteis</h2>
+      <Card className="shadow-md border-none">
+        <CardHeader className="pb-2 bg-gradient-to-r from-primary/5 to-transparent">
+          <CardTitle className="text-primary/90 flex items-center">
+            <span className="inline-block w-1 h-5 bg-primary rounded mr-2"></span>
+            Links Úteis
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-4">
           <div className="space-y-4">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="flex items-center">
+              <div key={i} className="flex items-center p-2">
                 <Skeleton className="h-8 w-8 rounded-full mr-3" />
                 <Skeleton className="h-4 w-full" />
               </div>
@@ -49,9 +54,14 @@ export function UtilityLinks() {
   // Renderizar mensagem se não houver links
   if (!links || links.length === 0) {
     return (
-      <Card>
-        <CardContent className="p-6">
-          <h2 className="text-xl font-semibold mb-4">Links Úteis</h2>
+      <Card className="shadow-md border-none">
+        <CardHeader className="pb-2 bg-gradient-to-r from-primary/5 to-transparent">
+          <CardTitle className="text-primary/90 flex items-center">
+            <span className="inline-block w-1 h-5 bg-primary rounded mr-2"></span>
+            Links Úteis
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-4">
           <p className="text-gray-500 text-center py-4">
             Nenhum link útil disponível no momento.
           </p>
@@ -62,9 +72,14 @@ export function UtilityLinks() {
 
   // Renderizar os links
   return (
-    <Card>
-      <CardContent className="p-6">
-        <h2 className="text-xl font-semibold mb-4">Links Úteis</h2>
+    <Card className="shadow-md hover:shadow-lg transition-shadow duration-300 border-none">
+      <CardHeader className="pb-2 bg-gradient-to-r from-primary/5 to-transparent">
+        <CardTitle className="text-primary/90 flex items-center">
+          <span className="inline-block w-1 h-5 bg-primary rounded mr-2"></span>
+          Links Úteis
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="p-4">
         <ul className="space-y-3">
           {links.map((link) => (
             <li key={link.id}>
