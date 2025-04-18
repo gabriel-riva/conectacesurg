@@ -481,7 +481,7 @@ router.post('/', isAuthenticated, upload.array('attachments', 5), async (req: Re
         name: `Grupo: ${title}`,
         description: `Grupo de colaboração para a ideia: ${title}`,
         isPrivate: true,
-        createdById: userId,
+        creatorId: userId,
         createdAt: new Date(),
         updatedAt: new Date()
       }).returning();
