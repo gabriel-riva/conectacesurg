@@ -687,9 +687,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Adicionar rotas de notícias
   app.use('/api/news', newsRouter);
+  app.use('/api/upload', uploadRouter);
   
   // Configurar acesso estático para a pasta de uploads
   app.use('/uploads', express.static('uploads'));
+  
+  // Configurar acesso estático para a pasta do TinyMCE
+  app.use('/tinymce', express.static('public/tinymce'));
 
   const httpServer = createServer(app);
   return httpServer;
