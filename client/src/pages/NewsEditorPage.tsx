@@ -15,8 +15,8 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { ArrowLeft, Save, Image, Trash } from "lucide-react";
 
-// Importando o editor Plate
-import PlateEditor from "@/components/PlateEditor";
+// Importando o editor TinyMCE
+import TinyEditor from "@/components/TinyEditor";
 
 // Define o tipo das props da página
 
@@ -57,29 +57,25 @@ export default function NewsEditorPage({ isEditMode = false }: NewsEditorPagePro
     queryKey: ['/api/news', newsId],
     queryFn: () => fetch(`/api/news/${newsId}`).then(res => res.json()),
     enabled: isEditMode && !!newsId,
-    onSuccess: (data) => {
+  });
+
+  // Efeito para atualizar o formulário quando os dados são carregados
+  React.useEffect(() => {
+    if (newsData) {
       setFormData({
-        title: data.title || "",
-        description: data.description || "",
-        content: data.content || "",
-        categoryId: data.categoryId ? String(data.categoryId) : "",
-        isPublished: data.isPublished || false,
-        imageUrl: data.imageUrl || null,
+        title: newsData.title || "",
+        description: newsData.description || "",
+        content: newsData.content || "",
+        categoryId: newsData.categoryId ? String(newsData.categoryId) : "",
+        isPublished: newsData.isPublished || false,
+        imageUrl: newsData.imageUrl || null,
       });
       
-      if (data.imageUrl) {
-        setImagePreview(data.imageUrl);
+      if (newsData.imageUrl) {
+        setImagePreview(newsData.imageUrl);
       }
-    },
-    onError: (error) => {
-      toast({
-        title: "Erro ao carregar notícia",
-        description: "Não foi possível carregar os dados da notícia. Tente novamente.",
-        variant: "destructive",
-      });
-      console.error("Erro ao carregar notícia:", error);
-    },
-  });
+    }
+  }, [newsData]);
   
   // Mutação para salvar notícia
   const saveNews = useMutation({
@@ -326,7 +322,7 @@ export default function NewsEditorPage({ isEditMode = false }: NewsEditorPagePro
                     </p>
                   </div>
                   
-                  <PlateEditor
+                  <TinyEditor
                     value={formData.content}
                     onChange={(value) => setFormData({ ...formData, content: value })}
                   />
