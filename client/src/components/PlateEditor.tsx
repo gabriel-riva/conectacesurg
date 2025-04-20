@@ -1,10 +1,9 @@
-import React, { useState, useCallback, useMemo } from 'react';
-import { createEditor, Descendant, Transforms, Editor, Text as SlateText, Element as SlateElement } from 'slate';
-import { Slate, Editable, withReact, ReactEditor, RenderElementProps, RenderLeafProps } from 'slate-react';
+import React, { useCallback, useMemo } from 'react';
+import { createEditor, Descendant, Transforms, Editor, Element as SlateElement } from 'slate';
+import { Slate, Editable, withReact, RenderElementProps, RenderLeafProps } from 'slate-react';
 import { withHistory } from 'slate-history';
-import { cn } from '@udecode/cn';
 
-// Componentes UI
+// UI Components
 import { Button } from "@/components/ui/button";
 import {
   Bold,
@@ -20,15 +19,12 @@ import {
   AlignLeft,
   AlignCenter,
   AlignRight,
-  Indent,
-  Outdent,
   Link,
   Image,
-  Video,
-  Table,
 } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
-// Defina tipos para o editor
+// Define custom types for our editor
 type CustomElement = {
   type: 'paragraph' | 'heading-one' | 'heading-two' | 'blockquote' | 'bulleted-list' | 'numbered-list' | 'list-item' | 'image' | 'link';
   children: CustomText[];
@@ -45,22 +41,24 @@ type CustomText = {
   code?: boolean;
 };
 
-// Declaração para o Typescript entender os tipos personalizados
+// Type definitions for TypeScript
 declare module 'slate' {
   interface CustomTypes {
-    Editor: BaseEditor & ReactEditor;
+    Editor: Editor;
     Element: CustomElement;
     Text: CustomText;
   }
 }
 
-// Barra de ferramentas para o editor
-const Toolbar = ({ editor }: { editor: BaseEditor & ReactEditor }) => {
+// Toolbar component
+const Toolbar = ({ editor }: { editor: Editor }) => {
+  // Check if a mark is currently active
   const isMarkActive = (format: keyof Omit<CustomText, 'text'>) => {
     const marks = Editor.marks(editor);
     return marks ? marks[format] === true : false;
   };
 
+  // Toggle a mark on or off
   const toggleMark = (format: keyof Omit<CustomText, 'text'>) => {
     const isActive = isMarkActive(format);
     
@@ -71,82 +69,93 @@ const Toolbar = ({ editor }: { editor: BaseEditor & ReactEditor }) => {
     }
   };
 
-  const isBlockActive = (format: string, blockType = 'type') => {
+  // Check if a block format is active
+  const isBlockActive = (format: string) => {
     const { selection } = editor;
     if (!selection) return false;
 
     const [match] = Array.from(
       Editor.nodes(editor, {
         at: Editor.unhangRange(editor, selection),
-        match: n => !Editor.isEditor(n) && SlateElement.isElement(n) && n[blockType as keyof typeof n] === format,
+        match: n => 
+          !Editor.isEditor(n) && 
+          SlateElement.isElement(n) && 
+          n.type === format,
       })
     );
 
     return !!match;
   };
 
+  // Toggle a block format
   const toggleBlock = (format: string) => {
     const isActive = isBlockActive(format);
     const isList = format === 'bulleted-list' || format === 'numbered-list';
 
     Transforms.unwrapNodes(editor, {
-      match: n => !Editor.isEditor(n) && SlateElement.isElement(n) && ['bulleted-list', 'numbered-list'].includes(n.type),
+      match: n => 
+        !Editor.isEditor(n) && 
+        SlateElement.isElement(n) && 
+        ['bulleted-list', 'numbered-list'].includes(n.type),
       split: true,
     });
 
-    const newProperties: Partial<CustomElement> = {
-      type: isActive ? 'paragraph' : isList ? 'list-item' : format as any,
-    };
-    
-    Transforms.setNodes(editor, newProperties);
+    Transforms.setNodes(editor, {
+      type: isActive ? 'paragraph' : isList ? 'list-item' : format,
+    });
 
     if (!isActive && isList) {
       const block = { type: format, children: [] };
-      Transforms.wrapNodes(editor, block as any);
+      Transforms.wrapNodes(editor, block);
     }
   };
 
-  const insertImage = () => {
-    const url = prompt('Digite o URL da imagem:');
-    if (url) {
-      const image: CustomElement = {
-        type: 'image',
-        url,
-        children: [{ text: '' }],
-      };
-      Transforms.insertNodes(editor, image);
-    }
-  };
-
-  const insertLink = () => {
-    const url = prompt('Digite o URL do link:');
-    if (!url) return;
-    
-    const { selection } = editor;
-    const isCollapsed = selection && Range.isCollapsed(selection);
-    
-    const link: CustomElement = {
-      type: 'link',
-      url,
-      children: isCollapsed ? [{ text: url }] : [],
-    };
-    
-    if (isCollapsed) {
-      Transforms.insertNodes(editor, link);
-    } else {
-      Transforms.wrapNodes(editor, link, { split: true });
-      Transforms.collapse(editor, { edge: 'end' });
-    }
-  };
-
-  const toggleAlign = (align: 'left' | 'center' | 'right') => {
-    Transforms.setNodes(editor, { align }, {
+  // Set text alignment
+  const setAlignment = (alignment: 'left' | 'center' | 'right') => {
+    Transforms.setNodes(editor, { align: alignment }, {
       match: n => !Editor.isEditor(n) && SlateElement.isElement(n),
     });
   };
 
+  // Insert a link
+  const insertLink = () => {
+    const url = prompt('Digite o URL do link:');
+    if (!url) return;
+
+    const { selection } = editor;
+    const isCollapsed = selection && selection.anchor.offset === selection.focus.offset;
+    
+    if (isCollapsed) {
+      Transforms.insertNodes(editor, {
+        type: 'link',
+        url,
+        children: [{ text: url }],
+      });
+    } else {
+      Transforms.wrapNodes(editor, {
+        type: 'link',
+        url,
+        children: [],
+      }, { split: true });
+      Transforms.collapse(editor, { edge: 'end' });
+    }
+  };
+
+  // Insert an image
+  const insertImage = () => {
+    const url = prompt('Digite o URL da imagem:');
+    if (url) {
+      Transforms.insertNodes(editor, {
+        type: 'image',
+        url,
+        children: [{ text: '' }],
+      });
+    }
+  };
+
   return (
     <div className="bg-muted p-2 rounded-t-md flex flex-wrap gap-1 border">
+      {/* Text formatting buttons */}
       <Button
         variant={isMarkActive('bold') ? 'default' : 'ghost'}
         size="sm"
@@ -190,6 +199,7 @@ const Toolbar = ({ editor }: { editor: BaseEditor & ReactEditor }) => {
       
       <div className="w-px h-8 bg-border mx-1" />
       
+      {/* Block formatting buttons */}
       <Button
         variant={isBlockActive('heading-one') ? 'default' : 'ghost'}
         size="sm"
@@ -217,6 +227,7 @@ const Toolbar = ({ editor }: { editor: BaseEditor & ReactEditor }) => {
       
       <div className="w-px h-8 bg-border mx-1" />
       
+      {/* List buttons */}
       <Button
         variant={isBlockActive('bulleted-list') ? 'default' : 'ghost'}
         size="sm"
@@ -236,10 +247,11 @@ const Toolbar = ({ editor }: { editor: BaseEditor & ReactEditor }) => {
       
       <div className="w-px h-8 bg-border mx-1" />
       
+      {/* Alignment buttons */}
       <Button
         variant="ghost"
         size="sm"
-        onClick={() => toggleAlign('left')}
+        onClick={() => setAlignment('left')}
         className="h-8 w-8 p-0"
       >
         <AlignLeft className="h-4 w-4" />
@@ -247,7 +259,7 @@ const Toolbar = ({ editor }: { editor: BaseEditor & ReactEditor }) => {
       <Button
         variant="ghost"
         size="sm"
-        onClick={() => toggleAlign('center')}
+        onClick={() => setAlignment('center')}
         className="h-8 w-8 p-0"
       >
         <AlignCenter className="h-4 w-4" />
@@ -255,7 +267,7 @@ const Toolbar = ({ editor }: { editor: BaseEditor & ReactEditor }) => {
       <Button
         variant="ghost"
         size="sm"
-        onClick={() => toggleAlign('right')}
+        onClick={() => setAlignment('right')}
         className="h-8 w-8 p-0"
       >
         <AlignRight className="h-4 w-4" />
@@ -263,6 +275,7 @@ const Toolbar = ({ editor }: { editor: BaseEditor & ReactEditor }) => {
       
       <div className="w-px h-8 bg-border mx-1" />
       
+      {/* Insert buttons */}
       <Button
         variant="ghost"
         size="sm"
@@ -271,7 +284,6 @@ const Toolbar = ({ editor }: { editor: BaseEditor & ReactEditor }) => {
       >
         <Link className="h-4 w-4" />
       </Button>
-      
       <Button
         variant="ghost"
         size="sm"
@@ -284,33 +296,26 @@ const Toolbar = ({ editor }: { editor: BaseEditor & ReactEditor }) => {
   );
 };
 
-// Tipos para as props do editor
-interface PlateEditorProps {
-  value: string;
-  onChange: (value: string) => void;
-  className?: string;
-}
-
-// Elemento personalizado para o editor
+// Custom element renderer
 const Element = ({ attributes, children, element }: RenderElementProps) => {
   const style = element.align ? { textAlign: element.align } : {};
   
   switch (element.type) {
     case 'heading-one':
-      return <h1 style={style} {...attributes}>{children}</h1>;
+      return <h1 style={style} {...attributes} className="text-2xl font-bold my-4">{children}</h1>;
     case 'heading-two':
-      return <h2 style={style} {...attributes}>{children}</h2>;
+      return <h2 style={style} {...attributes} className="text-xl font-bold my-3">{children}</h2>;
     case 'blockquote':
-      return <blockquote style={style} {...attributes}>{children}</blockquote>;
+      return <blockquote style={style} {...attributes} className="border-l-4 border-gray-300 pl-4 italic my-4">{children}</blockquote>;
     case 'bulleted-list':
-      return <ul style={style} {...attributes}>{children}</ul>;
+      return <ul style={style} {...attributes} className="list-disc ml-5 my-2">{children}</ul>;
     case 'numbered-list':
-      return <ol style={style} {...attributes}>{children}</ol>;
+      return <ol style={style} {...attributes} className="list-decimal ml-5 my-2">{children}</ol>;
     case 'list-item':
-      return <li style={style} {...attributes}>{children}</li>;
+      return <li style={style} {...attributes} className="my-1">{children}</li>;
     case 'image':
       return (
-        <div {...attributes} contentEditable={false} className="relative my-4">
+        <div {...attributes} contentEditable={false} className="my-4">
           <div contentEditable={false}>
             <img
               src={element.url}
@@ -328,11 +333,11 @@ const Element = ({ attributes, children, element }: RenderElementProps) => {
         </a>
       );
     default:
-      return <p style={style} {...attributes}>{children}</p>;
+      return <p style={style} {...attributes} className="my-2">{children}</p>;
   }
 };
 
-// Folha personalizada para o editor (formatação de texto)
+// Custom leaf renderer for text formatting
 const Leaf = ({ attributes, children, leaf }: RenderLeafProps) => {
   if (leaf.bold) {
     children = <strong>{children}</strong>;
@@ -357,24 +362,29 @@ const Leaf = ({ attributes, children, leaf }: RenderLeafProps) => {
   return <span {...attributes}>{children}</span>;
 };
 
-// Componente principal do editor
+// Props definition for the editor component
+interface PlateEditorProps {
+  value: string;
+  onChange: (value: string) => void;
+  className?: string;
+}
+
+// Main editor component
 const PlateEditor: React.FC<PlateEditorProps> = ({ value, onChange, className }) => {
-  // Criar o editor com os plugins
+  // Initialize the Slate editor
   const editor = useMemo(() => withHistory(withReact(createEditor())), []);
   
-  // Valor inicial do editor
+  // Define the initial value for the editor
   const initialValue: Descendant[] = useMemo(() => {
     if (value) {
       try {
-        const parsedValue = JSON.parse(value);
-        if (Array.isArray(parsedValue) && parsedValue.length > 0) {
-          return parsedValue;
-        }
+        return JSON.parse(value);
       } catch (error) {
-        console.error("Erro ao analisar o valor do editor:", error);
+        console.error("Error parsing editor content:", error);
       }
     }
     
+    // Default initial value if no value is provided or if parsing fails
     return [
       {
         type: 'paragraph',
@@ -383,10 +393,10 @@ const PlateEditor: React.FC<PlateEditorProps> = ({ value, onChange, className })
     ];
   }, [value]);
 
-  // Manipulador para alterações no editor
-  const handleChange = (newValue: Descendant[]) => {
+  // Handle changes to the editor content
+  const handleChange = useCallback((newValue: Descendant[]) => {
     onChange(JSON.stringify(newValue));
-  };
+  }, [onChange]);
 
   return (
     <div className={cn("border rounded-md", className)}>
@@ -394,8 +404,8 @@ const PlateEditor: React.FC<PlateEditorProps> = ({ value, onChange, className })
         <Toolbar editor={editor} />
         <div className="p-4 min-h-[300px] focus:outline-none prose prose-sm max-w-none bg-white rounded-b-md">
           <Editable
-            renderElement={useCallback((props) => <Element {...props} />, [])}
-            renderLeaf={useCallback((props) => <Leaf {...props} />, [])}
+            renderElement={(props) => <Element {...props} />}
+            renderLeaf={(props) => <Leaf {...props} />}
             placeholder="Digite o conteúdo da notícia aqui..."
             spellCheck
             className="outline-none min-h-[300px]"
