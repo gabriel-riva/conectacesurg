@@ -1,0 +1,224 @@
+Plate Plugin
+API reference for Plate plugins.
+
+Plate plugins are objects passed to Plate plugins prop.
+
+Plugin Properties
+Attributes
+
+key REQUIRED C['key']
+Unique identifier used by Plate to store the plugins by key in editor.plugins.
+
+
+api Record<string, Function>
+An object of API functions provided by the plugin. These functions are accessible via editor.api[key].
+
+
+transforms Record<string, Function>
+Transform functions provided by the plugin that modify the editor state. These are accessible via editor.tf[key].
+
+
+options Record<string, any>
+Extended properties used by the plugin as options.
+
+
+handlers { onChange?: (editor: PlateEditor) => void } & Record<string, Function>
+Event handlers for various editor events, including onChange.
+
+
+inject object
+Defines how the plugin injects functionality into other plugins or the editor.
+
+Show child attributes
+
+node object
+Defines the node-specific configuration for the plugin.
+
+Show child attributes
+
+override object
+Allows overriding components and plugins by key.
+
+Show child attributes
+
+parser Nullable<Parser<WithAnyKey<C>>>
+Defines how the plugin parses content.
+
+
+parsers object
+Defines serializers and deserializers for various formats.
+
+Show child attributes
+
+render object
+Defines how the plugin renders components.
+
+Show child attributes
+
+shortcuts Shortcuts
+Defines keyboard shortcuts for the plugin.
+
+
+useOptionsStore StoreApi<C['key'], C['options']>
+Zustand store for managing plugin options.
+
+
+dependencies string[]
+An array of plugin keys that this plugin depends on.
+
+
+enabled optional boolean
+Enables or disables the plugin. Used by Plate to determine if the plugin should be used.
+
+
+plugins any[]
+Recursive plugin support to allow having multiple plugins in a single plugin.
+
+
+priority number
+Defines the order in which plugins are registered and executed.
+
+Default: 100
+
+decorate optional Decorate<WithAnyKey<C>>
+Property used by Plate to decorate editor ranges.
+
+
+extendEditor optional ExtendEditor<WithAnyKey<C>>
+Function to extend the editor instance. Used primarily for integrating legacy Slate plugins that need direct editor mutation. Only one extendEditor is allowed per plugin.
+
+extendEditor: ({ editor }) => {
+  // Example: Integrating a legacy Slate plugin
+  return withYjs(editor);
+}
+Copy
+
+useHooks optional () => void
+Hook called when the editor is initialized.
+
+Plugin Methods
+Methods
+
+configure (config: PlatePluginConfig | ((ctx: PlatePluginContext) => PlatePluginConfig)) => PlatePlugin
+Creates a new plugin instance with updated options.
+
+(config: PlatePluginConfig<C['key'], InferOptions<C>, InferApi<C>, InferTransforms<C>> | ((ctx: PlatePluginContext<C>) => PlatePluginConfig<C['key'], InferOptions<C>, InferApi<C>, InferTransforms<C>>)) => PlatePlugin<C>
+Copy
+
+extend (config: Partial<PlatePlugin> | ((ctx: PlatePluginContext) => Partial<PlatePlugin>)) => PlatePlugin
+Creates a new plugin instance with additional configuration.
+
+(extendConfig: Partial<PlatePlugin> | ((ctx: PlatePluginContext<AnyPluginConfig>) => Partial<PlatePlugin>)) => PlatePlugin
+Copy
+
+extendPlugin (key: string, config: Partial<PlatePlugin> | ((ctx: PlatePluginContext) => Partial<PlatePlugin>)) => PlatePlugin
+Extends an existing nested plugin or adds a new one if not found. Supports deep nesting.
+
+(key: string, extendConfig: Partial<PlatePlugin> | ((ctx: PlatePluginContext<AnyPluginConfig>) => Partial<PlatePlugin>)) => PlatePlugin
+Copy
+
+withComponent function
+Sets or replaces the component associated with a plugin.
+
+(component: NodeComponent) => PlatePlugin<C>
+Copy
+
+overrideEditor function
+Creates a new plugin instance with overridden editor methods. Provides access to original methods via tf and api parameters. Can be called multiple times to layer different overrides.
+
+overrideEditor(({ editor, tf: { deleteForward }, api: { isInline } }) => ({
+  transforms: {
+    // Override transforms
+    deleteForward(options) {
+      deleteForward(options);
+    },
+  },
+  api: {
+    // Override API methods
+    isInline(element) {
+      return isInline(element);
+    },
+  },
+})) => PlatePlugin<C>
+Copy
+Preferred method for modifying editor behavior
+Type-safe access to original methods
+Clean separation between transforms and API
+Can be chained multiple times
+
+extendApi (api: (ctx: PlatePluginContext) => Record<string, Function>) => PlatePlugin
+Extends the plugin's API.
+
+(api: (ctx: PlatePluginContext) => Record<string, Function>) => PlatePlugin
+Copy
+
+extendEditorApi (api: (ctx: PlatePluginContext) => Record<string, Function>) => PlatePlugin
+Extends the editor's API with plugin-specific methods.
+
+(api: (ctx: PlatePluginContext) => Record<string, Function>) => PlatePlugin
+Copy
+
+extendTransforms (transforms: (ctx: PlatePluginContext) => Record<string, Function>) => PlatePlugin
+Extends the plugin's transforms.
+
+(transforms: (ctx: PlatePluginContext) => Record<string, Function>) => PlatePlugin
+Copy
+
+extendEditorTransforms (transforms: (ctx: PlatePluginContext) => Record<string, Function>) => PlatePlugin
+Extends the editor's transforms with plugin-specific methods.
+
+(transforms: (ctx: PlatePluginContext) => Record<string, Function>) => PlatePlugin
+Copy
+
+extendSelectors (options: (ctx: PlatePluginContext) => Record<string, any>) => PlatePlugin
+Extends the plugin with selectors.
+
+(options: (ctx: PlatePluginContext) => Record<string, any>) => PlatePlugin
+Copy
+Plugin Context
+Attributes
+
+editor PlateEditor
+The current editor instance.
+
+
+plugin EditorPlatePlugin<C>
+The current plugin instance.
+
+
+getOption function
+Function to get a specific option value.
+
+
+getOptions function
+Function to get all options for the plugin.
+
+
+setOption function
+Function to set a specific option value.
+
+
+setOptions function
+Function to set multiple options.
+
+For more detailed information on specific aspects of Plate plugins, refer to the individual guides on Plugin Configuration, Plugin Methods, Plugin Context, Plugin Components, and Plugin Shortcuts.
+
+Generic Types
+Attributes
+
+C AnyPluginConfig = PluginConfig
+Represents the plugin configuration. This type extends PluginConfig which includes key, options, api, and transforms.
+
+Usage example:
+
+type MyPluginConfig = PluginConfig<
+  'myPlugin',
+  { customOption: boolean },
+  { getData: () => string },
+  { customTransform: () => void }
+>;
+ 
+const MyPlugin = createPlatePlugin<MyPluginConfig>({
+  key: 'myPlugin',
+  // plugin implementation
+});

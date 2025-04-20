@@ -1,0 +1,95 @@
+Components
+Note: Plate plugins are packaged unstyled, implying that you have complete control over markup and styling, hence you can integrate your own design system or Plate UI.
+
+To plug-in all the components in one place, use the override.components option in usePlateEditor. We'll use the withProps helper to pass additional props to the components with Tailwind CSS classes.
+
+// ...
+ 
+import { withProps } from '@udecode/cn';
+import {
+  Plate,
+  PlateElement,
+  PlateLeaf,
+  usePlateEditor,
+} from '@udecode/plate/react';
+ 
+export default function BasicEditor() {
+  const editor = usePlateEditor({
+    plugins: [
+      HeadingPlugin,
+      BlockquotePlugin,
+      BoldPlugin,
+      ItalicPlugin,
+      UnderlinePlugin,
+    ],
+    override: {
+      components: {
+        blockquote: withProps(PlateElement, {
+          as: 'blockquote',
+          className: 'mb-4 border-l-4 border-[#d0d7de] pl-4 text-[#636c76]',
+        }),
+        bold: withProps(PlateLeaf, { as: 'strong' }),
+        h1: withProps(PlateElement, {
+          as: 'h1',
+          className:
+            'mb-4 mt-6 text-3xl font-semibold tracking-tight lg:text-4xl',
+        }),
+        h2: withProps(PlateElement, {
+          as: 'h2',
+          className: 'mb-4 mt-6 text-2xl font-semibold tracking-tight',
+        }),
+        h3: withProps(PlateElement, {
+          as: 'h3',
+          className: 'mb-4 mt-6 text-xl font-semibold tracking-tight',
+        }),
+        italic: withProps(PlateLeaf, { as: 'em' }),
+        p: withProps(PlateElement, {
+          as: 'p',
+          className: 'mb-4',
+        }),
+        underline: withProps(PlateLeaf, { as: 'u' }),
+      },
+    },
+  });
+ 
+  return (
+    <Plate editor={editor}>
+      <PlateContent />
+    </Plate>
+  );
+}
+Copy
+Preview
+Code
+
+🌳 Blocks
+Easily create headings of various levels, from H1 to H6, to structure your content and make it more organized.
+
+Create blockquotes to emphasize important information or highlight quotes from external sources.
+🌱 Marks
+Add style and emphasis to your text using the mark plugins, which offers a variety of formatting options.
+
+Make text bold, italic, underlined, or apply a combination of these styles for a visually striking effect.
+
+Initializing Editor's Value with HTML String
+You can also specify the initial content of the editor using an HTML string and the corresponding plugins.
+
+// ...
+ 
+const htmlValue = '<p>This is <b>bold</b> and <i>italic</i> text!</p>';
+ 
+export default function BasicEditor() {
+  const editor = usePlateEditor({
+    // ...
+    value: htmlValue,
+  });
+ 
+  return (
+    <Plate editor={editor}>
+      <PlateContent />
+    </Plate>
+  );
+}
+Copy
+That's it!
+You can now play around with the Playground and start building your own editor.
