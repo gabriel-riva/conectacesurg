@@ -326,7 +326,7 @@ export default function NewsEditorPage({ isEditMode = false }: NewsEditorPagePro
                     </p>
                   </div>
                   
-                  <SlateEditor
+                  <PlateEditor
                     value={formData.content}
                     onChange={(value) => setFormData({ ...formData, content: value })}
                   />
