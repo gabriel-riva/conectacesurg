@@ -5,7 +5,7 @@ import { UtilityLinks } from "@/components/UtilityLinks";
 import { CalendarCard } from "@/components/CalendarCard";
 import { ChallengesCard } from "@/components/ChallengesCard";
 import { AnnouncementsCard } from "@/components/AnnouncementsCard";
-import { NewsCard } from "@/components/NewsCard";
+import LatestNewsCard from "@/components/LatestNewsCard";
 import { RankingCard } from "@/components/RankingCard";
 
 export default function Dashboard() {
@@ -39,7 +39,7 @@ export default function Dashboard() {
             {/* Grid de 2 colunas para Avisos e Notícias */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <AnnouncementsCard />
-              <NewsCard />
+              <LatestNewsCard limit={3} />
             </div>
           </div>
           

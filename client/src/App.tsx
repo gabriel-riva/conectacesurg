@@ -99,6 +99,12 @@ function Router() {
       <Route path="/profile">
         {() => <ProtectedRoute component={Profile} />}
       </Route>
+      <Route path="/noticias/:id">
+        <NewsDetailPage />
+      </Route>
+      <Route path="/noticias">
+        <NewsListPage />
+      </Route>
       <Route path="/access-denied" component={AccessDeniedPage} />
       <Route path="/" component={LoginPage} />
       <Route component={NotFound} />
