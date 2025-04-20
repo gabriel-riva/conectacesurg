@@ -240,6 +240,27 @@ export const calendarEvents = pgTable("calendar_events", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+export const newsCategories = pgTable("news_categories", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull().unique(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const news = pgTable("news", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  content: text("content").notNull(), // HTML content from Plate editor
+  imageUrl: text("image_url"),
+  categoryId: integer("category_id").references(() => newsCategories.id),
+  creatorId: integer("creator_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  isPublished: boolean("is_published").notNull().default(false),
+  publishedAt: timestamp("published_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Tipos e esquemas para o UtilityLink estão definidos abaixo junto com os outros esquemas
 
 // Relations
@@ -263,6 +284,7 @@ export const usersRelations = relations(users, ({ many }) => ({
   aiPrompts: many(aiPrompts, { relationName: "creator" }),
   aiConversations: many(aiConversations),
   calendarEvents: many(calendarEvents, { relationName: "creator" }),
+  news: many(news, { relationName: "creator" }),
 }));
 
 export const groupsRelations = relations(groups, ({ many, one }) => ({
@@ -463,6 +485,22 @@ export const calendarEventsRelations = relations(calendarEvents, ({ one }) => ({
   }),
 }));
 
+export const newsCategoriesRelations = relations(newsCategories, ({ many }) => ({
+  news: many(news),
+}));
+
+export const newsRelations = relations(news, ({ one }) => ({
+  category: one(newsCategories, {
+    fields: [news.categoryId],
+    references: [newsCategories.id],
+  }),
+  creator: one(users, {
+    fields: [news.creatorId],
+    references: [users.id],
+    relationName: "creator"
+  }),
+}));
+
 // Schemas
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
@@ -603,6 +641,19 @@ export const insertCalendarEventSchema = createInsertSchema(calendarEvents).omit
   updatedAt: true,
 });
 
+export const insertNewsCategorySchema = createInsertSchema(newsCategories).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertNewsSchema = createInsertSchema(news).omit({
+  id: true,
+  publishedAt: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 // Types
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type UpdateProfile = z.infer<typeof updateProfileSchema>;
@@ -625,6 +676,8 @@ export type InsertAiPrompt = z.infer<typeof insertAiPromptSchema>;
 export type InsertAiPromptAgent = z.infer<typeof insertAiPromptAgentSchema>;
 export type InsertAiConversation = z.infer<typeof insertAiConversationSchema>;
 export type InsertAiMessage = z.infer<typeof insertAiMessageSchema>;
+export type InsertNewsCategory = z.infer<typeof insertNewsCategorySchema>;
+export type InsertNews = z.infer<typeof insertNewsSchema>;
 
 export type User = typeof users.$inferSelect;
 export type Group = typeof groups.$inferSelect;
@@ -645,3 +698,5 @@ export type AiConversation = typeof aiConversations.$inferSelect;
 export type AiMessage = typeof aiMessages.$inferSelect;
 export type UtilityLink = typeof utilityLinks.$inferSelect;
 export type CalendarEvent = typeof calendarEvents.$inferSelect;
+export type NewsCategory = typeof newsCategories.$inferSelect;
+export type News = typeof news.$inferSelect;
