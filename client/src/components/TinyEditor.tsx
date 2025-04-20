@@ -25,15 +25,45 @@ const TinyEditor: React.FC<TinyEditorProps> = ({ value, onChange, className }) =
         init={{
           height: 500,
           menubar: true,
+          // Adicionando a chave de licença GPL para remover a mensagem de avaliação
+          license_key: 'gpl',
+          // Resolvendo problemas de cursor com inicialização do editor
+          init_instance_callback: (editor) => {
+            editor.on('keydown', function(e) {
+              editor.selection.getNode();
+            });
+          },
+          // Plugins expandidos para mais opções
           plugins: [
             'advlist', 'autolink', 'lists', 'link', 'image', 
-            'searchreplace', 'code', 'fullscreen',
-            'media', 'table', 'wordcount'
+            'searchreplace', 'code', 'fullscreen', 'preview',
+            'media', 'table', 'wordcount', 'charmap', 'emoticons',
+            'insertdatetime', 'visualblocks', 'anchor', 'help', 'hr',
+            'textcolor', 'textpattern', 'nonbreaking', 'pagebreak'
           ],
+          // Barra de ferramentas com mais opções
           toolbar: 'undo redo | ' +
-            'formatselect | bold italic underline | alignleft aligncenter ' +
-            'alignright alignjustify | bullist numlist | ' +
-            'removeformat | image media link table | fullscreen',
+            'styleselect formatselect fontselect fontsizeselect | ' +
+            'bold italic underline strikethrough | forecolor backcolor | ' +
+            'alignleft aligncenter alignright alignjustify | ' + 
+            'bullist numlist outdent indent | ' +
+            'removeformat | image media link table charmap emoticons | fullscreen help',
+          // Opções estendidas para formatação de fonte
+          fontsize_formats: '8pt 10pt 12pt 14pt 16pt 18pt 20pt 24pt 36pt 48pt',
+          font_formats: 'Andale Mono=andale mono,times;' +
+            'Arial=arial,helvetica,sans-serif;' +
+            'Arial Black=arial black,avant garde;' +
+            'Book Antiqua=book antiqua,palatino;' +
+            'Comic Sans MS=comic sans ms,sans-serif;' +
+            'Courier New=courier new,courier;' +
+            'Georgia=georgia,palatino;' +
+            'Helvetica=helvetica;' +
+            'Impact=impact,chicago;' +
+            'Tahoma=tahoma,arial,helvetica,sans-serif;' +
+            'Terminal=terminal,monaco;' +
+            'Times New Roman=times new roman,times;' +
+            'Trebuchet MS=trebuchet ms,geneva;' +
+            'Verdana=verdana,geneva;',
           content_style: 'body { font-family: -apple-system, BlinkMacSystemFont, San Francisco, Segoe UI, Roboto, Helvetica Neue, sans-serif; font-size: 14px; }',
           images_upload_handler: (blobInfo, progress) => new Promise((resolve, reject) => {
             // Cria um arquivo a partir do blob
