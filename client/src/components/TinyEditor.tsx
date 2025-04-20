@@ -2,8 +2,8 @@ import React, { useRef } from 'react';
 import { Editor } from '@tinymce/tinymce-react';
 import { cn } from '@/lib/utils';
 
-// Importando o TinyMCE diretamente para ter acesso a seus tipos
-import tinymce, { Editor as TinyMCEEditor } from 'tinymce';
+// Importando o tipo do TinyMCE para a referência
+import { Editor as TinyMCEEditor } from 'tinymce';
 
 interface TinyEditorProps {
   value: string;
@@ -18,24 +18,22 @@ const TinyEditor: React.FC<TinyEditorProps> = ({ value, onChange, className }) =
   return (
     <div className={cn("border rounded-md", className)}>
       <Editor
-        tinymceScriptSrc="https://cdn.tiny.cloud/1/no-api-key/tinymce/6/tinymce.min.js" // Usando CDN para evitar problemas de carregamento local
+        tinymceScriptSrc="/tinymce/tinymce.min.js" // Usando a versão local do TinyMCE
         onInit={(evt, editor) => editorRef.current = editor}
         initialValue={value || '<p></p>'}
         onEditorChange={(newValue, editor) => onChange(newValue)}
         init={{
           height: 500,
           menubar: true,
-          // Sem definir idioma para evitar problemas com locais não disponíveis
           plugins: [
-            'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
-            'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
-            'insertdatetime', 'media', 'table', 'help', 'wordcount',
-            'emoticons', 'paste', 'autoresize', 'codesample'
+            'advlist', 'autolink', 'lists', 'link', 'image', 
+            'searchreplace', 'code', 'fullscreen',
+            'media', 'table', 'wordcount'
           ],
           toolbar: 'undo redo | ' +
-            'formatselect | bold italic forecolor backcolor | alignleft aligncenter ' +
-            'alignright alignjustify | bullist numlist outdent indent | ' +
-            'removeformat | image media link table codesample emoticons | fullscreen',
+            'formatselect | bold italic underline | alignleft aligncenter ' +
+            'alignright alignjustify | bullist numlist | ' +
+            'removeformat | image media link table | fullscreen',
           content_style: 'body { font-family: -apple-system, BlinkMacSystemFont, San Francisco, Segoe UI, Roboto, Helvetica Neue, sans-serif; font-size: 14px; }',
           images_upload_handler: (blobInfo, progress) => new Promise((resolve, reject) => {
             // Cria um arquivo a partir do blob
