@@ -106,7 +106,7 @@ const NewsDetailPage: React.FC = () => {
         {news.imageUrl && (
           <div className="mb-8">
             <img 
-              src={news.imageUrl} 
+              src={formatImageUrl(news.imageUrl)} 
               alt={news.title}
               className="w-full h-auto max-h-[500px] object-cover rounded-lg"
             />

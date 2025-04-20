@@ -11,8 +11,8 @@
  * @param url URL da imagem conforme armazenada no banco de dados
  * @returns URL formatada corretamente para renderização no cliente
  */
-export function formatImageUrl(url: string | null | undefined): string | null {
-  if (!url) return null;
+export function formatImageUrl(url: string | null | undefined): string {
+  if (!url) return '';
   
   // Verifica se a URL começa com http:// ou https:// (URL externa)
   if (url.startsWith('http://') || url.startsWith('https://')) {
