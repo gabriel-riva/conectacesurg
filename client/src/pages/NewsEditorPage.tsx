@@ -244,14 +244,14 @@ export default function NewsEditorPage({ isEditMode = false }: NewsEditorPagePro
                     <div className="space-y-2">
                       <Label htmlFor="category">Categoria</Label>
                       <Select
-                        value={formData.categoryId}
-                        onValueChange={(value) => setFormData({ ...formData, categoryId: value })}
+                        value={formData.categoryId || "null"} 
+                        onValueChange={(value) => setFormData({ ...formData, categoryId: value === "null" ? "" : value })}
                       >
                         <SelectTrigger>
                           <SelectValue placeholder="Selecione uma categoria" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="">Sem categoria</SelectItem>
+                          <SelectItem value="null">Sem categoria</SelectItem>
                           {categories?.map((category: any) => (
                             <SelectItem key={category.id} value={String(category.id)}>
                               {category.name}
