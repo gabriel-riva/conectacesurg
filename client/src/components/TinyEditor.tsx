@@ -62,6 +62,7 @@ const TinyEditor: React.FC<TinyEditorProps> = ({ value, onChange, className }) =
         content_style: 'body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; font-size: 14px; }',
         setup: (editor) => {
           editor.on('init', () => {
+            console.log("TinyMCE inicializado com conteúdo:", value);
             editor.setContent(value || '');
           });
           
@@ -113,7 +114,7 @@ const TinyEditor: React.FC<TinyEditorProps> = ({ value, onChange, className }) =
         window.tinymce.get(editorId.current).remove();
       }
     };
-  }, []);
+  }, [value]);
 
   // Atualiza o conteúdo quando o valor muda externamente
   useEffect(() => {
