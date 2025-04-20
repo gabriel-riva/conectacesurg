@@ -1,0 +1,129 @@
+eatures
+Add columns to your document.
+Choose from a variety of column layouts using column-group-element toolbar.
+ Resizable columns
+Report an issue
+Installation
+bun
+npm
+pnpm
+yarn
+pnpm add @udecode/plate-layout
+Copy
+Usage
+import { ColumnPlugin, ColumnItemPlugin } from '@udecode/plate-layout/react';
+ 
+const plugins = [
+  // ...otherPlugins,
+  ColumnPlugin,
+];
+Copy
+Plugins
+ColumnPlugin
+Add Column Plugin to your document.
+
+ColumnItemPlugin
+Add Column Item Plugin to your document.
+
+Types
+TColumnGroupElement
+Extends TElement.
+
+TColumnElement
+Extends TElement.
+
+Attributes
+
+width optional string
+The column's width (must end with %)
+
+Transforms
+insertColumnGroup
+Insert a columnGroup with two empty columns.
+
+OptionsInsertNodesOptions & { columns?: number[] | number }
+columns: Array of column widths or number of equal-width columns (default: 2)
+Other InsertNodesOptions to control insert behavior
+
+columns optional number[] | number
+Array of column widths or number of equal-width columns (default: 2)
+
+
+...InsertNodesOptions InsertNodesOptions
+Other options to control insert behavior
+
+insertColumn
+Insert an empty column.
+
+OptionsInsertNodesOptions & { width?: string }
+
+width optional string
+Column width (default: "33%")
+
+
+...InsertNodesOptions InsertNodesOptions
+Other options to control insert behavior
+
+moveMiddleColumn
+Move the middle column to the left or right.
+
+Parameters
+
+nodeEntry NodeEntry
+The node entry of column element
+
+
+options { direction: 'left' | 'right' }
+Control the direction the middle column moves to
+
+Returnsboolean
+Returns false if the middle node is empty (and removes it), true otherwise.
+
+toggleColumnGroup
+Convert a block into a column group layout or update an existing column group's layout.
+
+If the target block is not a column group, wraps it in a new column group with the specified number of columns
+If the target block is already a column group, updates its column layout using setColumns
+The original content becomes the content of the first column
+Additional columns are created with empty paragraphs
+Optionsobject
+
+at optional Location
+The location to toggle the column group at.
+
+
+columns optional number
+Number of equal-width columns to create (default: 2)
+
+
+widths optional string[]
+Array of column widths (e.g., ['50%', '50%']). Takes precedence over columns.
+
+setColumns
+Update the column layout of an existing column group.
+
+When increasing columns:
+Keeps existing column content
+Adds new empty columns with specified widths
+When decreasing columns:
+Merges content from removed columns into the last remaining column
+Updates widths of remaining columns
+When keeping same number of columns:
+Only updates column widths
+Optionsobject
+
+at Path
+The path to the column group element.
+
+
+columns optional number
+Number of equal-width columns to create.
+
+
+widths optional string[]
+Array of column widths (e.g., ['33%', '67%']). Takes precedence over columns.
+
+Hooks
+useDebouncePopoverOpen
+Returnsboolean
+Whether the popover is open.

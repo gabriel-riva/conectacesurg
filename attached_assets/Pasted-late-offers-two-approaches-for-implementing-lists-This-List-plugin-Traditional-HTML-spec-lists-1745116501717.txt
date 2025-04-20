@@ -1,0 +1,280 @@
+late offers two approaches for implementing lists:
+
+This List plugin - Traditional HTML-spec lists with strict nesting rules:
+
+Follows standard HTML list structure (ul/ol > li)
+Maintains consistent list hierarchy
+Best for content that may be exported to HTML/markdown
+Highest complexity
+The Indent List plugin - Flexible indentation-based lists:
+
+More like Word/Google Docs behavior
+Any block can be indented to create list-like structures
+Used in the AI editor
+Better for free-form content organization
+Choose based on your needs:
+
+Use the List plugin when you need standard HTML list compatibility
+Use the Indent List plugin when you want more flexible indentation behavior
+Features
+HTML-compliant lists:
+
+Standard ul/ol > li structure
+Proper nesting and hierarchy
+SEO-friendly markup
+Clean HTML/markdown export
+List types:
+
+Unordered (bulleted) lists
+Ordered (numbered) lists
+Todo lists with checkboxes
+Nested sublists
+Drag & drop:
+
+Currently supports root-level list items only
+Sibling and nested items drag & drop not yet supported
+Shortcuts:
+
+Combined with the autoformat plugin, use markdown shortcuts (-, *, 1.) to create lists
+Tab/Shift+Tab for indentation control
+Limitations (use Indent List for these features):
+
+Drag & drop only supports root-level lists
+List items cannot be aligned
+For a more flexible, Word-like approach, see the Indent List plugin.
+
+Report an issue
+Installation
+bun
+npm
+pnpm
+yarn
+pnpm add @udecode/plate-list
+Copy
+Usage
+import { ListPlugin } from '@udecode/plate-list/react';
+ 
+const plugins = [
+  // ...otherPlugins,
+  ListPlugin,
+];
+Copy
+Keyboard Shortcuts
+Key	Description
+Cmd + Opt + 4	Insert a numbered list.
+Cmd + Shift + 4	Insert a numbered list.
+Plugins
+ListPlugin
+Contains the following element plugins:
+
+BulletedListPlugin
+NumberedListPlugin
+ListItemPlugin
+ListItemContentPlugin
+Optionsobject
+
+validLiChildrenTypes optional string[]
+Valid child node types for list items (besides p and ul).
+
+
+enableResetOnShiftTab optional boolean
+Whether Shift+Tab should reset list indent level.
+
+BulletedListPlugin
+Plugin for unordered (bulleted) lists.
+
+NumberedListPlugin
+Plugin for ordered (numbered) lists.
+
+ListItemPlugin
+Plugin for list items.
+
+ListItemContentPlugin
+Plugin for list item content.
+
+API
+editor.tf.toggle.list
+Toggles a list in the editor.
+
+Optionsobject
+
+type string
+Type of list to toggle.
+
+getHighestEmptyList
+Finds the highest end list that can be deleted. The path of the list should be different from diffListPath. If the highest end list has 2 or more items, returns liPath. It traverses up the parent lists until:
+
+The list has less than 2 items
+Its path is not equal to diffListPath
+Optionsobject
+
+liPath Path
+Path of list item.
+
+
+diffListPath optional Path
+Path of different list.
+
+ReturnsPath | undefined
+Path of highest deletable end list.
+
+getListItemEntry
+Returns the nearest li and ul/ol wrapping node entries for a given path (default = selection).
+
+Optionsobject
+
+at optional Location | null
+Location to get entries from.
+
+Default: editor.selection
+ReturnsElementEntry | undefined
+Nearest li and ul/ol wrapping node entries.
+
+getListRoot
+Searches upward for root list element.
+
+Parameters
+
+at optional Path | TRange | Point | null
+Location to start search from.
+
+Default: editor.selection
+ReturnsElementEntry | undefined
+Root list element entry.
+
+getListTypes
+Gets array of supported list types.
+
+Returnsstring[]
+Array of supported list types.
+
+moveListSiblingsAfterCursor
+Moves list siblings after cursor to specified path.
+
+Optionsoptions
+
+at Path
+Cursor position path.
+
+
+to Path
+Destination path.
+
+Returnsnumber
+Number of siblings moved.
+
+removeFirstListItem
+Removes first list item if not nested and not first child.
+
+Optionsoptions
+
+list ElementEntry
+List entry containing item.
+
+
+listItem ElementEntry
+List item to remove.
+
+Returnsboolean
+Whether item was removed.
+
+removeListItem
+Removes list item and moves sublist to parent if any.
+
+OptionsRemoveListItemOptions
+
+list ElementEntry
+List entry containing item.
+
+
+listItem ElementEntry
+List item to remove.
+
+
+reverse optional boolean
+Whether to reverse sublist items.
+
+Default: true
+Returnsboolean
+Whether item was removed.
+
+someList
+Checks if selection is inside list of specific type.
+
+Parameters
+
+type string
+List type to check.
+
+Returnsboolean
+Whether selection is in specified list type.
+
+unindentListItems
+Decreases indentation level of list items.
+
+OptionsUnindentListItemsOptions
+Target path for unindenting.
+
+unwrapList
+Removes list formatting from selected items.
+
+Optionsoptions
+
+at optional Path
+Target path for unwrapping.
+
+Hooks
+useListToolbarButton
+A behavior hook for a list toolbar button.
+
+State
+
+pressed boolean
+Button pressed state.
+
+
+nodeType string
+List node type.
+
+Default: BulletedListPlugin.key
+Returnsobject
+
+props object
+Props for toolbar button.
+
+Show child attributes
+Todo List API
+getTodoListItemEntry
+Gets nearest todo list and item entries.
+
+Optionsoptions
+
+at optional Location | null
+Location to search from.
+
+Default: editor.selection
+Returns{ list: ElementEntry, listItem: ElementEntry } | undefined
+Todo list and item entries if found.
+
+useTodoListElement
+A behavior hook a todo list item element.
+
+State
+
+checked boolean
+Todo item checked state.
+
+
+readOnly boolean
+Whether item is read-only.
+
+
+element TElement
+Todo list item element.
+
+Returnsobject
+
+checkboxProps object
+Props for checkbox.
+
+Show child attributes

@@ -1,0 +1,212 @@
+Features
+Automatically generates a table of contents from document headings
+Smooth scrolling to headings
+Report an issue
+Installation
+bun
+npm
+pnpm
+yarn
+pnpm add @udecode/plate-heading @udecode/plate-node-id
+Copy
+Usage
+import { TocPlugin, HeadingPlugin } from '@udecode/plate-heading/react';
+import { NodeIdPlugin } from '@udecode/plate-node-id';
+Copy
+const plugins = [
+  // ...otherPlugins,
+  HeadingPlugin,
+  NodeIdPlugin,
+  TocPlugin.configure({
+    options: {
+      topOffset: 80,
+    },
+  }),
+];
+Copy
+const components = {
+  // ...otherComponents,
+  [TocPlugin.key]: TocElement,
+};
+Copy
+TocElement
+Scroll container
+If your scrolling element is EditorContainer, you can skip this step.
+If your scrolling element is the editor container, pass useEditorContainerRef() as the ref prop. For example:
+// Below <Plate> component
+function EditorContainer({ children }: { children: React.ReactNode }) {
+  const containerRef = useEditorContainerRef();
+ 
+  return <div ref={containerRef}>{children}</div>;
+}
+Copy
+If your scrolling element is an ancestor of the editor container, pass useEditorScrollRef() as the ref prop. For example:
+// Below <Plate> component
+function Layout() {
+  const scrollRef = useEditorScrollRef();
+ 
+  return (
+    <main ref={scrollRef}>
+      <EditorContainer>
+        <PlateContent />
+      </EditorContainer>
+    </main>
+  );
+}
+Copy
+Components
+TocElement
+Examples
+Plate UI
+Refer to the preview above.
+
+Plate Plus
+Sticky TOC sidebar
+Hover-to-expand: Opens automatically when you move your mouse over it
+Interactive navigation: Click on items to smoothly scroll to the corresponding heading
+Visual feedback: Highlights the current section in the sidebar
+Beautifully crafted UI
+Preview
+Get the code ->
+
+Plugins
+TocPlugin
+Plugin for generating table of contents.
+
+Options
+
+isScroll optional boolean
+Enable scrolling behavior.
+
+Default: true
+
+topOffset optional number
+Top offset when scrolling to heading.
+
+Default: 80
+
+queryHeading optional (editor: SlateEditor) => Heading[]
+Custom function to query headings.
+
+Transforms
+insertToc
+Insert table of contents element.
+
+OptionsInsertNodesOptions<SlateEditor>
+Node insertion options.
+
+Hooks
+useTocElementState
+Manage TOC element state.
+
+Returns
+
+headingList Heading[]
+Document headings array.
+
+
+onContentScroll (el: HTMLElement, id: string, behavior: ScrollBehavior) => void
+Heading scroll handler.
+
+useTocElement
+Handle TOC element interactions.
+
+Parameters
+
+onContentScroll (el: HTMLElement, id: string, behavior: ScrollBehavior) => void
+Scroll handler from useTocElementState.
+
+Returns
+
+props object
+Props for TOC element.
+
+Show child attributes
+useTocSideBarState
+Manage TOC sidebar state.
+
+Parameters
+
+open optional boolean
+Initial open state.
+
+Default: true
+
+rootMargin optional string
+Intersection Observer root margin.
+
+Default: '0px 0px 0px 0px'
+
+topOffset optional number
+Scroll top offset.
+
+Default: 0
+Returns
+
+activeContentId string
+Active section ID.
+
+
+headingList Heading[]
+Document headings.
+
+
+mouseInToc boolean
+Mouse over TOC state.
+
+
+open boolean
+Sidebar open state.
+
+
+setIsObserve React.Dispatch<React.SetStateAction<boolean>>
+Set observation state.
+
+
+setMouseInToc React.Dispatch<React.SetStateAction<boolean>>
+Set mouse over state.
+
+
+tocRef React.RefObject<HTMLElement>
+TOC element ref.
+
+
+onContentScroll (options: { id: string; behavior?: ScrollBehavior; el: HTMLElement }) => void
+Content scroll handler.
+
+useTocSideBar
+This hook provides props and handlers for the TOC sidebar component.
+
+Parameters
+
+mouseInToc boolean
+Mouse over TOC state.
+
+
+open boolean
+Sidebar open state.
+
+
+setIsObserve React.Dispatch<React.SetStateAction<boolean>>
+Set observation state.
+
+
+setMouseInToc React.Dispatch<React.SetStateAction<boolean>>
+Set mouse over state.
+
+
+tocRef React.RefObject<HTMLElement>
+TOC element ref.
+
+
+onContentScroll (options: { id: string; behavior?: ScrollBehavior; el: HTMLElement }) => void
+Content scroll handler.
+
+Returns
+
+navProps object
+Navigation element props.
+
+Show child attributes
+navProps.onContentClick (e: React.MouseEvent<HTMLElement, MouseEvent>, item: Heading, behavior?: ScrollBehavior) => void
+TOC item click handler.

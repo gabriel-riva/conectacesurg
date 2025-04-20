@@ -1,0 +1,147 @@
+Media Features
+Editable captions
+Resizable elements
+Media Support
+File types:
+Image
+Video
+Audio
+Others (PDF, Word, etc.)
+Video providers:
+Local video files
+YouTube, Vimeo, Dailymotion, Youku, Coub
+Embed providers:
+Tweets
+Upload
+Multiple upload methods:
+Toolbar button with file picker
+Drag and drop from file system
+Paste from clipboard (images)
+URL embedding for external media
+Upload experience:
+Real-time progress tracking
+Preview during upload
+Automatically converts the placeholder to the appropriate media element (image, video, audio, file) once the upload or embed is submitted
+Error handling
+File size validation
+Type validation
+Report an issue
+Installation
+bun
+npm
+pnpm
+yarn
+pnpm add @udecode/plate-media
+Copy
+Usage
+import {
+  AudioPlugin,
+  FilePlugin,
+  ImagePlugin,
+  MediaEmbedPlugin,
+  PlaceholderPlugin,
+  VideoPlugin,
+} from '@udecode/plate-media/react';
+import { SelectOnBackspacePlugin } from '@udecode/plate-select';
+Copy
+const plugins = [
+  // ...otherPlugins,
+  ImagePlugin,
+  VideoPlugin,
+  AudioPlugin,
+  FilePlugin,
+  MediaEmbedPlugin,
+  SelectOnBackspacePlugin.configure({
+    options: {
+      query: {
+        allow: [ImagePlugin.key, VideoPlugin.key, AudioPlugin.key, FilePlugin.key, MediaEmbedPlugin.key],
+      },
+    },
+  }),
+  PlaceholderPlugin.configure({
+    options: { disableEmptyPlaceholder: true },
+    render: { afterEditable: MediaUploadToast },
+  }),
+];
+Copy
+const components = {
+  // ...otherComponents,
+  [ImagePlugin.key]: ImageElement,
+  [VideoPlugin.key]: VideoElement,
+  [AudioPlugin.key]: AudioElement,
+  [FilePlugin.key]: FileElement,
+  [MediaEmbedPlugin.key]: MediaEmbedElement,
+  [PlaceholderPlugin.key]: MediaPlaceholderElement,
+};
+Copy
+Caption
+To enable media captions, use the Caption Plugin.
+
+Upload
+There are two ways to implement file uploads in your editor:
+
+Using our UploadThing implementation
+Creating a custom implementation with your preferred upload solution
+UploadThing
+Add MediaPlaceholderElement component
+
+Add API routes for UploadThing:
+
+CLI
+Manual
+Copy
+npx shadcx@latest add plate/api-uploadthing
+Get your secret key from UploadThing for free
+Add your UploadThing secret key to .env:
+.env
+UPLOADTHING_TOKEN=xxx
+Copy
+Custom Implementation
+For custom implementations, you'll need to create an upload hook that matches our interface. This can work with any upload backend (AWS S3, UploadThing, Cloudinary, Firebase Storage, etc.).
+
+The upload hook should implement this interface:
+
+interface UseUploadFileProps {
+  onUploadComplete?: (file: UploadedFile) => void;
+  onUploadError?: (error: unknown) => void;
+  headers?: Record<string, string>;
+  onUploadBegin?: (fileName: string) => void;
+  onUploadProgress?: (progress: { progress: number }) => void;
+  skipPolling?: boolean;
+}
+ 
+interface UploadedFile {
+  key: string;    // Unique identifier
+  url: string;    // Public URL of the uploaded file
+  name: string;   // Original filename
+  size: number;   // File size in bytes
+  type: string;   // MIME type
+}
+Copy
+Example implementation with S3 presigned URLs:
+
+export function useUploadFile({ 
+  onUploadComplete, 
+  onUploadError, 
+  onUploadProgress 
+}: UseUploadFileProps = {}) {
+  const [uploadedFile, setUploadedFile] = useState<UploadedFile>();
+  const [uploadingFile, setUploadingFile] = useState<File>();
+  const [progress, setProgress] = useState(0);
+  const [isUploading, setIsUploading] = useState(false);
+ 
+  async function uploadFile(file: File) {
+    setIsUploading(true);
+    setUploadingFile(file);
+ 
+    try {
+      // Get presigned URL and final URL from your backend
+      const { presignedUrl, fileUrl, fileKey } = await fetch('/api/upload', {
+        method: 'POST',
+        body: JSON.stringify({
+          filename: file.name,
+          contentType: file.type,
+        }),
+      }).then(r => r.json());
+ 
+      // Upload to S3 using presigned URL

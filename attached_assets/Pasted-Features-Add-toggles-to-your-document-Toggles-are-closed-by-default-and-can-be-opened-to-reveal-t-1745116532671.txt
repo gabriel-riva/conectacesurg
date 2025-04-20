@@ -1,0 +1,152 @@
+Features
+Add toggles to your document
+Toggles are closed by default, and can be opened to reveal the content inside
+Refer to the Indent documentation for more information
+Plugin dependencies
+Indent
+Node Id
+Report an issue
+Installation
+bun
+npm
+pnpm
+yarn
+pnpm add @udecode/plate-indent @udecode/plate-node-id @udecode/plate-toggle
+Copy
+Usage
+import { ParagraphPlugin } from '@udecode/plate/react';
+import { NodeIdPlugin } from '@udecode/plate-node-id';
+import { IndentPlugin } from '@udecode/plate-indent/react';
+import { TogglePlugin } from '@udecode/plate-toggle/react';
+ 
+const plugins = [
+  // ...otherPlugins,
+  HeadingPlugin,
+  IndentPlugin.configure({
+    inject: {
+      targetPlugins: [TogglePlugin.key, ParagraphPlugin.key, HEADING_KEYS.h1],
+    },
+  }),
+  NodeIdPlugin,
+  TogglePlugin,
+];
+Copy
+Plugins
+TogglePlugin
+Plugin for managing toggle functionality.
+
+Optionsobject
+
+openIds optional Set<string>
+Set of open toggle IDs.
+
+Default: new Set()
+
+isOpen optional (toggleId: string) => boolean
+Function to check if toggle is open.
+
+Default: (id) => openIds.has(id)
+
+someClosed optional (toggleIds: string[]) => boolean
+Function to check if any toggles are closed.
+
+Default: (ids) => ids.some(id => !isOpen(id))
+API
+editor.api.toggle.toggleIds
+Toggles the open state of specified toggles.
+
+Toggle open state of toggles.
+
+Parameters
+
+ids string[]
+Array of element IDs to toggle.
+
+
+force optional boolean | null
+Force toggle state:
+
+true: expand all toggles
+false: collapse all toggles
+null: toggle current state
+openNextToggles
+Mark block at current selection as open toggle.
+
+Hooks
+useToggleToolbarButtonState
+Hook for getting toggle toolbar button state.
+
+Returnsobject
+
+pressed boolean
+Whether button is pressed.
+
+useToggleToolbarButton
+Hook for handling toggle toolbar button behavior.
+
+State
+
+pressed boolean
+Whether button is pressed.
+
+Returnsobject
+
+props object
+Props for toggle button.
+
+Show child attributes
+useToggleButtonState
+Hook for getting toggle button state.
+
+Get toggle button state.
+
+Parameters
+
+toggleId string
+Toggle element ID.
+
+Returnsobject
+
+toggleId string
+Toggle element ID.
+
+
+open boolean
+Whether toggle is expanded.
+
+useToggleButton
+Hook for handling toggle button behavior.
+
+Handle toggle button behavior.
+
+Parameters
+
+toggleId string
+Toggle element ID.
+
+
+open boolean
+Whether toggle is expanded.
+
+Returnsobject
+
+toggleId string
+Toggle element ID.
+
+
+open boolean
+Whether toggle is expanded.
+
+
+buttonProps object
+Props for toggle button.
+
+Hide child attributes
+buttonProps.onClick function
+Toggle open state.
+
+buttonProps.onMouseDown function
+Prevent focus loss on click.
+
+Table of Contents
+Trailing Block

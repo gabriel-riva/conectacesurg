@@ -1,0 +1,436 @@
+Features
+Support for hyperlink insertion, edition and removal.
+Report an issue
+Installation
+bun
+npm
+pnpm
+yarn
+pnpm add @udecode/plate-link
+Copy
+Usage
+import { LinkPlugin } from '@udecode/plate-link/react';
+ 
+const plugins = [
+  // ...otherPlugins,
+  LinkPlugin.configure({
+    render: { afterEditable: () => <LinkFloatingToolbar /> },
+  }),
+];
+Copy
+Keyboard Shortcuts
+Key	Description
+Cmd + K	Add a link on the selected text.
+Plugin Transforms
+editor.tf.insert.link
+Inserts a link node into the editor.
+
+Parameters
+
+options object
+Options for inserting the link.
+
+OptionsInsertLinkOptions
+
+createLinkNodeOptions CreateLinkNodeOptions
+Options for creating the link node.
+
+
+insertOptions optional InsertNodesOptions
+Additional options for inserting nodes.
+
+Plugin API
+editor.api.floatingLink.hide
+Hides the floating link and resets its state.
+
+editor.api.floatingLink.reset
+Resets the floating link state without changing the openEditorId.
+
+editor.api.floatingLink.show
+Shows the floating link for the specified mode and editor ID.
+
+Parameters
+
+mode FloatingLinkMode
+The mode to set for the floating link ('edit' or 'insert').
+
+
+editorId string
+The ID of the editor where the floating link should be shown.
+
+editor.api.link.getAttributes
+Gets the attributes for a link element.
+
+Parameters
+
+element TLinkElement
+The link element for which to get attributes.
+
+ReturnsReact.AnchorHTMLAttributes<HTMLAnchorElement>
+The HTML attributes for the link element.
+
+editor.api.link.submitFloatingLink
+Inserts a link if the URL is valid, closes the floating link, and focuses the editor.
+
+Returnsboolean
+Returns true if the link was inserted successfully.
+
+Plugins
+LinkPlugin
+Plugin for link formatting.
+
+Optionsobject
+
+forceSubmit optional boolean
+Determines whether to force the submission of the link form.
+
+
+rangeBeforeOptions optional RangeBeforeOptions
+Allows custom configurations for rangeBeforeOptions.
+
+Default:
+{
+  matchString: ' ',
+  skipInvalid: true,
+  afterMatch: true,
+}
+Copy
+
+triggerFloatingLinkHotkeys optional string | string[]
+Hotkeys to trigger floating link.
+
+Default: 'meta+k, ctrl+k'
+
+allowedSchemes optional string[]
+List of allowed URL schemes.
+
+Default: ['http', 'https', 'mailto', 'tel']
+
+dangerouslySkipSanitization optional boolean
+Determines whether the sanitation of links should be skipped.
+
+Default: false
+
+defaultLinkAttributes optional AnchorHTMLAttributes<HTMLAnchorElement>
+Default HTML attributes for link elements.
+
+Default: {}
+
+keepSelectedTextOnPaste optional boolean
+Keeps selected text on pasting links by default.
+
+Default: true
+
+isUrl optional (text: string) => boolean
+Callback function to validate a URL.
+
+Default: isUrl
+
+getUrlHref optional (url: string) => string | undefined
+Callback function to optionally get the href for a URL. It returns an optional link that is different from the text content. For example, returns https://google.com for google.com.
+
+
+transformInput optional (url: string | null) => string | undefined
+Callback function to optionally transform the submitted URL provided by the user to the URL input before validation.
+
+
+getLinkUrl optional (prevUrl: string | null) => Promise<string | null>
+On keyboard shortcut or toolbar mousedown, this function is called to get the link URL. The default behavior is to use the browser's native prompt.
+
+API
+insertLink
+Inserts a link node into the editor.
+
+Parameters
+
+createLinkNodeOptions CreateLinkNodeOptions
+Options for creating link node.
+
+
+options optional InsertNodesOptions
+Additional options for node insertion.
+
+submitFloatingLink
+Inserts a link if the URL is valid, closes the floating link, and focuses the editor.
+
+Insert link if url is valid.
+Text is url if empty.
+Close floating link.
+Focus editor.
+Returnsboolean
+Returns true if the link was inserted.
+
+triggerFloatingLink
+Triggers the floating link.
+
+Optionsobject
+
+focused optional boolean
+Whether the floating link should be focused.
+
+triggerFloatingLinkEdit
+Triggers the floating link edit.
+
+Returnsboolean
+Returns true if the link was edited.
+
+triggerFloatingLinkInsert
+Trigger floating link. Do not trigger when:
+
+Selection is across blocks
+Selection has more than one leaf node
+Lowest selection is not text
+Selection has a link node
+OptionsTriggerFloatingLinkOptions
+
+focused optional boolean
+Whether the floating link should be focused.
+
+Returnsboolean
+Returns true if the link was inserted.
+
+unwrapLink
+Unwraps a link node.
+
+OptionsUnwrapLinkOptions
+
+split optional boolean
+If true, split the nodes if the selection is inside the link.
+
+upsertLink
+Insert or update a link node. The behavior depends on the current selection and options:
+
+If selection is in a link or not a URL:
+With insertTextInLink: true, inserts URL as text in link
+Otherwise, if text is empty, sets it to URL
+Validates URL unless skipValidation: true
+If selection is expanded or update: true in a link:
+Removes link node and gets link text
+Then:
+Inserts link node with updated URL and target
+If text is provided, replaces link text
+Parameters
+
+options UpsertLinkOptions
+Options for upserting the link.
+
+OptionsUpsertLinkOptions
+
+url string
+The URL of the link.
+
+
+text optional string
+The text content of the link.
+
+
+target optional string
+The target attribute of the link.
+
+
+insertTextInLink optional boolean
+If true, insert the URL as text in the link.
+
+
+insertNodesOptions optional InsertNodesOptions
+The options for inserting nodes.
+
+
+skipValidation optional boolean
+If true, skips URL validation.
+
+Default: false
+Returnsboolean
+Returns true if the link was inserted or updated.
+
+upsertLinkText
+If the text is different from the link above text, replaces the link children with a new text node. The new text node has the same marks as the first text node in the link.
+
+OptionsUpsertLinkTextOptions
+
+text optional string
+The new text to replace the link children with.
+
+validateUrl
+Validates a URL based on the plugin options.
+
+OptionsValidateUrlOptions
+
+url string
+The URL to validate.
+
+Returnsboolean
+Returns true if the URL is valid.
+
+wrapLink
+Wrap a link node with split.
+
+OptionsWrapLinkOptions
+
+url string
+The URL of the link.
+
+
+target optional string
+The target attribute of the link.
+
+CreateLinkNodeOptions
+Options for creating a new link node.
+
+Optionsobject
+
+url string
+The URL of the link node that is being created.
+
+
+text optional string
+The text that is displayed for the link node. If not provided, the URL is used as the display text.
+
+
+target optional string
+Specifies where to open the URL:
+
+_blank: new tab
+_self: same frame
+_parent: parent frame
+_top: full window
+
+children optional TText[]
+An array of text nodes that represent the link content.
+
+API Components
+FloatingLinkNewTabInput
+The input component for controlling whether a link opens in a new tab.
+
+State
+
+checked boolean
+Whether the link should open in a new tab.
+
+
+setChecked React.Dispatch<React.SetStateAction<boolean>>
+Function to update the checked state.
+
+
+ref RefObject<HTMLInputElement>
+Reference to the input element.
+
+FloatingLinkUrlInput
+The input component for entering and editing link URLs.
+
+State
+
+ref RefObject<HTMLInputElement>
+Reference to the input element.
+
+LinkOpenButton
+The button component for opening the link URL.
+
+State
+
+element TLinkElement
+The link element containing the URL to open.
+
+useFloatingLinkEdit
+The behavior hook for the floating link edit functionality.
+
+State
+
+floating optional object
+The virtual floating returned object.
+
+Returnsobject
+
+ref function
+The ref callback for the floating element.
+
+
+props object
+Props for the floating element.
+
+Show child attributes
+
+editButtonProps object
+Props for the edit button.
+
+Show child attributes
+
+unlinkButtonProps object
+Props for the unlink button.
+
+Show child attributes
+useFloatingLinkEnter
+Listens for the Enter key press event and submits the floating link in the editor.
+
+useFloatingLinkEscape
+Listens for the Escape key press event and handles the behavior of the floating link in the editor.
+
+useFloatingLinkInsert
+The behavior hook for inserting a link.
+
+State
+
+floating ReturnType<typeof useFloatingLinkInsertState>
+The virtual floating returned object.
+
+
+refClickOutside React.Ref
+The ref of the floating element.
+
+Returnsobject
+
+ref function
+The ref callback for the floating element.
+
+
+props object
+Props for the floating element.
+
+Show child attributes
+
+textInputProps object
+Props for the text input.
+
+Show child attributes
+useLink
+The behavior hook for the link element.
+
+OptionsUseLinkOptions
+
+element TLinkElement
+The link element.
+
+Returnsobject
+
+props object
+Props for the link element.
+
+Show child attributes
+useLinkToolbarButton
+The behavior hook for the link toolbar button.
+
+State
+
+pressed boolean
+Whether the selection is in a link.
+
+Returnsobject
+
+props object
+Props for the toolbar button.
+
+Show child attributes
+useVirtualFloatingLink
+Custom hook for managing virtual floating of a link.
+
+Optionsobject
+
+editorId string
+The ID of the editor to which the link belongs.
+
+
+floatingOptions optional UseVirtualFloatingOptions
+Options for virtual floating.
+
+ReturnsUseVirtualFloatingReturn
+The return value of the useVirtualFloating hook.

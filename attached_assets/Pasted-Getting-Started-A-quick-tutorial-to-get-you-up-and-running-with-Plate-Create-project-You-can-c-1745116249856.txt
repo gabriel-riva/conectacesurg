@@ -1,0 +1,422 @@
+Getting Started
+A quick tutorial to get you up and running with Plate.
+
+Create project
+You can choose one of the following templates to get started:
+
+Option	Plate	Plugins	AI	Backend
+Notion-like template	✅	✅	✅	✅
+Plate playground template	✅	✅	✅	
+Plate minimal template	✅			
+For an existing React project, jump to the next step.
+
+Add dependencies
+First, install the core dependencies:
+
+bun
+npm
+pnpm
+yarn
+pnpm add @udecode/plate
+Copy
+For the examples in this guide, we'll also use these plugins:
+
+bun
+npm
+pnpm
+yarn
+pnpm add @udecode/plate-basic-marks @udecode/plate-heading @udecode/plate-block-quote @udecode/cn
+Copy
+@udecode/plate-basic-marks provides bold, italic, underline, and code formatting.
+@udecode/plate-heading adds h1-h6 support.
+@udecode/plate-block-quote adds blockquote support.
+@udecode/cn helps with component styling (optional).
+TypeScript Requirements
+Ensure your tsconfig.json is properly configured. The recommended setup for Plate requires TypeScript 5.0+ with the "bundler" module resolution:
+
+{
+  "compilerOptions": {
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    // ... other options
+  }
+}
+Copy
+Note: If you can't use TypeScript 5.0+ or "bundler" resolution, see the TypeScript page for alternative solutions using path aliases.
+
+Basic Editor
+Let's start with a minimal editor setup.
+
+import {
+  usePlateEditor,
+  Plate,
+  PlateContent,
+} from '@udecode/plate/react';
+ 
+export default function BasicEditor() {
+  const editor = usePlateEditor();
+ 
+  return (
+    <Plate editor={editor}>
+      <PlateContent placeholder="Type..." />
+    </Plate>
+  );
+}
+Copy
+Plate manages the editor state and PlateContent renders the editor content.
+
+Preview
+Code
+
+﻿
+Styling
+Let's give our editor some styles: Editor is a styled version of PlateContent.
+
+Preview
+Code
+
+﻿
+To keep things simple, we'll continue to use PlateContent in the following code snippets.
+
+Note: Editor is just an example of a styled editor using Tailwind, and if you're using it, make sure to follow the installation steps in the Manual Installation guide. You can create your own styled version of PlateContent.
+
+editor.tsx
+'use client';
+ 
+import React from 'react';
+ 
+import type { PlateContentProps } from '@udecode/plate/react';
+import type { VariantProps } from 'class-variance-authority';
+ 
+import { cn } from '@udecode/cn';
+import {
+  PlateContent,
+  useEditorContainerRef,
+  useEditorRef,
+} from '@udecode/plate/react';
+import { cva } from 'class-variance-authority';
+ 
+const editorContainerVariants = cva(
+  'relative w-full cursor-text overflow-y-auto caret-primary select-text selection:bg-brand/25 focus-visible:outline-none [&_.slate-selection-area]:z-50 [&_.slate-selection-area]:border [&_.slate-selection-area]:border-brand/25 [&_.slate-selection-area]:bg-brand/15',
+  {
+    defaultVariants: {
+      variant: 'default',
+    },
+    variants: {
+      variant: {
+        comment: cn(
+          'flex flex-wrap justify-between gap-1 px-1 py-0.5 text-sm',
+          'rounded-md border-[1.5px] border-transparent bg-transparent',
+          'has-[[data-slate-editor]:focus]:border-brand/50 has-[[data-slate-editor]:focus]:ring-2 has-[[data-slate-editor]:focus]:ring-brand/30',
+          'has-aria-disabled:border-input has-aria-disabled:bg-muted'
+        ),
+        default: 'h-full',
+        demo: 'h-[650px]',
+        select: cn(
+          'group rounded-md border border-input ring-offset-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2',
+          'has-data-readonly:w-fit has-data-readonly:cursor-default has-data-readonly:border-transparent has-data-readonly:focus-within:[box-shadow:none]'
+        ),
+      },
+    },
+  }
+);
+ 
+export const EditorContainer = ({
+  className,
+  variant,
+  ...props
+}: React.HTMLAttributes<HTMLDivElement> &
+  VariantProps<typeof editorContainerVariants>) => {
+  const editor = useEditorRef();
+  const containerRef = useEditorContainerRef();
+ 
+  return (
+    <div
+      id={editor.uid}
+      ref={containerRef}
+      className={cn(
+        'ignore-click-outside/toolbar',
+        editorContainerVariants({ variant }),
+        className
+      )}
+      {...props}
+    />
+  );
+};
+ 
+EditorContainer.displayName = 'EditorContainer';
+ 
+const editorVariants = cva(
+  cn(
+    'group/editor',
+    'relative w-full cursor-text overflow-x-hidden break-words whitespace-pre-wrap select-text',
+    'rounded-md ring-offset-background focus-visible:outline-none',
+    'placeholder:text-muted-foreground/80 **:data-slate-placeholder:top-[auto_!important] **:data-slate-placeholder:text-muted-foreground/80 **:data-slate-placeholder:opacity-100!',
+    '[&_strong]:font-bold'
+  ),
+  {
+    defaultVariants: {
+      variant: 'default',
+    },
+    variants: {
+      disabled: {
+        true: 'cursor-not-allowed opacity-50',
+      },
+      focused: {
+        true: 'ring-2 ring-ring ring-offset-2',
+      },
+      variant: {
+        ai: 'w-full px-0 text-base md:text-sm',
+        aiChat:
+          'max-h-[min(70vh,320px)] w-full max-w-[700px] overflow-y-auto px-3 py-2 text-base md:text-sm',
+        comment: cn('rounded-none border-none bg-transparent text-sm'),
+        default:
+          'size-full px-16 pt-4 pb-72 text-base sm:px-[max(64px,calc(50%-350px))]',
+        demo: 'size-full px-16 pt-4 pb-72 text-base sm:px-[max(64px,calc(50%-350px))]',
+        fullWidth: 'size-full px-16 pt-4 pb-72 text-base sm:px-24',
+        none: '',
+        select: 'px-3 py-2 text-base data-readonly:w-fit',
+      },
+    },
+  }
+);
+ 
+export type EditorProps = PlateContentProps &
+  VariantProps<typeof editorVariants>;
+ 
+export const Editor = React.forwardRef<HTMLDivElement, EditorProps>(
+  ({ className, disabled, focused, variant, ...props }, ref) => {
+    return (
+      <PlateContent
+        ref={ref}
+        className={cn(
+          editorVariants({
+            disabled,
+            focused,
+            variant,
+          }),
+          className
+        )}
+        disabled={disabled}
+        disableDefaultStyles
+        {...props}
+      />
+    );
+  }
+);
+ 
+Editor.displayName = 'Editor';
+Copy
+Expand
+Initializing Editor's Value
+Let's specify the initial content of the editor: a single paragraph.
+
+// ...
+ 
+const value = [
+  {
+    type: 'p',
+    children: [
+      {
+        text: 'This is editable plain text with react and history plugins, just like a <textarea>!',
+      },
+    ],
+  },
+];
+ 
+export default function BasicEditor() {
+  const editor = usePlateEditor({
+    value,
+  });
+ 
+  return (
+    <Plate editor={editor}>
+      <PlateContent />
+    </Plate>
+  );
+}
+Copy
+Note: Plate uses the type property to enable plugins to render nodes by type.
+
+Preview
+Code
+
+This is editable plain text with react and history plugins, just like a <textarea>!
+Implementing Change Handler
+At this stage, it's crucial to monitor editor modifications in order to store the values appropriately. The onChange prop will serve this purpose. You can also persist the editor's state by saving the value to local storage or a database and loading it back when needed.
+
+// ...
+ 
+export default function BasicEditor() {
+  const localValue =
+    typeof window !== 'undefined' && localStorage.getItem('editorContent');
+ 
+  const editor = usePlateEditor({
+    value: localValue ? JSON.parse(localValue) : value,
+  });
+ 
+  return (
+    <Plate
+      editor={editor}
+      onChange={({ value }) => {
+        // For performance, debounce your saving logic
+        localStorage.setItem('editorContent', JSON.stringify(value));
+      }}
+    >
+      <PlateContent />
+    </Plate>
+  );
+}
+Copy
+Preview
+Code
+
+This is editable plain text with react and history plugins, just like a textarea!
+Debug Value
+Plugins
+See the full list of plugins in the Plugins section.
+
+Let's use a few basic plugins.
+
+// ...
+ 
+import {
+  BoldPlugin,
+  ItalicPlugin,
+  UnderlinePlugin,
+} from '@udecode/plate-basic-marks/react';
+import { HeadingPlugin } from '@udecode/plate-heading/react';
+import { BlockquotePlugin } from '@udecode/plate-block-quote/react';
+ 
+const value = [
+  // ...
+];
+ 
+export default function BasicEditor() {
+  const editor = usePlateEditor({
+    plugins: [
+      HeadingPlugin,
+      BlockquotePlugin,
+      BoldPlugin,
+      ItalicPlugin,
+      UnderlinePlugin,
+    ],
+    value,
+  });
+ 
+  return (
+    <Plate editor={editor}>
+      <PlateContent />
+    </Plate>
+  );
+}
+Copy
+Preview
+Code
+
+🌳 Blocks
+Easily create headings of various levels, from H1 to H6, to structure your content and make it more organized.
+Create blockquotes to emphasize important information or highlight quotes from external sources.
+🌱 Marks
+Add style and emphasis to your text using the mark plugins, which offers a variety of formatting options.
+Make text bold, italic, underlined, or apply a combination of these styles for a visually striking effect.
+Debug Value
+The plugins are functioning correctly. However, since we haven't specified any custom components for rendering, the editor is using the default (unstyled) components. Specifically, the default element component is a div, and the default leaf component is a span.
+
+Note: You don't need to add core plugins such as ReactPlugin, HistoryPlugin and ParagraphPlugin as usePlateEditor already does it.
+
+Components
+Note: Plate plugins are packaged unstyled, implying that you have complete control over markup and styling, hence you can integrate your own design system or Plate UI.
+
+To plug-in all the components in one place, use the override.components option in usePlateEditor. We'll use the withProps helper to pass additional props to the components with Tailwind CSS classes.
+
+// ...
+ 
+import { withProps } from '@udecode/cn';
+import {
+  Plate,
+  PlateElement,
+  PlateLeaf,
+  usePlateEditor,
+} from '@udecode/plate/react';
+ 
+export default function BasicEditor() {
+  const editor = usePlateEditor({
+    plugins: [
+      HeadingPlugin,
+      BlockquotePlugin,
+      BoldPlugin,
+      ItalicPlugin,
+      UnderlinePlugin,
+    ],
+    override: {
+      components: {
+        blockquote: withProps(PlateElement, {
+          as: 'blockquote',
+          className: 'mb-4 border-l-4 border-[#d0d7de] pl-4 text-[#636c76]',
+        }),
+        bold: withProps(PlateLeaf, { as: 'strong' }),
+        h1: withProps(PlateElement, {
+          as: 'h1',
+          className:
+            'mb-4 mt-6 text-3xl font-semibold tracking-tight lg:text-4xl',
+        }),
+        h2: withProps(PlateElement, {
+          as: 'h2',
+          className: 'mb-4 mt-6 text-2xl font-semibold tracking-tight',
+        }),
+        h3: withProps(PlateElement, {
+          as: 'h3',
+          className: 'mb-4 mt-6 text-xl font-semibold tracking-tight',
+        }),
+        italic: withProps(PlateLeaf, { as: 'em' }),
+        p: withProps(PlateElement, {
+          as: 'p',
+          className: 'mb-4',
+        }),
+        underline: withProps(PlateLeaf, { as: 'u' }),
+      },
+    },
+  });
+ 
+  return (
+    <Plate editor={editor}>
+      <PlateContent />
+    </Plate>
+  );
+}
+Copy
+Preview
+Code
+
+🌳 Blocks
+Easily create headings of various levels, from H1 to H6, to structure your content and make it more organized.
+
+Create blockquotes to emphasize important information or highlight quotes from external sources.
+🌱 Marks
+Add style and emphasis to your text using the mark plugins, which offers a variety of formatting options.
+
+Make text bold, italic, underlined, or apply a combination of these styles for a visually striking effect.
+
+Initializing Editor's Value with HTML String
+You can also specify the initial content of the editor using an HTML string and the corresponding plugins.
+
+// ...
+ 
+const htmlValue = '<p>This is <b>bold</b> and <i>italic</i> text!</p>';
+ 
+export default function BasicEditor() {
+  const editor = usePlateEditor({
+    // ...
+    value: htmlValue,
+  });
+ 
+  return (
+    <Plate editor={editor}>
+      <PlateContent />
+    </Plate>
+  );
+}
+Copy
+That's it!
+You can now play around with the Playground and start building your own editor.

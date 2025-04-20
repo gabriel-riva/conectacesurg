@@ -1,0 +1,840 @@
+Features
+Enables creation and editing of tables with advanced behaviors.
+Arrow navigation (up/down).
+Grid cell selection.
+Cell selection expansion with Shift+Arrow keys.
+Copying and pasting cells.
+Row drag-and-drop reordering
+Row selection via drag handle
+Report an issue
+Installation
+bun
+npm
+pnpm
+yarn
+pnpm add @udecode/plate-table
+Copy
+Usage
+// ...
+import { TablePlugin } from '@udecode/plate-table/react';
+ 
+const plugins = [
+  // ...otherPlugins,
+  TablePlugin.configure({
+    options: {
+      initialTableWidth: 600,
+    },
+  }),
+];
+Copy
+Disable merging
+Preview
+Code
+
+16
+Table
+Create customizable tables with resizable columns and rows, allowing you to design structured layouts.
+Plugin
+Element
+Inline
+Void
+Heading
+﻿
+﻿
+No
+Image
+Yes
+No
+Yes
+Mention
+Yes
+Yes
+Yes
+Plugins
+TablePlugin
+Options
+
+disableMerge optional boolean
+Disables the merging behavior of cells.
+
+
+disableExpandOnInsert optional boolean
+Disables the expansion of the table when inserting cells.
+
+
+disableMarginLeft optional boolean
+Disables the left resizer of the first column in the table.
+
+
+enableUnsetSingleColSize optional boolean
+Disables unsetting the width of the first column when the table has only one column. Set this to true if you want to resize the table width when there's only one column. Leave it false if you have a full-width table.
+
+
+initialTableWidth optional number
+If defined, a normalizer will set each undefined table colSizes to this value divided by the number of columns. Note that merged cells are not yet supported.
+
+
+minColumnWidth optional number
+The minimum width of a column in the table.
+
+Default: 48
+TableRowPlugin
+Plugin for table rows.
+
+TableCellPlugin
+Plugin for table cells.
+
+TableCellHeaderPlugin
+Plugin for table header cells.
+
+API
+editor.api.create.table
+Parameters
+
+options optional GetEmptyTableNodeOptions
+Extends GetEmptyRowNodeOptions.
+
+Options
+
+header optional boolean
+Specify true if the table has a header row.
+
+
+rowCount optional number
+The number of rows in the table.
+
+Default: 0
+
+colCount optional number | undefined
+The number of columns in the table.
+
+Returns
+
+TElement
+The table node.
+
+editor.api.create.tableCell
+Creates an empty cell node for a table.
+
+Options
+
+header optional boolean
+Specify true if the cell is a header cell.
+
+
+row optional TTableRowElement
+The row element. If header is not specified, it will determine if the cell is a header cell based on the row's children.
+
+
+children optional Descendant[]
+The children of the new cell node.
+
+Default: [editor.api.create.block()]
+Returns
+
+TElement
+The cell node.
+
+editor.api.create.tableRow
+Creates an empty row node with the specified number of columns.
+
+Options
+
+header optional boolean
+Specify true if the row is a header row.
+
+
+colCount optional number
+The number of columns in the row.
+
+Default: 1
+Returns
+
+TElement
+The row node.
+
+editor.api.table.getCellBorders
+Gets the border styles for a table cell, handling special cases for first row and first column cells.
+
+Options
+
+element TTableCellElement
+The table cell element to get the border styles for.
+
+
+defaultBorder optional Required<BorderStyle>
+The default border style to use when cell borders are not defined.
+
+Show child attributes
+Returns
+
+BorderStylesDefault
+An object containing:
+
+Show child attributes
+editor.api.table.getCellChildren
+Gets the children of a table cell.
+
+Parameters
+
+cell TElement
+The table cell element.
+
+Returns
+
+Descendant[]
+The children of the table cell.
+
+editor.api.table.getCellSize
+Gets the width and minimum height of a table cell, taking into account column spans and column sizes.
+
+Options
+
+element TTableCellElement
+The table cell element to get the size for.
+
+
+colSizes optional number[]
+Optional array of column sizes. If not provided, will use the table's overridden column sizes.
+
+Returns
+
+width number
+The total width of the cell, calculated by summing the widths of all columns it spans.
+
+
+minHeight number | undefined
+The minimum height of the cell, derived from the row's size property.
+
+editor.api.table.getColSpan
+Gets the column span of a table cell.
+
+Parameters
+
+element TTableCellElement
+The table cell element to get the column span for.
+
+Returns
+
+number
+The number of columns this cell spans.
+
+Default: 1
+editor.api.table.getRowSpan
+Gets the row span of a table cell.
+
+Parameters
+
+element TTableCellElement
+The table cell element to get the row span for.
+
+Returns
+
+number
+The number of rows this cell spans.
+
+Default: 1
+getCellType
+Get the plugin cell types.
+
+Returns
+
+string[]
+An array of element types for table cells (td and th) in the editor.
+
+getNextTableCell
+Gets the next cell in the table.
+
+Parameters
+
+currentCell NodeEntry
+The entry of the current cell.
+
+
+currentPath Path
+The path of the current cell.
+
+
+currentRow NodeEntry
+The entry of the current row.
+
+Returns
+
+NodeEntry | undefined
+The node entry of the cell in the next row, or undefined if the current row is the last row.
+
+getPreviousTableCell
+Gets the previous cell in the table.
+
+Parameters
+
+currentCell NodeEntry
+The entry of the current cell.
+
+
+currentPath Path
+The path of the current cell.
+
+
+currentRow NodeEntry
+The entry of the current row.
+
+Returns
+
+NodeEntry | undefined
+The node entry of the cell in the previous row, or undefined if the current row is the first row.
+
+getTableColumnCount
+Gets the number of columns in a table.
+
+Parameters
+
+tableNode TElement
+The table node for which to retrieve the column count.
+
+Returns
+
+number
+The number of columns in the table.
+
+getTableColumnIndex
+Gets the column index of a cell node within a table.
+
+Parameters
+
+cellNode TElement
+The cell node for which to retrieve the column index.
+
+Returns
+
+number
+The column index of the cell node.
+
+getTableEntries
+Gets the table, row, and cell node entries based on the current selection or a specified location.
+
+Options
+
+at optional Location | null
+The location where the table cell is located.
+
+Default: editor.selection
+Returns
+
+table NodeEntry | undefined
+The table node entry.
+
+
+row NodeEntry | undefined
+The row node entry.
+
+
+cell NodeEntry | undefined
+The cell node entry.
+
+getTableGridAbove
+Gets the sub table above the anchor and focus positions based on the specified format (tables or cells).
+
+Options
+
+format optional string
+The format of the sub table to retrieve.
+
+Default: 'table'
+Returns
+
+ElementEntry[]
+The sub table entries.
+getTableGridByRange
+Gets the sub table between two cell paths within a given range.
+
+Options
+
+at TRange
+The range specifying the start and end cell paths.
+
+
+format optional 'table' | 'cell'
+The format of the output.
+
+Default: 'table'
+Returns
+
+ElementEntry[]
+The sub table entries.
+getTableRowIndex
+Gets the row index of a cell node within a table.
+
+Parameters
+
+cellNode TElement
+The cell node for which to retrieve the row index.
+
+Returns
+
+number
+The row index of the cell node.
+
+getTopTableCell
+Gets the cell above the current cell in the table.
+
+Parameters
+
+at optional Path
+The path to the current cell. If not provided, the function will search for the current cell in the editor.
+
+Returns
+
+ElementEntry | undefined
+The cell node entry.
+
+isTableBorderHidden
+Checks if the border of a table cell or the table itself is hidden based on the specified border direction.
+
+Parameters
+
+border 'top' | 'left' | 'bottom' | 'right'
+The border direction to check.
+
+Returns
+
+boolean
+true if the border is hidden, false otherwise.
+
+API Transforms
+editor.tf.insert.table
+Inserts a table at the current selection if there is no existing table in the editor. Selects the start of the inserted table.
+
+Parameters
+
+getEmptyTableNodeOptions optional GetEmptyTableNodeOptions
+Extends GetEmptyRowNodeOptions.
+
+Show child attributes
+
+options optional InsertNodesOptions
+The options for inserting the table nodes.
+
+editor.tf.insert.tableColumn
+Inserts a column into the table at the current selection or a specified cell path.
+
+Options
+
+at optional Path
+The exact path of the cell to insert the column at. This overrules the fromCell option.
+
+
+before optional boolean
+If true, insert the column before the current column instead of after.
+
+
+fromCell optional Path
+The path of the cell to insert the column from.
+
+
+header optional boolean
+If true, the inserted column will be treated as a header column.
+
+
+select optional boolean
+If true, the inserted column will be selected after insertion.
+
+editor.tf.insert.tableRow
+Inserts a row into the table at the current selection or a specified row path.
+
+Options
+
+at optional Path
+Exact path of the row to insert the column at. Pass the table path to insert at the end of the table. Will overrule fromRow.
+
+
+before optional boolean
+If true, insert the row before the current row instead of after.
+
+
+fromRow optional Path
+The path of the row to insert the new row from.
+
+
+header optional boolean
+If true, the inserted row will be treated as a header row.
+
+
+select optional boolean
+If true, the inserted row will be selected after insertion.
+
+editor.tf.remove.tableColumn
+Deletes the column containing the selected cell in a table.
+
+editor.tf.remove.tableRow
+Deletes the row containing the selected cell in a table.
+
+editor.tf.remove.table
+Deletes the entire table.
+
+editor.tf.table.merge
+Merges multiple selected cells into one.
+
+The merged cell will:
+
+Have a colSpan equal to the number of columns spanned by the selected cells
+Have a rowSpan equal to the number of rows spanned by the selected cells
+Contain the combined content of all merged cells (non-empty cells only)
+Inherit the header status from the first selected cell
+editor.tf.table.split
+Splits a merged cell back into individual cells.
+
+The split operation will:
+
+Create new cells for each column and row that was spanned
+Copy the header status from the original merged cell
+Place the original cell's content in the first cell
+Create empty cells for the remaining spaces
+moveSelectionFromCell
+Moves the selection by cell unit within a table.
+
+Options
+
+at optional Location
+The location to move the selection from.
+
+
+reverse optional boolean
+Set to true to move the selection to the cell above, false to move the selection to the cell below.
+
+
+edge optional 'top' | 'left' | 'right' | 'bottom'
+The edge to expand the cell selection to.
+
+
+fromOneCell optional boolean
+Set to true to move the selection from only one selected cell.
+
+setBorderSize
+Sets the size of the specified border in a table cell.
+
+Parameters
+
+size number
+The size of the border.
+
+
+options optional object
+Options for setting the border size.
+
+Options
+
+at optional Location
+The location of the cell to set the border size.
+
+
+border optional 'all' | 'top' | 'left' | 'bottom' | 'right'
+The border direction to set the size.
+
+Default: 'all'
+setTableColSize
+Sets the width of a specific column in a table.
+
+Options
+
+colIndex optional number
+The index of the column to set the width.
+
+
+width optional number
+The desired width of the column.
+
+
+getAboveNodeOptions optional EditorAboveOptions
+Additional options for finding the table node.
+
+setTableMarginLeft
+Sets the margin left of a table.
+
+Options
+
+marginLeft number
+An object containing the desired margin left value.
+
+
+getAboveNodeOptions optional EditorAboveOptions
+Additional options for finding the table node.
+
+setTableRowSize
+Sets the size (height) of a table row.
+
+Options
+
+rowIndex number
+The index of the row to set the size.
+
+
+height number
+The desired height of the row.
+
+
+getAboveNodeOptions optional EditorAboveOptions
+Additional options for finding the table node.
+
+API Plugin
+onKeyDownTable
+Handles the keyboard events for tables.
+
+Parameters
+
+plugin PlatePlugin
+The plate plugin.
+
+Returns
+
+KeyboardHandlerReturnType
+The keyboard handler return type.
+
+withDeleteTable
+Prevents the deletion of cells in tables.
+
+withGetFragmentTable
+If the selection is inside a table, it retrieves the subtable above the selection as the fragment. This is useful when copying and pasting table cells.
+
+withInsertFragmentTable
+If inserting a table:
+
+If the block above the anchor of the selection is a table, replace each cell above with the inserted table until out of bounds. Select the inserted cells.
+If there is no table above the anchor, check if the selection is inside a table. If it is, find the cell at the anchor position and replace its children with the inserted fragment.
+withInsertTextTable
+If the selection is expanded:
+
+Check if the selection is inside a table. If it is, collapse the selection to the focus edge.
+withNormalizeTable
+Normalize table structure by performing the following actions:
+
+Wrap cell children in a paragraph if they are texts.
+Unwrap nodes that are not valid table elements.
+Set initial column sizes for tables if specified.
+withSelectionTable
+Handle table selections by performing the following actions:
+
+Adjust the focus of the selection when the anchor is inside a table and the focus is in a block before or after the table.
+Adjust the focus of the selection when the focus is inside a table and the anchor is in a block before or after the table.
+Override the selection from a cell if the previous and new selections are in different cells.
+withSetFragmentDataTable
+Handle setting data to the clipboard when copying or cutting table data by performing the following actions:
+
+Check if a table entry and selected cell entries exist.
+Handle single-cell copy or cut operations by copying the cell content instead of the table structure.
+Create a table structure with the selected cells' content.
+Set the text, HTML, CSV, TSV, and Slate fragment data to the clipboard.
+withTable
+Enhance the editor instance with table-related functionality by applying the following higher-order functions:
+
+withNormalizeTable: Normalize table structure and content.
+withDeleteTable: Prevent cell deletion within a table.
+withGetFragmentTable: Handle getting the fragment data when copying or cutting table cells.
+withInsertFragmentTable: Handle inserting table fragments.
+withInsertTextTable: Handle inserting text within a table.
+withSelectionTable: Handle adjusting the selection within a table.
+withSetFragmentDataTable: Handle setting the fragment data when copying or cutting table data.
+API Hooks
+useTableCellElementResizable
+A hook that provides resizing functionality for table cell elements.
+
+OptionsTableCellElementResizableOptions
+
+colIndex number
+The index of the column.
+
+
+colSpan number
+The number of columns this cell spans.
+
+
+rowIndex number
+The index of the row.
+
+
+step optional number
+Resize by step instead of by pixel.
+
+
+stepX optional number
+Step size for horizontal resizing.
+
+
+stepY optional number
+Step size for vertical resizing.
+
+Default: step
+Returns
+
+bottomProps ResizeHandleProps
+Props for the bottom resize handle, including resize direction and handler.
+
+
+hiddenLeft boolean
+Whether the left resize handle should be hidden. True if not the first column or margin left is disabled.
+
+
+leftProps ResizeHandleProps
+Props for the left resize handle, including resize direction and handler.
+
+
+rightProps ResizeHandleProps
+Props for the right resize handle, including resize direction, initial size, and handler.
+
+useTableStore
+The table store stores the state of the table plugin.
+
+Attributes
+
+colSizeOverrides TableStoreSizeOverrides
+The column size overrides.
+
+
+rowSizeOverrides TableStoreSizeOverrides
+The row size overrides.
+
+
+marginLeftOverride number | null
+The margin left override.
+
+
+selectedCells TElement[] | null
+The selected cells.
+
+
+selectedTables TElement[] | null
+The selected tables.
+
+useIsCellSelected
+Custom hook that checks if a table cell is selected.
+
+Parameters
+
+element TElement
+The table cell element to check.
+
+useSelectedCells
+A hook that manages the selection of cells in a table.
+
+It keeps track of the currently selected cells and updates them based on changes in editor selection.
+
+useTableBordersDropdownMenuContentState
+A state hook for the table borders dropdown menu content.
+
+Returns
+An object with the following properties:
+
+
+hasBottomBorder boolean
+Indicates whether the selected table cells have a bottom border.
+
+
+hasTopBorder boolean
+Indicates whether the selected table cells have a top border.
+
+
+hasLeftBorder boolean
+Indicates whether the selected table cells have a left border.
+
+
+hasRightBorder boolean
+Indicates whether the selected table cells have a right border.
+
+
+hasNoBorders boolean
+Indicates whether the selected table cells have no borders.
+
+
+hasOuterBorders boolean
+Indicates whether the selected table cells have outer borders (i.e., borders on all sides).
+
+
+getOnSelectTableBorder function
+A factory function that returns the onSelectTableBorder handler for a specific border type.
+
+The onSelectTableBorder handler is responsible for setting the border style for the selected table cells.
+useTableColSizes
+Custom hook that returns the column sizes of a table with overrides applied. If the colCount of the table updates to 1 and the enableUnsetSingleColSize option is enabled, it unsets the colSizes node.
+
+Options
+
+disableOverrides optional boolean
+If true, disables applying overrides to the column sizes.
+
+Default: false
+Returns
+
+overriddenColSizes number[]
+The column sizes of the table with overrides applied.
+
+useTableElement
+A hook for a table element that handles cell selection and margin left calculations.
+
+Returns
+
+isSelectingCell boolean
+Whether cells are currently being selected.
+
+
+marginLeft number
+The margin left of the table, considering overrides and plugin options.
+
+
+props object
+Props for the table element:
+
+Show child attributes
+useTableCellElement
+A hook for a table cell element that provides state and functionality for table cells.
+
+Returns
+
+borders BorderStylesDefault
+The border styles of the table cell.
+
+
+colIndex number
+The ending column index (considering colSpan).
+
+
+colSpan number
+The number of columns this cell spans.
+
+
+isSelectingCell boolean
+Whether cells are currently being selected.
+
+
+minHeight number | undefined
+The minimum height of the cell.
+
+
+rowIndex number
+The ending row index (considering rowSpan).
+
+
+selected boolean
+Whether this cell is currently selected.
+
+
+width number | string
+The width of the cell.
+
+useTableCellBorders
+A hook that returns the border styles for a table cell.
+
+Returns
+
+BorderStylesDefault
+An object containing the border styles for the cell:
+
+Show child attributes
+useTableCellSize
+A hook that returns the size (width and minimum height) of a table cell.
+
+Returns
+
+object
+An object containing:
+
+Show child attributes
