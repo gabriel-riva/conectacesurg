@@ -18,6 +18,8 @@ import CalendarPage from "@/pages/CalendarPage";
 import AdminCalendar from "@/pages/AdminCalendar";
 import AdminNewsPage from "@/pages/AdminNewsPage";
 import NewsEditorPage from "@/pages/NewsEditorPage";
+import NewsListPage from "@/pages/NewsListPage";
+import NewsDetailPage from "@/pages/NewsDetailPage";
 import { AuthProvider } from "./providers/AuthProvider";
 import { useAuth } from "./lib/auth";
 
