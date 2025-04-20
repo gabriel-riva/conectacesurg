@@ -26,10 +26,13 @@ interface NewsEditorPageProps {
 }
 
 // Componente principal da página
-export default function NewsEditorPage({ isEditMode = false }: NewsEditorPageProps) {
+export default function NewsEditorPage(props: NewsEditorPageProps) {
   const params = useParams();
   const newsId = params?.id;
   const [_, setLocation] = useLocation();
+  
+  // Determina se estamos no modo de edição com base nos props ou na presença de um ID
+  const isEditMode = props.isEditMode || !!newsId;
   const { toast } = useToast();
   
   // Estado inicial do formulário
