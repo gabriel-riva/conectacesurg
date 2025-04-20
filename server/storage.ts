@@ -9,6 +9,8 @@ import {
   aiMessages,
   utilityLinks,
   calendarEvents,
+  news,
+  newsCategories,
   type User, 
   type InsertUser, 
   type InsertGoogleUser,
@@ -26,7 +28,11 @@ import {
   type InsertAiConversation,
   type InsertAiMessage,
   type CalendarEvent,
-  type InsertCalendarEvent
+  type InsertCalendarEvent,
+  type News,
+  type InsertNews,
+  type NewsCategory,
+  type InsertNewsCategory
 } from "@shared/schema";
 import { db, pool } from "./db";
 import { and, asc, desc, eq, gte, lte, or, inArray, SQL } from "drizzle-orm";
@@ -104,6 +110,23 @@ export interface IStorage {
   createCalendarEvent(event: InsertCalendarEvent): Promise<CalendarEvent>;
   updateCalendarEvent(id: number, eventData: Partial<InsertCalendarEvent>): Promise<CalendarEvent | undefined>;
   deleteCalendarEvent(id: number): Promise<boolean>;
+  
+  // News Category methods
+  getAllNewsCategories(): Promise<NewsCategory[]>;
+  getNewsCategory(id: number): Promise<NewsCategory | undefined>;
+  createNewsCategory(category: InsertNewsCategory): Promise<NewsCategory>;
+  updateNewsCategory(id: number, categoryData: Partial<InsertNewsCategory>): Promise<NewsCategory | undefined>;
+  deleteNewsCategory(id: number): Promise<boolean>;
+  
+  // News methods
+  getAllNews(includeUnpublished?: boolean): Promise<(News & { category?: NewsCategory })[]>;
+  getLatestNews(limit: number): Promise<(News & { category?: NewsCategory })[]>;
+  getNewsById(id: number): Promise<(News & { category?: NewsCategory }) | undefined>;
+  createNews(news: InsertNews): Promise<News>;
+  updateNews(id: number, newsData: Partial<InsertNews>): Promise<News | undefined>;
+  publishNews(id: number): Promise<News | undefined>;
+  unpublishNews(id: number): Promise<News | undefined>;
+  deleteNews(id: number): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1048,6 +1071,218 @@ export class DatabaseStorage implements IStorage {
       return result.length > 0;
     } catch (error) {
       console.error("Error deleting calendar event:", error);
+      return false;
+    }
+  }
+
+  // News Category methods
+  async getAllNewsCategories(): Promise<NewsCategory[]> {
+    try {
+      return await db.select().from(newsCategories);
+    } catch (error) {
+      console.error("Error getting all news categories:", error);
+      return [];
+    }
+  }
+
+  async getNewsCategory(id: number): Promise<NewsCategory | undefined> {
+    try {
+      const [category] = await db
+        .select()
+        .from(newsCategories)
+        .where(eq(newsCategories.id, id));
+      
+      return category;
+    } catch (error) {
+      console.error("Error getting news category by ID:", error);
+      return undefined;
+    }
+  }
+
+  async createNewsCategory(category: InsertNewsCategory): Promise<NewsCategory> {
+    try {
+      const [newCategory] = await db
+        .insert(newsCategories)
+        .values(category)
+        .returning();
+      
+      return newCategory;
+    } catch (error) {
+      console.error("Error creating news category:", error);
+      throw new Error("Failed to create news category");
+    }
+  }
+
+  async updateNewsCategory(id: number, categoryData: Partial<InsertNewsCategory>): Promise<NewsCategory | undefined> {
+    try {
+      const [updatedCategory] = await db
+        .update(newsCategories)
+        .set(categoryData)
+        .where(eq(newsCategories.id, id))
+        .returning();
+      
+      return updatedCategory;
+    } catch (error) {
+      console.error("Error updating news category:", error);
+      return undefined;
+    }
+  }
+
+  async deleteNewsCategory(id: number): Promise<boolean> {
+    try {
+      const result = await db.delete(newsCategories).where(eq(newsCategories.id, id)).returning();
+      return result.length > 0;
+    } catch (error) {
+      console.error("Error deleting news category:", error);
+      return false;
+    }
+  }
+
+  // News methods
+  async getAllNews(includeUnpublished: boolean = false): Promise<(News & { category?: NewsCategory })[]> {
+    try {
+      const query = db
+        .select({
+          ...news,
+          category: newsCategories
+        })
+        .from(news)
+        .leftJoin(newsCategories, eq(news.categoryId, newsCategories.id))
+        .orderBy(desc(news.createdAt));
+      
+      if (!includeUnpublished) {
+        query.where(eq(news.isPublished, true));
+      }
+      
+      const results = await query;
+      
+      return results.map(item => ({
+        ...item,
+        category: item.category || undefined
+      }));
+    } catch (error) {
+      console.error("Error getting all news:", error);
+      return [];
+    }
+  }
+
+  async getLatestNews(limit: number): Promise<(News & { category?: NewsCategory })[]> {
+    try {
+      const results = await db
+        .select({
+          ...news,
+          category: newsCategories
+        })
+        .from(news)
+        .leftJoin(newsCategories, eq(news.categoryId, newsCategories.id))
+        .where(eq(news.isPublished, true))
+        .orderBy(desc(news.publishedAt || news.createdAt))
+        .limit(limit);
+      
+      return results.map(item => ({
+        ...item,
+        category: item.category || undefined
+      }));
+    } catch (error) {
+      console.error("Error getting latest news:", error);
+      return [];
+    }
+  }
+
+  async getNewsById(id: number): Promise<(News & { category?: NewsCategory }) | undefined> {
+    try {
+      const [result] = await db
+        .select({
+          ...news,
+          category: newsCategories
+        })
+        .from(news)
+        .leftJoin(newsCategories, eq(news.categoryId, newsCategories.id))
+        .where(eq(news.id, id));
+      
+      if (!result) return undefined;
+      
+      return {
+        ...result,
+        category: result.category || undefined
+      };
+    } catch (error) {
+      console.error("Error getting news by ID:", error);
+      return undefined;
+    }
+  }
+
+  async createNews(newsItem: InsertNews): Promise<News> {
+    try {
+      const [newNews] = await db
+        .insert(news)
+        .values(newsItem)
+        .returning();
+      
+      return newNews;
+    } catch (error) {
+      console.error("Error creating news:", error);
+      throw new Error("Failed to create news");
+    }
+  }
+
+  async updateNews(id: number, newsData: Partial<InsertNews>): Promise<News | undefined> {
+    try {
+      const [updatedNews] = await db
+        .update(news)
+        .set(newsData)
+        .where(eq(news.id, id))
+        .returning();
+      
+      return updatedNews;
+    } catch (error) {
+      console.error("Error updating news:", error);
+      return undefined;
+    }
+  }
+
+  async publishNews(id: number): Promise<News | undefined> {
+    try {
+      const [publishedNews] = await db
+        .update(news)
+        .set({ 
+          isPublished: true,
+          publishedAt: new Date()
+        })
+        .where(eq(news.id, id))
+        .returning();
+      
+      return publishedNews;
+    } catch (error) {
+      console.error("Error publishing news:", error);
+      return undefined;
+    }
+  }
+
+  async unpublishNews(id: number): Promise<News | undefined> {
+    try {
+      const [unpublishedNews] = await db
+        .update(news)
+        .set({ 
+          isPublished: false,
+          publishedAt: null
+        })
+        .where(eq(news.id, id))
+        .returning();
+      
+      return unpublishedNews;
+    } catch (error) {
+      console.error("Error unpublishing news:", error);
+      return undefined;
+    }
+  }
+
+  async deleteNews(id: number): Promise<boolean> {
+    try {
+      const result = await db.delete(news).where(eq(news.id, id)).returning();
+      return result.length > 0;
+    } catch (error) {
+      console.error("Error deleting news:", error);
       return false;
     }
   }
