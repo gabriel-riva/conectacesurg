@@ -16,6 +16,7 @@ import profileRouter from "./profile";
 import utilityLinksRouter from "./utilityLinks";
 import calendarRouter from "./calendar";
 import newsRouter from "./news";
+import uploadRouter from "./upload";
 
 // Create PostgreSQL session store for production or memory store for development
 const createSessionStore = () => {
