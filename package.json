@@ -52,7 +52,6 @@
     "@udecode/plate-basic-elements": "^47.0.0",
     "@udecode/plate-basic-marks": "^46.0.5",
     "@udecode/plate-block-quote": "^44.0.0",
-    "@udecode/plate-common": "^41.0.13",
     "@udecode/plate-core": "^46.0.10",
     "@udecode/plate-find-replace": "^44.0.0",
     "@udecode/plate-heading": "^44.0.0",
