@@ -23,10 +23,17 @@ export async function apiRequest<T = Response>(
     url = urlOrData;
     bodyData = data;
   } else {
-    // Novo formato: apiRequest(url, data)
+    // Novo formato: apiRequest(url, options)
     method = 'GET';
     url = methodOrUrl;
-    bodyData = urlOrData;
+    
+    // Se for um objeto e tiver uma propriedade 'method', usamos esse método
+    if (urlOrData && typeof urlOrData === 'object' && 'method' in urlOrData) {
+      method = (urlOrData as any).method;
+      bodyData = (urlOrData as any).body;
+    } else {
+      bodyData = urlOrData;
+    }
   }
   
   let headers = {};
@@ -36,8 +43,8 @@ export async function apiRequest<T = Response>(
   if (bodyData instanceof FormData) {
     // Não definimos content-type para FormData, o navegador cuida disso
     body = bodyData;
-  } else if (bodyData) {
-    // Para dados normais, usamos JSON
+  } else if (bodyData && method !== 'GET' && method !== 'HEAD') {
+    // Para dados normais em métodos que suportam corpo, usamos JSON
     headers = { "Content-Type": "application/json" };
     body = JSON.stringify(bodyData);
   }
