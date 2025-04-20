@@ -692,6 +692,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Configurar acesso estático para a pasta de uploads
   app.use('/uploads', express.static('uploads'));
   
+  // Configurar acesso estático para a pasta public/uploads
+  app.use('/public/uploads', express.static('public/uploads'));
+  
   // Configurar acesso estático para a pasta do TinyMCE
   app.use('/tinymce', express.static('public/tinymce'));
 

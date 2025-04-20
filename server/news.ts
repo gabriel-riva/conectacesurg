@@ -263,7 +263,7 @@ router.post("/", isAdmin, upload.single("image"), async (req: Request, res: Resp
 
     // Se tiver imagem, adicionar o caminho
     if (req.file) {
-      const relativePath = `/uploads/news/${req.file.filename}`;
+      const relativePath = `/public/uploads/news/${req.file.filename}`;
       newsData.imageUrl = relativePath;
     }
 
@@ -310,7 +310,7 @@ router.put("/:id", isAdmin, upload.single("image"), async (req: Request, res: Re
 
     // Se tiver imagem, atualizar o caminho
     if (req.file) {
-      const relativePath = `/uploads/news/${req.file.filename}`;
+      const relativePath = `/public/uploads/news/${req.file.filename}`;
       newsData.imageUrl = relativePath;
 
       // Remover imagem antiga se existir
