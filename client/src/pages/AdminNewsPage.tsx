@@ -48,7 +48,7 @@ function NewsCategoriesTab() {
     mutationFn: (data: { name: string }) => {
       return apiRequest('/api/news/categories', {
         method: 'POST',
-        body: JSON.stringify(data),
+        body: data,
       });
     },
     onSuccess: () => {
@@ -75,7 +75,7 @@ function NewsCategoriesTab() {
     mutationFn: (data: { id: number, name: string }) => {
       return apiRequest(`/api/news/categories/${data.id}`, {
         method: 'PUT',
-        body: JSON.stringify({ name: data.name }),
+        body: { name: data.name },
       });
     },
     onSuccess: () => {
