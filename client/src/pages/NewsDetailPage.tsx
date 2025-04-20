@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { formatImageUrl } from "@/lib/imageUtils";
 
 const NewsDetailPage: React.FC = () => {
   const params = useParams();
@@ -106,7 +105,7 @@ const NewsDetailPage: React.FC = () => {
         {news.imageUrl && (
           <div className="mb-8">
             <img 
-              src={formatImageUrl(news.imageUrl)} 
+              src={news.imageUrl} 
               alt={news.title}
               className="w-full h-auto max-h-[500px] object-cover rounded-lg"
             />

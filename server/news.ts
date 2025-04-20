@@ -263,7 +263,6 @@ router.post("/", isAdmin, upload.single("image"), async (req: Request, res: Resp
 
     // Se tiver imagem, adicionar o caminho
     if (req.file) {
-      // Use apenas /uploads sem o /public para evitar problemas com caminhos de imagem
       const relativePath = `/uploads/news/${req.file.filename}`;
       newsData.imageUrl = relativePath;
     }

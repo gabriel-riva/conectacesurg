@@ -14,7 +14,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { ArrowLeft, Save, Image, Trash } from "lucide-react";
-import { formatImageUrl } from "@/lib/imageUtils";
 
 // Importando o editor TinyMCE
 import TinyEditor from "@/components/TinyEditor";
@@ -76,7 +75,7 @@ export default function NewsEditorPage(props: NewsEditorPageProps) {
       });
       
       if (newsData.imageUrl) {
-        setImagePreview(formatImageUrl(newsData.imageUrl));
+        setImagePreview(newsData.imageUrl);
       }
     }
   }, [newsData]);
