@@ -467,9 +467,9 @@ function NewsListTab() {
                   <p className="text-sm line-clamp-2 mb-4">{news.description}</p>
                   <div className="text-xs text-muted-foreground mb-4">
                     {news.publishedAt ? (
-                      <p>Publicada em: {format(new Date(news.publishedAt), 'dd/MM/yyyy HH:mm')}</p>
+                      <p>Publicada em: {format(new Date(news.publishedAt!), 'dd/MM/yyyy HH:mm')}</p>
                     ) : (
-                      <p>Criada em: {format(new Date(news.createdAt), 'dd/MM/yyyy HH:mm')}</p>
+                      <p>Criada em: {format(new Date(news.createdAt!), 'dd/MM/yyyy HH:mm')}</p>
                     )}
                   </div>
                   <div className="flex justify-end gap-2">

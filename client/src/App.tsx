@@ -78,6 +78,9 @@ function Router() {
       <Route path="/admin/calendar">
         {() => <ProtectedRoute component={AdminCalendar} adminOnly={true} />}
       </Route>
+      <Route path="/admin/noticias">
+        {() => <ProtectedRoute component={AdminNewsPage} adminOnly={true} />}
+      </Route>
       <Route path="/calendar">
         {() => <ProtectedRoute component={CalendarPage} />}
       </Route>
