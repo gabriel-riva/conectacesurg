@@ -35,7 +35,7 @@ const NewsListPage: React.FC = () => {
 
     return news.filter((item: any) => {
       // Filtro por categoria
-      const matchesCategory = !selectedCategory || String(item.categoryId) === selectedCategory;
+      const matchesCategory = !selectedCategory || selectedCategory === "all" || String(item.categoryId) === selectedCategory;
       
       // Filtro por termo de pesquisa
       const matchesSearch = !searchTerm || 
@@ -109,12 +109,12 @@ const NewsListPage: React.FC = () => {
               </div>
             </div>
             
-            <Select value={selectedCategory || ""} onValueChange={(value) => setSelectedCategory(value || null)}>
+            <Select value={selectedCategory || "all"} onValueChange={(value) => setSelectedCategory(value)}>
               <SelectTrigger>
                 <SelectValue placeholder="Filtrar por categoria" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Todas as categorias</SelectItem>
+                <SelectItem value="all">Todas as categorias</SelectItem>
                 {categories?.map((category: any) => (
                   <SelectItem key={category.id} value={String(category.id)}>
                     {category.name}
@@ -132,7 +132,7 @@ const NewsListPage: React.FC = () => {
               </p>
               <Button onClick={() => {
                 setSearchTerm("");
-                setSelectedCategory(null);
+                setSelectedCategory("all");
               }}>
                 Limpar filtros
               </Button>
