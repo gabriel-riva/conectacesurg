@@ -16,6 +16,7 @@ import LinksPage from "@/pages/admin/LinksPage";
 import Profile from "@/pages/Profile";
 import CalendarPage from "@/pages/CalendarPage";
 import AdminCalendar from "@/pages/AdminCalendar";
+import AdminNewsPage from "@/pages/AdminNewsPage";
 import { AuthProvider } from "./providers/AuthProvider";
 import { useAuth } from "./lib/auth";
 

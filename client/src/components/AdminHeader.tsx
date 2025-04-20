@@ -1,26 +1,17 @@
-import { UserDropdown } from "@/components/UserDropdown";
-import { useAuth } from "@/lib/auth";
-import { Link } from "wouter";
+interface AdminHeaderProps {
+  title: string;
+  description?: string;
+}
 
-export function AdminHeader() {
-  const { user } = useAuth();
-  
+export function AdminHeader({ title, description }: AdminHeaderProps) {
   return (
-    <header className="h-14 border-b bg-white flex items-center justify-between px-6 w-full">
-      <div className="flex items-center gap-4">
-        <Link href="/" className="font-semibold text-primary text-lg flex items-center">
-          <span>Portal Conecta</span>
-          <span className="font-bold text-emerald-600 ml-1">CESURG</span>
-        </Link>
-        
-        <span className="text-gray-400">|</span>
-        
-        <span className="text-gray-600 font-medium">Painel Administrativo</span>
-      </div>
-      
-      <div className="flex items-center gap-4">
-        {user && <UserDropdown />}
-      </div>
-    </header>
+    <div className="mb-6">
+      <h1 className="text-2xl font-bold text-primary">{title}</h1>
+      {description && (
+        <p className="text-muted-foreground mt-2">
+          {description}
+        </p>
+      )}
+    </div>
   );
 }
