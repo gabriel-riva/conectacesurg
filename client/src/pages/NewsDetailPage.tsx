@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { formatImageUrl } from "@/lib/imageUtils";
 
 const NewsDetailPage: React.FC = () => {
   const params = useParams();

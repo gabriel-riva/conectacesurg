@@ -11,6 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Calendar, Search, ArrowRight, Newspaper } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { formatImageUrl } from "@/lib/imageUtils";
 
 const NewsListPage: React.FC = () => {
   const [_, navigate] = useLocation();
@@ -151,7 +152,7 @@ const NewsListPage: React.FC = () => {
                     {item.imageUrl && (
                       <div className="relative h-[200px] overflow-hidden">
                         <img 
-                          src={item.imageUrl} 
+                          src={formatImageUrl(item.imageUrl)} 
                           alt={item.title}
                           className="w-full h-full object-cover transition-transform hover:scale-105 duration-300"
                         />

@@ -7,6 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Calendar, ArrowRight, Newspaper } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { formatImageUrl } from "@/lib/imageUtils";
 
 interface LatestNewsCardProps {
   limit?: number;
@@ -70,7 +71,7 @@ const LatestNewsCard: React.FC<LatestNewsCardProps> = ({ limit = 3 }) => {
                 {news.imageUrl ? (
                   <div className="h-16 w-16 rounded overflow-hidden flex-shrink-0">
                     <img 
-                      src={news.imageUrl} 
+                      src={formatImageUrl(news.imageUrl)} 
                       alt={news.title}
                       className="h-full w-full object-cover"
                     />
