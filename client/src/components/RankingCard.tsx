@@ -39,7 +39,7 @@ export function RankingCard() {
         <div className="mb-4 flex items-center justify-between">
           <div className="flex gap-2">
             <Button variant="secondary" size="sm" className="px-3 py-1 h-auto text-xs rounded-md">
-              Mês
+              Ciclo
             </Button>
             <Button variant="outline" size="sm" className="px-3 py-1 h-auto text-xs rounded-md">
               Ano
