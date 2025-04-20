@@ -17,6 +17,7 @@ import Profile from "@/pages/Profile";
 import CalendarPage from "@/pages/CalendarPage";
 import AdminCalendar from "@/pages/AdminCalendar";
 import AdminNewsPage from "@/pages/AdminNewsPage";
+import NewsEditorPage from "@/pages/NewsEditorPage";
 import { AuthProvider } from "./providers/AuthProvider";
 import { useAuth } from "./lib/auth";
 
@@ -80,6 +81,12 @@ function Router() {
       </Route>
       <Route path="/admin/noticias">
         {() => <ProtectedRoute component={AdminNewsPage} adminOnly={true} />}
+      </Route>
+      <Route path="/admin/noticias/nova">
+        {() => <ProtectedRoute component={NewsEditorPage} adminOnly={true} />}
+      </Route>
+      <Route path="/admin/noticias/editar/:id">
+        {() => <ProtectedRoute component={NewsEditorPage} adminOnly={true} isEditMode={true} />}
       </Route>
       <Route path="/calendar">
         {() => <ProtectedRoute component={CalendarPage} />}
