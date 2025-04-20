@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useParams, useLocation } from "wouter";
 import { Header } from "@/components/Header";
@@ -12,250 +12,12 @@ import { Switch } from "@/components/ui/switch";
 import { Card } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest, queryClient } from "@/lib/queryClient";
-import { ArrowLeft, Save, Image, Trash, Bold, Italic, Underline, List, Link, AlignLeft, AlignCenter, AlignRight } from "lucide-react";
-
-// Importações do Slate
-import { createEditor, Descendant, Transforms, Editor, Text } from 'slate';
-import { Slate, Editable, withReact, ReactEditor } from 'slate-react';
-import { withHistory } from 'slate-history';
-
-// Definir tipos para o Slate
-type CustomElement = {
-  type?: string;
-  children: any[];
-  align?: string;
-};
-
-type CustomText = {
-  text: string;
-  bold?: boolean;
-  italic?: boolean;
-  underline?: boolean;
-};
+import { apiRequest } from "@/lib/queryClient";
+import { ArrowLeft, Save, Image, Trash } from "lucide-react";
 
 // Define o tipo das props da página
 interface NewsEditorPageProps {
   isEditMode?: boolean;
-}
-
-// Componente SlateEditor
-const SlateEditor = ({ initialValue, onChange }: { initialValue: any, onChange: (value: any) => void }) => {
-  const [editor] = useState(() => withHistory(withReact(createEditor())));
-  
-  // Define o valor inicial do editor
-  const initialContent: Descendant[] = initialValue || [
-    {
-      type: 'paragraph',
-      children: [{ text: '' }],
-    },
-  ];
-  
-  // Renderiza os elementos do editor
-  const renderElement = useCallback((props: any) => {
-    const { attributes, children, element } = props;
-    const style = { textAlign: element.align };
-    
-    switch (element.type) {
-      case 'heading-one':
-        return <h1 style={style} {...attributes}>{children}</h1>;
-      case 'heading-two':
-        return <h2 style={style} {...attributes}>{children}</h2>;
-      case 'bulleted-list':
-        return <ul style={style} {...attributes}>{children}</ul>;
-      case 'numbered-list':
-        return <ol style={style} {...attributes}>{children}</ol>;
-      case 'list-item':
-        return <li style={style} {...attributes}>{children}</li>;
-      default:
-        return <p style={style} {...attributes}>{children}</p>;
-    }
-  }, []);
-  
-  // Renderiza as formatações de texto
-  const renderLeaf = useCallback((props: any) => {
-    const { attributes, children, leaf } = props;
-    let formattedText = children;
-    
-    if (leaf.bold) {
-      formattedText = <strong>{formattedText}</strong>;
-    }
-    
-    if (leaf.italic) {
-      formattedText = <em>{formattedText}</em>;
-    }
-    
-    if (leaf.underline) {
-      formattedText = <u>{formattedText}</u>;
-    }
-    
-    return <span {...attributes}>{formattedText}</span>;
-  }, []);
-  
-  return (
-    <Slate
-      editor={editor}
-      initialValue={initialContent}
-      onChange={value => onChange(value)}
-    >
-      <Toolbar editor={editor} />
-      <div className="border rounded-lg p-4 bg-white">
-        <Editable
-          renderElement={renderElement}
-          renderLeaf={renderLeaf}
-          placeholder="Comece a escrever o conteúdo da sua notícia aqui..."
-          className="min-h-[300px] p-2 focus:outline-none"
-        />
-      </div>
-    </Slate>
-  );
-};
-
-// Componente da Barra de Ferramentas do Editor
-function Toolbar({ editor }: { editor: Editor }) {
-  const isBlockActive = (format: string) => {
-    const [match] = Editor.nodes(editor, {
-      match: n => n.type === format,
-    });
-    return !!match;
-  };
-
-  const isMarkActive = (format: string) => {
-    const marks = Editor.marks(editor);
-    return marks ? marks[format] === true : false;
-  };
-
-  const toggleBlock = (format: string) => {
-    const isActive = isBlockActive(format);
-    const isList = format === 'bulleted-list' || format === 'numbered-list';
-
-    Transforms.unwrapNodes(editor, {
-      match: n => n.type === 'bulleted-list' || n.type === 'numbered-list',
-      split: true,
-    });
-
-    const newProperties: Partial<CustomElement> = {
-      type: isActive ? 'paragraph' : isList ? 'list-item' : format,
-    };
-    
-    Transforms.setNodes(editor, newProperties);
-
-    if (!isActive && isList) {
-      const block = { type: format, children: [] };
-      Transforms.wrapNodes(editor, block);
-    }
-  };
-
-  const toggleMark = (format: string) => {
-    const isActive = isMarkActive(format);
-    
-    if (isActive) {
-      Editor.removeMark(editor, format);
-    } else {
-      Editor.addMark(editor, format, true);
-    }
-  };
-
-  const toggleAlign = (align: 'left' | 'center' | 'right') => {
-    Transforms.setNodes(editor, { align }, {
-      match: n => Editor.isBlock(editor, n),
-    });
-  };
-
-  return (
-    <div className="bg-white shadow-sm border p-2 mb-4 rounded-lg flex flex-wrap gap-2">
-      <Button
-        type="button"
-        variant={isMarkActive('bold') ? 'default' : 'outline'}
-        size="sm"
-        onClick={() => toggleMark('bold')}
-      >
-        <Bold className="h-4 w-4" />
-      </Button>
-      
-      <Button
-        type="button"
-        variant={isMarkActive('italic') ? 'default' : 'outline'}
-        size="sm"
-        onClick={() => toggleMark('italic')}
-      >
-        <Italic className="h-4 w-4" />
-      </Button>
-      
-      <Button
-        type="button"
-        variant={isMarkActive('underline') ? 'default' : 'outline'}
-        size="sm"
-        onClick={() => toggleMark('underline')}
-      >
-        <Underline className="h-4 w-4" />
-      </Button>
-      
-      <Button
-        type="button"
-        variant={isBlockActive('heading-one') ? 'default' : 'outline'}
-        size="sm"
-        onClick={() => toggleBlock('heading-one')}
-      >
-        H1
-      </Button>
-      
-      <Button
-        type="button"
-        variant={isBlockActive('heading-two') ? 'default' : 'outline'}
-        size="sm"
-        onClick={() => toggleBlock('heading-two')}
-      >
-        H2
-      </Button>
-      
-      <Button
-        type="button"
-        variant={isBlockActive('bulleted-list') ? 'default' : 'outline'}
-        size="sm"
-        onClick={() => toggleBlock('bulleted-list')}
-      >
-        <List className="h-4 w-4" />
-      </Button>
-      
-      <Button
-        type="button"
-        variant={isBlockActive('numbered-list') ? 'default' : 'outline'}
-        size="sm"
-        onClick={() => toggleBlock('numbered-list')}
-        className="mr-2"
-      >
-        1.
-      </Button>
-      
-      <Button
-        type="button"
-        variant="outline"
-        size="sm"
-        onClick={() => toggleAlign('left')}
-      >
-        <AlignLeft className="h-4 w-4" />
-      </Button>
-      
-      <Button
-        type="button"
-        variant="outline"
-        size="sm"
-        onClick={() => toggleAlign('center')}
-      >
-        <AlignCenter className="h-4 w-4" />
-      </Button>
-      
-      <Button
-        type="button"
-        variant="outline"
-        size="sm"
-        onClick={() => toggleAlign('right')}
-      >
-        <AlignRight className="h-4 w-4" />
-      </Button>
-    </div>
-  );
 }
 
 // Componente principal da página
@@ -404,10 +166,7 @@ export default function NewsEditorPage({ isEditMode = false }: NewsEditorPagePro
     saveNews.mutate();
   };
   
-  // Handler para atualizar o editor
-  const handleEditorChange = (value: any) => {
-    setFormData({ ...formData, content: JSON.stringify(value) });
-  };
+  // Agora estamos usando diretamente o evento onChange do Textarea
   
   // Handler para lidar com a seleção de imagem
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -556,18 +315,20 @@ export default function NewsEditorPage({ isEditMode = false }: NewsEditorPagePro
                 
                 <Card className="p-6 mb-6">
                   <div className="space-y-2 mb-4">
-                    <Label>Conteúdo da Notícia *</Label>
+                    <Label htmlFor="content">Conteúdo da Notícia *</Label>
                     <p className="text-sm text-muted-foreground">
-                      Use o editor abaixo para criar o conteúdo completo da notícia.
+                      Escreva o conteúdo completo da notícia abaixo.
                     </p>
                   </div>
                   
-                  <div className="border rounded-lg p-4 bg-white min-h-[400px]">
-                    <SlateEditor 
-                      initialValue={formData.content ? JSON.parse(formData.content) : null}
-                      onChange={handleEditorChange}
-                    />
-                  </div>
+                  <Textarea
+                    id="content"
+                    value={formData.content}
+                    onChange={(e) => setFormData({ ...formData, content: e.target.value })}
+                    placeholder="Digite o conteúdo completo da notícia aqui..."
+                    className="min-h-[400px] resize-y"
+                    rows={15}
+                  />
                 </Card>
                 
                 <div className="flex justify-end">
