@@ -67,7 +67,7 @@
   }
   
   .menu-item-content {
-    @apply flex items-center px-5 transition-all h-full w-full;
+    @apply flex items-center px-5 transition-all h-full;
   }
   
   .menu-item-hover {
@@ -76,15 +76,6 @@
   
   .menu-item-active .menu-item-content {
     @apply bg-conecta-green;
-  }
-  
-  /* Estilo para o header */
-  header .menu-item {
-    @apply h-12;
-  }
-  
-  header nav {
-    @apply h-12;
   }
   
   .bg-conecta-blue {
