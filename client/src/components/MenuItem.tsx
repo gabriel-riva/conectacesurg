@@ -16,16 +16,18 @@ export function MenuItem({ href, icon, iconHover, label, isActive, className = "
   return (
     <Link 
       href={href} 
-      className={`menu-item ${isActive ? 'text-conecta-green' : ''} ${className}`}
+      className={`menu-item ${isActive ? 'menu-item-active' : ''} ${className}`}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      <img 
-        src={isActive || isHovered ? iconHover : icon} 
-        alt={label} 
-        className="w-5 h-5 mr-2" 
-      />
-      {label}
+      <div className={`menu-item-content ${isHovered && !isActive ? 'menu-item-hover' : ''}`}>
+        <img 
+          src={isActive || isHovered ? iconHover : icon} 
+          alt={label} 
+          className="w-5 h-5 mr-2" 
+        />
+        {label}
+      </div>
     </Link>
   );
 }
