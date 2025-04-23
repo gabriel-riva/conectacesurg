@@ -46,9 +46,9 @@ export function Header() {
         </div>
       )}
       
-      <div className="container mx-auto px-4">
-        <div className={`flex items-center justify-between h-14 ${isDevelopment ? 'mt-6' : ''}`}>
-          <div className="flex items-center">
+      <div className="w-full">
+        <div className={`flex items-stretch justify-between ${isDevelopment ? 'pt-6' : ''}`}>
+          <div className="flex items-center px-6">
             <Link href="/dashboard">
               <Logo variant="white" className="h-8 cursor-pointer" />
             </Link>
@@ -107,7 +107,7 @@ export function Header() {
             />
           </nav>
           
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center px-6">
             <UserDropdown />
             
             <Button 
