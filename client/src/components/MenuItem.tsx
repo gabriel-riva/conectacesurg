@@ -4,7 +4,7 @@ import { Link } from "wouter";
 interface MenuItemProps {
   href: string;
   icon: string;
-  iconHover: string;
+  iconHover: string; // Mantendo o parâmetro para não quebrar as chamadas existentes
   label: string;
   isActive: boolean;
   className?: string;
@@ -22,7 +22,7 @@ export function MenuItem({ href, icon, iconHover, label, isActive, className = "
     >
       <div className={`menu-item-content ${isHovered && !isActive ? 'menu-item-hover' : ''}`}>
         <img 
-          src={isActive || isHovered ? iconHover : icon} 
+          src={icon}
           alt={label} 
           className="w-5 h-5 mr-2" 
         />

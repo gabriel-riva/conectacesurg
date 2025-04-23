@@ -47,7 +47,7 @@ export function Header() {
       )}
       
       <div className="container mx-auto px-4">
-        <div className={`flex items-center justify-between ${isDevelopment ? 'pt-6 pb-4' : 'py-4'}`}>
+        <div className={`flex items-center justify-between h-14 ${isDevelopment ? 'mt-6' : ''}`}>
           <div className="flex items-center">
             <Link href="/dashboard">
               <Logo variant="white" className="h-8 cursor-pointer" />
@@ -62,7 +62,7 @@ export function Header() {
             )}
           </div>
           
-          <nav className="hidden md:flex space-x-8">
+          <nav className="hidden md:flex h-full">
             <MenuItem 
               href="/dashboard"
               icon={inicioIcon}
