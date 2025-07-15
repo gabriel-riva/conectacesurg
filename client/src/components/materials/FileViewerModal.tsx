@@ -18,11 +18,21 @@ export default function FileViewerModal({ file, open, onClose, onDownload }: Fil
   const isImage = file.fileType.startsWith('image/');
   const isPDF = file.fileType === 'application/pdf';
   const isText = file.fileType.startsWith('text/') || file.fileType === 'application/json';
-  const isVideo = file.fileType.startsWith('video/');
+  const isVideo = file.fileType.startsWith('video/') && file.fileType !== 'video/youtube';
   const isAudio = file.fileType.startsWith('audio/');
+  const isYouTube = file.fileType === 'video/youtube';
+
+  const getYouTubeEmbedUrl = (url: string) => {
+    const videoId = url.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/);
+    return videoId ? `https://www.youtube.com/embed/${videoId[1]}` : null;
+  };
 
   const handleExternalView = () => {
-    window.open(`/api/materials/files/${file.id}/view`, '_blank');
+    if (file.fileType === 'video/youtube' && file.youtubeUrl) {
+      window.open(file.youtubeUrl, '_blank');
+    } else {
+      window.open(`/api/materials/files/${file.id}/view`, '_blank');
+    }
   };
 
   return (
@@ -56,7 +66,9 @@ export default function FileViewerModal({ file, open, onClose, onDownload }: Fil
           </div>
           <div className="flex items-center gap-4 text-sm text-gray-600">
             <span>{file.fileType}</span>
-            <span>{Math.round(file.fileSize / 1024)} KB</span>
+            {file.fileType !== 'video/youtube' && (
+              <span>{Math.round(file.fileSize / 1024)} KB</span>
+            )}
             <span>Por {file.uploader.name}</span>
           </div>
         </DialogHeader>
@@ -103,6 +115,20 @@ export default function FileViewerModal({ file, open, onClose, onDownload }: Fil
             </div>
           )}
           
+          {isYouTube && file.youtubeUrl && (
+            <div className="flex justify-center">
+              <iframe
+                width="800"
+                height="450"
+                src={getYouTubeEmbedUrl(file.youtubeUrl)}
+                frameBorder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+                className="max-w-full max-h-96"
+              />
+            </div>
+          )}
+
           {isVideo && (
             <div className="flex justify-center">
               <video 
@@ -123,7 +149,7 @@ export default function FileViewerModal({ file, open, onClose, onDownload }: Fil
             </div>
           )}
           
-          {!isImage && !isPDF && !isText && !isVideo && !isAudio && (
+          {!isImage && !isPDF && !isText && !isVideo && !isAudio && !isYouTube && (
             <div className="flex flex-col items-center justify-center p-8 text-center">
               <div className="text-gray-500 mb-4">
                 <svg className="w-16 h-16 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -722,11 +722,13 @@ export const materialFiles = pgTable("material_files", {
   description: text("description"),
   folderId: integer("folder_id").references(() => materialFolders.id, { onDelete: 'cascade' }),
   uploaderId: integer("uploader_id").notNull().references(() => users.id),
-  fileUrl: text("file_url").notNull(),
-  fileName: text("file_name").notNull(),
+  fileUrl: text("file_url"), // Pode ser null para links do YouTube
+  fileName: text("file_name"), // Pode ser null para links do YouTube
   fileType: text("file_type").notNull(),
-  fileSize: integer("file_size").notNull(),
+  fileSize: integer("file_size").notNull().default(0), // 0 para links do YouTube
   downloadCount: integer("download_count").notNull().default(0),
+  contentType: text("content_type").notNull().default("file"), // "file" ou "youtube"
+  youtubeUrl: text("youtube_url"), // URL do YouTube quando contentType é "youtube"
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

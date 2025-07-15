@@ -3,12 +3,13 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Upload, X, FileText } from 'lucide-react';
+import { Upload, X, FileText, Youtube, File } from 'lucide-react';
 import { DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from '@/hooks/use-toast';
 
 const uploadFileSchema = z.object({
@@ -17,7 +18,17 @@ const uploadFileSchema = z.object({
   file: z.any().refine((file) => file && file.length > 0, 'Arquivo é obrigatório')
 });
 
+const youtubeVideoSchema = z.object({
+  name: z.string().min(1, 'Nome é obrigatório'),
+  description: z.string().optional(),
+  youtubeUrl: z.string().url('URL inválida').refine((url) => 
+    url.includes('youtube.com') || url.includes('youtu.be'), 
+    'URL deve ser do YouTube'
+  )
+});
+
 type UploadFileData = z.infer<typeof uploadFileSchema>;
+type YoutubeVideoData = z.infer<typeof youtubeVideoSchema>;
 
 interface UploadFileDialogProps {
   folderId?: number | null;
@@ -29,7 +40,7 @@ export default function UploadFileDialog({ folderId, onSuccess }: UploadFileDial
   const [dragActive, setDragActive] = useState(false);
   const queryClient = useQueryClient();
 
-  const form = useForm<UploadFileData>({
+  const fileForm = useForm<UploadFileData>({
     resolver: zodResolver(uploadFileSchema),
     defaultValues: {
       name: '',
@@ -38,7 +49,16 @@ export default function UploadFileDialog({ folderId, onSuccess }: UploadFileDial
     }
   });
 
-  const selectedFile = form.watch('file')?.[0];
+  const youtubeForm = useForm<YoutubeVideoData>({
+    resolver: zodResolver(youtubeVideoSchema),
+    defaultValues: {
+      name: '',
+      description: '',
+      youtubeUrl: ''
+    }
+  });
+
+  const selectedFile = fileForm.watch('file')?.[0];
 
   const uploadFileMutation = useMutation({
     mutationFn: async (data: UploadFileData) => {
@@ -77,10 +97,57 @@ export default function UploadFileDialog({ folderId, onSuccess }: UploadFileDial
     }
   });
 
-  const onSubmit = async (data: UploadFileData) => {
+  const addYoutubeVideoMutation = useMutation({
+    mutationFn: async (data: YoutubeVideoData) => {
+      const formData = new FormData();
+      formData.append('name', data.name);
+      if (data.description) formData.append('description', data.description);
+      formData.append('youtubeUrl', data.youtubeUrl);
+      formData.append('contentType', 'youtube');
+      if (folderId) formData.append('folderId', folderId.toString());
+
+      const response = await fetch('/api/materials/files', {
+        method: 'POST',
+        body: formData
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Erro ao adicionar vídeo');
+      }
+
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/materials/files'] });
+      toast({
+        title: 'Vídeo adicionado',
+        description: 'Vídeo do YouTube adicionado com sucesso!'
+      });
+      onSuccess();
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Erro ao adicionar vídeo',
+        description: error.message || 'Ocorreu um erro ao adicionar o vídeo',
+        variant: 'destructive'
+      });
+    }
+  });
+
+  const onFileSubmit = async (data: UploadFileData) => {
     setIsSubmitting(true);
     try {
       await uploadFileMutation.mutateAsync(data);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const onYoutubeSubmit = async (data: YoutubeVideoData) => {
+    setIsSubmitting(true);
+    try {
+      await addYoutubeVideoMutation.mutateAsync(data);
     } finally {
       setIsSubmitting(false);
     }
@@ -103,9 +170,9 @@ export default function UploadFileDialog({ folderId, onSuccess }: UploadFileDial
     
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
       const file = e.dataTransfer.files[0];
-      form.setValue('file', e.dataTransfer.files);
-      if (!form.getValues('name')) {
-        form.setValue('name', file.name.split('.')[0]);
+      fileForm.setValue('file', e.dataTransfer.files);
+      if (!fileForm.getValues('name')) {
+        fileForm.setValue('name', file.name.split('.')[0]);
       }
     }
   };
@@ -113,9 +180,9 @@ export default function UploadFileDialog({ folderId, onSuccess }: UploadFileDial
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
-      form.setValue('file', e.target.files);
-      if (!form.getValues('name')) {
-        form.setValue('name', file.name.split('.')[0]);
+      fileForm.setValue('file', e.target.files);
+      if (!fileForm.getValues('name')) {
+        fileForm.setValue('name', file.name.split('.')[0]);
       }
     }
   };
@@ -131,20 +198,33 @@ export default function UploadFileDialog({ folderId, onSuccess }: UploadFileDial
   return (
     <div>
       <DialogHeader>
-        <DialogTitle>Upload de Arquivo</DialogTitle>
+        <DialogTitle>Adicionar Conteúdo</DialogTitle>
       </DialogHeader>
       
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 mt-4">
-          <FormField
-            control={form.control}
-            name="file"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Arquivo</FormLabel>
-                <FormControl>
-                  <div
-                    className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
+      <Tabs defaultValue="file" className="mt-4">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="file" className="flex items-center gap-2">
+            <File className="w-4 h-4" />
+            Arquivo
+          </TabsTrigger>
+          <TabsTrigger value="youtube" className="flex items-center gap-2">
+            <Youtube className="w-4 h-4" />
+            YouTube
+          </TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="file">
+          <Form {...fileForm}>
+            <form onSubmit={fileForm.handleSubmit(onFileSubmit)} className="space-y-4 mt-4">
+              <FormField
+                control={fileForm.control}
+                name="file"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Arquivo</FormLabel>
+                    <FormControl>
+                      <div
+                        className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
                       dragActive 
                         ? 'border-blue-500 bg-blue-50' 
                         : 'border-gray-300 hover:border-gray-400'
@@ -176,7 +256,7 @@ export default function UploadFileDialog({ folderId, onSuccess }: UploadFileDial
                           type="button"
                           variant="ghost"
                           size="sm"
-                          onClick={() => form.setValue('file', null)}
+                          onClick={() => fileForm.setValue('file', null)}
                         >
                           <X className="w-4 h-4" />
                         </Button>
@@ -205,48 +285,114 @@ export default function UploadFileDialog({ folderId, onSuccess }: UploadFileDial
             )}
           />
 
-          <FormField
-            control={form.control}
-            name="name"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Nome do Arquivo</FormLabel>
-                <FormControl>
-                  <Input placeholder="Digite o nome do arquivo" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+              <FormField
+                control={fileForm.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Nome do Arquivo</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Digite o nome do arquivo" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-          <FormField
-            control={form.control}
-            name="description"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Descrição (opcional)</FormLabel>
-                <FormControl>
-                  <Textarea 
-                    placeholder="Descreva o arquivo" 
-                    {...field}
-                    rows={3}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+              <FormField
+                control={fileForm.control}
+                name="description"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Descrição (opcional)</FormLabel>
+                    <FormControl>
+                      <Textarea 
+                        placeholder="Descreva o arquivo" 
+                        {...field}
+                        rows={3}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-          <div className="flex justify-end gap-2 pt-4">
-            <Button type="button" variant="outline" onClick={onSuccess}>
-              Cancelar
-            </Button>
-            <Button type="submit" disabled={isSubmitting || !selectedFile}>
-              {isSubmitting ? 'Enviando...' : 'Enviar Arquivo'}
-            </Button>
-          </div>
-        </form>
-      </Form>
+              <div className="flex justify-end gap-2 pt-4">
+                <Button type="button" variant="outline" onClick={onSuccess}>
+                  Cancelar
+                </Button>
+                <Button type="submit" disabled={isSubmitting || !selectedFile}>
+                  {isSubmitting ? 'Enviando...' : 'Enviar Arquivo'}
+                </Button>
+              </div>
+            </form>
+          </Form>
+        </TabsContent>
+
+        <TabsContent value="youtube">
+          <Form {...youtubeForm}>
+            <form onSubmit={youtubeForm.handleSubmit(onYoutubeSubmit)} className="space-y-4 mt-4">
+              <FormField
+                control={youtubeForm.control}
+                name="youtubeUrl"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>URL do YouTube</FormLabel>
+                    <FormControl>
+                      <Input 
+                        placeholder="https://www.youtube.com/watch?v=..." 
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={youtubeForm.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Nome do Vídeo</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Digite o nome do vídeo" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={youtubeForm.control}
+                name="description"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Descrição (opcional)</FormLabel>
+                    <FormControl>
+                      <Textarea 
+                        placeholder="Descreva o vídeo" 
+                        {...field}
+                        rows={3}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <div className="flex justify-end gap-2 pt-4">
+                <Button type="button" variant="outline" onClick={onSuccess}>
+                  Cancelar
+                </Button>
+                <Button type="submit" disabled={isSubmitting}>
+                  {isSubmitting ? 'Adicionando...' : 'Adicionar Vídeo'}
+                </Button>
+              </div>
+            </form>
+          </Form>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

@@ -292,30 +292,67 @@ router.get("/files/:id", isAuthenticated, async (req: Request, res: Response) =>
   }
 });
 
-// Upload de arquivo (admin apenas)
+// Upload de arquivo ou link do YouTube (admin apenas)
 router.post("/files", isAdmin, upload.single("file"), async (req: Request, res: Response) => {
   try {
-    if (!req.file) {
-      return res.status(400).json({ error: "Nenhum arquivo enviado" });
+    const contentType = req.body.contentType || "file";
+    
+    if (contentType === "youtube") {
+      // Processar link do YouTube
+      if (!req.body.youtubeUrl) {
+        return res.status(400).json({ error: "URL do YouTube é obrigatória" });
+      }
+      
+      // Validar URL do YouTube
+      if (!req.body.youtubeUrl.includes('youtube.com') && !req.body.youtubeUrl.includes('youtu.be')) {
+        return res.status(400).json({ error: "URL deve ser do YouTube" });
+      }
+      
+      const fileData = {
+        name: req.body.name,
+        description: req.body.description,
+        folderId: req.body.folderId ? parseInt(req.body.folderId) : null,
+        uploaderId: req.user?.id,
+        fileUrl: null,
+        fileName: null,
+        fileType: "video/youtube",
+        fileSize: 0,
+        contentType: "youtube",
+        youtubeUrl: req.body.youtubeUrl,
+      };
+      
+      // Validar dados
+      const validatedData = insertMaterialFileSchema.parse(fileData);
+      
+      const file = await storage.createMaterialFile(validatedData);
+      
+      res.status(201).json(file);
+    } else {
+      // Processar arquivo normal
+      if (!req.file) {
+        return res.status(400).json({ error: "Nenhum arquivo enviado" });
+      }
+      
+      const fileData = {
+        name: req.body.name || req.file.originalname,
+        description: req.body.description,
+        folderId: req.body.folderId ? parseInt(req.body.folderId) : null,
+        uploaderId: req.user?.id,
+        fileUrl: `/uploads/materials/${req.file.filename}`,
+        fileName: req.file.originalname,
+        fileType: req.file.mimetype,
+        fileSize: req.file.size,
+        contentType: "file",
+        youtubeUrl: null,
+      };
+      
+      // Validar dados
+      const validatedData = insertMaterialFileSchema.parse(fileData);
+      
+      const file = await storage.createMaterialFile(validatedData);
+      
+      res.status(201).json(file);
     }
-    
-    const fileData = {
-      name: req.body.name || req.file.originalname,
-      description: req.body.description,
-      folderId: req.body.folderId ? parseInt(req.body.folderId) : null,
-      uploaderId: req.user?.id,
-      fileUrl: `/uploads/materials/${req.file.filename}`,
-      fileName: req.file.originalname,
-      fileType: req.file.mimetype,
-      fileSize: req.file.size,
-    };
-    
-    // Validar dados
-    const validatedData = insertMaterialFileSchema.parse(fileData);
-    
-    const file = await storage.createMaterialFile(validatedData);
-    
-    res.status(201).json(file);
   } catch (error) {
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: "Dados inválidos", details: error.errors });

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Folder, Search, Download, Eye, Lock, Users, Calendar, User, Home, ChevronRight, FileText } from 'lucide-react';
+import { Folder, Search, Download, Eye, Lock, Users, Calendar, User, Home, ChevronRight, FileText, Youtube } from 'lucide-react';
 import { 
   BsFiletypePdf, 
   BsFiletypeDoc, 
@@ -63,11 +63,13 @@ interface MaterialFile {
   description: string | null;
   folderId: number | null;
   uploaderId: number;
-  fileUrl: string;
-  fileName: string;
+  fileUrl: string | null;
+  fileName: string | null;
   fileType: string;
   fileSize: number;
   downloadCount: number;
+  contentType?: string;
+  youtubeUrl?: string;
   createdAt: Date;
   updatedAt: Date;
   uploader: {
@@ -108,6 +110,16 @@ export default function MaterialsPage() {
 
   const handleDownload = async (file: MaterialFile) => {
     try {
+      // Para vídeos do YouTube, abrir em nova aba
+      if (file.fileType === 'video/youtube' && file.youtubeUrl) {
+        window.open(file.youtubeUrl, '_blank');
+        toast({
+          title: 'Vídeo aberto',
+          description: 'Vídeo do YouTube aberto em nova aba.'
+        });
+        return;
+      }
+      
       // Trigger download using direct link
       const link = document.createElement('a');
       link.href = `/api/materials/files/${file.id}/download`;
@@ -144,6 +156,11 @@ export default function MaterialsPage() {
   const getFileIcon = (file: MaterialFile) => {
     const fileType = file.fileType.toLowerCase();
     const fileName = file.name.toLowerCase();
+    
+    // Para vídeos do YouTube, mostrar ícone do YouTube
+    if (fileType === 'video/youtube') {
+      return <Youtube className="w-8 h-8 text-red-600" />;
+    }
     
     // Para imagens, mostrar a própria imagem como miniatura
     if (fileType.startsWith('image/')) {
