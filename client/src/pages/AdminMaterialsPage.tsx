@@ -13,6 +13,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -432,6 +433,44 @@ export default function AdminMaterialsPage() {
                                 </FormItem>
                               )}
                             />
+                            
+                            {!folderForm.watch('isPublic') && (
+                              <FormField
+                                control={folderForm.control}
+                                name="groupIds"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel>Grupos com Acesso</FormLabel>
+                                    <FormControl>
+                                      <div className="space-y-2">
+                                        {groups.map((group) => (
+                                          <div key={group.id} className="flex items-center space-x-2">
+                                            <Checkbox
+                                              id={`group-${group.id}`}
+                                              checked={field.value?.includes(group.id) || false}
+                                              onCheckedChange={(checked) => {
+                                                if (checked) {
+                                                  field.onChange([...(field.value || []), group.id]);
+                                                } else {
+                                                  field.onChange(field.value?.filter(id => id !== group.id) || []);
+                                                }
+                                              }}
+                                            />
+                                            <label
+                                              htmlFor={`group-${group.id}`}
+                                              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                                            >
+                                              {group.name}
+                                            </label>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                            )}
                             
                             <div className="flex justify-end gap-2">
                               <Button type="button" variant="outline" onClick={closeFolderDialog}>

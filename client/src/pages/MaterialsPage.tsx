@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Folder, FileText, Search, Download, Eye, Lock, Users, Calendar, User } from 'lucide-react';
+import { Folder, FileText, Search, Download, Eye, Lock, Users, Calendar, User, Home, ChevronRight } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -101,16 +101,47 @@ export default function MaterialsPage() {
     }
   };
 
-  const filteredFolders = folders.filter(folder =>
-    folder.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    folder.description?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Construir breadcrumbs para navegação
+  const buildBreadcrumbs = () => {
+    const breadcrumbs = [];
+    let currentFolder = currentFolderId;
+    
+    while (currentFolder !== null) {
+      const folder = folders.find(f => f.id === currentFolder);
+      if (folder) {
+        breadcrumbs.unshift(folder);
+        currentFolder = folder.parentId;
+      } else {
+        break;
+      }
+    }
+    
+    return breadcrumbs;
+  };
 
-  const filteredFiles = files.filter(file =>
-    file.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    file.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    file.fileName.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const breadcrumbs = buildBreadcrumbs();
+
+  // Filtrar pastas pela pasta atual e pelo termo de busca
+  const filteredFolders = folders.filter(folder => {
+    const matchesSearch = folder.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      folder.description?.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    // Mostrar apenas pastas filhas da pasta atual
+    const matchesParent = folder.parentId === currentFolderId;
+    
+    return matchesSearch && matchesParent;
+  });
+
+  const filteredFiles = files.filter(file => {
+    const matchesSearch = file.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      file.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      file.fileName.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    // Mostrar apenas arquivos da pasta atual
+    const matchesFolder = file.folderId === currentFolderId;
+    
+    return matchesSearch && matchesFolder;
+  });
 
   const isLoading = foldersLoading || filesLoading;
 
@@ -122,6 +153,34 @@ export default function MaterialsPage() {
         <div className="mb-6">
           <h1 className="text-3xl font-bold mb-2">Materiais</h1>
           <p className="text-gray-600">Repositório de documentos e arquivos da comunidade</p>
+        </div>
+
+        {/* Breadcrumbs */}
+        <div className="mb-6">
+          <div className="flex items-center space-x-2 text-sm text-gray-500">
+            <button
+              onClick={() => setCurrentFolderId(null)}
+              className="flex items-center hover:text-gray-700 transition-colors"
+            >
+              <Home className="w-4 h-4 mr-1" />
+              Início
+            </button>
+            {breadcrumbs.map((folder, index) => (
+              <div key={folder.id} className="flex items-center">
+                <ChevronRight className="w-4 h-4 mx-1" />
+                {index === breadcrumbs.length - 1 ? (
+                  <span className="text-gray-700 font-medium">{folder.name}</span>
+                ) : (
+                  <button
+                    onClick={() => setCurrentFolderId(folder.id)}
+                    className="hover:text-gray-700 transition-colors"
+                  >
+                    {folder.name}
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
         </div>
 
         {/* Search */}
@@ -150,7 +209,11 @@ export default function MaterialsPage() {
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {filteredFolders.map((folder) => (
-                    <Card key={folder.id} className="cursor-pointer hover:shadow-lg transition-shadow">
+                    <Card 
+                      key={folder.id} 
+                      className="cursor-pointer hover:shadow-lg transition-shadow"
+                      onClick={() => handleFolderClick(folder.id)}
+                    >
                       <CardHeader className="pb-3">
                         <div className="flex items-center gap-3">
                           {folder.imageUrl ? (
