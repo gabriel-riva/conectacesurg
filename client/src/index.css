@@ -63,19 +63,7 @@
   }
   
   .menu-item {
-    @apply flex items-center font-medium text-white transition-colors tracking-wide h-full;
-  }
-  
-  .menu-item-content {
-    @apply flex items-center px-5 transition-all h-full;
-  }
-  
-  .menu-item-hover {
-    @apply bg-conecta-green;
-  }
-  
-  .menu-item-active .menu-item-content {
-    @apply bg-conecta-green;
+    @apply flex items-center font-medium text-white hover:text-conecta-green transition-colors tracking-wide;
   }
   
   .bg-conecta-blue {
