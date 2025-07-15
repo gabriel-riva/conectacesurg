@@ -396,6 +396,12 @@ router.get("/files/:id/view", isAuthenticated, async (req: Request, res: Respons
     res.setHeader('Content-Type', mimeType);
     res.setHeader('Content-Disposition', `inline; filename="${file.fileName}"`);
     
+    // Headers adicionais para PDFs
+    if (file.fileType === 'application/pdf') {
+      res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+      res.setHeader('Content-Security-Policy', "frame-ancestors 'self'");
+    }
+    
     // Enviar arquivo
     res.sendFile(filePath);
   } catch (error) {
