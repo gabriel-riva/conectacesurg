@@ -147,7 +147,7 @@ router.post("/folders", isAdmin, upload.single("image"), async (req: Request, re
       description: req.body.description,
       parentId: req.body.parentId ? parseInt(req.body.parentId) : null,
       creatorId: req.user?.id,
-      isPublic: req.body.isPublic === "true",
+      isPublic: req.body.isPublic === "true" || req.body.isPublic === true,
       groupIds: groupIds,
       imageUrl: req.file ? `/uploads/materials/${req.file.filename}` : null,
     };
@@ -192,7 +192,7 @@ router.put("/folders/:id", isAdmin, upload.single("image"), async (req: Request,
       name: req.body.name,
       description: req.body.description,
       parentId: req.body.parentId ? parseInt(req.body.parentId) : null,
-      isPublic: req.body.isPublic === "true",
+      isPublic: req.body.isPublic === "true" || req.body.isPublic === true,
       groupIds: groupIds,
     };
     
