@@ -98,13 +98,6 @@ export function Header() {
               label="Gamificação"
               isActive={location === '/gamificacao'}
             />
-            <MenuItem 
-              href="/ai"
-              icon={iaIcon}
-              iconHover={iaIconVerde}
-              label="IA"
-              isActive={location.startsWith('/ai')}
-            />
           </nav>
           
           <div className="flex items-center space-x-4">
@@ -165,14 +158,6 @@ export function Header() {
               iconHover={gamificacaoIconVerde}
               label="Gamificação"
               isActive={location === '/gamificacao'}
-              className="py-2"
-            />
-            <MenuItem 
-              href="/ai"
-              icon={iaIcon}
-              iconHover={iaIconVerde}
-              label="IA"
-              isActive={location.startsWith('/ai')}
               className="py-2"
             />
           </div>
