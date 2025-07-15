@@ -1,6 +1,31 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Folder, FileText, Search, Download, Eye, Lock, Users, Calendar, User, Home, ChevronRight, FileImage, Video, Music, Archive, Code, File } from 'lucide-react';
+import { Folder, Search, Download, Eye, Lock, Users, Calendar, User, Home, ChevronRight } from 'lucide-react';
+import { 
+  BsFiletypePdf, 
+  BsFiletypeDoc, 
+  BsFiletypeDocx, 
+  BsFiletypeXls, 
+  BsFiletypeXlsx, 
+  BsFiletypePpt, 
+  BsFiletypePptx,
+  BsFiletypeJson,
+  BsFiletypeJs,
+  BsFiletypeHtml,
+  BsFiletypeCss,
+  BsFiletypeTxt,
+  BsFiletypeMp4,
+  BsFiletypeMp3,
+  BsFiletypePng,
+  BsFiletypeJpg,
+  BsFiletypeGif,
+  BsFiletypeSvg,
+  BsFileEarmark,
+  BsFileZip,
+  BsFileMusic,
+  BsFilePlay,
+  BsFileImage
+} from 'react-icons/bs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -117,7 +142,8 @@ export default function MaterialsPage() {
 
   // Função para retornar o ícone correto baseado no tipo de arquivo
   const getFileIcon = (file: MaterialFile) => {
-    const fileType = file.fileType;
+    const fileType = file.fileType.toLowerCase();
+    const fileName = file.name.toLowerCase();
     
     // Para imagens, mostrar a própria imagem como miniatura
     if (fileType.startsWith('image/')) {
@@ -133,24 +159,53 @@ export default function MaterialsPage() {
           }}
         />
       );
+    }
+    
+    // Ícones específicos por tipo de arquivo
+    if (fileType === 'application/pdf') {
+      return <BsFiletypePdf className="w-8 h-8 text-red-600" />;
+    } else if (fileType.includes('word') || fileType.includes('msword') || fileName.endsWith('.doc')) {
+      return <BsFiletypeDoc className="w-8 h-8 text-blue-600" />;
+    } else if (fileType.includes('wordprocessingml') || fileName.endsWith('.docx')) {
+      return <BsFiletypeDocx className="w-8 h-8 text-blue-600" />;
+    } else if (fileType.includes('excel') || fileType.includes('spreadsheet') || fileName.endsWith('.xls')) {
+      return <BsFiletypeXls className="w-8 h-8 text-green-600" />;
+    } else if (fileType.includes('spreadsheetml') || fileName.endsWith('.xlsx')) {
+      return <BsFiletypeXlsx className="w-8 h-8 text-green-600" />;
+    } else if (fileType.includes('powerpoint') || fileType.includes('presentation') || fileName.endsWith('.ppt')) {
+      return <BsFiletypePpt className="w-8 h-8 text-orange-600" />;
+    } else if (fileType.includes('presentationml') || fileName.endsWith('.pptx')) {
+      return <BsFiletypePptx className="w-8 h-8 text-orange-600" />;
+    } else if (fileType.includes('zip') || fileType.includes('rar') || fileType.includes('archive') || fileName.endsWith('.zip')) {
+      return <BsFileZip className="w-8 h-8 text-yellow-600" />;
+    } else if (fileType === 'application/json' || fileName.endsWith('.json')) {
+      return <BsFiletypeJson className="w-8 h-8 text-purple-600" />;
+    } else if (fileType === 'text/javascript' || fileName.endsWith('.js')) {
+      return <BsFiletypeJs className="w-8 h-8 text-yellow-500" />;
+    } else if (fileType === 'text/html' || fileName.endsWith('.html')) {
+      return <BsFiletypeHtml className="w-8 h-8 text-orange-500" />;
+    } else if (fileType === 'text/css' || fileName.endsWith('.css')) {
+      return <BsFiletypeCss className="w-8 h-8 text-blue-500" />;
+    } else if (fileType === 'text/plain' || fileName.endsWith('.txt')) {
+      return <BsFiletypeTxt className="w-8 h-8 text-gray-600" />;
+    } else if (fileName.endsWith('.mp4')) {
+      return <BsFiletypeMp4 className="w-8 h-8 text-red-500" />;
+    } else if (fileName.endsWith('.mp3')) {
+      return <BsFiletypeMp3 className="w-8 h-8 text-green-500" />;
     } else if (fileType.startsWith('video/')) {
-      return <Video className="w-6 h-6 text-red-600" />;
+      return <BsFilePlay className="w-8 h-8 text-red-500" />;
     } else if (fileType.startsWith('audio/')) {
-      return <Music className="w-6 h-6 text-green-600" />;
-    } else if (fileType === 'application/pdf') {
-      return <FileText className="w-6 h-6 text-red-500" />;
-    } else if (fileType.includes('word') || fileType.includes('document')) {
-      return <FileText className="w-6 h-6 text-blue-500" />;
-    } else if (fileType.includes('excel') || fileType.includes('spreadsheet')) {
-      return <FileText className="w-6 h-6 text-green-500" />;
-    } else if (fileType.includes('powerpoint') || fileType.includes('presentation')) {
-      return <FileText className="w-6 h-6 text-orange-500" />;
-    } else if (fileType.includes('zip') || fileType.includes('rar') || fileType.includes('archive')) {
-      return <Archive className="w-6 h-6 text-yellow-600" />;
-    } else if (fileType.includes('javascript') || fileType.includes('html') || fileType.includes('css') || fileType.startsWith('text/')) {
-      return <Code className="w-6 h-6 text-purple-600" />;
+      return <BsFileMusic className="w-8 h-8 text-green-500" />;
+    } else if (fileName.endsWith('.png')) {
+      return <BsFiletypePng className="w-8 h-8 text-blue-500" />;
+    } else if (fileName.endsWith('.jpg') || fileName.endsWith('.jpeg')) {
+      return <BsFiletypeJpg className="w-8 h-8 text-blue-500" />;
+    } else if (fileName.endsWith('.gif')) {
+      return <BsFiletypeGif className="w-8 h-8 text-blue-500" />;
+    } else if (fileName.endsWith('.svg')) {
+      return <BsFiletypeSvg className="w-8 h-8 text-blue-500" />;
     } else {
-      return <File className="w-6 h-6 text-gray-600" />;
+      return <BsFileEarmark className="w-8 h-8 text-gray-600" />;
     }
   };
 
@@ -323,7 +378,13 @@ export default function MaterialsPage() {
                             {getFileIcon(file)}
                             {/* Fallback icon para imagens que não carregam */}
                             {file.fileType.startsWith('image/') && (
-                              <FileImage className="w-6 h-6 text-blue-600 hidden" />
+                              <div className="hidden">
+                                {file.name.toLowerCase().endsWith('.png') && <BsFiletypePng className="w-8 h-8 text-blue-500" />}
+                                {file.name.toLowerCase().endsWith('.jpg') && <BsFiletypeJpg className="w-8 h-8 text-blue-500" />}
+                                {file.name.toLowerCase().endsWith('.jpeg') && <BsFiletypeJpg className="w-8 h-8 text-blue-500" />}
+                                {file.name.toLowerCase().endsWith('.gif') && <BsFiletypeGif className="w-8 h-8 text-blue-500" />}
+                                {file.name.toLowerCase().endsWith('.svg') && <BsFiletypeSvg className="w-8 h-8 text-blue-500" />}
+                              </div>
                             )}
                           </div>
                           <div className="flex-1">
