@@ -11,6 +11,8 @@ import {
   calendarEvents,
   news,
   newsCategories,
+  materialFolders,
+  materialFiles,
   type User, 
   type InsertUser, 
   type InsertGoogleUser,
@@ -32,7 +34,11 @@ import {
   type News,
   type InsertNews,
   type NewsCategory,
-  type InsertNewsCategory
+  type InsertNewsCategory,
+  type MaterialFolder,
+  type MaterialFile,
+  type InsertMaterialFolder,
+  type InsertMaterialFile
 } from "@shared/schema";
 import { db, pool } from "./db";
 import { and, asc, desc, eq, gte, lte, or, inArray, SQL } from "drizzle-orm";
@@ -127,6 +133,21 @@ export interface IStorage {
   publishNews(id: number): Promise<News | undefined>;
   unpublishNews(id: number): Promise<News | undefined>;
   deleteNews(id: number): Promise<boolean>;
+  
+  // Material Folder methods
+  getAllMaterialFolders(userId?: number): Promise<(MaterialFolder & { creator: User; parent?: MaterialFolder; children?: MaterialFolder[]; files?: MaterialFile[] })[]>;
+  getMaterialFolder(id: number): Promise<(MaterialFolder & { creator: User; parent?: MaterialFolder; children?: MaterialFolder[]; files?: MaterialFile[] }) | undefined>;
+  createMaterialFolder(folder: InsertMaterialFolder): Promise<MaterialFolder>;
+  updateMaterialFolder(id: number, folderData: Partial<InsertMaterialFolder>): Promise<MaterialFolder | undefined>;
+  deleteMaterialFolder(id: number): Promise<boolean>;
+  
+  // Material File methods
+  getAllMaterialFiles(folderId?: number): Promise<(MaterialFile & { folder?: MaterialFolder; uploader: User })[]>;
+  getMaterialFile(id: number): Promise<(MaterialFile & { folder?: MaterialFolder; uploader: User }) | undefined>;
+  createMaterialFile(file: InsertMaterialFile): Promise<MaterialFile>;
+  updateMaterialFile(id: number, fileData: Partial<InsertMaterialFile>): Promise<MaterialFile | undefined>;
+  deleteMaterialFile(id: number): Promise<boolean>;
+  incrementDownloadCount(id: number): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1283,6 +1304,240 @@ export class DatabaseStorage implements IStorage {
       return result.length > 0;
     } catch (error) {
       console.error("Error deleting news:", error);
+      return false;
+    }
+  }
+
+  // Material Folder methods
+  async getAllMaterialFolders(userId?: number): Promise<(MaterialFolder & { creator: User; parent?: MaterialFolder; children?: MaterialFolder[]; files?: MaterialFile[] })[]> {
+    try {
+      const query = db
+        .select({
+          folder: materialFolders,
+          creator: users,
+          parent: materialFolders,
+        })
+        .from(materialFolders)
+        .leftJoin(users, eq(materialFolders.creatorId, users.id))
+        .leftJoin(materialFolders, eq(materialFolders.parentId, materialFolders.id));
+
+      const results = await query;
+      
+      // Transform results to include nested structure
+      return results.map((result: any) => ({
+        ...result.folder,
+        creator: result.creator,
+        parent: result.parent,
+        children: [], // Will be populated by frontend if needed
+        files: [], // Will be populated by frontend if needed
+      }));
+    } catch (error) {
+      console.error("Error getting material folders:", error);
+      return [];
+    }
+  }
+
+  async getMaterialFolder(id: number): Promise<(MaterialFolder & { creator: User; parent?: MaterialFolder; children?: MaterialFolder[]; files?: MaterialFile[] }) | undefined> {
+    try {
+      const folderQuery = db
+        .select({
+          folder: materialFolders,
+          creator: users,
+          parent: materialFolders,
+        })
+        .from(materialFolders)
+        .leftJoin(users, eq(materialFolders.creatorId, users.id))
+        .leftJoin(materialFolders, eq(materialFolders.parentId, materialFolders.id))
+        .where(eq(materialFolders.id, id));
+
+      const [folderResult] = await folderQuery;
+      
+      if (!folderResult) return undefined;
+
+      // Get children folders
+      const childrenQuery = db
+        .select()
+        .from(materialFolders)
+        .where(eq(materialFolders.parentId, id));
+      
+      const children = await childrenQuery;
+
+      // Get files in this folder
+      const filesQuery = db
+        .select({
+          file: materialFiles,
+          uploader: users,
+        })
+        .from(materialFiles)
+        .leftJoin(users, eq(materialFiles.uploaderId, users.id))
+        .where(eq(materialFiles.folderId, id));
+      
+      const filesResults = await filesQuery;
+      const files = filesResults.map((result: any) => ({
+        ...result.file,
+        uploader: result.uploader,
+      }));
+
+      return {
+        ...folderResult.folder,
+        creator: folderResult.creator,
+        parent: folderResult.parent,
+        children,
+        files,
+      };
+    } catch (error) {
+      console.error("Error getting material folder:", error);
+      return undefined;
+    }
+  }
+
+  async createMaterialFolder(folder: InsertMaterialFolder): Promise<MaterialFolder> {
+    try {
+      const [newFolder] = await db
+        .insert(materialFolders)
+        .values(folder)
+        .returning();
+      
+      return newFolder;
+    } catch (error) {
+      console.error("Error creating material folder:", error);
+      throw new Error("Failed to create material folder");
+    }
+  }
+
+  async updateMaterialFolder(id: number, folderData: Partial<InsertMaterialFolder>): Promise<MaterialFolder | undefined> {
+    try {
+      const [updatedFolder] = await db
+        .update(materialFolders)
+        .set(folderData)
+        .where(eq(materialFolders.id, id))
+        .returning();
+      
+      return updatedFolder;
+    } catch (error) {
+      console.error("Error updating material folder:", error);
+      return undefined;
+    }
+  }
+
+  async deleteMaterialFolder(id: number): Promise<boolean> {
+    try {
+      const result = await db.delete(materialFolders).where(eq(materialFolders.id, id)).returning();
+      return result.length > 0;
+    } catch (error) {
+      console.error("Error deleting material folder:", error);
+      return false;
+    }
+  }
+
+  // Material File methods
+  async getAllMaterialFiles(folderId?: number): Promise<(MaterialFile & { folder?: MaterialFolder; uploader: User })[]> {
+    try {
+      let query = db
+        .select({
+          file: materialFiles,
+          folder: materialFolders,
+          uploader: users,
+        })
+        .from(materialFiles)
+        .leftJoin(materialFolders, eq(materialFiles.folderId, materialFolders.id))
+        .leftJoin(users, eq(materialFiles.uploaderId, users.id));
+
+      if (folderId) {
+        query = query.where(eq(materialFiles.folderId, folderId));
+      }
+
+      const results = await query;
+      
+      return results.map((result: any) => ({
+        ...result.file,
+        folder: result.folder,
+        uploader: result.uploader,
+      }));
+    } catch (error) {
+      console.error("Error getting material files:", error);
+      return [];
+    }
+  }
+
+  async getMaterialFile(id: number): Promise<(MaterialFile & { folder?: MaterialFolder; uploader: User }) | undefined> {
+    try {
+      const query = db
+        .select({
+          file: materialFiles,
+          folder: materialFolders,
+          uploader: users,
+        })
+        .from(materialFiles)
+        .leftJoin(materialFolders, eq(materialFiles.folderId, materialFolders.id))
+        .leftJoin(users, eq(materialFiles.uploaderId, users.id))
+        .where(eq(materialFiles.id, id));
+
+      const [result] = await query;
+      
+      if (!result) return undefined;
+
+      return {
+        ...result.file,
+        folder: result.folder,
+        uploader: result.uploader,
+      };
+    } catch (error) {
+      console.error("Error getting material file:", error);
+      return undefined;
+    }
+  }
+
+  async createMaterialFile(file: InsertMaterialFile): Promise<MaterialFile> {
+    try {
+      const [newFile] = await db
+        .insert(materialFiles)
+        .values(file)
+        .returning();
+      
+      return newFile;
+    } catch (error) {
+      console.error("Error creating material file:", error);
+      throw new Error("Failed to create material file");
+    }
+  }
+
+  async updateMaterialFile(id: number, fileData: Partial<InsertMaterialFile>): Promise<MaterialFile | undefined> {
+    try {
+      const [updatedFile] = await db
+        .update(materialFiles)
+        .set(fileData)
+        .where(eq(materialFiles.id, id))
+        .returning();
+      
+      return updatedFile;
+    } catch (error) {
+      console.error("Error updating material file:", error);
+      return undefined;
+    }
+  }
+
+  async deleteMaterialFile(id: number): Promise<boolean> {
+    try {
+      const result = await db.delete(materialFiles).where(eq(materialFiles.id, id)).returning();
+      return result.length > 0;
+    } catch (error) {
+      console.error("Error deleting material file:", error);
+      return false;
+    }
+  }
+
+  async incrementDownloadCount(id: number): Promise<boolean> {
+    try {
+      const result = await db
+        .update(materialFiles)
+        .set({ downloadCount: materialFiles.downloadCount + 1 })
+        .where(eq(materialFiles.id, id))
+        .returning();
+      
+      return result.length > 0;
+    } catch (error) {
+      console.error("Error incrementing download count:", error);
       return false;
     }
   }

@@ -700,3 +700,71 @@ export type UtilityLink = typeof utilityLinks.$inferSelect;
 export type CalendarEvent = typeof calendarEvents.$inferSelect;
 export type NewsCategory = typeof newsCategories.$inferSelect;
 export type News = typeof news.$inferSelect;
+
+// Tabela para pastas de materiais
+export const materialFolders = pgTable("material_folders", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description"),
+  parentId: integer("parent_id").references(() => materialFolders.id, { onDelete: 'cascade' }),
+  creatorId: integer("creator_id").notNull().references(() => users.id),
+  imageUrl: text("image_url"),
+  isPublic: boolean("is_public").notNull().default(false),
+  groupIds: integer("group_ids").array().default([]), // IDs dos grupos que têm acesso
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Tabela para arquivos de materiais
+export const materialFiles = pgTable("material_files", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description"),
+  folderId: integer("folder_id").references(() => materialFolders.id, { onDelete: 'cascade' }),
+  uploaderId: integer("uploader_id").notNull().references(() => users.id),
+  fileUrl: text("file_url").notNull(),
+  fileName: text("file_name").notNull(),
+  fileType: text("file_type").notNull(),
+  fileSize: integer("file_size").notNull(),
+  downloadCount: integer("download_count").notNull().default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Relações para pastas de materiais
+export const materialFoldersRelations = relations(materialFolders, ({ one, many }) => ({
+  creator: one(users, {
+    fields: [materialFolders.creatorId],
+    references: [users.id],
+  }),
+  parent: one(materialFolders, {
+    fields: [materialFolders.parentId],
+    references: [materialFolders.id],
+  }),
+  children: many(materialFolders),
+  files: many(materialFiles),
+}));
+
+// Relações para arquivos de materiais
+export const materialFilesRelations = relations(materialFiles, ({ one }) => ({
+  folder: one(materialFolders, {
+    fields: [materialFiles.folderId],
+    references: [materialFolders.id],
+  }),
+  uploader: one(users, {
+    fields: [materialFiles.uploaderId],
+    references: [users.id],
+  }),
+}));
+
+// Schemas para inserção
+export const insertMaterialFolderSchema = createInsertSchema(materialFolders);
+export const insertMaterialFileSchema = createInsertSchema(materialFiles);
+
+// Tipos para inserção
+export type InsertMaterialFolder = z.infer<typeof insertMaterialFolderSchema>;
+export type InsertMaterialFile = z.infer<typeof insertMaterialFileSchema>;
+
+// Tipos para seleção
+export type MaterialFolder = typeof materialFolders.$inferSelect;
+export type MaterialFile = typeof materialFiles.$inferSelect;

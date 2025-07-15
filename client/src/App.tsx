@@ -20,6 +20,7 @@ import AdminNewsPage from "@/pages/AdminNewsPage";
 import NewsEditorPage from "@/pages/NewsEditorPage";
 import NewsListPage from "@/pages/NewsListPage";
 import NewsDetailPage from "@/pages/NewsDetailPage";
+import MaterialsPage from "@/pages/MaterialsPage";
 import { AuthProvider } from "./providers/AuthProvider";
 import { useAuth } from "./lib/auth";
 
@@ -89,6 +90,9 @@ function Router() {
       </Route>
       <Route path="/admin/noticias/editar/:id">
         {() => <ProtectedRoute component={NewsEditorPage} adminOnly={true} isEditMode={true} />}
+      </Route>
+      <Route path="/materiais">
+        {() => <ProtectedRoute component={MaterialsPage} />}
       </Route>
       <Route path="/calendar">
         {() => <ProtectedRoute component={CalendarPage} />}

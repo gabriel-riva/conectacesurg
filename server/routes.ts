@@ -17,6 +17,7 @@ import utilityLinksRouter from "./utilityLinks";
 import calendarRouter from "./calendar";
 import newsRouter from "./news";
 import uploadRouter from "./upload";
+import materialsRouter from "./materials";
 
 // Create PostgreSQL session store for production or memory store for development
 const createSessionStore = () => {
@@ -688,6 +689,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Adicionar rotas de notícias
   app.use('/api/news', newsRouter);
   app.use('/api/upload', uploadRouter);
+  
+  // Adicionar rotas de materiais
+  app.use('/api/materials', materialsRouter);
   
   // Configurar acesso estático para a pasta de uploads
   app.use('/uploads', express.static('uploads'));
