@@ -12,13 +12,6 @@ interface FileViewerModalProps {
 }
 
 export default function FileViewerModal({ file, open, onClose, onDownload }: FileViewerModalProps) {
-  const [pdfError, setPdfError] = useState(false);
-
-  useEffect(() => {
-    if (open) {
-      setPdfError(false);
-    }
-  }, [open]);
 
   if (!file) return null;
 
@@ -79,35 +72,13 @@ export default function FileViewerModal({ file, open, onClose, onDownload }: Fil
             </div>
           )}
           
-          {isPDF && !pdfError && (
-            <div className="w-full h-96">
-              <iframe
-                src={`/api/materials/files/${file.id}/view`}
-                className="w-full h-full border-0"
-                title={file.name}
-                style={{ minHeight: '400px' }}
-                onLoad={(e) => {
-                  // Verificar se o iframe carregou corretamente
-                  const iframe = e.target as HTMLIFrameElement;
-                  try {
-                    if (iframe.contentDocument && iframe.contentDocument.body.innerText.includes('error')) {
-                      setPdfError(true);
-                    }
-                  } catch (e) {
-                    // Erro de cross-origin é esperado e normal
-                  }
-                }}
-              />
-            </div>
-          )}
-          
-          {isPDF && pdfError && (
+          {isPDF && (
             <div className="flex flex-col items-center justify-center p-8 text-center">
               <div className="text-gray-500 mb-4">
                 <FileText className="w-16 h-16 mx-auto mb-2" />
                 <p className="text-lg font-semibold mb-2">Visualização de PDF</p>
-                <p>O PDF não pôde ser carregado no visualizador interno.</p>
-                <p className="text-sm mt-2">Use uma das opções abaixo para visualizar o arquivo:</p>
+                <p>Para melhor experiência, recomendamos visualizar o PDF em uma nova aba ou fazer o download.</p>
+                <p className="text-sm mt-2">Escolha uma das opções abaixo:</p>
               </div>
               <div className="flex gap-2">
                 <Button onClick={handleExternalView} variant="outline">
