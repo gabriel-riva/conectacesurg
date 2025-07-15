@@ -392,14 +392,14 @@ export default function AdminMaterialsPage() {
                               render={({ field }) => (
                                 <FormItem>
                                   <FormLabel>Pasta Pai</FormLabel>
-                                  <Select onValueChange={(value) => field.onChange(value ? parseInt(value) : undefined)}>
+                                  <Select onValueChange={(value) => field.onChange(value === "null" ? null : parseInt(value))}>
                                     <FormControl>
                                       <SelectTrigger>
                                         <SelectValue placeholder="Selecione uma pasta pai (opcional)" />
                                       </SelectTrigger>
                                     </FormControl>
                                     <SelectContent>
-                                      <SelectItem value="">Nenhuma (raiz)</SelectItem>
+                                      <SelectItem value="null">Nenhuma (raiz)</SelectItem>
                                       {folders.map((folder) => (
                                         <SelectItem key={folder.id} value={folder.id.toString()}>
                                           {folder.name}
@@ -612,14 +612,14 @@ export default function AdminMaterialsPage() {
                               render={({ field }) => (
                                 <FormItem>
                                   <FormLabel>Pasta</FormLabel>
-                                  <Select onValueChange={(value) => field.onChange(value ? parseInt(value) : undefined)}>
+                                  <Select onValueChange={(value) => field.onChange(value === "null" ? null : parseInt(value))}>
                                     <FormControl>
                                       <SelectTrigger>
                                         <SelectValue placeholder="Selecione uma pasta (opcional)" />
                                       </SelectTrigger>
                                     </FormControl>
                                     <SelectContent>
-                                      <SelectItem value="">Nenhuma (raiz)</SelectItem>
+                                      <SelectItem value="null">Nenhuma (raiz)</SelectItem>
                                       {folders.map((folder) => (
                                         <SelectItem key={folder.id} value={folder.id.toString()}>
                                           {folder.name}
