@@ -1315,11 +1315,9 @@ export class DatabaseStorage implements IStorage {
         .select({
           folder: materialFolders,
           creator: users,
-          parent: materialFolders,
         })
         .from(materialFolders)
-        .leftJoin(users, eq(materialFolders.creatorId, users.id))
-        .leftJoin(materialFolders, eq(materialFolders.parentId, materialFolders.id));
+        .leftJoin(users, eq(materialFolders.creatorId, users.id));
 
       const results = await query;
       
@@ -1327,7 +1325,6 @@ export class DatabaseStorage implements IStorage {
       return results.map((result: any) => ({
         ...result.folder,
         creator: result.creator,
-        parent: result.parent,
         children: [], // Will be populated by frontend if needed
         files: [], // Will be populated by frontend if needed
       }));
@@ -1343,11 +1340,9 @@ export class DatabaseStorage implements IStorage {
         .select({
           folder: materialFolders,
           creator: users,
-          parent: materialFolders,
         })
         .from(materialFolders)
         .leftJoin(users, eq(materialFolders.creatorId, users.id))
-        .leftJoin(materialFolders, eq(materialFolders.parentId, materialFolders.id))
         .where(eq(materialFolders.id, id));
 
       const [folderResult] = await folderQuery;
@@ -1381,7 +1376,6 @@ export class DatabaseStorage implements IStorage {
       return {
         ...folderResult.folder,
         creator: folderResult.creator,
-        parent: folderResult.parent,
         children,
         files,
       };
