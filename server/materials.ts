@@ -126,13 +126,23 @@ router.get("/folders/:id", isAuthenticated, async (req: Request, res: Response) 
 // Criar nova pasta (admin apenas)
 router.post("/folders", isAdmin, upload.single("image"), async (req: Request, res: Response) => {
   try {
+    let groupIds: number[] = [];
+    if (req.body.groupIds) {
+      try {
+        groupIds = JSON.parse(req.body.groupIds);
+      } catch (e) {
+        console.error("Erro ao fazer parse dos groupIds:", e);
+        groupIds = [];
+      }
+    }
+    
     const folderData = {
       name: req.body.name,
       description: req.body.description,
       parentId: req.body.parentId ? parseInt(req.body.parentId) : null,
       creatorId: req.user?.id,
       isPublic: req.body.isPublic === "true",
-      groupIds: req.body.groupIds ? JSON.parse(req.body.groupIds) : [],
+      groupIds: groupIds,
       imageUrl: req.file ? `/uploads/materials/${req.file.filename}` : null,
     };
     
@@ -156,12 +166,22 @@ router.put("/folders/:id", isAdmin, upload.single("image"), async (req: Request,
   try {
     const folderId = parseInt(req.params.id);
     
+    let groupIds: number[] = [];
+    if (req.body.groupIds) {
+      try {
+        groupIds = JSON.parse(req.body.groupIds);
+      } catch (e) {
+        console.error("Erro ao fazer parse dos groupIds:", e);
+        groupIds = [];
+      }
+    }
+    
     const folderData: any = {
       name: req.body.name,
       description: req.body.description,
       parentId: req.body.parentId ? parseInt(req.body.parentId) : null,
       isPublic: req.body.isPublic === "true",
-      groupIds: req.body.groupIds ? JSON.parse(req.body.groupIds) : [],
+      groupIds: groupIds,
     };
     
     if (req.file) {
