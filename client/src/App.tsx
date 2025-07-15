@@ -21,6 +21,7 @@ import NewsEditorPage from "@/pages/NewsEditorPage";
 import NewsListPage from "@/pages/NewsListPage";
 import NewsDetailPage from "@/pages/NewsDetailPage";
 import MaterialsPage from "@/pages/MaterialsPage";
+import AdminMaterialsPage from "@/pages/AdminMaterialsPage";
 import { AuthProvider } from "./providers/AuthProvider";
 import { useAuth } from "./lib/auth";
 
@@ -90,6 +91,9 @@ function Router() {
       </Route>
       <Route path="/admin/noticias/editar/:id">
         {() => <ProtectedRoute component={NewsEditorPage} adminOnly={true} isEditMode={true} />}
+      </Route>
+      <Route path="/admin/materiais">
+        {() => <ProtectedRoute component={AdminMaterialsPage} adminOnly={true} />}
       </Route>
       <Route path="/materiais">
         {() => <ProtectedRoute component={MaterialsPage} />}
