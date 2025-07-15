@@ -363,6 +363,47 @@ router.get("/files/:id/download", isAuthenticated, async (req: Request, res: Res
   }
 });
 
+// Visualizar arquivo (servir arquivo diretamente)
+router.get("/files/:id/view", isAuthenticated, async (req: Request, res: Response) => {
+  try {
+    const fileId = parseInt(req.params.id);
+    const userId = req.user?.id;
+    const userRole = req.user?.role;
+    
+    const file = await storage.getMaterialFile(fileId);
+    
+    if (!file) {
+      return res.status(404).json({ error: "Arquivo não encontrado" });
+    }
+    
+    // Verificar acesso
+    if (file.folderId) {
+      const hasAccess = await hasAccessToFolder(file.folderId, userId, userRole);
+      if (!hasAccess) {
+        return res.status(403).json({ error: "Acesso negado" });
+      }
+    }
+    
+    // Servir arquivo para visualização
+    const filePath = path.join(process.cwd(), "public", file.fileUrl);
+    
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({ error: "Arquivo não encontrado no servidor" });
+    }
+    
+    // Definir headers apropriados para diferentes tipos de arquivo
+    const mimeType = file.fileType || 'application/octet-stream';
+    res.setHeader('Content-Type', mimeType);
+    res.setHeader('Content-Disposition', `inline; filename="${file.fileName}"`);
+    
+    // Enviar arquivo
+    res.sendFile(filePath);
+  } catch (error) {
+    console.error("Erro ao visualizar arquivo:", error);
+    res.status(500).json({ error: "Erro interno do servidor" });
+  }
+});
+
 // Atualizar arquivo (admin apenas)
 router.put("/files/:id", isAdmin, async (req: Request, res: Response) => {
   try {

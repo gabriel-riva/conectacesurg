@@ -9,6 +9,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { toast } from '@/hooks/use-toast';
 import { formatFileSize } from '@/lib/utils';
 import { Header } from '@/components/Header';
+import FileViewerModal from '@/components/materials/FileViewerModal';
 
 interface MaterialFolder {
   id: number;
@@ -55,6 +56,8 @@ interface MaterialFile {
 export default function MaterialsPage() {
   const [currentFolderId, setCurrentFolderId] = useState<number | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [viewerFile, setViewerFile] = useState<MaterialFile | null>(null);
+  const [viewerOpen, setViewerOpen] = useState(false);
 
   const { data: folders = [], isLoading: foldersLoading } = useQuery<MaterialFolder[]>({
     queryKey: ['/api/materials/folders'],
@@ -80,13 +83,14 @@ export default function MaterialsPage() {
 
   const handleDownload = async (file: MaterialFile) => {
     try {
-      const response = await fetch(`/api/materials/files/${file.id}/download`, {
-        method: 'POST'
-      });
-      if (!response.ok) throw new Error('Failed to download file');
-      
-      // Open file in new tab
-      window.open(file.fileUrl, '_blank');
+      // Trigger download using direct link
+      const link = document.createElement('a');
+      link.href = `/api/materials/files/${file.id}/download`;
+      link.download = file.fileName;
+      link.style.display = 'none';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
       
       toast({
         title: 'Download iniciado',
@@ -99,6 +103,16 @@ export default function MaterialsPage() {
         variant: 'destructive'
       });
     }
+  };
+
+  const handlePreview = (file: MaterialFile) => {
+    setViewerFile(file);
+    setViewerOpen(true);
+  };
+
+  const handleCloseViewer = () => {
+    setViewerOpen(false);
+    setViewerFile(null);
   };
 
   // Construir breadcrumbs para navegação
@@ -284,14 +298,24 @@ export default function MaterialsPage() {
                             <CardTitle className="text-lg">{file.name}</CardTitle>
                             <p className="text-sm text-gray-600 mt-1">{file.description}</p>
                           </div>
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => handleDownload(file)}
-                            className="ml-2"
-                          >
-                            <Download className="w-4 h-4" />
-                          </Button>
+                          <div className="flex items-center gap-2">
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => handlePreview(file)}
+                              className="flex items-center gap-1"
+                            >
+                              <Eye className="w-4 h-4" />
+                            </Button>
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => handleDownload(file)}
+                              className="flex items-center gap-1"
+                            >
+                              <Download className="w-4 h-4" />
+                            </Button>
+                          </div>
                         </div>
                       </CardHeader>
                       <CardContent>
@@ -342,6 +366,14 @@ export default function MaterialsPage() {
           </div>
         )}
       </div>
+      
+      {/* File Viewer Modal */}
+      <FileViewerModal
+        file={viewerFile}
+        open={viewerOpen}
+        onClose={handleCloseViewer}
+        onDownload={handleDownload}
+      />
     </div>
   );
 }
