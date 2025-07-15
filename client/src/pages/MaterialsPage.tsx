@@ -116,9 +116,23 @@ export default function MaterialsPage() {
   };
 
   // Função para retornar o ícone correto baseado no tipo de arquivo
-  const getFileIcon = (fileType: string) => {
+  const getFileIcon = (file: MaterialFile) => {
+    const fileType = file.fileType;
+    
+    // Para imagens, mostrar a própria imagem como miniatura
     if (fileType.startsWith('image/')) {
-      return <FileImage className="w-6 h-6 text-blue-600" />;
+      return (
+        <img 
+          src={`/api/materials/files/${file.id}/view`}
+          alt={file.name}
+          className="w-8 h-8 object-cover rounded"
+          onError={(e) => {
+            // Fallback para ícone se a imagem não carregar
+            e.currentTarget.style.display = 'none';
+            e.currentTarget.nextElementSibling?.classList.remove('hidden');
+          }}
+        />
+      );
     } else if (fileType.startsWith('video/')) {
       return <Video className="w-6 h-6 text-red-600" />;
     } else if (fileType.startsWith('audio/')) {
@@ -305,8 +319,12 @@ export default function MaterialsPage() {
                     <Card key={file.id} className="hover:shadow-lg transition-shadow">
                       <CardHeader className="pb-3">
                         <div className="flex items-center gap-3">
-                          <div className="w-12 h-12 bg-gray-100 rounded flex items-center justify-center">
-                            {getFileIcon(file.fileType)}
+                          <div className="w-12 h-12 bg-gray-100 rounded flex items-center justify-center relative">
+                            {getFileIcon(file)}
+                            {/* Fallback icon para imagens que não carregam */}
+                            {file.fileType.startsWith('image/') && (
+                              <FileImage className="w-6 h-6 text-blue-600 hidden" />
+                            )}
                           </div>
                           <div className="flex-1">
                             <CardTitle className="text-lg">{file.name}</CardTitle>
