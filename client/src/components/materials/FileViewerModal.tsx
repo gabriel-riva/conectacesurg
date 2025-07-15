@@ -14,6 +14,12 @@ interface FileViewerModalProps {
 export default function FileViewerModal({ file, open, onClose, onDownload }: FileViewerModalProps) {
   const [pdfError, setPdfError] = useState(false);
 
+  useEffect(() => {
+    if (open) {
+      setPdfError(false);
+    }
+  }, [open]);
+
   if (!file) return null;
 
   const isImage = file.fileType.startsWith('image/');
@@ -25,12 +31,6 @@ export default function FileViewerModal({ file, open, onClose, onDownload }: Fil
   const handleExternalView = () => {
     window.open(`/api/materials/files/${file.id}/view`, '_blank');
   };
-
-  useEffect(() => {
-    if (open) {
-      setPdfError(false);
-    }
-  }, [open]);
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
