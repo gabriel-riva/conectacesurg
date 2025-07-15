@@ -127,12 +127,18 @@ router.get("/folders/:id", isAuthenticated, async (req: Request, res: Response) 
 router.post("/folders", isAdmin, upload.single("image"), async (req: Request, res: Response) => {
   try {
     let groupIds: number[] = [];
-    if (req.body.groupIds && req.body.groupIds.trim() !== '') {
-      try {
-        groupIds = JSON.parse(req.body.groupIds);
-      } catch (e) {
-        console.error("Erro ao fazer parse dos groupIds:", e);
-        groupIds = [];
+    if (req.body.groupIds) {
+      if (typeof req.body.groupIds === 'string') {
+        if (req.body.groupIds.trim() !== '') {
+          try {
+            groupIds = JSON.parse(req.body.groupIds);
+          } catch (e) {
+            console.error("Erro ao fazer parse dos groupIds:", e);
+            groupIds = [];
+          }
+        }
+      } else if (Array.isArray(req.body.groupIds)) {
+        groupIds = req.body.groupIds;
       }
     }
     
@@ -167,12 +173,18 @@ router.put("/folders/:id", isAdmin, upload.single("image"), async (req: Request,
     const folderId = parseInt(req.params.id);
     
     let groupIds: number[] = [];
-    if (req.body.groupIds && req.body.groupIds.trim() !== '') {
-      try {
-        groupIds = JSON.parse(req.body.groupIds);
-      } catch (e) {
-        console.error("Erro ao fazer parse dos groupIds:", e);
-        groupIds = [];
+    if (req.body.groupIds) {
+      if (typeof req.body.groupIds === 'string') {
+        if (req.body.groupIds.trim() !== '') {
+          try {
+            groupIds = JSON.parse(req.body.groupIds);
+          } catch (e) {
+            console.error("Erro ao fazer parse dos groupIds:", e);
+            groupIds = [];
+          }
+        }
+      } else if (Array.isArray(req.body.groupIds)) {
+        groupIds = req.body.groupIds;
       }
     }
     

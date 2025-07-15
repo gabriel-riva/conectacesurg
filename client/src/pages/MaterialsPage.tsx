@@ -203,10 +203,6 @@ export default function MaterialsPage() {
             {/* Folders */}
             {filteredFolders.length > 0 && (
               <div>
-                <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-                  <Folder className="w-5 h-5" />
-                  Pastas
-                </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {filteredFolders.map((folder) => (
                     <Card 
