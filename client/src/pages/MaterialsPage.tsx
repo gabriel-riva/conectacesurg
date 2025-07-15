@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Folder, FileText, Search, Download, Eye, Lock, Users, Calendar, User, Home, ChevronRight } from 'lucide-react';
+import { Folder, FileText, Search, Download, Eye, Lock, Users, Calendar, User, Home, ChevronRight, FileImage, Video, Music, Archive, Code, File } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -113,6 +113,31 @@ export default function MaterialsPage() {
   const handleCloseViewer = () => {
     setViewerOpen(false);
     setViewerFile(null);
+  };
+
+  // Função para retornar o ícone correto baseado no tipo de arquivo
+  const getFileIcon = (fileType: string) => {
+    if (fileType.startsWith('image/')) {
+      return <FileImage className="w-6 h-6 text-blue-600" />;
+    } else if (fileType.startsWith('video/')) {
+      return <Video className="w-6 h-6 text-red-600" />;
+    } else if (fileType.startsWith('audio/')) {
+      return <Music className="w-6 h-6 text-green-600" />;
+    } else if (fileType === 'application/pdf') {
+      return <FileText className="w-6 h-6 text-red-500" />;
+    } else if (fileType.includes('word') || fileType.includes('document')) {
+      return <FileText className="w-6 h-6 text-blue-500" />;
+    } else if (fileType.includes('excel') || fileType.includes('spreadsheet')) {
+      return <FileText className="w-6 h-6 text-green-500" />;
+    } else if (fileType.includes('powerpoint') || fileType.includes('presentation')) {
+      return <FileText className="w-6 h-6 text-orange-500" />;
+    } else if (fileType.includes('zip') || fileType.includes('rar') || fileType.includes('archive')) {
+      return <Archive className="w-6 h-6 text-yellow-600" />;
+    } else if (fileType.includes('javascript') || fileType.includes('html') || fileType.includes('css') || fileType.startsWith('text/')) {
+      return <Code className="w-6 h-6 text-purple-600" />;
+    } else {
+      return <File className="w-6 h-6 text-gray-600" />;
+    }
   };
 
   // Construir breadcrumbs para navegação
@@ -252,24 +277,13 @@ export default function MaterialsPage() {
                       </CardHeader>
                       <CardContent>
                         <div className="flex items-center justify-between text-sm text-gray-500">
-                          <div className="flex items-center gap-4">
-                            <span className="flex items-center gap-1">
-                              <Folder className="w-4 h-4" />
-                              {folder.children?.length || 0}
-                            </span>
-                            <span className="flex items-center gap-1">
-                              <FileText className="w-4 h-4" />
-                              {folder.files?.length || 0}
-                            </span>
-                          </div>
                           <div className="flex items-center gap-2">
-                            <Avatar className="w-6 h-6">
-                              <AvatarImage src={folder.creator.photoUrl || undefined} />
-                              <AvatarFallback className="text-xs">
-                                {folder.creator.name.charAt(0)}
-                              </AvatarFallback>
-                            </Avatar>
-                            <span className="text-xs">{folder.creator.name}</span>
+                            {!folder.isPublic && (
+                              <Lock className="w-4 h-4 text-gray-400" />
+                            )}
+                            <span className="text-xs">
+                              {folder.isPublic ? 'Pasta pública' : 'Pasta privada'}
+                            </span>
                           </div>
                         </div>
                       </CardContent>
@@ -292,11 +306,13 @@ export default function MaterialsPage() {
                       <CardHeader className="pb-3">
                         <div className="flex items-center gap-3">
                           <div className="w-12 h-12 bg-gray-100 rounded flex items-center justify-center">
-                            <FileText className="w-6 h-6 text-gray-600" />
+                            {getFileIcon(file.fileType)}
                           </div>
                           <div className="flex-1">
                             <CardTitle className="text-lg">{file.name}</CardTitle>
-                            <p className="text-sm text-gray-600 mt-1">{file.description}</p>
+                            {file.description && (
+                              <p className="text-sm text-gray-600 mt-1">{file.description}</p>
+                            )}
                           </div>
                           <div className="flex items-center gap-2">
                             <Button 
@@ -327,20 +343,6 @@ export default function MaterialsPage() {
                               {file.downloadCount}
                             </span>
                           </div>
-                          <div className="flex items-center gap-2">
-                            <Avatar className="w-6 h-6">
-                              <AvatarImage src={file.uploader.photoUrl || undefined} />
-                              <AvatarFallback className="text-xs">
-                                {file.uploader.name.charAt(0)}
-                              </AvatarFallback>
-                            </Avatar>
-                            <span className="text-xs">{file.uploader.name}</span>
-                          </div>
-                        </div>
-                        <div className="mt-2">
-                          <Badge variant="secondary" className="text-xs">
-                            {file.fileType}
-                          </Badge>
                         </div>
                       </CardContent>
                     </Card>
