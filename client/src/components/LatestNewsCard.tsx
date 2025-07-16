@@ -42,9 +42,9 @@ const LatestNewsCard: React.FC<LatestNewsCardProps> = ({ limit = 3 }) => {
 
   return (
     <Card className="shadow-sm">
-      <CardHeader className="pb-2">
-        <CardTitle className="text-xl flex items-center">
-          <Newspaper className="h-5 w-5 mr-2" />
+      <CardHeader className="pb-2 bg-gradient-to-r from-primary/5 to-transparent">
+        <CardTitle className="text-primary/90 flex items-center">
+          <span className="inline-block w-1 h-5 bg-primary rounded mr-2"></span>
           Últimas Notícias
         </CardTitle>
       </CardHeader>
