@@ -176,7 +176,7 @@ export default function AdminGamificationPage() {
   const addPointsForm = useForm<AddPointsForm>({
     resolver: zodResolver(addPointsSchema),
     defaultValues: {
-      userId: "",
+      userId: undefined,
       points: 0,
       description: "",
     },
@@ -185,7 +185,7 @@ export default function AdminGamificationPage() {
   const settingsForm = useForm<SettingsForm>({
     resolver: zodResolver(settingsSchema),
     defaultValues: {
-      generalCategoryId: "",
+      generalCategoryId: undefined,
       enabledCategoryIds: [],
       cycleStartDate: "",
       cycleEndDate: "",

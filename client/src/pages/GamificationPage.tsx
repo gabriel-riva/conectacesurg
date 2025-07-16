@@ -13,7 +13,7 @@ import { Header } from "@/components/Header";
 
 function GamificationPageContent() {
   const [rankingFilter, setRankingFilter] = useState("all");
-  const [categoryFilter, setCategoryFilter] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("all");
 
   // Queries
   const { data: ranking, isLoading: rankingLoading } = useQuery({
@@ -21,7 +21,7 @@ function GamificationPageContent() {
     queryFn: async () => {
       const params = new URLSearchParams();
       if (rankingFilter !== "all") params.append("filter", rankingFilter);
-      if (categoryFilter) params.append("categoryId", categoryFilter);
+      if (categoryFilter && categoryFilter !== "all") params.append("categoryId", categoryFilter);
       
       const response = await fetch(`/api/gamification/ranking?${params}`);
       if (!response.ok) throw new Error("Failed to fetch ranking");
@@ -129,7 +129,7 @@ function GamificationPageContent() {
                           <SelectValue placeholder="Todas as categorias" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="">Todas as categorias</SelectItem>
+                          <SelectItem value="all">Todas as categorias</SelectItem>
                           {categories?.map((category: any) => (
                             <SelectItem key={category.id} value={category.id.toString()}>
                               {category.name}
