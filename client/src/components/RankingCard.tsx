@@ -95,49 +95,42 @@ export function RankingCard() {
       <CardContent className="p-4 flex flex-col" style={{ height: "calc(280px - 54px)" }}>
         {/* Filtros */}
         <div className="flex gap-1 mb-2">
+          <Button
+            variant={period === 'cycle' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setPeriod('cycle')}
+            className="text-xs h-6 px-2"
+          >
+            Ciclo
+          </Button>
+          <Button
+            variant={period === 'annual' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setPeriod('annual')}
+            className="text-xs h-6 px-2"
+          >
+            Anual
+          </Button>
           <div className="flex-1">
-            <Button
-              variant={period === 'cycle' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setPeriod('cycle')}
-              className="w-full text-xs h-7 px-2"
-            >
-              <Calendar className="h-3 w-3 mr-1" />
-              Ciclo
-            </Button>
-          </div>
-          <div className="flex-1">
-            <Button
-              variant={period === 'annual' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setPeriod('annual')}
-              className="w-full text-xs h-7 px-2"
-            >
-              <Calendar className="h-3 w-3 mr-1" />
-              Anual
-            </Button>
-          </div>
-        </div>
-
-        <div className="mb-2">
-          <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-            <SelectTrigger className="h-7 text-xs">
-              <SelectValue placeholder="Selecione uma categoria" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">
-                <div className="flex items-center">
-                  <Users className="h-3 w-3 mr-2" />
-                  Todas as categorias
-                </div>
-              </SelectItem>
-              {categories.map((category) => (
-                <SelectItem key={category.id} value={category.id.toString()}>
-                  {category.name}
+            <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+              <SelectTrigger className="h-6 text-xs">
+                <SelectValue placeholder="Categoria" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">
+                  <div className="flex items-center">
+                    <Users className="h-3 w-3 mr-2" />
+                    Todas as categorias
+                  </div>
                 </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+                {categories.map((category) => (
+                  <SelectItem key={category.id} value={category.id.toString()}>
+                    {category.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         {/* Lista de usuários */}
