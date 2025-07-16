@@ -28,17 +28,17 @@ interface FeatureSetting {
 }
 
 const featureLabels: Record<string, string> = {
-  community: "Comunidade",
-  ideas: "Ideias",
-  gamification: "Gamificação",
+  comunidades: "Comunidade",
+  ideias: "Ideias",
+  gamificacao: "Gamificação",
   trilhas: "Trilhas",
   materiais: "Materiais",
 };
 
 const featureDescriptions: Record<string, string> = {
-  community: "Sistema de grupos, posts e mensagens da comunidade",
-  ideas: "Sistema de submissão e gerenciamento de ideias",
-  gamification: "Sistema de pontuação, desafios e ranking",
+  comunidades: "Sistema de grupos, posts e mensagens da comunidade",
+  ideias: "Sistema de submissão e gerenciamento de ideias",
+  gamificacao: "Sistema de pontuação, desafios e ranking",
   trilhas: "Sistema de trilhas de aprendizado e desenvolvimento",
   materiais: "Sistema de materiais educativos e recursos",
 };
