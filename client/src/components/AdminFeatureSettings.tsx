@@ -17,6 +17,7 @@ interface FeatureSetting {
   id: number;
   featureName: string;
   isEnabled: boolean;
+  showInHeader: boolean;
   disabledMessage: string;
   lastUpdatedBy?: {
     id: number;
@@ -30,12 +31,16 @@ const featureLabels: Record<string, string> = {
   community: "Comunidade",
   ideas: "Ideias",
   gamification: "Gamificação",
+  trilhas: "Trilhas",
+  materiais: "Materiais",
 };
 
 const featureDescriptions: Record<string, string> = {
   community: "Sistema de grupos, posts e mensagens da comunidade",
   ideas: "Sistema de submissão e gerenciamento de ideias",
   gamification: "Sistema de pontuação, desafios e ranking",
+  trilhas: "Sistema de trilhas de aprendizado e desenvolvimento",
+  materiais: "Sistema de materiais educativos e recursos",
 };
 
 export function AdminFeatureSettings() {
@@ -44,8 +49,9 @@ export function AdminFeatureSettings() {
   const [editingFeature, setEditingFeature] = useState<string | null>(null);
   const [tempSettings, setTempSettings] = useState<{
     isEnabled: boolean;
+    showInHeader: boolean;
     disabledMessage: string;
-  }>({ isEnabled: false, disabledMessage: "" });
+  }>({ isEnabled: false, showInHeader: true, disabledMessage: "" });
 
   const { data: settings, isLoading } = useQuery({
     queryKey: ['/api/feature-settings'],
@@ -53,15 +59,16 @@ export function AdminFeatureSettings() {
   });
 
   const updateSettingMutation = useMutation({
-    mutationFn: async ({ featureName, isEnabled, disabledMessage }: {
+    mutationFn: async ({ featureName, isEnabled, showInHeader, disabledMessage }: {
       featureName: string;
       isEnabled: boolean;
+      showInHeader: boolean;
       disabledMessage: string;
     }) => {
       const response = await fetch(`/api/feature-settings/${featureName}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ isEnabled, disabledMessage }),
+        body: JSON.stringify({ isEnabled, showInHeader, disabledMessage }),
       });
 
       if (!response.ok) {
@@ -91,6 +98,7 @@ export function AdminFeatureSettings() {
     setEditingFeature(feature.featureName);
     setTempSettings({
       isEnabled: feature.isEnabled,
+      showInHeader: feature.showInHeader ?? true,
       disabledMessage: feature.disabledMessage || "Em breve, novidades!",
     });
   };
@@ -99,13 +107,14 @@ export function AdminFeatureSettings() {
     updateSettingMutation.mutate({
       featureName,
       isEnabled: tempSettings.isEnabled,
+      showInHeader: tempSettings.showInHeader,
       disabledMessage: tempSettings.disabledMessage,
     });
   };
 
   const handleCancel = () => {
     setEditingFeature(null);
-    setTempSettings({ isEnabled: false, disabledMessage: "" });
+    setTempSettings({ isEnabled: false, showInHeader: true, disabledMessage: "" });
   };
 
   if (isLoading) {
@@ -142,6 +151,9 @@ export function AdminFeatureSettings() {
                     <Badge variant={isEnabled ? "default" : "secondary"}>
                       {isEnabled ? "Ativada" : "Desativada"}
                     </Badge>
+                    <Badge variant={setting?.showInHeader ? "outline" : "destructive"}>
+                      {setting?.showInHeader ? "Visível no Header" : "Oculta no Header"}
+                    </Badge>
                   </div>
                   <div className="flex items-center gap-2">
                     {!isEditing ? (
@@ -152,6 +164,7 @@ export function AdminFeatureSettings() {
                           id: 0,
                           featureName,
                           isEnabled: true,
+                          showInHeader: true,
                           disabledMessage: "Em breve, novidades!",
                           updatedAt: new Date().toISOString(),
                         })}
@@ -202,6 +215,19 @@ export function AdminFeatureSettings() {
                       />
                       <Label htmlFor={`switch-${featureName}`}>
                         Funcionalidade ativada
+                      </Label>
+                    </div>
+
+                    <div className="flex items-center space-x-2">
+                      <Switch
+                        id={`header-switch-${featureName}`}
+                        checked={tempSettings.showInHeader}
+                        onCheckedChange={(checked) =>
+                          setTempSettings(prev => ({ ...prev, showInHeader: checked }))
+                        }
+                      />
+                      <Label htmlFor={`header-switch-${featureName}`}>
+                        Mostrar no menu/header
                       </Label>
                     </div>
 

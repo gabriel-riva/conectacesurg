@@ -25,6 +25,8 @@ import AdminMaterialsPage from "@/pages/AdminMaterialsPage";
 import AdminAnnouncementsPage from "@/pages/AdminAnnouncementsPage";
 import AdminFeatureSettingsPage from "@/pages/AdminFeatureSettingsPage";
 import GamificationPage from "@/pages/GamificationPage";
+import TrilhasPage from "@/pages/TrilhasPage";
+import AdminTrilhasPage from "@/pages/AdminTrilhasPage";
 import { AuthProvider } from "./providers/AuthProvider";
 import { useAuth } from "./lib/auth";
 
@@ -101,6 +103,9 @@ function Router() {
       <Route path="/admin/materiais">
         {() => <ProtectedRoute component={AdminMaterialsPage} adminOnly={true} />}
       </Route>
+      <Route path="/admin/trilhas">
+        {() => <ProtectedRoute component={AdminTrilhasPage} adminOnly={true} />}
+      </Route>
       <Route path="/admin/avisos">
         {() => <ProtectedRoute component={AdminAnnouncementsPage} adminOnly={true} />}
       </Route>
@@ -109,6 +114,9 @@ function Router() {
       </Route>
       <Route path="/materiais">
         {() => <ProtectedRoute component={MaterialsPage} />}
+      </Route>
+      <Route path="/trilhas">
+        {() => <ProtectedRoute component={TrilhasPage} />}
       </Route>
       <Route path="/calendar">
         {() => <ProtectedRoute component={CalendarPage} />}

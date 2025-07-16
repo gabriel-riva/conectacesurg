@@ -6,10 +6,13 @@ import { UserDropdown } from "@/components/UserDropdown";
 import { Logo } from "@/components/ui/logo";
 import { Badge } from "@/components/ui/badge";
 import { MenuItem } from "@/components/MenuItem";
+import { useQuery } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
 
 // Importing icons
 import inicioIcon from "@assets/icone_inicio.png";
 import materiaisIcon from "@assets/icone_materiais_new.svg";
+import trilhasIcon from "@assets/icone_materiais.png";
 import ideiasIcon from "@assets/icone_ideias.png";
 import comunidadeIcon from "@assets/icone_comunidade.png";
 import gamificacaoIcon from "@assets/icone_gamificacao.png";
@@ -18,10 +21,25 @@ import iaIcon from "@assets/icone_ia.png";
 // Importing green icons
 import inicioIconVerde from "@assets/icone_inicio_verde.png";
 import materiaisIconVerde from "@assets/icone_materiais_verde_new.svg";
+import trilhasIconVerde from "@assets/icone_materiais_verde.png";
 import ideiasIconVerde from "@assets/icone_ideias_verde.png";
 import comunidadeIconVerde from "@assets/icone_comunidade_verde.png";
 import gamificacaoIconVerde from "@assets/icone_gamificacao_verde.png";
 import iaIconVerde from "@assets/icone_ia_verde.png";
+
+interface FeatureSetting {
+  id: number;
+  featureName: string;
+  isEnabled: boolean;
+  showInHeader: boolean;
+  disabledMessage: string;
+  lastUpdatedBy?: {
+    id: number;
+    name: string;
+    email: string;
+  };
+  updatedAt: string;
+}
 
 export function Header() {
   const [location] = useLocation();
@@ -32,6 +50,20 @@ export function Header() {
   const isDevelopment = import.meta.env.MODE === 'development';
   
   const isAdmin = user?.role === "superadmin" || user?.role === "admin";
+  
+  // Query para buscar configurações de funcionalidades
+  const { data: featureSettings } = useQuery({
+    queryKey: ['/api/feature-settings'],
+    queryFn: () => apiRequest<FeatureSetting[]>('/api/feature-settings'),
+    enabled: !!user, // Só faz a query se o usuário estiver logado
+  });
+  
+  // Função para verificar se uma funcionalidade deve aparecer no header
+  const shouldShowInHeader = (featureName: string): boolean => {
+    if (!featureSettings) return true; // Se não há configurações, mostra por padrão
+    const setting = featureSettings.find(s => s.featureName === featureName);
+    return setting?.showInHeader !== false; // Mostra se não estiver explicitamente oculta
+  };
   
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
@@ -70,34 +102,51 @@ export function Header() {
               label="Início"
               isActive={location === '/dashboard'}
             />
-            <MenuItem 
-              href="/materiais"
-              icon={materiaisIcon}
-              iconHover={materiaisIconVerde}
-              label="Materiais"
-              isActive={location === '/materiais'}
-            />
-            <MenuItem 
-              href="/ideas"
-              icon={ideiasIcon}
-              iconHover={ideiasIconVerde}
-              label="Ideias"
-              isActive={location === '/ideas'}
-            />
-            <MenuItem 
-              href="/community"
-              icon={comunidadeIcon}
-              iconHover={comunidadeIconVerde}
-              label="Comunidade"
-              isActive={location === '/community'}
-            />
-            <MenuItem 
-              href="/gamificacao"
-              icon={gamificacaoIcon}
-              iconHover={gamificacaoIconVerde}
-              label="Gamificação"
-              isActive={location === '/gamificacao'}
-            />
+            {shouldShowInHeader('materiais') && (
+              <MenuItem 
+                href="/materiais"
+                icon={materiaisIcon}
+                iconHover={materiaisIconVerde}
+                label="Materiais"
+                isActive={location === '/materiais'}
+              />
+            )}
+            {shouldShowInHeader('trilhas') && (
+              <MenuItem 
+                href="/trilhas"
+                icon={trilhasIcon}
+                iconHover={trilhasIconVerde}
+                label="Trilhas"
+                isActive={location === '/trilhas'}
+              />
+            )}
+            {shouldShowInHeader('ideias') && (
+              <MenuItem 
+                href="/ideas"
+                icon={ideiasIcon}
+                iconHover={ideiasIconVerde}
+                label="Ideias"
+                isActive={location === '/ideas'}
+              />
+            )}
+            {shouldShowInHeader('comunidades') && (
+              <MenuItem 
+                href="/community"
+                icon={comunidadeIcon}
+                iconHover={comunidadeIconVerde}
+                label="Comunidade"
+                isActive={location === '/community'}
+              />
+            )}
+            {shouldShowInHeader('gamificacao') && (
+              <MenuItem 
+                href="/gamificacao"
+                icon={gamificacaoIcon}
+                iconHover={gamificacaoIconVerde}
+                label="Gamificação"
+                isActive={location === '/gamificacao'}
+              />
+            )}
           </nav>
           
           <div className="flex items-center space-x-4">
@@ -128,38 +177,56 @@ export function Header() {
               isActive={location === '/dashboard'}
               className="py-2"
             />
-            <MenuItem 
-              href="/materiais"
-              icon={materiaisIcon}
-              iconHover={materiaisIconVerde}
-              label="Materiais"
-              isActive={location === '/materiais'}
-              className="py-2"
-            />
-            <MenuItem 
-              href="/ideas"
-              icon={ideiasIcon}
-              iconHover={ideiasIconVerde}
-              label="Ideias"
-              isActive={location === '/ideas'}
-              className="py-2"
-            />
-            <MenuItem 
-              href="/community"
-              icon={comunidadeIcon}
-              iconHover={comunidadeIconVerde}
-              label="Comunidade"
-              isActive={location === '/community'}
-              className="py-2"
-            />
-            <MenuItem 
-              href="/gamificacao"
-              icon={gamificacaoIcon}
-              iconHover={gamificacaoIconVerde}
-              label="Gamificação"
-              isActive={location === '/gamificacao'}
-              className="py-2"
-            />
+            {shouldShowInHeader('materiais') && (
+              <MenuItem 
+                href="/materiais"
+                icon={materiaisIcon}
+                iconHover={materiaisIconVerde}
+                label="Materiais"
+                isActive={location === '/materiais'}
+                className="py-2"
+              />
+            )}
+            {shouldShowInHeader('trilhas') && (
+              <MenuItem 
+                href="/trilhas"
+                icon={trilhasIcon}
+                iconHover={trilhasIconVerde}
+                label="Trilhas"
+                isActive={location === '/trilhas'}
+                className="py-2"
+              />
+            )}
+            {shouldShowInHeader('ideias') && (
+              <MenuItem 
+                href="/ideas"
+                icon={ideiasIcon}
+                iconHover={ideiasIconVerde}
+                label="Ideias"
+                isActive={location === '/ideas'}
+                className="py-2"
+              />
+            )}
+            {shouldShowInHeader('comunidades') && (
+              <MenuItem 
+                href="/community"
+                icon={comunidadeIcon}
+                iconHover={comunidadeIconVerde}
+                label="Comunidade"
+                isActive={location === '/community'}
+                className="py-2"
+              />
+            )}
+            {shouldShowInHeader('gamificacao') && (
+              <MenuItem 
+                href="/gamificacao"
+                icon={gamificacaoIcon}
+                iconHover={gamificacaoIconVerde}
+                label="Gamificação"
+                isActive={location === '/gamificacao'}
+                className="py-2"
+              />
+            )}
           </div>
         )}
       </div>

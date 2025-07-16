@@ -73,10 +73,14 @@ router.get('/check/:featureName', async (req: Request, res: Response) => {
 router.put('/:featureName', isAdmin, async (req: Request, res: Response) => {
   try {
     const { featureName } = req.params;
-    const { isEnabled, disabledMessage } = req.body;
+    const { isEnabled, showInHeader, disabledMessage } = req.body;
 
     if (typeof isEnabled !== 'boolean') {
       return res.status(400).json({ error: 'isEnabled deve ser um boolean' });
+    }
+
+    if (showInHeader !== undefined && typeof showInHeader !== 'boolean') {
+      return res.status(400).json({ error: 'showInHeader deve ser um boolean' });
     }
 
     // Verificar se a configuração existe
@@ -86,19 +90,26 @@ router.put('/:featureName', isAdmin, async (req: Request, res: Response) => {
 
     if (existingSetting) {
       // Atualizar configuração existente
+      const updateData: any = {
+        isEnabled,
+        disabledMessage: disabledMessage || 'Em breve, novidades!',
+        lastUpdatedBy: req.user!.id,
+        updatedAt: new Date(),
+      };
+      
+      if (showInHeader !== undefined) {
+        updateData.showInHeader = showInHeader;
+      }
+      
       await db.update(schema.featureSettings)
-        .set({
-          isEnabled,
-          disabledMessage: disabledMessage || 'Em breve, novidades!',
-          lastUpdatedBy: req.user!.id,
-          updatedAt: new Date(),
-        })
+        .set(updateData)
         .where(eq(schema.featureSettings.featureName, featureName));
     } else {
       // Criar nova configuração
       await db.insert(schema.featureSettings).values({
         featureName,
         isEnabled,
+        showInHeader: showInHeader !== undefined ? showInHeader : true,
         disabledMessage: disabledMessage || 'Em breve, novidades!',
         lastUpdatedBy: req.user!.id,
       });

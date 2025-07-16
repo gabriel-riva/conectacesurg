@@ -300,6 +300,7 @@ export const featureSettings = pgTable("feature_settings", {
   id: serial("id").primaryKey(),
   featureName: text("feature_name").notNull().unique(),
   isEnabled: boolean("is_enabled").notNull().default(true),
+  showInHeader: boolean("show_in_header").notNull().default(true),
   disabledMessage: text("disabled_message").default("Em breve, novidades!"),
   lastUpdatedBy: integer("last_updated_by").references(() => users.id),
   updatedAt: timestamp("updated_at").defaultNow(),
