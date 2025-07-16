@@ -159,7 +159,7 @@ function NewsImportTab() {
     
     importNews.mutate({
       url: importUrl,
-      categoryId: importCategoryId || undefined,
+      categoryId: importCategoryId && importCategoryId !== "none" ? importCategoryId : undefined,
     });
   };
 
@@ -323,7 +323,7 @@ function NewsImportTab() {
                   <SelectValue placeholder="Selecione uma categoria" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Sem categoria</SelectItem>
+                  <SelectItem value="none">Sem categoria</SelectItem>
                   {categories?.map((category: NewsCategory) => (
                     <SelectItem key={category.id} value={category.id.toString()}>
                       {category.name}
