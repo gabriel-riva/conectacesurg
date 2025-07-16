@@ -21,6 +21,7 @@ import uploadRouter from "./upload";
 import materialsRouter from "./materials";
 import featureSettingsRouter from "./feature-settings";
 import userCategoriesRouter from "./user-categories";
+import userCategoryAssignmentsRouter from "./user-category-assignments";
 
 // Create PostgreSQL session store for production or memory store for development
 const createSessionStore = () => {
@@ -705,6 +706,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Adicionar rotas de categorias de usuários
   app.use('/api/user-categories', userCategoriesRouter);
+  
+  // Adicionar rotas de atribuições de categoria de usuário
+  app.use('/api/user-category-assignments', userCategoryAssignmentsRouter);
   
   // Configurar acesso estático para a pasta de uploads
   app.use('/uploads', express.static('uploads'));

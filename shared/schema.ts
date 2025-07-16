@@ -61,6 +61,16 @@ export const userGroups = pgTable("user_groups", {
   };
 });
 
+export const userCategoryAssignments = pgTable("user_category_assignments", {
+  userId: integer("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  categoryId: integer("category_id").notNull().references(() => userCategories.id, { onDelete: 'cascade' }),
+  assignedAt: timestamp("assigned_at").defaultNow(),
+}, (table) => {
+  return {
+    pk: primaryKey({ columns: [table.userId, table.categoryId] }),
+  };
+});
+
 export const ideas = pgTable("ideas", {
   id: serial("id").primaryKey(),
   title: text("title").notNull(),
@@ -299,7 +309,7 @@ export const featureSettings = pgTable("feature_settings", {
 
 // Relations
 export const userCategoriesRelations = relations(userCategories, ({ many }) => ({
-  users: many(users),
+  userAssignments: many(userCategoryAssignments),
 }));
 
 export const usersRelations = relations(users, ({ many, one }) => ({
@@ -329,6 +339,7 @@ export const usersRelations = relations(users, ({ many, one }) => ({
   news: many(news, { relationName: "creator" }),
   announcements: many(announcements, { relationName: "creator" }),
   featureSettings: many(featureSettings, { relationName: "lastUpdatedBy" }),
+  userCategoryAssignments: many(userCategoryAssignments),
 }));
 
 export const groupsRelations = relations(groups, ({ many, one }) => ({
@@ -350,6 +361,17 @@ export const userGroupsRelations = relations(userGroups, ({ one }) => ({
   group: one(groups, {
     fields: [userGroups.groupId],
     references: [groups.id],
+  }),
+}));
+
+export const userCategoryAssignmentsRelations = relations(userCategoryAssignments, ({ one }) => ({
+  user: one(users, {
+    fields: [userCategoryAssignments.userId],
+    references: [users.id],
+  }),
+  category: one(userCategories, {
+    fields: [userCategoryAssignments.categoryId],
+    references: [userCategories.id],
   }),
 }));
 
@@ -623,6 +645,8 @@ export const insertGroupSchema = createInsertSchema(groups).omit({
 
 export const insertUserGroupSchema = createInsertSchema(userGroups);
 
+export const insertUserCategoryAssignmentSchema = createInsertSchema(userCategoryAssignments);
+
 export const insertPostSchema = createInsertSchema(posts).omit({
   id: true,
   createdAt: true,
@@ -740,6 +764,7 @@ export type InsertUtilityLink = z.infer<typeof insertUtilityLinkSchema>;
 export type InsertCalendarEvent = z.infer<typeof insertCalendarEventSchema>;
 export type InsertGroup = z.infer<typeof insertGroupSchema>;
 export type InsertUserGroup = z.infer<typeof insertUserGroupSchema>;
+export type InsertUserCategoryAssignment = z.infer<typeof insertUserCategoryAssignmentSchema>;
 export type InsertPost = z.infer<typeof insertPostSchema>;
 export type InsertComment = z.infer<typeof insertCommentSchema>;
 export type InsertLike = z.infer<typeof insertLikeSchema>;
@@ -763,6 +788,7 @@ export type UserCategory = typeof userCategories.$inferSelect;
 export type User = typeof users.$inferSelect;
 export type Group = typeof groups.$inferSelect;
 export type UserGroup = typeof userGroups.$inferSelect;
+export type UserCategoryAssignment = typeof userCategoryAssignments.$inferSelect;
 export type Post = typeof posts.$inferSelect;
 export type Comment = typeof comments.$inferSelect;
 export type Like = typeof likes.$inferSelect;

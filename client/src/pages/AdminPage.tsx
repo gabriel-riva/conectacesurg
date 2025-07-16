@@ -18,6 +18,8 @@ import { EditUserModal } from "@/components/EditUserModal";
 import { EditGroupModal } from "@/components/EditGroupModal";
 import { AdminIdeas } from "@/components/AdminIdeas";
 import { UserCategoryModal } from "@/components/UserCategoryModal";
+import { EditUserCategoryModal } from "@/components/EditUserCategoryModal";
+import { UserCategoryAssignmentModal } from "@/components/UserCategoryAssignmentModal";
 import { 
   AlertDialog,
   AlertDialogAction,
@@ -53,6 +55,11 @@ export default function AdminPage({ activeTab: initialActiveTab }: { activeTab?:
   const [selectedGroupFilter, setSelectedGroupFilter] = useState<number | null>(null);
   const [sortColumn, setSortColumn] = useState<SortColumn>(null);
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
+  const [categoryToDelete, setCategoryToDelete] = useState<number | null>(null);
+  const [categoryToEdit, setCategoryToEdit] = useState<number | null>(null);
+  const [isUserCategoryEditModalOpen, setIsUserCategoryEditModalOpen] = useState(false);
+  const [isUserCategoryAssignmentModalOpen, setIsUserCategoryAssignmentModalOpen] = useState(false);
+  const [userForCategoryAssignment, setUserForCategoryAssignment] = useState<{ id: number; name: string } | null>(null);
   const { toast } = useToast();
 
   // Fetch users - Usar endpoint filter quando um grupo está selecionado
@@ -83,7 +90,7 @@ export default function AdminPage({ activeTab: initialActiveTab }: { activeTab?:
   });
 
   // Fetch user categories
-  const { data: userCategories = [], isLoading: isLoadingUserCategories } = useQuery<UserCategory[]>({
+  const { data: userCategories = [], isLoading: isLoadingUserCategoryList } = useQuery<UserCategory[]>({
     queryKey: ['/api/user-categories'],
   });
   
@@ -105,6 +112,24 @@ export default function AdminPage({ activeTab: initialActiveTab }: { activeTab?:
     enabled: users.length > 0,
   });
 
+  // Buscar as categorias de cada usuário
+  const { data: userCategoriesMapping = {}, isLoading: isLoadingUserCategories } = useQuery<Record<number, any[]>>({
+    queryKey: ['/api/users/categories/mapping', users],
+    queryFn: async () => {
+      // Criar um mapeamento de usuário para suas categorias
+      const mapping: Record<number, any[]> = {};
+      
+      for (const user of users) {
+        const response = await apiRequest<any[]>('GET', `/api/user-category-assignments/user/${user.id}`);
+        mapping[user.id] = response;
+      }
+      
+      return mapping;
+    },
+    // Só buscar quando tiver usuários carregados
+    enabled: users.length > 0,
+  });
+
   // Delete user mutation
   const deleteUserMutation = useMutation({
     mutationFn: async (userId: number) => {
@@ -113,6 +138,7 @@ export default function AdminPage({ activeTab: initialActiveTab }: { activeTab?:
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/users'] });
       queryClient.invalidateQueries({ queryKey: ['/api/users/groups/mapping'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/users/categories/mapping'] });
       toast({
         title: "Usuário removido",
         description: "O usuário foi removido com sucesso.",
@@ -170,6 +196,27 @@ export default function AdminPage({ activeTab: initialActiveTab }: { activeTab?:
     },
   });
 
+  // Delete category mutation
+  const deleteCategoryMutation = useMutation({
+    mutationFn: async (categoryId: number) => {
+      await apiRequest("DELETE", `/api/user-categories/${categoryId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/user-categories'] });
+      toast({
+        title: "Categoria removida",
+        description: "A categoria foi removida com sucesso.",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Erro",
+        description: "Não foi possível remover a categoria.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleUserCreated = () => {
     queryClient.invalidateQueries({ queryKey: ['/api/users'] });
     setIsUserModalOpen(false);
@@ -221,6 +268,24 @@ export default function AdminPage({ activeTab: initialActiveTab }: { activeTab?:
   const handleEditGroup = (groupId: number) => {
     setGroupToEdit(groupId);
     setIsGroupEditModalOpen(true);
+  };
+
+  const handleEditCategory = (categoryId: number) => {
+    setCategoryToEdit(categoryId);
+    setIsUserCategoryEditModalOpen(true);
+  };
+
+  const handleDeleteCategory = (categoryId: number) => {
+    setCategoryToDelete(categoryId);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const confirmDeleteCategory = () => {
+    if (categoryToDelete) {
+      deleteCategoryMutation.mutate(categoryToDelete);
+      setCategoryToDelete(null);
+      setIsDeleteDialogOpen(false);
+    }
   };
 
   const handleUserGroups = useCallback((userId: number) => {
@@ -441,7 +506,7 @@ export default function AdminPage({ activeTab: initialActiveTab }: { activeTab?:
                               </div>
                             </th>
                             <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Grupos</th>
+                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Categorias</th>
                             <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>
                           </tr>
                         </thead>
@@ -487,22 +552,23 @@ export default function AdminPage({ activeTab: initialActiveTab }: { activeTab?:
                                 </td>
                                 <td className="px-6 py-4">
                                   <div className="flex flex-wrap gap-1">
-                                    {isLoadingUserGroups ? (
+                                    {isLoadingUserCategories ? (
                                       <span className="text-xs text-gray-500">Carregando...</span>
-                                    ) : userGroupMapping[user.id]?.length > 0 ? (
-                                      [...userGroupMapping[user.id]]
+                                    ) : userCategoriesMapping[user.id]?.length > 0 ? (
+                                      [...userCategoriesMapping[user.id]]
                                         .sort((a, b) => a.name.localeCompare(b.name))
-                                        .map(group => (
+                                        .map(category => (
                                           <Badge 
-                                            key={group.id} 
+                                            key={category.id} 
                                             variant="secondary"
-                                            className="bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100"
+                                            className="text-white border-0"
+                                            style={{ backgroundColor: category.color }}
                                           >
-                                            {group.name}
+                                            {category.name}
                                           </Badge>
                                         ))
                                     ) : (
-                                      <span className="text-xs text-gray-500">Nenhum grupo</span>
+                                      <span className="text-xs text-gray-500">Nenhuma categoria</span>
                                     )}
                                   </div>
                                 </td>
@@ -549,6 +615,20 @@ export default function AdminPage({ activeTab: initialActiveTab }: { activeTab?:
                                         >
                                           <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                          </svg>
+                                        </Button>
+                                        <Button 
+                                          variant="ghost" 
+                                          size="icon" 
+                                          className="h-8 w-8 text-amber-600 hover:text-amber-900 hover:bg-amber-50" 
+                                          title="Gerenciar Categorias"
+                                          onClick={() => {
+                                            setUserForCategoryAssignment({ id: user.id, name: user.name });
+                                            setIsUserCategoryAssignmentModalOpen(true);
+                                          }}
+                                        >
+                                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
                                           </svg>
                                         </Button>
                                         <Button 
@@ -662,6 +742,7 @@ export default function AdminPage({ activeTab: initialActiveTab }: { activeTab?:
                                       size="icon" 
                                       className="h-8 w-8 text-blue-600 hover:text-blue-900 hover:bg-blue-50" 
                                       title="Editar"
+                                      onClick={() => handleEditCategory(category.id)}
                                     >
                                       <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -672,6 +753,7 @@ export default function AdminPage({ activeTab: initialActiveTab }: { activeTab?:
                                       size="icon" 
                                       className="h-8 w-8 text-red-600 hover:text-red-900 hover:bg-red-50" 
                                       title="Remover"
+                                      onClick={() => handleDeleteCategory(category.id)}
                                     >
                                       <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -841,6 +923,28 @@ export default function AdminPage({ activeTab: initialActiveTab }: { activeTab?:
         />
       )}
 
+      {isUserCategoryEditModalOpen && categoryToEdit && (
+        <EditUserCategoryModal 
+          categoryId={categoryToEdit}
+          onClose={() => {
+            setIsUserCategoryEditModalOpen(false);
+            setCategoryToEdit(null);
+          }}
+          onCategoryUpdated={handleUserCategoryCreated}
+        />
+      )}
+
+      {isUserCategoryAssignmentModalOpen && userForCategoryAssignment && (
+        <UserCategoryAssignmentModal
+          userId={userForCategoryAssignment.id}
+          userName={userForCategoryAssignment.name}
+          onClose={() => {
+            setIsUserCategoryAssignmentModalOpen(false);
+            setUserForCategoryAssignment(null);
+          }}
+        />
+      )}
+
       {isUserGroupsModalOpen && selectedUserId && (
         <UserGroupsModal 
           userId={selectedUserId}
@@ -905,6 +1009,7 @@ export default function AdminPage({ activeTab: initialActiveTab }: { activeTab?:
             setIsDeleteDialogOpen(false);
             setUserToDelete(null);
             setGroupToDelete(null);
+            setCategoryToDelete(null);
           }
         }}
       >
@@ -914,13 +1019,15 @@ export default function AdminPage({ activeTab: initialActiveTab }: { activeTab?:
             <AlertDialogDescription>
               {userToDelete 
                 ? "Tem certeza que deseja remover este usuário? Esta ação não pode ser desfeita."
-                : "Tem certeza que deseja remover este grupo? Esta ação não pode ser desfeita."}
+                : groupToDelete 
+                  ? "Tem certeza que deseja remover este grupo? Esta ação não pode ser desfeita."
+                  : "Tem certeza que deseja remover esta categoria? Esta ação não pode ser desfeita."}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
             <AlertDialogAction 
-              onClick={userToDelete ? confirmDeleteUser : confirmDeleteGroup}
+              onClick={userToDelete ? confirmDeleteUser : groupToDelete ? confirmDeleteGroup : confirmDeleteCategory}
               className="bg-red-600 hover:bg-red-700 text-white"
             >
               Confirmar exclusão
