@@ -55,7 +55,7 @@ export function ChallengesCard() {
       <CardHeader className="pb-2 bg-gradient-to-r from-primary/5 to-transparent">
         <CardTitle className="text-primary/90 flex items-center">
           <span className="inline-block w-1 h-5 bg-primary rounded mr-2"></span>
-          Desafios
+          Gamificação
         </CardTitle>
       </CardHeader>
       <CardContent className="flex-grow overflow-hidden">

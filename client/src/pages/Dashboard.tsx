@@ -32,7 +32,7 @@ export default function Dashboard() {
           
           {/* Coluna 2: Área central (5/11 da largura) */}
           <div className="lg:col-span-5 space-y-6">
-            {/* Área de desafios */}
+            {/* Área de gamificação */}
             <ChallengesCard />
             
             {/* Notícias ocupando toda a largura da segunda fileira */}
