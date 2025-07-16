@@ -65,7 +65,7 @@ export function RankingCard() {
   const topUsers = ranking.slice(0, 20);
 
   const handleViewAll = () => {
-    navigate('/gamification');
+    navigate('/dashboard/gamification');
   };
 
   const getInitials = (name: string) => {
@@ -94,13 +94,13 @@ export function RankingCard() {
       
       <CardContent className="p-4 flex flex-col" style={{ height: "calc(280px - 54px)" }}>
         {/* Filtros */}
-        <div className="flex gap-2 mb-3">
+        <div className="flex gap-1 mb-2">
           <div className="flex-1">
             <Button
               variant={period === 'cycle' ? 'default' : 'outline'}
               size="sm"
               onClick={() => setPeriod('cycle')}
-              className="w-full text-xs"
+              className="w-full text-xs h-7 px-2"
             >
               <Calendar className="h-3 w-3 mr-1" />
               Ciclo
@@ -111,7 +111,7 @@ export function RankingCard() {
               variant={period === 'annual' ? 'default' : 'outline'}
               size="sm"
               onClick={() => setPeriod('annual')}
-              className="w-full text-xs"
+              className="w-full text-xs h-7 px-2"
             >
               <Calendar className="h-3 w-3 mr-1" />
               Anual
@@ -119,9 +119,9 @@ export function RankingCard() {
           </div>
         </div>
 
-        <div className="mb-3">
+        <div className="mb-2">
           <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-            <SelectTrigger className="h-8 text-xs">
+            <SelectTrigger className="h-7 text-xs">
               <SelectValue placeholder="Selecione uma categoria" />
             </SelectTrigger>
             <SelectContent>
@@ -155,36 +155,33 @@ export function RankingCard() {
             </div>
           ) : (
             <ScrollArea className="h-full">
-              <div className="space-y-2">
+              <div className="space-y-1">
                 {topUsers.map((user) => (
                   <div
                     key={user.userId}
-                    className="flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 transition-colors"
+                    className="flex items-center justify-between p-1.5 rounded-lg hover:bg-gray-50 transition-colors"
                   >
-                    <div className="flex items-center space-x-3 flex-1 min-w-0">
+                    <div className="flex items-center space-x-2 flex-1 min-w-0">
                       <div className="flex-shrink-0">
                         <Badge 
                           variant={user.position <= 3 ? "default" : "secondary"}
-                          className="w-6 h-6 p-0 rounded-full flex items-center justify-center text-xs"
+                          className="w-5 h-5 p-0 rounded-full flex items-center justify-center text-xs"
                         >
                           {user.position}
                         </Badge>
                       </div>
-                      <Avatar className="h-8 w-8 flex-shrink-0">
+                      <Avatar className="h-6 w-6 flex-shrink-0">
                         <AvatarImage src={user.photoUrl || undefined} alt={user.userName} />
                         <AvatarFallback className="text-xs">
                           {getInitials(user.userName)}
                         </AvatarFallback>
                       </Avatar>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium truncate">{user.userName}</p>
-                        {user.categoryName && (
-                          <p className="text-xs text-gray-500 truncate">{user.categoryName}</p>
-                        )}
+                        <p className="text-xs font-medium truncate">{user.userName}</p>
                       </div>
                     </div>
                     <div className="flex-shrink-0 text-right">
-                      <p className="text-sm font-semibold text-primary">
+                      <p className="text-xs font-semibold text-primary">
                         {user.totalPoints} pts
                       </p>
                     </div>
