@@ -506,7 +506,7 @@ export default function AdminPage({ activeTab: initialActiveTab }: { activeTab?:
                               </div>
                             </th>
                             <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Categorias</th>
+                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-48">Categorias</th>
                             <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>
                           </tr>
                         </thead>
@@ -550,23 +550,47 @@ export default function AdminPage({ activeTab: initialActiveTab }: { activeTab?:
                                     </Badge>
                                   )}
                                 </td>
-                                <td className="px-6 py-4">
-                                  <div className="flex flex-wrap gap-1">
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                  <div className="flex items-center space-x-1 max-w-48">
                                     {isLoadingUserCategories ? (
                                       <span className="text-xs text-gray-500">Carregando...</span>
                                     ) : userCategoriesMapping[user.id]?.length > 0 ? (
-                                      [...userCategoriesMapping[user.id]]
-                                        .sort((a, b) => a.name.localeCompare(b.name))
-                                        .map(category => (
-                                          <Badge 
-                                            key={category.id} 
-                                            variant="secondary"
-                                            className="text-white border-0"
-                                            style={{ backgroundColor: category.color }}
-                                          >
-                                            {category.name}
-                                          </Badge>
-                                        ))
+                                      <>
+                                        {userCategoriesMapping[user.id].length <= 2 ? (
+                                          [...userCategoriesMapping[user.id]]
+                                            .sort((a, b) => a.name.localeCompare(b.name))
+                                            .map(category => (
+                                              <Badge 
+                                                key={category.id} 
+                                                variant="secondary"
+                                                className="text-white border-0 text-xs px-2 py-1 shrink-0"
+                                                style={{ backgroundColor: category.color }}
+                                                title={category.description || category.name}
+                                              >
+                                                {category.name}
+                                              </Badge>
+                                            ))
+                                        ) : (
+                                          <>
+                                            <Badge 
+                                              variant="secondary"
+                                              className="text-white border-0 text-xs px-2 py-1 shrink-0"
+                                              style={{ backgroundColor: userCategoriesMapping[user.id][0].color }}
+                                              title={userCategoriesMapping[user.id][0].description || userCategoriesMapping[user.id][0].name}
+                                            >
+                                              {userCategoriesMapping[user.id][0].name}
+                                            </Badge>
+                                            <Badge 
+                                              variant="outline" 
+                                              className="text-xs px-2 py-1 bg-gray-100 text-gray-600 border-gray-300 shrink-0 cursor-help"
+                                              title={`Total: ${userCategoriesMapping[user.id].length} categorias
+${userCategoriesMapping[user.id].map(c => `• ${c.name}`).join('\n')}`}
+                                            >
+                                              +{userCategoriesMapping[user.id].length - 1}
+                                            </Badge>
+                                          </>
+                                        )}
+                                      </>
                                     ) : (
                                       <span className="text-xs text-gray-500">Nenhuma categoria</span>
                                     )}
