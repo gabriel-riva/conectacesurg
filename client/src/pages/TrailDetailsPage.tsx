@@ -7,7 +7,7 @@ import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { BookOpen, Clock, Users, CheckCircle, PlayCircle, ArrowLeft, Eye, User } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useParams } from "wouter";
 
 interface TrailCategory {
@@ -35,7 +35,7 @@ interface Trail {
   description: string;
   imageUrl?: string;
   category?: TrailCategory;
-  creator: {
+  creator?: {
     id: number;
     name: string;
     email: string;
@@ -55,6 +55,13 @@ export default function TrailDetailsPage() {
   const { data: trail, isLoading: isLoadingTrail } = useQuery<Trail>({
     queryKey: ['/api/trails', trailId],
   });
+
+  // Selecionar o primeiro conteúdo automaticamente quando a trilha carrega
+  useEffect(() => {
+    if (trail && trail.contents && trail.contents.length > 0 && !selectedContent) {
+      setSelectedContent(trail.contents[0]);
+    }
+  }, [trail, selectedContent]);
 
   const getBadgeColor = (categoryName?: string) => {
     if (!categoryName) return 'bg-gray-100 text-gray-800';
@@ -155,11 +162,11 @@ export default function TrailDetailsPage() {
               <div className="flex items-center gap-4 text-sm text-muted-foreground">
                 <div className="flex items-center gap-1">
                   <User className="w-4 h-4" />
-                  {trail.creator.name}
+                  {trail.creator?.name || 'Autor não identificado'}
                 </div>
                 <div className="flex items-center gap-1">
                   <BookOpen className="w-4 h-4" />
-                  {trail.contentCount} conteúdos
+                  {trail.contentCount || 0} conteúdos
                 </div>
               </div>
             </div>
@@ -171,11 +178,11 @@ export default function TrailDetailsPage() {
                   <CardHeader>
                     <CardTitle className="text-lg">Conteúdos da Trilha</CardTitle>
                     <CardDescription>
-                      {trail.contents.length} conteúdos disponíveis
+                      {trail.contents?.length || 0} conteúdos disponíveis
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-2">
-                    {trail.contents.length === 0 ? (
+                    {(!trail.contents || trail.contents.length === 0) ? (
                       <p className="text-muted-foreground text-center py-4">
                         Nenhum conteúdo disponível ainda.
                       </p>
