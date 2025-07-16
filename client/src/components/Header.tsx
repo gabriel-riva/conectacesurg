@@ -9,7 +9,7 @@ import { MenuItem } from "@/components/MenuItem";
 
 // Importing icons
 import inicioIcon from "@assets/icone_inicio.png";
-import materiaisIcon from "@assets/icone_materiais.png";
+import materiaisIcon from "@assets/icone_materiais_new.svg";
 import ideiasIcon from "@assets/icone_ideias.png";
 import comunidadeIcon from "@assets/icone_comunidade.png";
 import gamificacaoIcon from "@assets/icone_gamificacao.png";
@@ -17,7 +17,7 @@ import iaIcon from "@assets/icone_ia.png";
 
 // Importing green icons
 import inicioIconVerde from "@assets/icone_inicio_verde.png";
-import materiaisIconVerde from "@assets/icone_materiais_verde.png";
+import materiaisIconVerde from "@assets/icone_materiais_verde_new.svg";
 import ideiasIconVerde from "@assets/icone_ideias_verde.png";
 import comunidadeIconVerde from "@assets/icone_comunidade_verde.png";
 import gamificacaoIconVerde from "@assets/icone_gamificacao_verde.png";
