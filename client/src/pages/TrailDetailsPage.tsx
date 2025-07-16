@@ -56,8 +56,10 @@ export default function TrailDetailsPage() {
     queryKey: ['/api/trails', trailId],
   });
 
-  const getBadgeColor = (categoryName: string) => {
-    switch (categoryName?.toLowerCase()) {
+  const getBadgeColor = (categoryName?: string) => {
+    if (!categoryName) return 'bg-gray-100 text-gray-800';
+    
+    switch (categoryName.toLowerCase()) {
       case 'básico':
         return 'bg-blue-100 text-blue-800';
       case 'intermediário':

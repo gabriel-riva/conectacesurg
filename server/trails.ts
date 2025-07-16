@@ -191,6 +191,70 @@ router.get('/admin/all', isAdmin, async (req: Request, res: Response) => {
   }
 });
 
+// Obter conteúdos de uma trilha (incluindo rascunhos) - Admin apenas
+router.get('/:id/contents', isAdmin, async (req: Request, res: Response) => {
+  try {
+    const trailId = parseInt(req.params.id);
+    const includeUnpublished = req.query.includeUnpublished === 'true';
+    const contents = await storage.getTrailContents(trailId, !includeUnpublished);
+    res.json(contents);
+  } catch (error) {
+    console.error('Erro ao obter conteúdos da trilha (admin):', error);
+    res.status(500).json({ error: 'Erro interno do servidor' });
+  }
+});
+
+// Criar novo conteúdo para uma trilha - Admin apenas
+router.post('/:id/contents', isAdmin, async (req: Request, res: Response) => {
+  try {
+    const trailId = parseInt(req.params.id);
+    const contentData = {
+      ...req.body,
+      trailId
+    };
+    
+    const newContent = await storage.createTrailContent(contentData);
+    res.json(newContent);
+  } catch (error) {
+    console.error('Erro ao criar conteúdo:', error);
+    res.status(500).json({ error: 'Erro interno do servidor' });
+  }
+});
+
+// Atualizar conteúdo - Admin apenas
+router.put('/content/:id', isAdmin, async (req: Request, res: Response) => {
+  try {
+    const id = parseInt(req.params.id);
+    const updatedContent = await storage.updateTrailContent(id, req.body);
+    
+    if (!updatedContent) {
+      return res.status(404).json({ error: 'Conteúdo não encontrado' });
+    }
+    
+    res.json(updatedContent);
+  } catch (error) {
+    console.error('Erro ao atualizar conteúdo:', error);
+    res.status(500).json({ error: 'Erro interno do servidor' });
+  }
+});
+
+// Excluir conteúdo - Admin apenas
+router.delete('/content/:id', isAdmin, async (req: Request, res: Response) => {
+  try {
+    const id = parseInt(req.params.id);
+    const success = await storage.deleteTrailContent(id);
+    
+    if (!success) {
+      return res.status(404).json({ error: 'Conteúdo não encontrado' });
+    }
+    
+    res.json({ message: 'Conteúdo excluído com sucesso' });
+  } catch (error) {
+    console.error('Erro ao excluir conteúdo:', error);
+    res.status(500).json({ error: 'Erro interno do servidor' });
+  }
+});
+
 // Criar nova trilha - Admin apenas
 router.post('/admin/create', isAdmin, upload.single('image'), async (req: Request, res: Response) => {
   try {

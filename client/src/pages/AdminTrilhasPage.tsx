@@ -17,6 +17,7 @@ import { z } from "zod";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import { Link } from "wouter";
 
 interface TrailCategory {
   id: number;
@@ -480,6 +481,15 @@ export default function AdminTrilhasPage() {
                         </div>
                         
                         <div className="flex items-center gap-2">
+                          <Link href={`/admin/trilhas/${trail.id}/conteudos`}>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              title="Gerenciar Conteúdos"
+                            >
+                              <BookOpen className="h-4 w-4" />
+                            </Button>
+                          </Link>
                           <Button
                             variant="outline"
                             size="sm"
