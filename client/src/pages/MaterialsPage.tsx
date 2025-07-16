@@ -260,7 +260,7 @@ export default function MaterialsPage() {
   const filteredFiles = files.filter(file => {
     const matchesSearch = file.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       file.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      file.fileName.toLowerCase().includes(searchTerm.toLowerCase());
+      file.fileName?.toLowerCase().includes(searchTerm.toLowerCase());
     
     // Mostrar apenas arquivos da pasta atual
     const matchesFolder = file.folderId === currentFolderId;
