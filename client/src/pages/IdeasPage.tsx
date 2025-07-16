@@ -1016,7 +1016,7 @@ function IdeasPageContent() {
 
 export default function IdeasPage() {
   return (
-    <FeatureGuard featureName="ideas">
+    <FeatureGuard featureName="ideias">
       <IdeasPageContent />
     </FeatureGuard>
   );

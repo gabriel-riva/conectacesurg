@@ -2188,7 +2188,7 @@ function PostCard({
 
 export default function CommunityPage() {
   return (
-    <FeatureGuard featureName="community">
+    <FeatureGuard featureName="comunidades">
       <CommunityPageContent />
     </FeatureGuard>
   );

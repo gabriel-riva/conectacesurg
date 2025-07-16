@@ -300,7 +300,7 @@ function GamificationPageContent() {
 
 export default function GamificationPage() {
   return (
-    <FeatureGuard featureName="gamification">
+    <FeatureGuard featureName="gamificacao">
       <GamificationPageContent />
     </FeatureGuard>
   );

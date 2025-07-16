@@ -11,9 +11,11 @@ interface FeatureDisabledPageProps {
 }
 
 const featureLabels: Record<string, string> = {
-  community: "Comunidade",
-  ideas: "Ideias",
-  gamification: "Gamificação",
+  comunidades: "Comunidade",
+  ideias: "Ideias",
+  gamificacao: "Gamificação",
+  trilhas: "Trilhas",
+  materiais: "Materiais",
 };
 
 export function FeatureDisabledPage({ 
