@@ -2,10 +2,9 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Calendar, User, X } from "lucide-react";
+import { Calendar, User } from "lucide-react";
 
 type Announcement = {
   id: number;
@@ -139,16 +138,7 @@ export function AnnouncementsCard() {
       <Dialog open={!!selectedAnnouncement} onOpenChange={() => setSelectedAnnouncement(null)}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle className="flex items-center justify-between">
-              <span>{selectedAnnouncement?.title}</span>
-              <Button 
-                variant="ghost" 
-                size="sm"
-                onClick={() => setSelectedAnnouncement(null)}
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            </DialogTitle>
+            <DialogTitle>{selectedAnnouncement?.title}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div className="whitespace-pre-wrap text-sm text-gray-700">
@@ -172,16 +162,7 @@ export function AnnouncementsCard() {
       <Dialog open={isAllAnnouncementsDialogOpen} onOpenChange={setIsAllAnnouncementsDialogOpen}>
         <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="flex items-center justify-between">
-              <span>Todos os Avisos</span>
-              <Button 
-                variant="ghost" 
-                size="sm"
-                onClick={() => setIsAllAnnouncementsDialogOpen(false)}
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            </DialogTitle>
+            <DialogTitle>Todos os Avisos</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             {isLoadingAll ? (
