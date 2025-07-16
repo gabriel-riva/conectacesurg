@@ -1,7 +1,7 @@
 import { Router } from "express";
 import type { Request, Response } from "express";
 import { db } from "./db";
-import { gamificationSettings, gamificationPoints, users, userCategories } from "@/shared/schema";
+import { gamificationSettings, gamificationPoints, users, userCategories, userCategoryAssignments } from "@/shared/schema";
 import { eq, desc, and, gte, lte, sql, inArray } from "drizzle-orm";
 import { z } from "zod";
 import { insertGamificationSettingsSchema, insertGamificationPointsSchema, updateGamificationSettingsSchema } from "@/shared/schema";
@@ -104,49 +104,74 @@ router.get("/ranking", isAuthenticated, async (req: Request, res: Response) => {
       );
     }
     
-    // Query base
-    let query = db
+    // Query base - usando subquery para categorias do usuário
+    let baseQuery = db
       .select({
         userId: users.id,
         userName: users.name,
         userEmail: users.email,
         photoUrl: users.photoUrl,
-        categoryId: users.userCategoryId,
-        categoryName: userCategories.name,
         totalPoints: sql<number>`sum(${gamificationPoints.points})`
       })
       .from(gamificationPoints)
       .innerJoin(users, eq(gamificationPoints.userId, users.id))
-      .leftJoin(userCategories, eq(users.userCategoryId, userCategories.id))
       .where(dateCondition)
-      .groupBy(users.id, users.name, users.email, users.photoUrl, users.userCategoryId, userCategories.name)
+      .groupBy(users.id, users.name, users.email, users.photoUrl)
       .orderBy(desc(sql<number>`sum(${gamificationPoints.points})`));
     
-    // Filtrar por categoria se especificado
+    // Filtrar por categoria específica se especificado
     if (categoryId) {
-      query = query.where(and(
-        dateCondition,
-        eq(users.userCategoryId, parseInt(categoryId as string))
-      ));
+      baseQuery = baseQuery
+        .innerJoin(userCategoryAssignments, eq(users.id, userCategoryAssignments.userId))
+        .where(and(
+          dateCondition,
+          eq(userCategoryAssignments.categoryId, parseInt(categoryId as string))
+        ));
     }
     
     // Filtrar por categorias habilitadas se for classificação geral
-    if (filter === 'general' && currentSettings?.enabledCategoryIds?.length > 0) {
-      query = query.where(and(
-        dateCondition,
-        inArray(users.userCategoryId, currentSettings.enabledCategoryIds)
-      ));
+    else if (filter === 'general' && currentSettings?.enabledCategoryIds?.length > 0) {
+      baseQuery = baseQuery
+        .innerJoin(userCategoryAssignments, eq(users.id, userCategoryAssignments.userId))
+        .where(and(
+          dateCondition,
+          inArray(userCategoryAssignments.categoryId, currentSettings.enabledCategoryIds)
+        ));
     }
     
-    const ranking = await query;
+    const ranking = await baseQuery;
     
-    // Adicionar posição no ranking
-    const rankingWithPosition = ranking.map((user, index) => ({
-      ...user,
-      position: index + 1
-    }));
+    // Buscar informações de categoria para cada usuário
+    const rankingWithCategories = await Promise.all(
+      ranking.map(async (user, index) => {
+        let categoryInfo = null;
+        
+        // Se há filtro por categoria específica, buscar a categoria
+        if (categoryId) {
+          const categoryResult = await db
+            .select({
+              categoryId: userCategories.id,
+              categoryName: userCategories.name
+            })
+            .from(userCategories)
+            .where(eq(userCategories.id, parseInt(categoryId as string)))
+            .limit(1);
+          
+          if (categoryResult.length > 0) {
+            categoryInfo = categoryResult[0];
+          }
+        }
+        
+        return {
+          ...user,
+          categoryId: categoryInfo?.categoryId || null,
+          categoryName: categoryInfo?.categoryName || null,
+          position: index + 1
+        };
+      })
+    );
     
-    res.json(rankingWithPosition);
+    res.json(rankingWithCategories);
   } catch (error) {
     console.error("Error fetching ranking:", error);
     res.status(500).json({ error: "Internal server error" });
@@ -259,13 +284,31 @@ router.delete("/points/:id", isAdmin, async (req: Request, res: Response) => {
   }
 });
 
-// Buscar categorias de usuários
+// Buscar categorias de usuários configuradas para gamificação
 router.get("/categories", isAuthenticated, async (req: Request, res: Response) => {
   try {
+    // Buscar configurações atuais
+    const settings = await db
+      .select()
+      .from(gamificationSettings)
+      .limit(1);
+    
+    const currentSettings = settings[0];
+    
+    if (!currentSettings?.enabledCategoryIds?.length) {
+      return res.json([]);
+    }
+    
+    // Buscar apenas as categorias habilitadas nas configurações
     const categories = await db
       .select()
       .from(userCategories)
-      .where(eq(userCategories.isActive, true))
+      .where(
+        and(
+          eq(userCategories.isActive, true),
+          inArray(userCategories.id, currentSettings.enabledCategoryIds)
+        )
+      )
       .orderBy(userCategories.name);
     
     res.json(categories);
