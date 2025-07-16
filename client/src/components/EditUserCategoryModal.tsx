@@ -117,11 +117,11 @@ export function EditUserCategoryModal({ categoryId, onClose, onCategoryUpdated }
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <Card className="w-full max-w-md mx-4">
-        <CardHeader>
+      <Card className="w-full max-w-md mx-4 max-h-[90vh] overflow-hidden flex flex-col">
+        <CardHeader className="flex-shrink-0">
           <CardTitle>Editar Categoria</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="flex-1 overflow-y-auto">
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <Label htmlFor="name">Nome da Categoria</Label>
