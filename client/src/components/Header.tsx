@@ -122,20 +122,20 @@ export function Header() {
             )}
             {shouldShowInHeader('ideias') && (
               <MenuItem 
-                href="/ideas"
+                href="/ideias"
                 icon={ideiasIcon}
                 iconHover={ideiasIconVerde}
                 label="Ideias"
-                isActive={location === '/ideas'}
+                isActive={location === '/ideias'}
               />
             )}
             {shouldShowInHeader('comunidades') && (
               <MenuItem 
-                href="/community"
+                href="/comunidades"
                 icon={comunidadeIcon}
                 iconHover={comunidadeIconVerde}
                 label="Comunidade"
-                isActive={location === '/community'}
+                isActive={location === '/comunidades'}
               />
             )}
             {shouldShowInHeader('gamificacao') && (
@@ -199,21 +199,21 @@ export function Header() {
             )}
             {shouldShowInHeader('ideias') && (
               <MenuItem 
-                href="/ideas"
+                href="/ideias"
                 icon={ideiasIcon}
                 iconHover={ideiasIconVerde}
                 label="Ideias"
-                isActive={location === '/ideas'}
+                isActive={location === '/ideias'}
                 className="py-2"
               />
             )}
             {shouldShowInHeader('comunidades') && (
               <MenuItem 
-                href="/community"
+                href="/comunidades"
                 icon={comunidadeIcon}
                 iconHover={comunidadeIconVerde}
                 label="Comunidade"
-                isActive={location === '/community'}
+                isActive={location === '/comunidades'}
                 className="py-2"
               />
             )}
