@@ -13,24 +13,27 @@ import {
 } from "@/components/ui/dialog";
 import { Link, Image, Youtube, Upload, Table } from "lucide-react";
 
-// Registrar módulos do Quill
+// Módulos do Quill carregados dinamicamente
 let ImageResize: any;
 let ImageDrop: any;
+let modulesLoaded = false;
 
-if (typeof window !== 'undefined') {
+const loadQuillModules = async () => {
+  if (typeof window === 'undefined' || modulesLoaded) return;
+  
   try {
-    ImageResize = require('quill-image-resize-module-react').default;
-    ImageDrop = require('quill-image-drop-module').default;
-    
-    if (ImageResize) {
-      Quill.register('modules/imageResize', ImageResize);
-    }
-    if (ImageDrop) {
-      Quill.register('modules/imageDrop', ImageDrop);
-    }
+    // Não usar os módulos problemáticos por enquanto
+    // Eles estão causando erro de constructor no Quill 2.x
+    modulesLoaded = true;
   } catch (error) {
     console.warn('Não foi possível carregar os módulos de imagem:', error);
+    modulesLoaded = true;
   }
+};
+
+// Chamar a função de carregamento
+if (typeof window !== 'undefined') {
+  loadQuillModules();
 }
 
 interface RichTextEditorProps {
@@ -48,7 +51,7 @@ export function RichTextEditor({ value, onChange, placeholder = "Digite seu cont
   const [isLinkDialogOpen, setIsLinkDialogOpen] = useState(false);
   const [isYoutubeDialogOpen, setIsYoutubeDialogOpen] = useState(false);
 
-  // Configuração dos módulos do Quill
+  // Configuração dos módulos do Quill (sem os módulos problemáticos)
   const modules = {
     toolbar: {
       container: [
@@ -67,11 +70,6 @@ export function RichTextEditor({ value, onChange, placeholder = "Digite seu cont
         'image': () => handleImageUpload(),
         'video': () => handleYoutubeVideo()
       }
-    },
-    imageDrop: true,
-    imageResize: {
-      parchment: Quill.import('parchment'),
-      modules: ['Resize', 'DisplaySize', 'Toolbar']
     },
     clipboard: {
       matchVisual: false,
