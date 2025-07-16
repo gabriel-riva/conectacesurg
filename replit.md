@@ -46,6 +46,7 @@ Preferred communication style: Simple, everyday language.
 - **AI Components**: AI agents, prompts, conversations, and messages
 - **Utility Links**: Administrative link management
 - **Ideas**: Idea submission and management system
+- **Announcements**: Notice/announcement system with priority levels and scheduling
 
 ### File Management
 - **Upload System**: Centralized file upload handling

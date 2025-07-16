@@ -11,6 +11,7 @@ import {
   calendarEvents,
   news,
   newsCategories,
+  announcements,
   materialFolders,
   materialFiles,
   type User, 
@@ -35,6 +36,8 @@ import {
   type InsertNews,
   type NewsCategory,
   type InsertNewsCategory,
+  type Announcement,
+  type InsertAnnouncement,
   type MaterialFolder,
   type MaterialFile,
   type InsertMaterialFolder,
@@ -133,6 +136,14 @@ export interface IStorage {
   publishNews(id: number): Promise<News | undefined>;
   unpublishNews(id: number): Promise<News | undefined>;
   deleteNews(id: number): Promise<boolean>;
+  
+  // Announcement methods
+  getAllAnnouncements(includeInactive?: boolean): Promise<(Announcement & { creator: User })[]>;
+  getActiveAnnouncements(limit?: number): Promise<(Announcement & { creator: User })[]>;
+  getAnnouncementById(id: number): Promise<(Announcement & { creator: User }) | undefined>;
+  createAnnouncement(announcement: InsertAnnouncement): Promise<Announcement>;
+  updateAnnouncement(id: number, announcementData: Partial<InsertAnnouncement>): Promise<Announcement | undefined>;
+  deleteAnnouncement(id: number): Promise<boolean>;
   
   // Material Folder methods
   getAllMaterialFolders(userId?: number): Promise<(MaterialFolder & { creator: User; parent?: MaterialFolder; children?: MaterialFolder[]; files?: MaterialFile[] })[]>;
@@ -1304,6 +1315,132 @@ export class DatabaseStorage implements IStorage {
       return result.length > 0;
     } catch (error) {
       console.error("Error deleting news:", error);
+      return false;
+    }
+  }
+
+  // Announcement methods
+  async getAllAnnouncements(includeInactive?: boolean): Promise<(Announcement & { creator: User })[]> {
+    try {
+      const query = db
+        .select({
+          announcement: announcements,
+          creator: users,
+        })
+        .from(announcements)
+        .leftJoin(users, eq(announcements.creatorId, users.id))
+        .orderBy(desc(announcements.priority), desc(announcements.createdAt));
+
+      if (!includeInactive) {
+        query.where(eq(announcements.isActive, true));
+      }
+
+      const results = await query;
+      return results.map((result: any) => ({
+        ...result.announcement,
+        creator: result.creator,
+      }));
+    } catch (error) {
+      console.error("Error getting announcements:", error);
+      return [];
+    }
+  }
+
+  async getActiveAnnouncements(limit?: number): Promise<(Announcement & { creator: User })[]> {
+    try {
+      const now = new Date();
+      let query = db
+        .select({
+          announcement: announcements,
+          creator: users,
+        })
+        .from(announcements)
+        .leftJoin(users, eq(announcements.creatorId, users.id))
+        .where(
+          and(
+            eq(announcements.isActive, true),
+            lte(announcements.startDate, now),
+            or(
+              eq(announcements.endDate, null),
+              gte(announcements.endDate, now)
+            )
+          )
+        )
+        .orderBy(desc(announcements.priority), desc(announcements.createdAt));
+
+      if (limit) {
+        query = query.limit(limit);
+      }
+
+      const results = await query;
+      return results.map((result: any) => ({
+        ...result.announcement,
+        creator: result.creator,
+      }));
+    } catch (error) {
+      console.error("Error getting active announcements:", error);
+      return [];
+    }
+  }
+
+  async getAnnouncementById(id: number): Promise<(Announcement & { creator: User }) | undefined> {
+    try {
+      const [result] = await db
+        .select({
+          announcement: announcements,
+          creator: users,
+        })
+        .from(announcements)
+        .leftJoin(users, eq(announcements.creatorId, users.id))
+        .where(eq(announcements.id, id));
+
+      if (!result) return undefined;
+
+      return {
+        ...result.announcement,
+        creator: result.creator,
+      };
+    } catch (error) {
+      console.error("Error getting announcement by ID:", error);
+      return undefined;
+    }
+  }
+
+  async createAnnouncement(announcement: InsertAnnouncement): Promise<Announcement> {
+    try {
+      const [newAnnouncement] = await db
+        .insert(announcements)
+        .values(announcement)
+        .returning();
+      
+      return newAnnouncement;
+    } catch (error) {
+      console.error("Error creating announcement:", error);
+      throw error;
+    }
+  }
+
+  async updateAnnouncement(id: number, announcementData: Partial<InsertAnnouncement>): Promise<Announcement | undefined> {
+    try {
+      const [updatedAnnouncement] = await db
+        .update(announcements)
+        .set(announcementData)
+        .where(eq(announcements.id, id))
+        .returning();
+      
+      return updatedAnnouncement;
+    } catch (error) {
+      console.error("Error updating announcement:", error);
+      return undefined;
+    }
+  }
+
+  async deleteAnnouncement(id: number): Promise<boolean> {
+    try {
+      const result = await db.delete(announcements).where(eq(announcements.id, id)).returning();
+      return result.length > 0;
+    } catch (error) {
+      console.error("Error deleting announcement:", error);
       return false;
     }
   }

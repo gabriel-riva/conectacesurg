@@ -261,6 +261,22 @@ export const news = pgTable("news", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+export const announcements = pgTable("announcements", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  content: text("content").notNull(),
+  type: text("type").notNull().default("info"), // 'info', 'warning', 'success', 'error'
+  priority: integer("priority").notNull().default(1), // 1 (low) to 5 (high)
+  imageUrl: text("image_url"),
+  externalUrl: text("external_url"),
+  creatorId: integer("creator_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  isActive: boolean("is_active").notNull().default(true),
+  startDate: timestamp("start_date").defaultNow(),
+  endDate: timestamp("end_date"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Tipos e esquemas para o UtilityLink estão definidos abaixo junto com os outros esquemas
 
 // Relations
@@ -285,6 +301,7 @@ export const usersRelations = relations(users, ({ many }) => ({
   aiConversations: many(aiConversations),
   calendarEvents: many(calendarEvents, { relationName: "creator" }),
   news: many(news, { relationName: "creator" }),
+  announcements: many(announcements, { relationName: "creator" }),
 }));
 
 export const groupsRelations = relations(groups, ({ many, one }) => ({
@@ -501,6 +518,14 @@ export const newsRelations = relations(news, ({ one }) => ({
   }),
 }));
 
+export const announcementsRelations = relations(announcements, ({ one }) => ({
+  creator: one(users, {
+    fields: [announcements.creatorId],
+    references: [users.id],
+    relationName: "creator"
+  }),
+}));
+
 // Schemas
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
@@ -654,6 +679,12 @@ export const insertNewsSchema = createInsertSchema(news).omit({
   updatedAt: true,
 });
 
+export const insertAnnouncementSchema = createInsertSchema(announcements).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 // Types
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type UpdateProfile = z.infer<typeof updateProfileSchema>;
@@ -678,6 +709,7 @@ export type InsertAiConversation = z.infer<typeof insertAiConversationSchema>;
 export type InsertAiMessage = z.infer<typeof insertAiMessageSchema>;
 export type InsertNewsCategory = z.infer<typeof insertNewsCategorySchema>;
 export type InsertNews = z.infer<typeof insertNewsSchema>;
+export type InsertAnnouncement = z.infer<typeof insertAnnouncementSchema>;
 
 export type User = typeof users.$inferSelect;
 export type Group = typeof groups.$inferSelect;
@@ -700,6 +732,7 @@ export type UtilityLink = typeof utilityLinks.$inferSelect;
 export type CalendarEvent = typeof calendarEvents.$inferSelect;
 export type NewsCategory = typeof newsCategories.$inferSelect;
 export type News = typeof news.$inferSelect;
+export type Announcement = typeof announcements.$inferSelect;
 
 // Tabela para pastas de materiais
 export const materialFolders = pgTable("material_folders", {

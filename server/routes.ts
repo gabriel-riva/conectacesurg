@@ -16,6 +16,7 @@ import profileRouter from "./profile";
 import utilityLinksRouter from "./utilityLinks";
 import calendarRouter from "./calendar";
 import newsRouter from "./news";
+import announcementsRouter from "./announcements";
 import uploadRouter from "./upload";
 import materialsRouter from "./materials";
 
@@ -688,6 +689,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Adicionar rotas de notícias
   app.use('/api/news', newsRouter);
+  
+  // Adicionar rotas de avisos
+  app.use('/api/announcements', announcementsRouter);
+  
   app.use('/api/upload', uploadRouter);
   
   // Adicionar rotas de materiais
