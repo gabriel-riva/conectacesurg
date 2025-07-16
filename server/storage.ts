@@ -15,6 +15,11 @@ import {
   announcements,
   materialFolders,
   materialFiles,
+  trailCategories,
+  trails,
+  trailContents,
+  trailComments,
+  trailProgress,
   type User, 
   type InsertUser, 
   type InsertGoogleUser,
@@ -44,7 +49,17 @@ import {
   type MaterialFolder,
   type MaterialFile,
   type InsertMaterialFolder,
-  type InsertMaterialFile
+  type InsertMaterialFile,
+  type TrailCategory,
+  type Trail,
+  type TrailContent,
+  type TrailComment,
+  type TrailProgress,
+  type InsertTrailCategory,
+  type InsertTrail,
+  type InsertTrailContent,
+  type InsertTrailComment,
+  type InsertTrailProgress
 } from "@shared/schema";
 import { db, pool } from "./db";
 import { and, asc, desc, eq, gte, lte, or, inArray, SQL, isNull } from "drizzle-orm";
@@ -170,6 +185,40 @@ export interface IStorage {
   updateMaterialFile(id: number, fileData: Partial<InsertMaterialFile>): Promise<MaterialFile | undefined>;
   deleteMaterialFile(id: number): Promise<boolean>;
   incrementDownloadCount(id: number): Promise<boolean>;
+
+  // Trail Category methods
+  getAllTrailCategories(): Promise<TrailCategory[]>;
+  getTrailCategory(id: number): Promise<TrailCategory | undefined>;
+  createTrailCategory(category: InsertTrailCategory): Promise<TrailCategory>;
+  updateTrailCategory(id: number, categoryData: Partial<InsertTrailCategory>): Promise<TrailCategory | undefined>;
+  deleteTrailCategory(id: number): Promise<boolean>;
+
+  // Trail methods
+  getAllTrails(includeUnpublished?: boolean): Promise<(Trail & { category?: TrailCategory; creator: User; contentCount: number })[]>;
+  getTrail(id: number): Promise<(Trail & { category?: TrailCategory; creator: User; contents: TrailContent[] }) | undefined>;
+  createTrail(trail: InsertTrail): Promise<Trail>;
+  updateTrail(id: number, trailData: Partial<InsertTrail>): Promise<Trail | undefined>;
+  deleteTrail(id: number): Promise<boolean>;
+  incrementTrailViewCount(id: number): Promise<boolean>;
+
+  // Trail Content methods
+  getTrailContents(trailId: number, includeDrafts?: boolean): Promise<TrailContent[]>;
+  getTrailContent(id: number): Promise<(TrailContent & { trail: Trail; commentsCount: number }) | undefined>;
+  createTrailContent(content: InsertTrailContent): Promise<TrailContent>;
+  updateTrailContent(id: number, contentData: Partial<InsertTrailContent>): Promise<TrailContent | undefined>;
+  deleteTrailContent(id: number): Promise<boolean>;
+  incrementTrailContentViewCount(id: number): Promise<boolean>;
+
+  // Trail Comment methods
+  getTrailComments(contentId: number): Promise<(TrailComment & { user: User; replies: (TrailComment & { user: User })[] })[]>;
+  createTrailComment(comment: InsertTrailComment): Promise<TrailComment>;
+  updateTrailComment(id: number, commentData: Partial<InsertTrailComment>): Promise<TrailComment | undefined>;
+  deleteTrailComment(id: number): Promise<boolean>;
+
+  // Trail Progress methods
+  getUserTrailProgress(userId: number, trailId: number): Promise<TrailProgress | undefined>;
+  createOrUpdateTrailProgress(progress: InsertTrailProgress): Promise<TrailProgress>;
+  getUserTrailProgresses(userId: number): Promise<(TrailProgress & { trail: Trail })[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1760,6 +1809,458 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error("Error deleting user category:", error);
       return false;
+    }
+  }
+
+  // Trail Category methods
+  async getAllTrailCategories(): Promise<TrailCategory[]> {
+    try {
+      return await db.select().from(trailCategories).where(eq(trailCategories.isActive, true)).orderBy(trailCategories.name);
+    } catch (error) {
+      console.error("Error getting all trail categories:", error);
+      return [];
+    }
+  }
+
+  async getTrailCategory(id: number): Promise<TrailCategory | undefined> {
+    try {
+      const [category] = await db.select().from(trailCategories).where(eq(trailCategories.id, id));
+      return category;
+    } catch (error) {
+      console.error("Error getting trail category:", error);
+      return undefined;
+    }
+  }
+
+  async createTrailCategory(category: InsertTrailCategory): Promise<TrailCategory> {
+    try {
+      const [newCategory] = await db
+        .insert(trailCategories)
+        .values(category)
+        .returning();
+      
+      return newCategory;
+    } catch (error) {
+      console.error("Error creating trail category:", error);
+      throw new Error("Failed to create trail category");
+    }
+  }
+
+  async updateTrailCategory(id: number, categoryData: Partial<InsertTrailCategory>): Promise<TrailCategory | undefined> {
+    try {
+      const [updatedCategory] = await db
+        .update(trailCategories)
+        .set(categoryData)
+        .where(eq(trailCategories.id, id))
+        .returning();
+      
+      return updatedCategory;
+    } catch (error) {
+      console.error("Error updating trail category:", error);
+      return undefined;
+    }
+  }
+
+  async deleteTrailCategory(id: number): Promise<boolean> {
+    try {
+      const result = await db.delete(trailCategories).where(eq(trailCategories.id, id)).returning();
+      return result.length > 0;
+    } catch (error) {
+      console.error("Error deleting trail category:", error);
+      return false;
+    }
+  }
+
+  // Trail methods
+  async getAllTrails(includeUnpublished?: boolean): Promise<(Trail & { category?: TrailCategory; creator: User; contentCount: number })[]> {
+    try {
+      const query = db
+        .select({
+          trail: trails,
+          category: trailCategories,
+          creator: users,
+          contentCount: sql<number>`COALESCE(content_counts.count, 0)`.as('contentCount'),
+        })
+        .from(trails)
+        .leftJoin(trailCategories, eq(trails.categoryId, trailCategories.id))
+        .leftJoin(users, eq(trails.creatorId, users.id))
+        .leftJoin(
+          sql`(
+            SELECT trail_id, COUNT(*) as count 
+            FROM trail_contents 
+            WHERE is_draft = false 
+            GROUP BY trail_id
+          ) as content_counts`,
+          sql`content_counts.trail_id = ${trails.id}`
+        )
+        .where(
+          and(
+            eq(trails.isActive, true),
+            includeUnpublished ? undefined : eq(trails.isPublished, true)
+          )
+        )
+        .orderBy(trails.order, trails.createdAt);
+
+      const results = await query;
+      
+      return results.map((result: any) => ({
+        ...result.trail,
+        category: result.category,
+        creator: result.creator,
+        contentCount: result.contentCount,
+      }));
+    } catch (error) {
+      console.error("Error getting all trails:", error);
+      return [];
+    }
+  }
+
+  async getTrail(id: number): Promise<(Trail & { category?: TrailCategory; creator: User; contents: TrailContent[] }) | undefined> {
+    try {
+      const trailQuery = db
+        .select({
+          trail: trails,
+          category: trailCategories,
+          creator: users,
+        })
+        .from(trails)
+        .leftJoin(trailCategories, eq(trails.categoryId, trailCategories.id))
+        .leftJoin(users, eq(trails.creatorId, users.id))
+        .where(eq(trails.id, id));
+
+      const [trailResult] = await trailQuery;
+      
+      if (!trailResult) return undefined;
+
+      const contentsQuery = db
+        .select()
+        .from(trailContents)
+        .where(eq(trailContents.trailId, id))
+        .orderBy(trailContents.order, trailContents.createdAt);
+
+      const contents = await contentsQuery;
+
+      return {
+        ...trailResult.trail,
+        category: trailResult.category,
+        creator: trailResult.creator,
+        contents,
+      };
+    } catch (error) {
+      console.error("Error getting trail:", error);
+      return undefined;
+    }
+  }
+
+  async createTrail(trail: InsertTrail): Promise<Trail> {
+    try {
+      const [newTrail] = await db
+        .insert(trails)
+        .values(trail)
+        .returning();
+      
+      return newTrail;
+    } catch (error) {
+      console.error("Error creating trail:", error);
+      throw new Error("Failed to create trail");
+    }
+  }
+
+  async updateTrail(id: number, trailData: Partial<InsertTrail>): Promise<Trail | undefined> {
+    try {
+      const [updatedTrail] = await db
+        .update(trails)
+        .set(trailData)
+        .where(eq(trails.id, id))
+        .returning();
+      
+      return updatedTrail;
+    } catch (error) {
+      console.error("Error updating trail:", error);
+      return undefined;
+    }
+  }
+
+  async deleteTrail(id: number): Promise<boolean> {
+    try {
+      const result = await db.delete(trails).where(eq(trails.id, id)).returning();
+      return result.length > 0;
+    } catch (error) {
+      console.error("Error deleting trail:", error);
+      return false;
+    }
+  }
+
+  async incrementTrailViewCount(id: number): Promise<boolean> {
+    try {
+      const result = await db
+        .update(trails)
+        .set({ viewCount: sql`${trails.viewCount} + 1` })
+        .where(eq(trails.id, id))
+        .returning();
+      
+      return result.length > 0;
+    } catch (error) {
+      console.error("Error incrementing trail view count:", error);
+      return false;
+    }
+  }
+
+  // Trail Content methods
+  async getTrailContents(trailId: number, includeDrafts?: boolean): Promise<TrailContent[]> {
+    try {
+      const query = db
+        .select()
+        .from(trailContents)
+        .where(
+          and(
+            eq(trailContents.trailId, trailId),
+            includeDrafts ? undefined : eq(trailContents.isDraft, false)
+          )
+        )
+        .orderBy(trailContents.order, trailContents.createdAt);
+
+      return await query;
+    } catch (error) {
+      console.error("Error getting trail contents:", error);
+      return [];
+    }
+  }
+
+  async getTrailContent(id: number): Promise<(TrailContent & { trail: Trail; commentsCount: number }) | undefined> {
+    try {
+      const contentQuery = db
+        .select({
+          content: trailContents,
+          trail: trails,
+          commentsCount: sql<number>`COALESCE(comment_counts.count, 0)`.as('commentsCount'),
+        })
+        .from(trailContents)
+        .leftJoin(trails, eq(trailContents.trailId, trails.id))
+        .leftJoin(
+          sql`(
+            SELECT content_id, COUNT(*) as count 
+            FROM trail_comments 
+            GROUP BY content_id
+          ) as comment_counts`,
+          sql`comment_counts.content_id = ${trailContents.id}`
+        )
+        .where(eq(trailContents.id, id));
+
+      const [result] = await contentQuery;
+      
+      if (!result) return undefined;
+
+      return {
+        ...result.content,
+        trail: result.trail,
+        commentsCount: result.commentsCount,
+      };
+    } catch (error) {
+      console.error("Error getting trail content:", error);
+      return undefined;
+    }
+  }
+
+  async createTrailContent(content: InsertTrailContent): Promise<TrailContent> {
+    try {
+      const [newContent] = await db
+        .insert(trailContents)
+        .values(content)
+        .returning();
+      
+      return newContent;
+    } catch (error) {
+      console.error("Error creating trail content:", error);
+      throw new Error("Failed to create trail content");
+    }
+  }
+
+  async updateTrailContent(id: number, contentData: Partial<InsertTrailContent>): Promise<TrailContent | undefined> {
+    try {
+      const [updatedContent] = await db
+        .update(trailContents)
+        .set(contentData)
+        .where(eq(trailContents.id, id))
+        .returning();
+      
+      return updatedContent;
+    } catch (error) {
+      console.error("Error updating trail content:", error);
+      return undefined;
+    }
+  }
+
+  async deleteTrailContent(id: number): Promise<boolean> {
+    try {
+      const result = await db.delete(trailContents).where(eq(trailContents.id, id)).returning();
+      return result.length > 0;
+    } catch (error) {
+      console.error("Error deleting trail content:", error);
+      return false;
+    }
+  }
+
+  async incrementTrailContentViewCount(id: number): Promise<boolean> {
+    try {
+      const result = await db
+        .update(trailContents)
+        .set({ viewCount: sql`${trailContents.viewCount} + 1` })
+        .where(eq(trailContents.id, id))
+        .returning();
+      
+      return result.length > 0;
+    } catch (error) {
+      console.error("Error incrementing trail content view count:", error);
+      return false;
+    }
+  }
+
+  // Trail Comment methods
+  async getTrailComments(contentId: number): Promise<(TrailComment & { user: User; replies: (TrailComment & { user: User })[] })[]> {
+    try {
+      const commentsQuery = db
+        .select({
+          comment: trailComments,
+          user: users,
+        })
+        .from(trailComments)
+        .leftJoin(users, eq(trailComments.userId, users.id))
+        .where(and(eq(trailComments.contentId, contentId), isNull(trailComments.parentId)))
+        .orderBy(trailComments.createdAt);
+
+      const comments = await commentsQuery;
+
+      const commentsWithReplies = await Promise.all(
+        comments.map(async (comment: any) => {
+          const repliesQuery = db
+            .select({
+              comment: trailComments,
+              user: users,
+            })
+            .from(trailComments)
+            .leftJoin(users, eq(trailComments.userId, users.id))
+            .where(eq(trailComments.parentId, comment.comment.id))
+            .orderBy(trailComments.createdAt);
+
+          const replies = await repliesQuery;
+
+          return {
+            ...comment.comment,
+            user: comment.user,
+            replies: replies.map((reply: any) => ({
+              ...reply.comment,
+              user: reply.user,
+            })),
+          };
+        })
+      );
+
+      return commentsWithReplies;
+    } catch (error) {
+      console.error("Error getting trail comments:", error);
+      return [];
+    }
+  }
+
+  async createTrailComment(comment: InsertTrailComment): Promise<TrailComment> {
+    try {
+      const [newComment] = await db
+        .insert(trailComments)
+        .values(comment)
+        .returning();
+      
+      return newComment;
+    } catch (error) {
+      console.error("Error creating trail comment:", error);
+      throw new Error("Failed to create trail comment");
+    }
+  }
+
+  async updateTrailComment(id: number, commentData: Partial<InsertTrailComment>): Promise<TrailComment | undefined> {
+    try {
+      const [updatedComment] = await db
+        .update(trailComments)
+        .set(commentData)
+        .where(eq(trailComments.id, id))
+        .returning();
+      
+      return updatedComment;
+    } catch (error) {
+      console.error("Error updating trail comment:", error);
+      return undefined;
+    }
+  }
+
+  async deleteTrailComment(id: number): Promise<boolean> {
+    try {
+      const result = await db.delete(trailComments).where(eq(trailComments.id, id)).returning();
+      return result.length > 0;
+    } catch (error) {
+      console.error("Error deleting trail comment:", error);
+      return false;
+    }
+  }
+
+  // Trail Progress methods
+  async getUserTrailProgress(userId: number, trailId: number): Promise<TrailProgress | undefined> {
+    try {
+      const [progress] = await db
+        .select()
+        .from(trailProgress)
+        .where(and(eq(trailProgress.userId, userId), eq(trailProgress.trailId, trailId)));
+      
+      return progress;
+    } catch (error) {
+      console.error("Error getting user trail progress:", error);
+      return undefined;
+    }
+  }
+
+  async createOrUpdateTrailProgress(progress: InsertTrailProgress): Promise<TrailProgress> {
+    try {
+      const [result] = await db
+        .insert(trailProgress)
+        .values(progress)
+        .onConflictDoUpdate({
+          target: [trailProgress.userId, trailProgress.trailId],
+          set: {
+            completedContents: progress.completedContents,
+            lastAccessed: sql`now()`,
+            completionPercentage: progress.completionPercentage,
+            updatedAt: sql`now()`,
+          },
+        })
+        .returning();
+      
+      return result;
+    } catch (error) {
+      console.error("Error creating or updating trail progress:", error);
+      throw new Error("Failed to create or update trail progress");
+    }
+  }
+
+  async getUserTrailProgresses(userId: number): Promise<(TrailProgress & { trail: Trail })[]> {
+    try {
+      const query = db
+        .select({
+          progress: trailProgress,
+          trail: trails,
+        })
+        .from(trailProgress)
+        .leftJoin(trails, eq(trailProgress.trailId, trails.id))
+        .where(eq(trailProgress.userId, userId))
+        .orderBy(trailProgress.lastAccessed);
+
+      const results = await query;
+      
+      return results.map((result: any) => ({
+        ...result.progress,
+        trail: result.trail,
+      }));
+    } catch (error) {
+      console.error("Error getting user trail progresses:", error);
+      return [];
     }
   }
 }

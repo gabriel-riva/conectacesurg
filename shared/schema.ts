@@ -306,6 +306,70 @@ export const featureSettings = pgTable("feature_settings", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Tabelas para o Portal de Trilhas
+export const trailCategories = pgTable("trail_categories", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull().unique(),
+  description: text("description"),
+  color: text("color").default("#3B82F6"),
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const trails = pgTable("trails", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  imageUrl: text("image_url"),
+  categoryId: integer("category_id").references(() => trailCategories.id),
+  creatorId: integer("creator_id").notNull().references(() => users.id),
+  isPublished: boolean("is_published").notNull().default(false),
+  isActive: boolean("is_active").notNull().default(true),
+  viewCount: integer("view_count").notNull().default(0),
+  order: integer("order").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const trailContents = pgTable("trail_contents", {
+  id: serial("id").primaryKey(),
+  trailId: integer("trail_id").notNull().references(() => trails.id, { onDelete: 'cascade' }),
+  title: text("title").notNull(),
+  content: text("content").notNull(), // Conteúdo HTML do TinyMCE
+  order: integer("order").notNull().default(0),
+  isDraft: boolean("is_draft").notNull().default(false),
+  viewCount: integer("view_count").notNull().default(0),
+  estimatedMinutes: integer("estimated_minutes").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const trailComments = pgTable("trail_comments", {
+  id: serial("id").primaryKey(),
+  contentId: integer("content_id").notNull().references(() => trailContents.id, { onDelete: 'cascade' }),
+  userId: integer("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  content: text("content").notNull(),
+  parentId: integer("parent_id").references(() => trailComments.id, { onDelete: 'cascade' }),
+  isAdminReply: boolean("is_admin_reply").notNull().default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const trailProgress = pgTable("trail_progress", {
+  userId: integer("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  trailId: integer("trail_id").notNull().references(() => trails.id, { onDelete: 'cascade' }),
+  completedContents: integer("completed_contents").array().default([]),
+  lastAccessed: timestamp("last_accessed").defaultNow(),
+  completionPercentage: integer("completion_percentage").notNull().default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => {
+  return {
+    pk: primaryKey({ columns: [table.userId, table.trailId] }),
+  };
+});
+
 // Tipos e esquemas para o UtilityLink estão definidos abaixo junto com os outros esquemas
 
 // Relations
@@ -581,6 +645,59 @@ export const featureSettingsRelations = relations(featureSettings, ({ one }) => 
     fields: [featureSettings.lastUpdatedBy],
     references: [users.id],
     relationName: "lastUpdatedBy"
+  }),
+}));
+
+// Relações para as tabelas de trilhas
+export const trailCategoriesRelations = relations(trailCategories, ({ many }) => ({
+  trails: many(trails),
+}));
+
+export const trailsRelations = relations(trails, ({ one, many }) => ({
+  category: one(trailCategories, {
+    fields: [trails.categoryId],
+    references: [trailCategories.id],
+  }),
+  creator: one(users, {
+    fields: [trails.creatorId],
+    references: [users.id],
+  }),
+  contents: many(trailContents),
+  progress: many(trailProgress),
+}));
+
+export const trailContentsRelations = relations(trailContents, ({ one, many }) => ({
+  trail: one(trails, {
+    fields: [trailContents.trailId],
+    references: [trails.id],
+  }),
+  comments: many(trailComments),
+}));
+
+export const trailCommentsRelations = relations(trailComments, ({ one, many }) => ({
+  content: one(trailContents, {
+    fields: [trailComments.contentId],
+    references: [trailContents.id],
+  }),
+  user: one(users, {
+    fields: [trailComments.userId],
+    references: [users.id],
+  }),
+  parent: one(trailComments, {
+    fields: [trailComments.parentId],
+    references: [trailComments.id],
+  }),
+  replies: many(trailComments, { relationName: 'parent' }),
+}));
+
+export const trailProgressRelations = relations(trailProgress, ({ one }) => ({
+  user: one(users, {
+    fields: [trailProgress.userId],
+    references: [users.id],
+  }),
+  trail: one(trails, {
+    fields: [trailProgress.trailId],
+    references: [trails.id],
   }),
 }));
 
@@ -880,3 +997,50 @@ export type InsertMaterialFile = z.infer<typeof insertMaterialFileSchema>;
 // Tipos para seleção
 export type MaterialFolder = typeof materialFolders.$inferSelect;
 export type MaterialFile = typeof materialFiles.$inferSelect;
+
+// Schemas para inserção das trilhas
+export const insertTrailCategorySchema = createInsertSchema(trailCategories).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertTrailSchema = createInsertSchema(trails).omit({
+  id: true,
+  viewCount: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertTrailContentSchema = createInsertSchema(trailContents).omit({
+  id: true,
+  viewCount: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertTrailCommentSchema = createInsertSchema(trailComments).omit({
+  id: true,
+  isAdminReply: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertTrailProgressSchema = createInsertSchema(trailProgress).omit({
+  createdAt: true,
+  updatedAt: true,
+});
+
+// Tipos para inserção das trilhas
+export type InsertTrailCategory = z.infer<typeof insertTrailCategorySchema>;
+export type InsertTrail = z.infer<typeof insertTrailSchema>;
+export type InsertTrailContent = z.infer<typeof insertTrailContentSchema>;
+export type InsertTrailComment = z.infer<typeof insertTrailCommentSchema>;
+export type InsertTrailProgress = z.infer<typeof insertTrailProgressSchema>;
+
+// Tipos para seleção das trilhas
+export type TrailCategory = typeof trailCategories.$inferSelect;
+export type Trail = typeof trails.$inferSelect;
+export type TrailContent = typeof trailContents.$inferSelect;
+export type TrailComment = typeof trailComments.$inferSelect;
+export type TrailProgress = typeof trailProgress.$inferSelect;
