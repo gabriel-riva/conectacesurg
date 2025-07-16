@@ -24,6 +24,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { toast } from '@/hooks/use-toast';
 import { formatFileSize } from '@/lib/utils';
+import UploadFileDialog from '@/components/materials/UploadFileDialog';
 
 interface MaterialFolder {
   id: number;
@@ -52,11 +53,13 @@ interface MaterialFile {
   description: string | null;
   folderId: number | null;
   uploaderId: number;
-  fileUrl: string;
-  fileName: string;
+  fileUrl: string | null;
+  fileName: string | null;
   fileType: string;
   fileSize: number;
   downloadCount: number;
+  contentType?: string;
+  youtubeUrl?: string;
   createdAt: Date;
   updatedAt: Date;
   uploader: {
@@ -87,13 +90,7 @@ const folderSchema = z.object({
 
 type FolderFormData = z.infer<typeof folderSchema>;
 
-const fileSchema = z.object({
-  name: z.string().min(1, 'Nome é obrigatório'),
-  description: z.string().optional(),
-  folderId: z.number().optional(),
-});
 
-type FileFormData = z.infer<typeof fileSchema>;
 
 export default function AdminMaterialsPage() {
   const [activeTab, setActiveTab] = useState('pastas');
@@ -101,7 +98,6 @@ export default function AdminMaterialsPage() {
   const [isFileDialogOpen, setIsFileDialogOpen] = useState(false);
   const [editingFolder, setEditingFolder] = useState<MaterialFolder | null>(null);
   const [editingFile, setEditingFile] = useState<MaterialFile | null>(null);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [deletingItem, setDeletingItem] = useState<{type: 'folder' | 'file', id: number} | null>(null);
   
   const queryClient = useQueryClient();
@@ -145,13 +141,7 @@ export default function AdminMaterialsPage() {
     },
   });
 
-  const fileForm = useForm<FileFormData>({
-    resolver: zodResolver(fileSchema),
-    defaultValues: {
-      name: '',
-      description: '',
-    },
-  });
+
 
   // Mutations
   const createFolderMutation = useMutation({
@@ -197,32 +187,7 @@ export default function AdminMaterialsPage() {
     },
   });
 
-  const uploadFileMutation = useMutation({
-    mutationFn: async (data: FileFormData & { file: File }) => {
-      const formData = new FormData();
-      formData.append('file', data.file);
-      formData.append('name', data.name);
-      if (data.description) formData.append('description', data.description);
-      if (data.folderId) formData.append('folderId', data.folderId.toString());
 
-      const response = await fetch('/api/materials/files', {
-        method: 'POST',
-        body: formData,
-      });
-      if (!response.ok) throw new Error('Failed to upload file');
-      return response.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/materials/files'] });
-      setIsFileDialogOpen(false);
-      setSelectedFile(null);
-      fileForm.reset();
-      toast({ title: 'Arquivo enviado com sucesso' });
-    },
-    onError: () => {
-      toast({ title: 'Erro ao enviar arquivo', variant: 'destructive' });
-    },
-  });
 
   const deleteFolderMutation = useMutation({
     mutationFn: async (id: number) => {
@@ -289,13 +254,7 @@ export default function AdminMaterialsPage() {
     }
   };
 
-  const handleFileSubmit = (data: FileFormData) => {
-    if (!selectedFile) {
-      toast({ title: 'Selecione um arquivo', variant: 'destructive' });
-      return;
-    }
-    uploadFileMutation.mutate({ ...data, file: selectedFile });
-  };
+
 
   const handleDelete = () => {
     if (!deletingItem) return;
@@ -313,12 +272,7 @@ export default function AdminMaterialsPage() {
     folderForm.reset();
   };
 
-  const closeFileDialog = () => {
-    setIsFileDialogOpen(false);
-    setEditingFile(null);
-    setSelectedFile(null);
-    fileForm.reset();
-  };
+
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -593,94 +547,11 @@ export default function AdminMaterialsPage() {
                           Enviar Arquivo
                         </Button>
                       </DialogTrigger>
-                      <DialogContent className="max-w-md">
-                        <DialogHeader>
-                          <DialogTitle>Enviar Arquivo</DialogTitle>
-                        </DialogHeader>
-                        <Form {...fileForm}>
-                          <form onSubmit={fileForm.handleSubmit(handleFileSubmit)} className="space-y-4">
-                            <div>
-                              <Label htmlFor="file-upload">Arquivo</Label>
-                              <div className="mt-2 border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-                                <input
-                                  id="file-upload"
-                                  type="file"
-                                  className="hidden"
-                                  onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
-                                />
-                                <label htmlFor="file-upload" className="cursor-pointer">
-                                  <Upload className="w-8 h-8 mx-auto mb-2 text-gray-400" />
-                                  <p className="text-sm text-gray-600">
-                                    {selectedFile ? selectedFile.name : 'Clique para selecionar um arquivo'}
-                                  </p>
-                                </label>
-                              </div>
-                            </div>
-                            
-                            <FormField
-                              control={fileForm.control}
-                              name="name"
-                              render={({ field }) => (
-                                <FormItem>
-                                  <FormLabel>Nome</FormLabel>
-                                  <FormControl>
-                                    <Input placeholder="Nome do arquivo" {...field} />
-                                  </FormControl>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
-                            
-                            <FormField
-                              control={fileForm.control}
-                              name="description"
-                              render={({ field }) => (
-                                <FormItem>
-                                  <FormLabel>Descrição</FormLabel>
-                                  <FormControl>
-                                    <Textarea placeholder="Descrição do arquivo (opcional)" {...field} />
-                                  </FormControl>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
-                            
-                            <FormField
-                              control={fileForm.control}
-                              name="folderId"
-                              render={({ field }) => (
-                                <FormItem>
-                                  <FormLabel>Pasta</FormLabel>
-                                  <Select onValueChange={(value) => field.onChange(value === "null" ? null : parseInt(value))}>
-                                    <FormControl>
-                                      <SelectTrigger>
-                                        <SelectValue placeholder="Selecione uma pasta (opcional)" />
-                                      </SelectTrigger>
-                                    </FormControl>
-                                    <SelectContent>
-                                      <SelectItem value="null">Nenhuma (raiz)</SelectItem>
-                                      {folders.map((folder) => (
-                                        <SelectItem key={folder.id} value={folder.id.toString()}>
-                                          {folder.name}
-                                        </SelectItem>
-                                      ))}
-                                    </SelectContent>
-                                  </Select>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
-                            
-                            <div className="flex justify-end gap-2">
-                              <Button type="button" variant="outline" onClick={closeFileDialog}>
-                                Cancelar
-                              </Button>
-                              <Button type="submit" disabled={uploadFileMutation.isPending}>
-                                Enviar
-                              </Button>
-                            </div>
-                          </form>
-                        </Form>
+                      <DialogContent className="max-w-2xl">
+                        <UploadFileDialog
+                          folderId={null}
+                          onSuccess={() => setIsFileDialogOpen(false)}
+                        />
                       </DialogContent>
                     </Dialog>
                   </div>
