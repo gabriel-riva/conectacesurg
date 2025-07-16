@@ -275,39 +275,6 @@ export default function MaterialsPage() {
       <Header />
       
       <div className="container mx-auto p-6">
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold mb-2">Materiais</h1>
-          <p className="text-gray-600">Repositório de documentos e arquivos da comunidade</p>
-        </div>
-
-        {/* Breadcrumbs */}
-        <div className="mb-6">
-          <div className="flex items-center space-x-2 text-sm text-gray-500">
-            <button
-              onClick={() => setCurrentFolderId(null)}
-              className="flex items-center hover:text-gray-700 transition-colors"
-            >
-              <Home className="w-4 h-4 mr-1" />
-              Início
-            </button>
-            {breadcrumbs.map((folder, index) => (
-              <div key={folder.id} className="flex items-center">
-                <ChevronRight className="w-4 h-4 mx-1" />
-                {index === breadcrumbs.length - 1 ? (
-                  <span className="text-gray-700 font-medium">{folder.name}</span>
-                ) : (
-                  <button
-                    onClick={() => setCurrentFolderId(folder.id)}
-                    className="hover:text-gray-700 transition-colors"
-                  >
-                    {folder.name}
-                  </button>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-
         {/* Search */}
         <div className="relative mb-6">
           <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
@@ -317,6 +284,34 @@ export default function MaterialsPage() {
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-10"
           />
+        </div>
+
+        {/* Breadcrumbs */}
+        <div className="mb-6">
+          <div className="flex items-center space-x-2 text-lg text-gray-600">
+            <button
+              onClick={() => setCurrentFolderId(null)}
+              className="flex items-center hover:text-gray-800 transition-colors font-medium"
+            >
+              <Home className="w-5 h-5 mr-2" />
+              Início
+            </button>
+            {breadcrumbs.map((folder, index) => (
+              <div key={folder.id} className="flex items-center">
+                <ChevronRight className="w-5 h-5 mx-2" />
+                {index === breadcrumbs.length - 1 ? (
+                  <span className="text-gray-800 font-semibold text-xl">{folder.name}</span>
+                ) : (
+                  <button
+                    onClick={() => setCurrentFolderId(folder.id)}
+                    className="hover:text-gray-800 transition-colors font-medium"
+                  >
+                    {folder.name}
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
         </div>
 
         {isLoading ? (
