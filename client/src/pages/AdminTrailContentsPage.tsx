@@ -186,12 +186,36 @@ export default function AdminTrailContentsPage() {
   };
 
   const onCreateSubmit = (data: ContentFormData) => {
-    createContentMutation.mutate(data);
+    console.log('Dados do formulário de criação:', data);
+    try {
+      // Testar se o JSON é válido
+      JSON.stringify(data);
+      createContentMutation.mutate(data);
+    } catch (error) {
+      console.error('Erro ao serializar JSON:', error);
+      toast({
+        title: "Erro",
+        description: "Erro nos dados do formulário. Verifique o conteúdo.",
+        variant: "destructive",
+      });
+    }
   };
 
   const onEditSubmit = (data: ContentFormData) => {
+    console.log('Dados do formulário de edição:', data);
     if (selectedContent) {
-      updateContentMutation.mutate({ ...data, id: selectedContent.id });
+      try {
+        const payload = { ...data, id: selectedContent.id };
+        JSON.stringify(payload);
+        updateContentMutation.mutate(payload);
+      } catch (error) {
+        console.error('Erro ao serializar JSON:', error);
+        toast({
+          title: "Erro",
+          description: "Erro nos dados do formulário. Verifique o conteúdo.",
+          variant: "destructive",
+        });
+      }
     }
   };
 

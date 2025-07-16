@@ -207,11 +207,16 @@ router.get('/:id/contents', isAdmin, async (req: Request, res: Response) => {
 // Criar novo conteúdo para uma trilha - Admin apenas
 router.post('/:id/contents', isAdmin, async (req: Request, res: Response) => {
   try {
+    console.log('Received request body:', req.body);
+    console.log('Content type:', req.headers['content-type']);
+    
     const trailId = parseInt(req.params.id);
     const contentData = {
       ...req.body,
       trailId
     };
+    
+    console.log('Processed contentData:', contentData);
     
     const newContent = await storage.createTrailContent(contentData);
     res.json(newContent);
@@ -224,6 +229,9 @@ router.post('/:id/contents', isAdmin, async (req: Request, res: Response) => {
 // Atualizar conteúdo - Admin apenas
 router.put('/content/:id', isAdmin, async (req: Request, res: Response) => {
   try {
+    console.log('Update request body:', req.body);
+    console.log('Update content type:', req.headers['content-type']);
+    
     const id = parseInt(req.params.id);
     const updatedContent = await storage.updateTrailContent(id, req.body);
     
