@@ -68,7 +68,7 @@ export default function AdminTrailContentsPage() {
   });
 
   const { data: contents = [], isLoading: isLoadingContents } = useQuery<TrailContent[]>({
-    queryKey: ['/api/trails', trailId, 'contents'],
+    queryKey: [`/api/trails/${trailId}/contents`],
   });
 
   const createContentMutation = useMutation({
@@ -79,7 +79,7 @@ export default function AdminTrailContentsPage() {
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/trails', trailId, 'contents'] });
+      queryClient.invalidateQueries({ queryKey: [`/api/trails/${trailId}/contents`] });
       queryClient.invalidateQueries({ queryKey: ['/api/trails'] });
       setIsCreateDialogOpen(false);
       toast({
@@ -104,7 +104,7 @@ export default function AdminTrailContentsPage() {
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/trails', trailId, 'contents'] });
+      queryClient.invalidateQueries({ queryKey: [`/api/trails/${trailId}/contents`] });
       queryClient.invalidateQueries({ queryKey: ['/api/trails'] });
       setIsEditDialogOpen(false);
       setSelectedContent(null);
@@ -129,7 +129,7 @@ export default function AdminTrailContentsPage() {
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/trails', trailId, 'contents'] });
+      queryClient.invalidateQueries({ queryKey: [`/api/trails/${trailId}/contents`] });
       queryClient.invalidateQueries({ queryKey: ['/api/trails'] });
       toast({
         title: "Sucesso",
