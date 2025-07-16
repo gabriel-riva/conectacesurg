@@ -46,7 +46,7 @@ Preferred communication style: Simple, everyday language.
 - **AI Components**: AI agents, prompts, conversations, and messages
 - **Utility Links**: Administrative link management
 - **Ideas**: Idea submission and management system
-- **Announcements**: Notice/announcement system with priority levels and scheduling
+- **Announcements**: Simplified notice/announcement system with essential fields (title, content, start/end dates, active status)
 
 ### File Management
 - **Upload System**: Centralized file upload handling
@@ -80,6 +80,14 @@ Preferred communication style: Simple, everyday language.
 - JSON request/response format
 - Error handling with consistent error messages
 - File upload endpoints for media handling
+
+## Recent Changes
+
+### January 2025
+- **Announcements System Simplified**: Removed unnecessary fields (type, priority, image upload) to focus on essential functionality
+- **Enhanced User Experience**: Implemented "read more" functionality for long announcements and "see all" dialog for viewing all active announcements
+- **Improved Dialog Behavior**: Fixed dialog sizing and scroll issues to ensure proper display on all screen sizes
+- **Bug Fixes**: Resolved JSON parsing errors and duplicate UI elements in announcement dialogs
 
 ## External Dependencies
 

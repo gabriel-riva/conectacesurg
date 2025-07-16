@@ -136,12 +136,12 @@ export function AnnouncementsCard() {
 
       {/* Modal "Ler mais" */}
       <Dialog open={!!selectedAnnouncement} onOpenChange={() => setSelectedAnnouncement(null)}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{selectedAnnouncement?.title}</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
-            <div className="whitespace-pre-wrap text-sm text-gray-700">
+          <div className="space-y-4 max-h-[70vh] overflow-y-auto">
+            <div className="whitespace-pre-wrap text-sm text-gray-700 pr-2">
               {selectedAnnouncement?.content}
             </div>
             <div className="flex justify-between items-center text-xs text-gray-400 pt-4 border-t">
@@ -160,11 +160,11 @@ export function AnnouncementsCard() {
 
       {/* Modal "Ver tudo" */}
       <Dialog open={isAllAnnouncementsDialogOpen} onOpenChange={setIsAllAnnouncementsDialogOpen}>
-        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+        <DialogContent className="max-w-4xl max-h-[85vh] overflow-hidden flex flex-col">
           <DialogHeader>
             <DialogTitle>Todos os Avisos</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
+          <div className="flex-1 overflow-y-auto space-y-4 pr-2">
             {isLoadingAll ? (
               <div className="flex justify-center items-center h-32">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
