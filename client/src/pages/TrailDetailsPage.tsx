@@ -56,6 +56,9 @@ export default function TrailDetailsPage() {
     queryKey: ['/api/trails', trailId],
   });
 
+  console.log('Trail data:', trail);
+  console.log('Trail contents:', trail?.contents);
+
   // Selecionar o primeiro conteúdo automaticamente quando a trilha carrega
   useEffect(() => {
     if (trail && trail.contents && trail.contents.length > 0 && !selectedContent) {
