@@ -17,7 +17,7 @@ import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { Link, useParams } from "wouter";
-import { TinyEditor } from "@/components/TinyEditor";
+import { RichTextEditor } from "@/components/RichTextEditor";
 
 interface TrailContent {
   id: number;
@@ -296,9 +296,10 @@ export default function AdminTrailContentsPage() {
                           <FormItem>
                             <FormLabel>Conteúdo</FormLabel>
                             <FormControl>
-                              <TinyEditor
+                              <RichTextEditor
                                 value={field.value}
                                 onChange={field.onChange}
+                                placeholder="Digite o conteúdo da trilha..."
                               />
                             </FormControl>
                             <FormMessage />
@@ -502,9 +503,10 @@ export default function AdminTrailContentsPage() {
                   <FormItem>
                     <FormLabel>Conteúdo</FormLabel>
                     <FormControl>
-                      <TinyEditor
+                      <RichTextEditor
                         value={field.value}
                         onChange={field.onChange}
+                        placeholder="Digite o conteúdo da trilha..."
                       />
                     </FormControl>
                     <FormMessage />
