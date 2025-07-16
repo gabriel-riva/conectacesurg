@@ -23,6 +23,7 @@ import NewsDetailPage from "@/pages/NewsDetailPage";
 import MaterialsPage from "@/pages/MaterialsPage";
 import AdminMaterialsPage from "@/pages/AdminMaterialsPage";
 import AdminAnnouncementsPage from "@/pages/AdminAnnouncementsPage";
+import AdminFeatureSettingsPage from "@/pages/AdminFeatureSettingsPage";
 import { AuthProvider } from "./providers/AuthProvider";
 import { useAuth } from "./lib/auth";
 
@@ -98,6 +99,9 @@ function Router() {
       </Route>
       <Route path="/admin/avisos">
         {() => <ProtectedRoute component={AdminAnnouncementsPage} adminOnly={true} />}
+      </Route>
+      <Route path="/admin/funcionalidades">
+        {() => <ProtectedRoute component={AdminFeatureSettingsPage} adminOnly={true} />}
       </Route>
       <Route path="/materiais">
         {() => <ProtectedRoute component={MaterialsPage} />}

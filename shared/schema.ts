@@ -274,6 +274,15 @@ export const announcements = pgTable("announcements", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+export const featureSettings = pgTable("feature_settings", {
+  id: serial("id").primaryKey(),
+  featureName: text("feature_name").notNull().unique(),
+  isEnabled: boolean("is_enabled").notNull().default(true),
+  disabledMessage: text("disabled_message").default("Em breve, novidades!"),
+  lastUpdatedBy: integer("last_updated_by").references(() => users.id),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Tipos e esquemas para o UtilityLink estão definidos abaixo junto com os outros esquemas
 
 // Relations
@@ -299,6 +308,7 @@ export const usersRelations = relations(users, ({ many }) => ({
   calendarEvents: many(calendarEvents, { relationName: "creator" }),
   news: many(news, { relationName: "creator" }),
   announcements: many(announcements, { relationName: "creator" }),
+  featureSettings: many(featureSettings, { relationName: "lastUpdatedBy" }),
 }));
 
 export const groupsRelations = relations(groups, ({ many, one }) => ({
@@ -523,6 +533,14 @@ export const announcementsRelations = relations(announcements, ({ one }) => ({
   }),
 }));
 
+export const featureSettingsRelations = relations(featureSettings, ({ one }) => ({
+  lastUpdatedBy: one(users, {
+    fields: [featureSettings.lastUpdatedBy],
+    references: [users.id],
+    relationName: "lastUpdatedBy"
+  }),
+}));
+
 // Schemas
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
@@ -682,6 +700,11 @@ export const insertAnnouncementSchema = createInsertSchema(announcements).omit({
   updatedAt: true,
 });
 
+export const insertFeatureSettingSchema = createInsertSchema(featureSettings).omit({
+  id: true,
+  updatedAt: true,
+});
+
 // Types
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type UpdateProfile = z.infer<typeof updateProfileSchema>;
@@ -707,6 +730,7 @@ export type InsertAiMessage = z.infer<typeof insertAiMessageSchema>;
 export type InsertNewsCategory = z.infer<typeof insertNewsCategorySchema>;
 export type InsertNews = z.infer<typeof insertNewsSchema>;
 export type InsertAnnouncement = z.infer<typeof insertAnnouncementSchema>;
+export type InsertFeatureSetting = z.infer<typeof insertFeatureSettingSchema>;
 
 export type User = typeof users.$inferSelect;
 export type Group = typeof groups.$inferSelect;
@@ -730,6 +754,7 @@ export type CalendarEvent = typeof calendarEvents.$inferSelect;
 export type NewsCategory = typeof newsCategories.$inferSelect;
 export type News = typeof news.$inferSelect;
 export type Announcement = typeof announcements.$inferSelect;
+export type FeatureSetting = typeof featureSettings.$inferSelect;
 
 // Tabela para pastas de materiais
 export const materialFolders = pgTable("material_folders", {

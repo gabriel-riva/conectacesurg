@@ -22,6 +22,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { ThumbsUp, ThumbsDown, MessageSquare, UserPlus, Filter, Search, ArrowUpDown, Loader2, FileText, FileImage, Paperclip } from "lucide-react";
+import { FeatureGuard } from "@/components/FeatureGuard";
 
 // Definição do formulário de criação de ideias
 const createIdeaSchema = z.object({
@@ -652,7 +653,7 @@ const CreateIdeaDialog = ({ isOpen, onClose, onCreated }: { isOpen: boolean; onC
   );
 };
 
-export default function IdeasPage() {
+function IdeasPageContent() {
   const { toast } = useToast();
   const { user } = useAuth();
   
@@ -1010,5 +1011,13 @@ export default function IdeasPage() {
         }}
       />
     </div>
+  );
+}
+
+export default function IdeasPage() {
+  return (
+    <FeatureGuard featureName="ideas">
+      <IdeasPageContent />
+    </FeatureGuard>
   );
 }

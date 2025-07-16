@@ -21,6 +21,7 @@ import { ArrowUp, ImageIcon, FileTextIcon, FilmIcon, LinkIcon, FileIcon, Send, S
 import type { Post, Comment, Group, Message, Conversation } from '@shared/schema';
 import type { User as UserType } from '@shared/schema';
 import { format } from 'date-fns';
+import { FeatureGuard } from '@/components/FeatureGuard';
 
 // Schemas dos formulários
 const postFormSchema = z.object({
@@ -55,7 +56,7 @@ type SearchFormValues = z.infer<typeof searchFormSchema>;
 type GroupFormValues = z.infer<typeof groupFormSchema>;
 type MessageFormValues = z.infer<typeof messageFormSchema>;
 
-export default function CommunityPage() {
+function CommunityPageContent() {
   const { user } = useAuth();
   const [createGroupOpen, setCreateGroupOpen] = useState(false);
   const [searchResults, setSearchResults] = useState<Post[]>([]);
@@ -2182,5 +2183,13 @@ function PostCard({
         </div>
       )}
     </Card>
+  );
+}
+
+export default function CommunityPage() {
+  return (
+    <FeatureGuard featureName="community">
+      <CommunityPageContent />
+    </FeatureGuard>
   );
 }

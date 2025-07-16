@@ -19,6 +19,7 @@ import newsRouter from "./news";
 import announcementsRouter from "./announcements";
 import uploadRouter from "./upload";
 import materialsRouter from "./materials";
+import featureSettingsRouter from "./feature-settings";
 
 // Create PostgreSQL session store for production or memory store for development
 const createSessionStore = () => {
@@ -697,6 +698,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Adicionar rotas de materiais
   app.use('/api/materials', materialsRouter);
+  
+  // Adicionar rotas de configurações de funcionalidades
+  app.use('/api/feature-settings', featureSettingsRouter);
   
   // Configurar acesso estático para a pasta de uploads
   app.use('/uploads', express.static('uploads'));
