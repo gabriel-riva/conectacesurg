@@ -1,6 +1,5 @@
 import { Header } from "@/components/Header";
 import { useAuth } from "@/lib/auth";
-import { HomeProfile } from "@/components/HomeProfile";
 import { UtilityLinks } from "@/components/UtilityLinks";
 import { CalendarCard } from "@/components/CalendarCard";
 import { ChallengesCard } from "@/components/ChallengesCard";
@@ -36,17 +35,14 @@ export default function Dashboard() {
             {/* Área de desafios */}
             <ChallengesCard />
             
-            {/* Grid de 2 colunas para Avisos e Notícias */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <AnnouncementsCard />
-              <LatestNewsCard limit={3} />
-            </div>
+            {/* Notícias ocupando toda a largura da segunda fileira */}
+            <LatestNewsCard limit={3} />
           </div>
           
-          {/* Coluna 3: Perfil e Ranking (3/11 da largura) */}
+          {/* Coluna 3: Ranking e Avisos (3/11 da largura) */}
           <div className="lg:col-span-3 space-y-6 order-first lg:order-last">
-            <HomeProfile />
             <RankingCard />
+            <AnnouncementsCard />
           </div>
         </div>
       </div>
