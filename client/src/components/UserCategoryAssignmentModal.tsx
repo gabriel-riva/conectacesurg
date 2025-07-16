@@ -128,7 +128,7 @@ export function UserCategoryAssignmentModal({ userId, userName, onClose }: UserC
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <Card className="w-full max-w-2xl mx-4 max-h-[90vh] overflow-hidden">
+      <Card className="w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Gerenciar Categorias - {userName}</CardTitle>
           <Button variant="ghost" size="sm" onClick={onClose}>
@@ -175,7 +175,7 @@ export function UserCategoryAssignmentModal({ userId, userName, onClose }: UserC
             {/* Atribuir novas categorias */}
             <div>
               <h3 className="text-lg font-semibold mb-3">Atribuir Novas Categorias</h3>
-              
+
               {/* Campo de busca */}
               <div className="relative mb-4">
                 <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
