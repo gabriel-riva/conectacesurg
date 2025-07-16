@@ -196,7 +196,12 @@ router.get('/:id/contents', isAdmin, async (req: Request, res: Response) => {
   try {
     const trailId = parseInt(req.params.id);
     const includeUnpublished = req.query.includeUnpublished === 'true';
-    const contents = await storage.getTrailContents(trailId, !includeUnpublished);
+    console.log(`Getting contents for trail ${trailId}, includeUnpublished: ${includeUnpublished}`);
+    
+    // Para admin, incluir drafts sempre
+    const contents = await storage.getTrailContents(trailId, true);
+    console.log(`Found ${contents.length} contents for trail ${trailId}:`, contents);
+    
     res.json(contents);
   } catch (error) {
     console.error('Erro ao obter conteúdos da trilha (admin):', error);
@@ -233,6 +238,11 @@ router.put('/content/:id', isAdmin, async (req: Request, res: Response) => {
     console.log('Update content type:', req.headers['content-type']);
     
     const id = parseInt(req.params.id);
+    console.log(`Attempting to update content with ID: ${id}`);
+    
+    // Primeiro, vamos verificar se o conteúdo existe
+    const existingContent = await storage.getTrailContent(id);
+    console.log('Existing content:', existingContent);
     const updatedContent = await storage.updateTrailContent(id, req.body);
     
     if (!updatedContent) {
