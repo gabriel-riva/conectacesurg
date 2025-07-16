@@ -1,17 +1,7 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef } from 'react';
 import ReactQuill, { Quill } from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle, 
-  DialogTrigger 
-} from "@/components/ui/dialog";
-import { Link, Image, Youtube, Table } from "lucide-react";
+
 
 // Import dos módulos do Quill para funcionalidades avançadas
 import ImageResize from 'quill-image-resize-module-react';
@@ -44,6 +34,40 @@ Quill.register('modules/imageResize', ImageResize);
 Quill.register('modules/imageDrop', ImageDrop);
 Quill.register(VideoBlot);
 
+// Criar handlers customizados para a toolbar
+const toolbarHandlers = {
+  video: function() {
+    const range = this.quill.getSelection(true);
+    const url = prompt('Insira a URL do YouTube:');
+    if (url) {
+      const embedUrl = getYoutubeEmbedUrl(url);
+      if (embedUrl) {
+        this.quill.insertEmbed(range.index, 'video', embedUrl);
+        this.quill.setSelection(range.index + 1);
+      } else {
+        alert('URL inválida do YouTube');
+      }
+    }
+  },
+  link: function(value: string) {
+    if (value) {
+      const href = prompt('Insira a URL do link:');
+      if (href) {
+        this.quill.format('link', href);
+      }
+    } else {
+      this.quill.format('link', false);
+    }
+  }
+};
+
+// Função para converter URL do YouTube para embed (precisa ser global)
+function getYoutubeEmbedUrl(url: string) {
+  const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+  const match = url.match(regExp);
+  return match && match[2].length === 11 ? `https://www.youtube.com/embed/${match[2]}` : null;
+}
+
 interface RichTextEditorProps {
   value: string;
   onChange: (value: string) => void;
@@ -58,25 +82,29 @@ export function RichTextEditor({
   className = "" 
 }: RichTextEditorProps) {
   const quillRef = useRef<ReactQuill>(null);
-  const [linkUrl, setLinkUrl] = useState('');
-  const [linkText, setLinkText] = useState('');
-  const [youtubeUrl, setYoutubeUrl] = useState('');
-  const [isLinkDialogOpen, setIsLinkDialogOpen] = useState(false);
-  const [isYoutubeDialogOpen, setIsYoutubeDialogOpen] = useState(false);
+
+  // Adicionar ícone customizado para vídeo na toolbar
+  React.useEffect(() => {
+    const icons = Quill.import('ui/icons');
+    icons['video'] = '<svg viewBox="0 0 18 18"> <rect class="ql-stroke" height="12" width="12" x="3" y="3"/> <rect class="ql-fill" height="12" width="1" x="5" y="3"/> <rect class="ql-fill" height="12" width="1" x="12" y="3"/> <rect class="ql-fill" height="2" width="8" x="5" y="8"/> <rect class="ql-fill" height="3" width="3" x="2" y="6"/> <rect class="ql-fill" height="3" width="3" x="13" y="6"/> </svg>';
+  }, []);
 
   // Configuração avançada do Quill com módulos de redimensionamento e drag-drop
   const modules = {
-    toolbar: [
-      [{ 'header': [1, 2, 3, false] }],
-      ['bold', 'italic', 'underline', 'strike'],
-      [{ 'color': [] }, { 'background': [] }],
-      [{ 'align': [] }],
-      [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-      [{ 'indent': '-1'}, { 'indent': '+1' }],
-      ['blockquote', 'code-block'],
-      ['link', 'image'],
-      ['clean']
-    ],
+    toolbar: {
+      container: [
+        [{ 'header': [1, 2, 3, false] }],
+        ['bold', 'italic', 'underline', 'strike'],
+        [{ 'color': [] }, { 'background': [] }],
+        [{ 'align': [] }],
+        [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+        [{ 'indent': '-1'}, { 'indent': '+1' }],
+        ['blockquote', 'code-block'],
+        ['link', 'image', 'video'],
+        ['clean']
+      ],
+      handlers: toolbarHandlers
+    },
     clipboard: {
       matchVisual: false,
     },
@@ -94,41 +122,7 @@ export function RichTextEditor({
     'blockquote', 'code-block', 'link', 'image', 'video'
   ];
 
-  // Função para inserir link personalizado
-  const handleCustomLink = () => {
-    setIsLinkDialogOpen(true);
-  };
 
-  // Função para inserir link
-  const insertLink = () => {
-    if (quillRef.current && linkUrl) {
-      const quill = quillRef.current.getEditor();
-      const range = quill.getSelection();
-      
-      if (range) {
-        if (linkText) {
-          // Inserir texto com link
-          quill.insertText(range.index, linkText);
-          quill.setSelection(range.index, linkText.length);
-          quill.format('link', linkUrl);
-        } else {
-          // Aplicar link ao texto selecionado
-          if (range.length > 0) {
-            quill.format('link', linkUrl);
-          } else {
-            // Inserir URL como texto e link
-            quill.insertText(range.index, linkUrl);
-            quill.setSelection(range.index, linkUrl.length);
-            quill.format('link', linkUrl);
-          }
-        }
-      }
-    }
-    
-    setLinkUrl('');
-    setLinkText('');
-    setIsLinkDialogOpen(false);
-  };
 
   // Função para upload de imagem
   const handleImageUpload = () => {
@@ -168,35 +162,7 @@ export function RichTextEditor({
     };
   };
 
-  // Função para inserir vídeo do YouTube
-  const handleYoutubeVideo = () => {
-    setIsYoutubeDialogOpen(true);
-  };
 
-  // Função para converter URL do YouTube para embed
-  const getYoutubeEmbedUrl = (url: string) => {
-    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
-    const match = url.match(regExp);
-    return match && match[2].length === 11 ? `https://www.youtube.com/embed/${match[2]}` : null;
-  };
-
-  // Função para inserir vídeo do YouTube
-  const insertYoutubeVideo = () => {
-    const embedUrl = getYoutubeEmbedUrl(youtubeUrl);
-    
-    if (embedUrl && quillRef.current) {
-      const quill = quillRef.current.getEditor();
-      const range = quill.getSelection();
-      
-      if (range) {
-        quill.insertEmbed(range.index, 'video', embedUrl);
-        quill.setSelection(range.index + 1);
-      }
-    }
-    
-    setYoutubeUrl('');
-    setIsYoutubeDialogOpen(false);
-  };
 
   // Função para inserir tabela
   const insertTable = () => {
@@ -380,78 +346,7 @@ export function RichTextEditor({
         `
       }} />
 
-      {/* Botões de ação extras */}
-      <div className="mb-4 flex gap-2 flex-wrap">
-        <Dialog open={isLinkDialogOpen} onOpenChange={setIsLinkDialogOpen}>
-          <DialogTrigger asChild>
-            <Button variant="outline" size="sm" type="button">
-              <Link className="w-4 h-4 mr-2" />
-              Link
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Inserir Link</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="linkUrl">URL</Label>
-                <Input
-                  id="linkUrl"
-                  value={linkUrl}
-                  onChange={(e) => setLinkUrl(e.target.value)}
-                  placeholder="https://exemplo.com"
-                />
-              </div>
-              <div>
-                <Label htmlFor="linkText">Texto do Link (opcional)</Label>
-                <Input
-                  id="linkText"
-                  value={linkText}
-                  onChange={(e) => setLinkText(e.target.value)}
-                  placeholder="Texto a ser exibido"
-                />
-              </div>
-              <Button onClick={insertLink} className="w-full">
-                Inserir Link
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
 
-        <Dialog open={isYoutubeDialogOpen} onOpenChange={setIsYoutubeDialogOpen}>
-          <DialogTrigger asChild>
-            <Button variant="outline" size="sm" type="button">
-              <Youtube className="w-4 h-4 mr-2" />
-              YouTube
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Inserir Vídeo do YouTube</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="youtubeUrl">URL do YouTube</Label>
-                <Input
-                  id="youtubeUrl"
-                  value={youtubeUrl}
-                  onChange={(e) => setYoutubeUrl(e.target.value)}
-                  placeholder="https://www.youtube.com/watch?v=..."
-                />
-              </div>
-              <Button onClick={insertYoutubeVideo} className="w-full">
-                Inserir Vídeo
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
-
-        <Button variant="outline" size="sm" onClick={insertTable} type="button">
-          <Table className="w-4 h-4 mr-2" />
-          Tabela
-        </Button>
-      </div>
 
       {/* Editor Quill */}
       <div className="quill-editor-container">
