@@ -43,12 +43,14 @@ async function extractCesurgNews(url: string) {
     
     console.log(`Extraindo data para: ${url}`);
     
-    // Padrões para buscar datas no HTML
+    // Padrões para buscar datas no HTML (ordenados por prioridade)
     const datePatterns = [
+      // Padrão específico CESURG - classe blog_informacao
+      { pattern: /class="blog_informacao"[^>]*>[\s\S]*?(\d{2}\/\d{2}\/\d{4})/i, name: 'CESURG_BLOG_INFO' },
+      // Padrão brasileiro genérico
+      { pattern: /(\d{2}\/\d{2}\/\d{4})/, name: 'BR' },
       // Padrão ISO
       { pattern: /(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})/, name: 'ISO' },
-      // Padrão brasileiro
-      { pattern: /(\d{2}\/\d{2}\/\d{4})/, name: 'BR' },
       // Padrão americano
       { pattern: /(\d{2}-\d{2}-\d{4})/, name: 'US' },
       // Padrão com texto português
@@ -70,7 +72,22 @@ async function extractCesurgNews(url: string) {
         const dateStr = match[1];
         console.log(`Padrão ${name} encontrado: ${dateStr}`);
         
-        const parsedDate = new Date(dateStr);
+        let parsedDate: Date;
+        
+        // Tratar formato brasileiro DD/MM/YYYY
+        if (name === 'CESURG_BLOG_INFO' || name === 'BR') {
+          const dateParts = dateStr.split('/');
+          if (dateParts.length === 3) {
+            const day = parseInt(dateParts[0]);
+            const month = parseInt(dateParts[1]) - 1; // JavaScript months are 0-indexed
+            const year = parseInt(dateParts[2]);
+            parsedDate = new Date(year, month, day);
+          } else {
+            parsedDate = new Date(dateStr);
+          }
+        } else {
+          parsedDate = new Date(dateStr);
+        }
         
         // Verificar se a data é válida e não é futura
         if (!isNaN(parsedDate.getTime()) && parsedDate <= new Date()) {
@@ -78,6 +95,8 @@ async function extractCesurgNews(url: string) {
           dateFound = true;
           console.log(`Data válida encontrada: ${publishedAt.toISOString()}`);
           break;
+        } else {
+          console.log(`Data inválida ou futura: ${parsedDate.toISOString()}`);
         }
       }
     }
