@@ -71,6 +71,9 @@ router.post("/", isAdmin, async (req: Request, res: Response) => {
   try {
     const user = req.user as any;
     
+    console.log("Request body:", req.body);
+    console.log("Request body type:", typeof req.body);
+    
     // Validate request body
     const announcementData = {
       ...req.body,

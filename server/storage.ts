@@ -1329,7 +1329,7 @@ export class DatabaseStorage implements IStorage {
         })
         .from(announcements)
         .leftJoin(users, eq(announcements.creatorId, users.id))
-        .orderBy(desc(announcements.priority), desc(announcements.createdAt));
+        .orderBy(desc(announcements.createdAt));
 
       if (!includeInactive) {
         query.where(eq(announcements.isActive, true));
@@ -1367,7 +1367,7 @@ export class DatabaseStorage implements IStorage {
             )
           )
         )
-        .orderBy(desc(announcements.priority), desc(announcements.createdAt));
+        .orderBy(desc(announcements.createdAt));
 
       if (limit) {
         query = query.limit(limit);
