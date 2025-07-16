@@ -23,12 +23,9 @@ import { Pencil, Plus, Trash2, AlertCircle, CheckCircle, Info, AlertTriangle, X 
 const announcementSchema = z.object({
   title: z.string().min(1, "Título é obrigatório"),
   content: z.string().min(1, "Conteúdo é obrigatório"),
-  type: z.enum(["info", "warning", "success", "error"]),
-  priority: z.number().min(1).max(5),
   isActive: z.boolean(),
   startDate: z.string().optional(),
   endDate: z.string().optional(),
-  externalUrl: z.string().optional(),
 });
 
 type AnnouncementFormData = z.infer<typeof announcementSchema>;
@@ -37,10 +34,6 @@ type Announcement = {
   id: number;
   title: string;
   content: string;
-  type: "info" | "warning" | "success" | "error";
-  priority: number;
-  imageUrl?: string;
-  externalUrl?: string;
   isActive: boolean;
   startDate: string;
   endDate?: string;
@@ -53,27 +46,14 @@ type Announcement = {
   };
 };
 
-const typeIcons = {
-  info: <Info className="h-4 w-4" />,
-  warning: <AlertTriangle className="h-4 w-4" />,
-  success: <CheckCircle className="h-4 w-4" />,
-  error: <AlertCircle className="h-4 w-4" />,
-};
 
-const typeColors = {
-  info: "bg-blue-100 text-blue-800",
-  warning: "bg-yellow-100 text-yellow-800",
-  success: "bg-green-100 text-green-800",
-  error: "bg-red-100 text-red-800",
-};
 
 export default function AdminAnnouncementsPage() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [selectedAnnouncement, setSelectedAnnouncement] = useState<Announcement | null>(null);
   const [includeInactive, setIncludeInactive] = useState(false);
-  const [selectedImage, setSelectedImage] = useState<File | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -83,12 +63,9 @@ export default function AdminAnnouncementsPage() {
     defaultValues: {
       title: "",
       content: "",
-      type: "info",
-      priority: 1,
       isActive: true,
       startDate: format(new Date(), "yyyy-MM-dd'T'HH:mm"),
       endDate: "",
-      externalUrl: "",
     },
   });
 
@@ -106,22 +83,13 @@ export default function AdminAnnouncementsPage() {
 
   // Create announcement mutation
   const createMutation = useMutation({
-    mutationFn: async (data: AnnouncementFormData & { image?: File }) => {
-      const formData = new FormData();
-      
-      Object.entries(data).forEach(([key, value]) => {
-        if (key !== "image" && value !== undefined && value !== "") {
-          formData.append(key, value.toString());
-        }
-      });
-
-      if (selectedImage) {
-        formData.append("image", selectedImage);
-      }
-
+    mutationFn: async (data: AnnouncementFormData) => {
       return apiRequest("/api/announcements", {
         method: "POST",
-        body: formData,
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
       });
     },
     onSuccess: () => {
@@ -132,8 +100,6 @@ export default function AdminAnnouncementsPage() {
       });
       setIsCreateDialogOpen(false);
       form.reset();
-      setSelectedImage(null);
-      setPreviewUrl(null);
     },
     onError: (error: any) => {
       toast({
@@ -146,22 +112,13 @@ export default function AdminAnnouncementsPage() {
 
   // Update announcement mutation
   const updateMutation = useMutation({
-    mutationFn: async (data: AnnouncementFormData & { id: number; image?: File }) => {
-      const formData = new FormData();
-      
-      Object.entries(data).forEach(([key, value]) => {
-        if (key !== "image" && key !== "id" && value !== undefined && value !== "") {
-          formData.append(key, value.toString());
-        }
-      });
-
-      if (selectedImage) {
-        formData.append("image", selectedImage);
-      }
-
+    mutationFn: async (data: AnnouncementFormData & { id: number }) => {
       return apiRequest(`/api/announcements/${data.id}`, {
         method: "PUT",
-        body: formData,
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
       });
     },
     onSuccess: () => {
@@ -173,8 +130,6 @@ export default function AdminAnnouncementsPage() {
       setIsEditDialogOpen(false);
       setSelectedAnnouncement(null);
       form.reset();
-      setSelectedImage(null);
-      setPreviewUrl(null);
     },
     onError: (error: any) => {
       toast({
@@ -208,17 +163,7 @@ export default function AdminAnnouncementsPage() {
     },
   });
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setSelectedImage(file);
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setPreviewUrl(e.target?.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
+
 
   const handleSubmit = (data: AnnouncementFormData) => {
     if (selectedAnnouncement) {
@@ -233,14 +178,10 @@ export default function AdminAnnouncementsPage() {
     form.reset({
       title: announcement.title,
       content: announcement.content,
-      type: announcement.type,
-      priority: announcement.priority,
       isActive: announcement.isActive,
       startDate: announcement.startDate ? format(new Date(announcement.startDate), "yyyy-MM-dd'T'HH:mm") : "",
       endDate: announcement.endDate ? format(new Date(announcement.endDate), "yyyy-MM-dd'T'HH:mm") : "",
-      externalUrl: announcement.externalUrl || "",
     });
-    setPreviewUrl(announcement.imageUrl || null);
     setIsEditDialogOpen(true);
   };
 
@@ -253,40 +194,21 @@ export default function AdminAnnouncementsPage() {
   const handleCreateNew = () => {
     setSelectedAnnouncement(null);
     form.reset();
-    setSelectedImage(null);
-    setPreviewUrl(null);
     setIsCreateDialogOpen(true);
   };
 
   const AnnouncementForm = () => (
     <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <Label htmlFor="title">Título</Label>
-          <Input
-            id="title"
-            {...form.register("title")}
-            placeholder="Digite o título do aviso"
-          />
-          {form.formState.errors.title && (
-            <p className="text-sm text-red-500">{form.formState.errors.title.message}</p>
-          )}
-        </div>
-
-        <div>
-          <Label htmlFor="type">Tipo</Label>
-          <Select value={form.watch("type")} onValueChange={(value) => form.setValue("type", value as any)}>
-            <SelectTrigger>
-              <SelectValue placeholder="Selecione o tipo" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="info">Informação</SelectItem>
-              <SelectItem value="warning">Atenção</SelectItem>
-              <SelectItem value="success">Sucesso</SelectItem>
-              <SelectItem value="error">Erro</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+      <div>
+        <Label htmlFor="title">Título</Label>
+        <Input
+          id="title"
+          {...form.register("title")}
+          placeholder="Digite o título do aviso"
+        />
+        {form.formState.errors.title && (
+          <p className="text-sm text-red-500">{form.formState.errors.title.message}</p>
+        )}
       </div>
 
       <div>
@@ -295,38 +217,11 @@ export default function AdminAnnouncementsPage() {
           id="content"
           {...form.register("content")}
           placeholder="Digite o conteúdo do aviso"
-          rows={3}
+          rows={5}
         />
         {form.formState.errors.content && (
           <p className="text-sm text-red-500">{form.formState.errors.content.message}</p>
         )}
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <Label htmlFor="priority">Prioridade (1-5)</Label>
-          <Select value={form.watch("priority").toString()} onValueChange={(value) => form.setValue("priority", parseInt(value))}>
-            <SelectTrigger>
-              <SelectValue placeholder="Selecione a prioridade" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="1">1 - Baixa</SelectItem>
-              <SelectItem value="2">2</SelectItem>
-              <SelectItem value="3">3 - Média</SelectItem>
-              <SelectItem value="4">4</SelectItem>
-              <SelectItem value="5">5 - Alta</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div>
-          <Label htmlFor="externalUrl">URL Externa (opcional)</Label>
-          <Input
-            id="externalUrl"
-            {...form.register("externalUrl")}
-            placeholder="https://..."
-          />
-        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -347,21 +242,6 @@ export default function AdminAnnouncementsPage() {
             {...form.register("endDate")}
           />
         </div>
-      </div>
-
-      <div>
-        <Label htmlFor="image">Imagem (opcional)</Label>
-        <Input
-          id="image"
-          type="file"
-          accept="image/*"
-          onChange={handleImageChange}
-        />
-        {previewUrl && (
-          <div className="mt-2">
-            <img src={previewUrl} alt="Preview" className="w-32 h-32 object-cover rounded-md" />
-          </div>
-        )}
       </div>
 
       <div className="flex items-center space-x-2">
@@ -446,13 +326,6 @@ export default function AdminAnnouncementsPage() {
                   <CardHeader className="pb-3">
                     <div className="flex justify-between items-start">
                       <div className="flex items-center space-x-3">
-                        <Badge className={typeColors[announcement.type]}>
-                          {typeIcons[announcement.type]}
-                          <span className="ml-1 capitalize">{announcement.type}</span>
-                        </Badge>
-                        <Badge variant="outline">
-                          Prioridade {announcement.priority}
-                        </Badge>
                         <Badge variant={announcement.isActive ? "default" : "secondary"}>
                           {announcement.isActive ? "Ativo" : "Inativo"}
                         </Badge>
@@ -478,16 +351,6 @@ export default function AdminAnnouncementsPage() {
                   </CardHeader>
                   <CardContent>
                     <p className="text-gray-600 mb-3">{announcement.content}</p>
-                    
-                    {announcement.imageUrl && (
-                      <div className="mb-3">
-                        <img 
-                          src={announcement.imageUrl} 
-                          alt={announcement.title}
-                          className="w-24 h-24 object-cover rounded-md"
-                        />
-                      </div>
-                    )}
                     
                     <div className="flex justify-between items-center text-sm text-gray-500">
                       <div>

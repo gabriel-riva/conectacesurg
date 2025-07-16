@@ -2,26 +2,7 @@ import { Request, Response, Router } from "express";
 import { storage } from "./storage";
 import { z } from "zod";
 import { insertAnnouncementSchema } from "@shared/schema";
-import multer from "multer";
-import path from "path";
-
 const router = Router();
-
-// Configure multer for file uploads
-const upload = multer({
-  dest: "public/uploads/announcements/",
-  limits: {
-    fileSize: 5 * 1024 * 1024, // 5MB limit
-  },
-  fileFilter: (req, file, cb) => {
-    const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/gif", "image/webp"];
-    if (allowedTypes.includes(file.mimetype)) {
-      cb(null, true);
-    } else {
-      cb(new Error("Invalid file type. Only JPEG, PNG, GIF, and WebP images are allowed."));
-    }
-  },
-});
 
 // Middleware to check if user is authenticated
 const isAuthenticated = (req: Request, res: Response, next: Function) => {
@@ -86,7 +67,7 @@ router.get("/:id", isAuthenticated, async (req: Request, res: Response) => {
 });
 
 // POST /api/announcements - Create new announcement (admin only)
-router.post("/", isAdmin, upload.single("image"), async (req: Request, res: Response) => {
+router.post("/", isAdmin, async (req: Request, res: Response) => {
   try {
     const user = req.user as any;
     
@@ -94,26 +75,10 @@ router.post("/", isAdmin, upload.single("image"), async (req: Request, res: Resp
     const announcementData = {
       ...req.body,
       creatorId: user.id,
-      priority: req.body.priority ? parseInt(req.body.priority) : 1,
-      isActive: req.body.isActive === "true",
+      isActive: req.body.isActive === true || req.body.isActive === "true",
       startDate: req.body.startDate ? new Date(req.body.startDate) : new Date(),
       endDate: req.body.endDate ? new Date(req.body.endDate) : null,
     };
-
-    // Handle image upload
-    if (req.file) {
-      const fileExtension = path.extname(req.file.originalname);
-      const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 15)}${fileExtension}`;
-      const imagePath = `/uploads/announcements/${fileName}`;
-      
-      // Move file to correct location with proper name
-      const fs = require("fs");
-      const oldPath = req.file.path;
-      const newPath = path.join("public", imagePath);
-      fs.renameSync(oldPath, newPath);
-      
-      announcementData.imageUrl = imagePath;
-    }
 
     const validatedData = insertAnnouncementSchema.parse(announcementData);
     const announcement = await storage.createAnnouncement(validatedData);
@@ -129,7 +94,7 @@ router.post("/", isAdmin, upload.single("image"), async (req: Request, res: Resp
 });
 
 // PUT /api/announcements/:id - Update announcement (admin only)
-router.put("/:id", isAdmin, upload.single("image"), async (req: Request, res: Response) => {
+router.put("/:id", isAdmin, async (req: Request, res: Response) => {
   try {
     const id = parseInt(req.params.id);
     if (isNaN(id)) {
@@ -138,26 +103,10 @@ router.put("/:id", isAdmin, upload.single("image"), async (req: Request, res: Re
 
     const updateData: any = {
       ...req.body,
-      priority: req.body.priority ? parseInt(req.body.priority) : undefined,
-      isActive: req.body.isActive !== undefined ? req.body.isActive === "true" : undefined,
+      isActive: req.body.isActive !== undefined ? req.body.isActive === true || req.body.isActive === "true" : undefined,
       startDate: req.body.startDate ? new Date(req.body.startDate) : undefined,
       endDate: req.body.endDate ? new Date(req.body.endDate) : undefined,
     };
-
-    // Handle image upload
-    if (req.file) {
-      const fileExtension = path.extname(req.file.originalname);
-      const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 15)}${fileExtension}`;
-      const imagePath = `/uploads/announcements/${fileName}`;
-      
-      // Move file to correct location with proper name
-      const fs = require("fs");
-      const oldPath = req.file.path;
-      const newPath = path.join("public", imagePath);
-      fs.renameSync(oldPath, newPath);
-      
-      updateData.imageUrl = imagePath;
-    }
 
     // Remove undefined values
     Object.keys(updateData).forEach(key => {

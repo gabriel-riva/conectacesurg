@@ -265,10 +265,6 @@ export const announcements = pgTable("announcements", {
   id: serial("id").primaryKey(),
   title: text("title").notNull(),
   content: text("content").notNull(),
-  type: text("type").notNull().default("info"), // 'info', 'warning', 'success', 'error'
-  priority: integer("priority").notNull().default(1), // 1 (low) to 5 (high)
-  imageUrl: text("image_url"),
-  externalUrl: text("external_url"),
   creatorId: integer("creator_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
   isActive: boolean("is_active").notNull().default(true),
   startDate: timestamp("start_date").defaultNow(),
