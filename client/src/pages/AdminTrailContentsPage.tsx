@@ -75,7 +75,7 @@ export default function AdminTrailContentsPage() {
     mutationFn: async (data: ContentFormData) => {
       return await apiRequest(`/api/trails/${trailId}/contents`, {
         method: 'POST',
-        body: JSON.stringify(data),
+        body: data,
       });
     },
     onSuccess: () => {
@@ -100,7 +100,7 @@ export default function AdminTrailContentsPage() {
     mutationFn: async (data: ContentFormData & { id: number }) => {
       return await apiRequest(`/api/trails/content/${data.id}`, {
         method: 'PUT',
-        body: JSON.stringify(data),
+        body: data,
       });
     },
     onSuccess: () => {

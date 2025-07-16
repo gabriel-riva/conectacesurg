@@ -46,7 +46,12 @@ export async function apiRequest<T = Response>(
   } else if (bodyData && method !== 'GET' && method !== 'HEAD') {
     // Para dados normais em métodos que suportam corpo, usamos JSON
     headers = { "Content-Type": "application/json" };
-    body = JSON.stringify(bodyData);
+    // Verificar se bodyData já é uma string JSON
+    if (typeof bodyData === 'string') {
+      body = bodyData;
+    } else {
+      body = JSON.stringify(bodyData);
+    }
   }
   
   const res = await fetch(url, {
