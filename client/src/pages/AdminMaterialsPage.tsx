@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Folder, FileText, Edit, Trash2, Users, Eye, Lock, Upload, Download } from 'lucide-react';
+import { Plus, Folder, FileText, Edit, Trash2, Users, Eye, Lock, Upload, Download, Youtube } from 'lucide-react';
 import { Header } from '@/components/Header';
 import { AdminSidebar } from '@/components/AdminSidebar';
 import { AdminHeader } from '@/components/AdminHeader';
@@ -581,13 +581,17 @@ export default function AdminMaterialsPage() {
                           <TableRow key={file.id}>
                             <TableCell className="font-medium">
                               <div className="flex items-center gap-2">
-                                <FileText className="w-4 h-4 text-gray-600" />
+                                {file.fileType === 'video/youtube' ? (
+                                  <Youtube className="w-4 h-4 text-red-600" />
+                                ) : (
+                                  <FileText className="w-4 h-4 text-gray-600" />
+                                )}
                                 {file.name}
                               </div>
                             </TableCell>
                             <TableCell>{file.description || '-'}</TableCell>
                             <TableCell>{file.folder?.name || 'Raiz'}</TableCell>
-                            <TableCell>{formatFileSize(file.fileSize)}</TableCell>
+                            <TableCell>{file.fileType === 'video/youtube' ? 'Vídeo YouTube' : formatFileSize(file.fileSize)}</TableCell>
                             <TableCell>
                               <Badge variant="outline">{file.fileType}</Badge>
                             </TableCell>
@@ -609,7 +613,13 @@ export default function AdminMaterialsPage() {
                                 <Button
                                   variant="ghost"
                                   size="sm"
-                                  onClick={() => window.open(file.fileUrl, '_blank')}
+                                  onClick={() => {
+                                    if (file.fileType === 'video/youtube' && file.youtubeUrl) {
+                                      window.open(file.youtubeUrl, '_blank');
+                                    } else {
+                                      window.open(file.fileUrl, '_blank');
+                                    }
+                                  }}
                                 >
                                   <Download className="w-4 h-4" />
                                 </Button>
