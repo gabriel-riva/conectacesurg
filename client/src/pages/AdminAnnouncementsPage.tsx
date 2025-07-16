@@ -86,10 +86,7 @@ export default function AdminAnnouncementsPage() {
     mutationFn: async (data: AnnouncementFormData) => {
       return apiRequest("/api/announcements", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(data),
+        body: data,
       });
     },
     onSuccess: () => {
@@ -115,10 +112,7 @@ export default function AdminAnnouncementsPage() {
     mutationFn: async (data: AnnouncementFormData & { id: number }) => {
       return apiRequest(`/api/announcements/${data.id}`, {
         method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(data),
+        body: data,
       });
     },
     onSuccess: () => {
