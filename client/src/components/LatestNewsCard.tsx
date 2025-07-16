@@ -4,7 +4,7 @@ import { useLocation } from "wouter";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Calendar, ArrowRight, Newspaper } from "lucide-react";
+import { Calendar, ArrowRight, Newspaper, ExternalLink, Globe } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -21,14 +21,18 @@ const LatestNewsCard: React.FC<LatestNewsCardProps> = ({ limit = 3 }) => {
     queryFn: () => fetch(`/api/news/latest/${limit}`).then(res => res.json()),
   });
 
-  // Função para navegar para a página de detalhes
-  const handleNewsClick = (newsId: number) => {
-    navigate(`/noticias/${newsId}`);
+  // Função para abrir notícia no site da CESURG
+  const handleNewsClick = (news: any) => {
+    if (news.sourceUrl) {
+      window.open(news.sourceUrl, '_blank');
+    } else {
+      navigate(`/noticias/${news.id}`);
+    }
   };
 
-  // Função para navegar para a página de listagem
+  // Função para abrir página de notícias da CESURG
   const handleSeeAllClick = () => {
-    navigate('/noticias');
+    window.open('https://cesurgmarau.com.br/noticias', '_blank');
   };
 
   // Formatação da data
@@ -65,7 +69,7 @@ const LatestNewsCard: React.FC<LatestNewsCardProps> = ({ limit = 3 }) => {
               <div 
                 key={news.id} 
                 className="flex gap-3 cursor-pointer hover:bg-accent p-2 rounded-md transition-colors"
-                onClick={() => handleNewsClick(news.id)}
+                onClick={() => handleNewsClick(news)}
               >
                 {news.imageUrl ? (
                   <div className="h-16 w-16 rounded overflow-hidden flex-shrink-0">
@@ -82,11 +86,24 @@ const LatestNewsCard: React.FC<LatestNewsCardProps> = ({ limit = 3 }) => {
                 )}
                 
                 <div className="flex-1">
-                  <h3 className="font-medium line-clamp-2 text-sm">{news.title}</h3>
+                  <div className="flex items-start justify-between">
+                    <h3 className="font-medium line-clamp-2 text-sm flex-1">{news.title}</h3>
+                    {news.sourceUrl && (
+                      <div className="flex items-center text-xs text-muted-foreground ml-2">
+                        <Globe className="h-3 w-3 mr-1" />
+                        <span>CESURG</span>
+                      </div>
+                    )}
+                  </div>
                   <p className="text-muted-foreground text-xs line-clamp-1 mt-1">{news.description}</p>
-                  <div className="flex items-center text-xs text-muted-foreground mt-1">
-                    <Calendar className="h-3 w-3 mr-1" />
-                    <span>{news.createdAt ? formatDate(news.createdAt) : "Data não disponível"}</span>
+                  <div className="flex items-center justify-between text-xs text-muted-foreground mt-1">
+                    <div className="flex items-center">
+                      <Calendar className="h-3 w-3 mr-1" />
+                      <span>{news.publishedAt ? formatDate(news.publishedAt) : "Data não disponível"}</span>
+                    </div>
+                    {news.sourceUrl && (
+                      <ExternalLink className="h-3 w-3" />
+                    )}
                   </div>
                 </div>
               </div>

@@ -1209,7 +1209,7 @@ export class DatabaseStorage implements IStorage {
         .from(news)
         .leftJoin(newsCategories, eq(news.categoryId, newsCategories.id))
         .where(eq(news.isPublished, true))
-        .orderBy(desc(news.publishedAt || news.createdAt))
+        .orderBy(desc(news.publishedAt), desc(news.createdAt))
         .limit(limit);
       
       return results.map(item => ({

@@ -32,22 +32,33 @@ async function extractCesurgNews(url: string) {
     const ogDescMatch = html.match(/<meta property="og:description" content="([^"]+)"/);
     let description = ogDescMatch ? ogDescMatch[1].trim() : '';
     
-    // Se não tiver descrição, usar o título como base
+    // Se não tiver descrição, criar uma breve
     if (!description) {
-      description = title.length > 100 ? title.substring(0, 100) + '...' : title;
+      description = "Confira esta notícia no site da CESURG";
     }
     
-    // Para o conteúdo, usar a descrição como fallback
-    // Em sites SPA, o conteúdo principal é carregado via JavaScript
-    const content = description || title;
+    // Extrair data do ID da notícia na URL para estimar a data
+    const urlIdMatch = url.match(/\/noticia\/(\d+)\//);
+    let publishedAt = new Date();
     
-    // Data padrão (sites SPA geralmente não têm data no HTML inicial)
-    const publishedAt = new Date();
+    if (urlIdMatch) {
+      const newsId = parseInt(urlIdMatch[1]);
+      // Estimar data baseada no ID (IDs maiores = mais recentes)
+      // Assumindo que ID 500 = Jan 2024, cada 10 IDs = aproximadamente 1 semana
+      const baseDate = new Date('2024-01-01');
+      const estimatedDays = Math.max(0, (newsId - 500) * 2); // 2 dias por ID
+      publishedAt = new Date(baseDate.getTime() + estimatedDays * 24 * 60 * 60 * 1000);
+      
+      // Se a data estimada for futura, usar hoje
+      if (publishedAt > new Date()) {
+        publishedAt = new Date();
+      }
+    }
     
     return {
       title,
       description,
-      content,
+      content: description, // Conteúdo simples já que vai abrir no site original
       imageUrl,
       publishedAt,
     };
