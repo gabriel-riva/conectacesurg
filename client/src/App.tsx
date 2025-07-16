@@ -11,7 +11,7 @@ import CommunityPage from "@/pages/CommunityPage";
 import IdeasPage from "@/pages/IdeasPage";
 import AccessDeniedPage from "@/pages/AccessDeniedPage";
 import AIPage from "@/pages/AIPage";
-import AdminAIPage from "@/pages/AdminAIPage";
+
 import LinksPage from "@/pages/admin/LinksPage";
 import Profile from "@/pages/Profile";
 import CalendarPage from "@/pages/CalendarPage";
@@ -67,9 +67,7 @@ function Router() {
       <Route path="/gamificacao">
         {() => <ProtectedRoute component={GamificationPage} />}
       </Route>
-      <Route path="/admin/ai">
-        {() => <ProtectedRoute component={AdminAIPage} adminOnly={true} />}
-      </Route>
+
       <Route path="/admin">
         {() => <ProtectedRoute component={AdminPage} adminOnly={true} />}
       </Route>

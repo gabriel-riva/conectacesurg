@@ -115,15 +115,6 @@ export function AdminSidebar() {
       ),
     },
     {
-      href: "/admin/ai",
-      label: "IA",
-      icon: (
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.5 3L15 10L18.5 3M5.5 21L9 14L12.5 21M2.5 12L6 5L9.5 12M14.5 12L18 5L21.5 12" />
-        </svg>
-      ),
-    },
-    {
       href: "/admin/funcionalidades",
       label: "Funcionalidades",
       icon: (
