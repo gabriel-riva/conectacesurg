@@ -58,22 +58,10 @@ export function ChallengesCard() {
           Gamificação
         </CardTitle>
       </CardHeader>
-      <CardContent className="flex-grow overflow-hidden">
-        <div className="grid grid-cols-3 gap-4">
-          {challenges.map((challenge) => (
-            <ChallengeItem
-              key={challenge.id}
-              title={challenge.title}
-              description={challenge.description}
-              image={challenge.image}
-              points={challenge.points}
-            />
-          ))}
-        </div>
-        <div className="mt-4 text-right">
-          <a href="#" className="text-primary text-sm hover:underline">
-            Ver tudo
-          </a>
+      <CardContent className="flex-grow overflow-hidden flex items-center justify-center">
+        <div className="text-center text-gray-500">
+          <p className="text-base font-medium">Em breve</p>
+          <p className="text-sm mt-1">Esta funcionalidade será implementada em breve</p>
         </div>
       </CardContent>
     </Card>

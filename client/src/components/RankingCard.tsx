@@ -35,53 +35,10 @@ export function RankingCard() {
           Ranking
         </CardTitle>
       </CardHeader>
-      <CardContent className="p-4 flex flex-col" style={{ height: "calc(280px - 54px)" }}>
-        <div className="mb-4 flex items-center justify-between">
-          <div className="flex gap-2">
-            <Button variant="secondary" size="sm" className="px-3 py-1 h-auto text-xs rounded-md">
-              Ciclo
-            </Button>
-            <Button variant="outline" size="sm" className="px-3 py-1 h-auto text-xs rounded-md">
-              Ano
-            </Button>
-          </div>
-          
-          <Select defaultValue="curso">
-            <SelectTrigger className="w-24 h-7 text-xs">
-              <SelectValue placeholder="Curso" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="curso">Curso</SelectItem>
-              <SelectItem value="si">Sistemas de Informação</SelectItem>
-              <SelectItem value="direito">Direito</SelectItem>
-              <SelectItem value="adm">Administração</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        
-        <div className="overflow-y-auto" style={{ maxHeight: "calc(100% - 60px)" }}>
-          <div className="space-y-3">
-            {users.map((user) => (
-              <div key={user.id} className="flex items-center justify-between">
-                <div className="flex items-center gap-2 max-w-[75%]">
-                  <Avatar className="h-7 w-7 flex-shrink-0">
-                    <AvatarImage src={user.avatar} />
-                    <AvatarFallback className="text-xs">
-                      {user.name.split(' ').map(n => n[0]).join('')}
-                    </AvatarFallback>
-                  </Avatar>
-                  <span className="text-sm truncate">{user.name}</span>
-                </div>
-                <span className="text-primary text-sm font-medium ml-2">{user.points}pts</span>
-              </div>
-            ))}
-          </div>
-        </div>
-        
-        <div className="mt-2 pt-2 text-right border-t border-gray-100">
-          <a href="#" className="text-[#0D8A43] text-sm hover:underline">
-            Ver tudo
-          </a>
+      <CardContent className="p-4 flex flex-col items-center justify-center" style={{ height: "calc(280px - 54px)" }}>
+        <div className="text-center text-gray-500">
+          <p className="text-base font-medium">Em breve</p>
+          <p className="text-sm mt-1">Esta funcionalidade será implementada em breve</p>
         </div>
       </CardContent>
     </Card>
