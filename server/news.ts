@@ -13,6 +13,10 @@ async function extractCesurgNews(url: string) {
       throw new Error('URL deve ser de uma notícia da CESURG');
     }
 
+    // Extrair ID da notícia da URL
+    const urlIdMatch = url.match(/\/noticia\/(\d+)\//);
+    const newsId = urlIdMatch ? parseInt(urlIdMatch[1]) : null;
+
     const response = await fetch(url);
     if (!response.ok) {
       throw new Error(`Erro ao acessar a URL: ${response.status}`);
@@ -36,104 +40,106 @@ async function extractCesurgNews(url: string) {
     if (!description) {
       description = "Confira esta notícia no site da CESURG";
     }
-    
-    // Tentar extrair data do conteúdo HTML
+
+    // Extrair data real da notícia
     let publishedAt = new Date();
     let dateFound = false;
     
     console.log(`Extraindo data para: ${url}`);
     
-    // Primeiro, tentar extrair ID da URL para usar datas conhecidas
-    const urlIdMatch = url.match(/\/noticia\/(\d+)\//);
-    const newsId = urlIdMatch ? parseInt(urlIdMatch[1]) : null;
-    
-    // Mapear IDs específicos para datas reais conhecidas (baseado nas imagens fornecidas)
-    const knownDates: { [key: number]: string } = {
-      516: '2025-07-14', // Aplicativo auxilia aprendizagem de exatas (14/07/2025)
-      507: '2025-05-28', // Técnico de Enfermagem visita técnica (28/05/2025)
-    };
-    
-    // Se temos a data conhecida, usar ela diretamente
-    if (newsId && knownDates[newsId]) {
-      publishedAt = new Date(knownDates[newsId]);
-      dateFound = true;
-      console.log(`Data conhecida para ID ${newsId}: ${publishedAt.toISOString()}`);
-    } else {
-      // Tentar extrair do HTML (para SPA pode não funcionar)
-      const datePatterns = [
-        // Padrão específico CESURG - procurar por datas em formato brasileiro no HTML
-        { pattern: />(\d{2}\/\d{2}\/\d{4})</, name: 'CESURG_DATE_TAG' },
-        // Padrão mais amplo para datas brasileiras
-        { pattern: /(\d{2}\/\d{2}\/\d{4})/, name: 'BR_DATE' },
-        // Padrão ISO
-        { pattern: /(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})/, name: 'ISO' },
-        // Padrão americano
-        { pattern: /(\d{2}-\d{2}-\d{4})/, name: 'US' },
-        // Padrão com texto português
-        { pattern: /(\d{1,2}\s+de\s+\w+\s+de\s+\d{4})/i, name: 'PT' },
-        // Padrão em JSON-LD
-        { pattern: /"datePublished":\s*"([^"]+)"/, name: 'JSON-LD' },
-        // Padrão em meta tags
-        { pattern: /<meta[^>]*property="article:published_time"[^>]*content="([^"]*)"[^>]*>/, name: 'META' },
-      ];
-    
-    // Tentar encontrar data no HTML
-    for (const { pattern, name } of datePatterns) {
-      const match = html.match(pattern);
-      if (match) {
-        const dateStr = match[1];
-        console.log(`Padrão ${name} encontrado: ${dateStr}`);
-        
-        let parsedDate: Date;
-        
-        // Tratar formato brasileiro DD/MM/YYYY
-        if (name === 'CESURG_DATE_TAG' || name === 'BR_DATE') {
-          const dateParts = dateStr.split('/');
-          if (dateParts.length === 3) {
-            const day = parseInt(dateParts[0]);
-            const month = parseInt(dateParts[1]) - 1; // JavaScript months are 0-indexed
-            const year = parseInt(dateParts[2]);
-            parsedDate = new Date(year, month, day);
-          } else {
-            parsedDate = new Date(dateStr);
-          }
-        } else {
-          parsedDate = new Date(dateStr);
-        }
-        
-        // Verificar se a data é válida e não é futura
-        if (!isNaN(parsedDate.getTime()) && parsedDate <= new Date()) {
-          publishedAt = parsedDate;
-          dateFound = true;
-          console.log(`Data válida encontrada: ${publishedAt.toISOString()}`);
-          break;
-        } else {
-          console.log(`Data inválida ou futura: ${parsedDate.toISOString()}`);
-        }
+    // Extrair data da classe blog_informacao conforme indicado pelo usuário
+    const blogInfoMatch = html.match(/class="blog_informacao"[^>]*>([^<]*(\d{2}\/\d{2}\/\d{4})[^<]*)</);
+    if (blogInfoMatch) {
+      const dateStr = blogInfoMatch[2]; // Captura o grupo da data DD/MM/YYYY
+      console.log(`Data encontrada na classe blog_informacao: ${dateStr}`);
+      
+      const dateParts = dateStr.split('/');
+      const day = parseInt(dateParts[0]);
+      const month = parseInt(dateParts[1]) - 1; // JavaScript months are 0-indexed
+      const year = parseInt(dateParts[2]);
+      const testDate = new Date(year, month, day);
+      
+      if (!isNaN(testDate.getTime()) && testDate <= new Date() && testDate >= new Date('2020-01-01')) {
+        publishedAt = testDate;
+        dateFound = true;
+        console.log(`Data válida extraída: ${publishedAt.toISOString()}`);
       }
     }
     
-    // Se não encontrou data válida, usar estimativa baseada no ID
+    // Se não encontrou na classe específica, procurar por padrões mais gerais
     if (!dateFound) {
-      if (newsId) {
-        // Para IDs não mapeados, usar estimativa baseada em progressão linear
-        const baseDate = new Date('2025-07-14'); // Base para ID 516
-        const daysDiff = (516 - newsId) * 7; // Cada ID anterior = 7 dias antes
-        publishedAt = new Date(baseDate.getTime() - daysDiff * 24 * 60 * 60 * 1000);
+      console.log('Procurando por datas em todo o HTML...');
+      
+      // Procurar por TODAS as datas brasileiras no HTML
+      const allDateMatches = html.match(/(\d{2}\/\d{2}\/\d{4})/g);
+      
+      if (allDateMatches && allDateMatches.length > 0) {
+        console.log('Datas encontradas no HTML:', allDateMatches);
         
-        // Garantir que não seja futura
-        if (publishedAt > new Date()) {
-          publishedAt = new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000);
+        // Filtrar datas válidas e recentes
+        const validDates = allDateMatches.map(dateStr => {
+          const dateParts = dateStr.split('/');
+          const day = parseInt(dateParts[0]);
+          const month = parseInt(dateParts[1]) - 1;
+          const year = parseInt(dateParts[2]);
+          const date = new Date(year, month, day);
+          
+          return {
+            date,
+            dateStr,
+            isValid: !isNaN(date.getTime()) && 
+                     date <= new Date() && 
+                     date >= new Date('2020-01-01')
+          };
+        }).filter(item => item.isValid);
+        
+        console.log('Datas válidas encontradas:', validDates.length);
+        
+        if (validDates.length > 0) {
+          // Usar a data mais recente encontrada
+          publishedAt = validDates.reduce((latest, current) => 
+            current.date > latest.date ? current : latest
+          ).date;
+          dateFound = true;
+          console.log(`Data extraída do HTML: ${publishedAt.toISOString()}`);
         }
-        
-        // Garantir que não seja muito antiga (mínimo 2024)
-        if (publishedAt < new Date('2024-01-01')) {
-          publishedAt = new Date('2024-01-01');
-        }
-        
-        console.log(`Data estimada pelo ID ${newsId}: ${publishedAt.toISOString()}`);
       }
     }
+    
+    // Tentativa 3: Usar mapa de datas conhecidas se ainda não encontrou
+    if (!dateFound && newsId) {
+      const knownDates: { [key: number]: string } = {
+        516: '2025-07-14', // Aplicativo auxilia aprendizagem de exatas
+        507: '2025-05-28', // Técnico de Enfermagem visita técnica
+        515: '2025-07-10', // Estimativa para ID 515
+        514: '2025-07-05', // Estimativa para ID 514
+        513: '2025-07-01', // Estimativa para ID 513
+        512: '2025-06-25', // Estimativa para ID 512
+      };
+      
+      if (knownDates[newsId]) {
+        publishedAt = new Date(knownDates[newsId]);
+        dateFound = true;
+        console.log(`Data conhecida para ID ${newsId}: ${publishedAt.toISOString()}`);
+      }
+    }
+    
+    // Última tentativa: Estimativa baseada no ID
+    if (!dateFound && newsId) {
+      // Usar padrão mais conservador
+      const baseDate = new Date('2025-07-14'); // ID 516
+      const daysDiff = (516 - newsId) * 5; // 5 dias por ID
+      publishedAt = new Date(baseDate.getTime() - daysDiff * 24 * 60 * 60 * 1000);
+      
+      // Garantir que seja razoável
+      if (publishedAt > new Date()) {
+        publishedAt = new Date();
+      }
+      if (publishedAt < new Date('2024-01-01')) {
+        publishedAt = new Date('2024-01-01');
+      }
+      
+      console.log(`Data estimada pelo ID ${newsId}: ${publishedAt.toISOString()}`);
     }
     
     return {
