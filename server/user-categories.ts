@@ -9,7 +9,7 @@ const router = Router();
 
 // Middleware para verificar autenticação
 const isAuthenticated = (req: Request, res: Response, next: Function) => {
-  if (!req.session?.userId) {
+  if (!req.isAuthenticated()) {
     return res.status(401).json({ message: "Unauthorized" });
   }
   next();
@@ -17,11 +17,11 @@ const isAuthenticated = (req: Request, res: Response, next: Function) => {
 
 // Middleware para verificar se é admin
 const isAdmin = (req: Request, res: Response, next: Function) => {
-  if (!req.session?.userId) {
+  if (!req.isAuthenticated()) {
     return res.status(401).json({ message: "Unauthorized" });
   }
   
-  const user = req.session.user;
+  const user = req.user as any;
   if (!user || (user.role !== 'admin' && user.role !== 'superadmin')) {
     return res.status(403).json({ message: "Forbidden" });
   }
