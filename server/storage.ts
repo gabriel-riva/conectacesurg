@@ -44,7 +44,7 @@ import {
   type InsertMaterialFile
 } from "@shared/schema";
 import { db, pool } from "./db";
-import { and, asc, desc, eq, gte, lte, or, inArray, SQL } from "drizzle-orm";
+import { and, asc, desc, eq, gte, lte, or, inArray, SQL, isNull } from "drizzle-orm";
 
 export interface IStorage {
   // User related methods
@@ -1349,6 +1349,7 @@ export class DatabaseStorage implements IStorage {
   async getActiveAnnouncements(limit?: number): Promise<(Announcement & { creator: User })[]> {
     try {
       const now = new Date();
+      
       let query = db
         .select({
           announcement: announcements,
@@ -1361,7 +1362,7 @@ export class DatabaseStorage implements IStorage {
             eq(announcements.isActive, true),
             lte(announcements.startDate, now),
             or(
-              eq(announcements.endDate, null),
+              isNull(announcements.endDate),
               gte(announcements.endDate, now)
             )
           )
@@ -1373,6 +1374,7 @@ export class DatabaseStorage implements IStorage {
       }
 
       const results = await query;
+      
       return results.map((result: any) => ({
         ...result.announcement,
         creator: result.creator,
