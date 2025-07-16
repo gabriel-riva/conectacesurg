@@ -96,11 +96,7 @@ const LatestNewsCard: React.FC<LatestNewsCardProps> = ({ limit = 3 }) => {
                     )}
                   </div>
                   <p className="text-muted-foreground text-xs line-clamp-1 mt-1">{news.description}</p>
-                  <div className="flex items-center justify-between text-xs text-muted-foreground mt-1">
-                    <div className="flex items-center">
-                      <Calendar className="h-3 w-3 mr-1" />
-                      <span>{news.publishedAt ? formatDate(news.publishedAt) : "Data não disponível"}</span>
-                    </div>
+                  <div className="flex items-center justify-end text-xs text-muted-foreground mt-1">
                     {news.sourceUrl && (
                       <ExternalLink className="h-3 w-3" />
                     )}
