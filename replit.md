@@ -84,6 +84,10 @@ Preferred communication style: Simple, everyday language.
 ## Recent Changes
 
 ### January 2025
+- **News Import System**: Implemented automated news import from CESURG website with direct external links
+- **Date Management**: Removed date extraction from news imports due to SPA complexity - all imported news now appear without publication dates to avoid incorrect information
+- **Visual Indicators**: Added CESURG origin badges and external link icons to distinguish imported content
+- **Admin Interface**: Simplified news management with focus on title, description, and external links
 - **Announcements System Simplified**: Removed unnecessary fields (type, priority, image upload) to focus on essential functionality
 - **Enhanced User Experience**: Implemented "read more" functionality for long announcements and "see all" dialog for viewing all active announcements
 - **Improved Dialog Behavior**: Fixed dialog sizing and scroll issues to ensure proper display on all screen sizes

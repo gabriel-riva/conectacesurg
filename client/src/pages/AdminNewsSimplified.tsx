@@ -248,7 +248,7 @@ function NewsImportTab() {
                   <div className="flex items-center gap-4 text-sm text-muted-foreground">
                     <div className="flex items-center gap-1">
                       <Calendar className="h-4 w-4" />
-                      {format(new Date(item.createdAt), "dd/MM/yyyy", { locale: ptBR })}
+                      {item.publishedAt ? format(new Date(item.publishedAt), "dd/MM/yyyy", { locale: ptBR }) : "Sem data"}
                     </div>
                     {item.category && (
                       <Badge variant="outline" className="text-xs">
