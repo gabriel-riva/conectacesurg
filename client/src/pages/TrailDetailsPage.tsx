@@ -53,7 +53,7 @@ export default function TrailDetailsPage() {
   const [selectedContent, setSelectedContent] = useState<TrailContent | null>(null);
 
   const { data: trail, isLoading: isLoadingTrail } = useQuery<Trail>({
-    queryKey: ['/api/trails', trailId],
+    queryKey: [`/api/trails/${trailId}`],
   });
 
   console.log('Trail data:', trail);
