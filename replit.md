@@ -96,6 +96,8 @@ Preferred communication style: Simple, everyday language.
 - **Trail Content Display**: Resolved issues with trail content listing in both admin and public areas - contents now display correctly in both contexts
 - **API Query Optimization**: Fixed query keys and endpoints for proper data fetching and cache invalidation
 - **Rich Text Editor Enhancement**: Enhanced Quill editor with image resizing, drag-and-drop functionality, improved YouTube video embedding, and better link insertion capabilities
+- **Video Resize Functionality**: Added custom resize handles for YouTube videos in rich text editor allowing users to resize embedded videos directly
+- **Link URL Handling**: Fixed link creation to automatically add https:// protocol prefix and open links in new tabs to prevent relative URL issues
 
 ## External Dependencies
 
