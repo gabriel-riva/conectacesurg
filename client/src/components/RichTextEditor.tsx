@@ -153,6 +153,7 @@ export function RichTextEditor({
             border-right: 1px solid #ccc;
             background: white;
             border-radius: 0 0 4px 4px;
+            position: relative;
           }
           
           .quill-editor-container .ql-editor img {
@@ -192,6 +193,51 @@ export function RichTextEditor({
           
           .quill-editor-container .ql-tooltip {
             z-index: 1000;
+            position: absolute !important;
+            left: 50% !important;
+            transform: translateX(-50%) !important;
+            top: 40px !important;
+            background: white !important;
+            border: 1px solid #ccc !important;
+            border-radius: 4px !important;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15) !important;
+            padding: 8px !important;
+            min-width: 200px !important;
+          }
+
+          .quill-editor-container .ql-tooltip::before {
+            content: "URL:" !important;
+            font-size: 12px !important;
+            color: #666 !important;
+            margin-right: 8px !important;
+          }
+
+          .quill-editor-container .ql-tooltip[data-mode="link"]::before {
+            content: "URL do link:" !important;
+          }
+
+          .quill-editor-container .ql-tooltip[data-mode="video"]::before {
+            content: "URL do vídeo:" !important;
+          }
+
+          .quill-editor-container .ql-tooltip input {
+            border: 1px solid #ddd !important;
+            padding: 4px 8px !important;
+            border-radius: 3px !important;
+            width: 200px !important;
+          }
+
+          .quill-editor-container .ql-tooltip a {
+            background: #007cdc !important;
+            color: white !important;
+            padding: 4px 8px !important;
+            text-decoration: none !important;
+            border-radius: 3px !important;
+            margin-left: 8px !important;
+          }
+
+          .quill-editor-container .ql-tooltip a:hover {
+            background: #0056b3 !important;
           }
 
           /* Estilos para redimensionamento de imagens */
