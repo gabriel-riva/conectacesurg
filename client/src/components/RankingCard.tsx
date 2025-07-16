@@ -65,7 +65,7 @@ export function RankingCard() {
   const topUsers = ranking.slice(0, 20);
 
   const handleViewAll = () => {
-    navigate('/dashboard/gamification');
+    navigate('/gamificacao');
   };
 
   const getInitials = (name: string) => {
