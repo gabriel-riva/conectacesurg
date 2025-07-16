@@ -16,7 +16,7 @@ import LinksPage from "@/pages/admin/LinksPage";
 import Profile from "@/pages/Profile";
 import CalendarPage from "@/pages/CalendarPage";
 import AdminCalendar from "@/pages/AdminCalendar";
-import AdminNewsPage from "@/pages/AdminNewsPage";
+import AdminNewsSimplified from "@/pages/AdminNewsSimplified";
 import NewsEditorPage from "@/pages/NewsEditorPage";
 import NewsListPage from "@/pages/NewsListPage";
 import NewsDetailPage from "@/pages/NewsDetailPage";
@@ -85,7 +85,7 @@ function Router() {
         {() => <ProtectedRoute component={AdminCalendar} adminOnly={true} />}
       </Route>
       <Route path="/admin/noticias">
-        {() => <ProtectedRoute component={AdminNewsPage} adminOnly={true} />}
+        {() => <ProtectedRoute component={AdminNewsSimplified} adminOnly={true} />}
       </Route>
       <Route path="/admin/noticias/nova">
         {() => <ProtectedRoute component={NewsEditorPage} adminOnly={true} />}

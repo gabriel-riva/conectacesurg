@@ -131,6 +131,7 @@ export interface IStorage {
   getAllNews(includeUnpublished?: boolean): Promise<(News & { category?: NewsCategory })[]>;
   getLatestNews(limit: number): Promise<(News & { category?: NewsCategory })[]>;
   getNewsById(id: number): Promise<(News & { category?: NewsCategory }) | undefined>;
+  getNewsBySourceUrl(sourceUrl: string): Promise<News | undefined>;
   createNews(news: InsertNews): Promise<News>;
   updateNews(id: number, newsData: Partial<InsertNews>): Promise<News | undefined>;
   publishNews(id: number): Promise<News | undefined>;
@@ -1240,6 +1241,20 @@ export class DatabaseStorage implements IStorage {
       };
     } catch (error) {
       console.error("Error getting news by ID:", error);
+      return undefined;
+    }
+  }
+
+  async getNewsBySourceUrl(sourceUrl: string): Promise<News | undefined> {
+    try {
+      const [result] = await db
+        .select()
+        .from(news)
+        .where(eq(news.sourceUrl, sourceUrl));
+      
+      return result;
+    } catch (error) {
+      console.error("Error getting news by source URL:", error);
       return undefined;
     }
   }
