@@ -2,6 +2,7 @@ import {
   users, 
   groups, 
   userGroups,
+  userCategories,
   aiAgents,
   aiPrompts,
   aiPromptAgents,
@@ -20,6 +21,8 @@ import {
   type Group,
   type InsertGroup,
   type UserGroup,
+  type UserCategory,
+  type InsertUserCategory,
   type AiAgent,
   type AiPrompt,
   type AiConversation,
@@ -72,6 +75,13 @@ export interface IStorage {
   removeUserFromGroup(userId: number, groupId: number): Promise<boolean>;
   getUserGroups(userId: number): Promise<Group[]>;
   getGroupUsers(groupId: number): Promise<User[]>;
+  
+  // User Category methods
+  getAllUserCategories(): Promise<UserCategory[]>;
+  getUserCategory(id: number): Promise<UserCategory | undefined>;
+  createUserCategory(category: InsertUserCategory): Promise<UserCategory>;
+  updateUserCategory(id: number, categoryData: Partial<InsertUserCategory>): Promise<UserCategory | undefined>;
+  deleteUserCategory(id: number): Promise<boolean>;
   
   // AI Agent methods
   getAllAiAgents(): Promise<AiAgent[]>;
@@ -1686,6 +1696,69 @@ export class DatabaseStorage implements IStorage {
       return result.length > 0;
     } catch (error) {
       console.error("Error incrementing download count:", error);
+      return false;
+    }
+  }
+
+  // User Category methods
+  async getAllUserCategories(): Promise<UserCategory[]> {
+    try {
+      return await db.select().from(userCategories).orderBy(userCategories.name);
+    } catch (error) {
+      console.error("Error getting all user categories:", error);
+      return [];
+    }
+  }
+
+  async getUserCategory(id: number): Promise<UserCategory | undefined> {
+    try {
+      const [category] = await db.select().from(userCategories).where(eq(userCategories.id, id));
+      return category;
+    } catch (error) {
+      console.error("Error getting user category:", error);
+      return undefined;
+    }
+  }
+
+  async createUserCategory(category: InsertUserCategory): Promise<UserCategory> {
+    try {
+      const [newCategory] = await db
+        .insert(userCategories)
+        .values(category)
+        .returning();
+      
+      return newCategory;
+    } catch (error) {
+      console.error("Error creating user category:", error);
+      throw new Error("Failed to create user category");
+    }
+  }
+
+  async updateUserCategory(id: number, categoryData: Partial<InsertUserCategory>): Promise<UserCategory | undefined> {
+    try {
+      const [updatedCategory] = await db
+        .update(userCategories)
+        .set(categoryData)
+        .where(eq(userCategories.id, id))
+        .returning();
+      
+      return updatedCategory;
+    } catch (error) {
+      console.error("Error updating user category:", error);
+      return undefined;
+    }
+  }
+
+  async deleteUserCategory(id: number): Promise<boolean> {
+    try {
+      const result = await db
+        .delete(userCategories)
+        .where(eq(userCategories.id, id))
+        .returning();
+      
+      return result.length > 0;
+    } catch (error) {
+      console.error("Error deleting user category:", error);
       return false;
     }
   }

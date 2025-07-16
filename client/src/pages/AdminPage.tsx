@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { AddUserModal } from "@/components/AddUserModal";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { User, Group } from "@shared/schema";
+import { User, Group, UserCategory } from "@shared/schema";
 import { AdminSidebar } from "@/components/AdminSidebar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AddGroupModal } from "@/components/AddGroupModal";
@@ -80,6 +80,11 @@ export default function AdminPage({ activeTab: initialActiveTab }: { activeTab?:
   // Fetch groups
   const { data: groups = [], isLoading: isLoadingGroups } = useQuery<Group[]>({
     queryKey: ['/api/groups'],
+  });
+
+  // Fetch user categories
+  const { data: userCategories = [], isLoading: isLoadingUserCategories } = useQuery<UserCategory[]>({
+    queryKey: ['/api/user-categories'],
   });
   
   // Buscar os grupos de cada usuário
@@ -175,13 +180,7 @@ export default function AdminPage({ activeTab: initialActiveTab }: { activeTab?:
     setIsGroupModalOpen(false);
   };
 
-  // Fetch user categories
-  const { data: userCategories = [] } = useQuery({
-    queryKey: ['/api/user-categories'],
-    queryFn: async () => {
-      return await apiRequest("GET", "/api/user-categories");
-    }
-  });
+
 
   const handleUserCategoryCreated = () => {
     queryClient.invalidateQueries({ queryKey: ['/api/user-categories'] });

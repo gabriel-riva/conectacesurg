@@ -21,8 +21,8 @@ const isAdmin = (req: Request, res: Response, next: Function) => {
     return res.status(401).json({ message: "Unauthorized" });
   }
   
-  const userRole = req.session.userRole;
-  if (userRole !== 'admin' && userRole !== 'superadmin') {
+  const user = req.session.user;
+  if (!user || (user.role !== 'admin' && user.role !== 'superadmin')) {
     return res.status(403).json({ message: "Forbidden" });
   }
   next();
