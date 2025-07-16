@@ -62,7 +62,7 @@ import {
   type InsertTrailProgress
 } from "@shared/schema";
 import { db, pool } from "./db";
-import { and, asc, desc, eq, gte, lte, or, inArray, SQL, isNull } from "drizzle-orm";
+import { and, asc, desc, eq, gte, lte, or, inArray, SQL, isNull, sql } from "drizzle-orm";
 
 export interface IStorage {
   // User related methods

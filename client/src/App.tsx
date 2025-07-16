@@ -26,6 +26,7 @@ import AdminAnnouncementsPage from "@/pages/AdminAnnouncementsPage";
 import AdminFeatureSettingsPage from "@/pages/AdminFeatureSettingsPage";
 import GamificationPage from "@/pages/GamificationPage";
 import TrilhasPage from "@/pages/TrilhasPage";
+import TrailDetailsPage from "@/pages/TrailDetailsPage";
 import AdminTrilhasPage from "@/pages/AdminTrilhasPage";
 import { AuthProvider } from "./providers/AuthProvider";
 import { useAuth } from "./lib/auth";
@@ -115,6 +116,9 @@ function Router() {
       </Route>
       <Route path="/trilhas">
         {() => <ProtectedRoute component={TrilhasPage} />}
+      </Route>
+      <Route path="/trilhas/:trailId">
+        {() => <ProtectedRoute component={TrailDetailsPage} />}
       </Route>
       <Route path="/calendar">
         {() => <ProtectedRoute component={CalendarPage} />}
