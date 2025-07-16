@@ -7,66 +7,9 @@ import 'react-quill/dist/quill.snow.css';
 import ImageResize from 'quill-image-resize-module-react';
 import { ImageDrop } from 'quill-image-drop-module';
 
-// Criar um blot customizado para vídeos do YouTube
-const BlockEmbed = Quill.import('blots/block/embed');
-class VideoBlot extends BlockEmbed {
-  static create(value: string) {
-    const node = super.create();
-    node.setAttribute('src', value);
-    node.setAttribute('frameborder', '0');
-    node.setAttribute('allowfullscreen', 'true');
-    node.setAttribute('width', '100%');
-    node.setAttribute('height', '315');
-    node.style.display = 'block';
-    node.style.margin = '10px 0';
-    return node;
-  }
-
-  static value(node: HTMLElement) {
-    return node.getAttribute('src');
-  }
-}
-VideoBlot.blotName = 'video';
-VideoBlot.tagName = 'iframe';
-
 // Registrar os módulos no Quill
 Quill.register('modules/imageResize', ImageResize);
 Quill.register('modules/imageDrop', ImageDrop);
-Quill.register(VideoBlot);
-
-// Criar handlers customizados para a toolbar
-const toolbarHandlers = {
-  video: function() {
-    const range = this.quill.getSelection(true);
-    const url = prompt('Insira a URL do YouTube:');
-    if (url) {
-      const embedUrl = getYoutubeEmbedUrl(url);
-      if (embedUrl) {
-        this.quill.insertEmbed(range.index, 'video', embedUrl);
-        this.quill.setSelection(range.index + 1);
-      } else {
-        alert('URL inválida do YouTube');
-      }
-    }
-  },
-  link: function(value: string) {
-    if (value) {
-      const href = prompt('Insira a URL do link:');
-      if (href) {
-        this.quill.format('link', href);
-      }
-    } else {
-      this.quill.format('link', false);
-    }
-  }
-};
-
-// Função para converter URL do YouTube para embed (precisa ser global)
-function getYoutubeEmbedUrl(url: string) {
-  const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
-  const match = url.match(regExp);
-  return match && match[2].length === 11 ? `https://www.youtube.com/embed/${match[2]}` : null;
-}
 
 interface RichTextEditorProps {
   value: string;
@@ -83,28 +26,21 @@ export function RichTextEditor({
 }: RichTextEditorProps) {
   const quillRef = useRef<ReactQuill>(null);
 
-  // Adicionar ícone customizado para vídeo na toolbar
-  React.useEffect(() => {
-    const icons = Quill.import('ui/icons');
-    icons['video'] = '<svg viewBox="0 0 18 18"> <rect class="ql-stroke" height="12" width="12" x="3" y="3"/> <rect class="ql-fill" height="12" width="1" x="5" y="3"/> <rect class="ql-fill" height="12" width="1" x="12" y="3"/> <rect class="ql-fill" height="2" width="8" x="5" y="8"/> <rect class="ql-fill" height="3" width="3" x="2" y="6"/> <rect class="ql-fill" height="3" width="3" x="13" y="6"/> </svg>';
-  }, []);
+
 
   // Configuração avançada do Quill com módulos de redimensionamento e drag-drop
   const modules = {
-    toolbar: {
-      container: [
-        [{ 'header': [1, 2, 3, false] }],
-        ['bold', 'italic', 'underline', 'strike'],
-        [{ 'color': [] }, { 'background': [] }],
-        [{ 'align': [] }],
-        [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-        [{ 'indent': '-1'}, { 'indent': '+1' }],
-        ['blockquote', 'code-block'],
-        ['link', 'image', 'video'],
-        ['clean']
-      ],
-      handlers: toolbarHandlers
-    },
+    toolbar: [
+      [{ 'header': [1, 2, 3, false] }],
+      ['bold', 'italic', 'underline', 'strike'],
+      [{ 'color': [] }, { 'background': [] }],
+      [{ 'align': [] }],
+      [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+      [{ 'indent': '-1'}, { 'indent': '+1' }],
+      ['blockquote', 'code-block'],
+      ['link', 'image', 'video'],
+      ['clean']
+    ],
     clipboard: {
       matchVisual: false,
     },
