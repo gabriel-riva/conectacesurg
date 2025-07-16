@@ -14,29 +14,20 @@ import {
 import { Link, Image, Youtube, Upload, Table } from "lucide-react";
 
 // Registrar módulos do Quill
-let ImageResize: any = null;
-let ImageDrop: any = null;
+let ImageResize: any;
+let ImageDrop: any;
 
 if (typeof window !== 'undefined') {
   try {
-    // Tentar carregar os módulos de imagem dinamicamente
-    import('quill-image-resize-module-react').then(module => {
-      ImageResize = module.default || module;
-      if (ImageResize && typeof ImageResize === 'function') {
-        Quill.register('modules/imageResize', ImageResize);
-      }
-    }).catch(error => {
-      console.warn('Não foi possível carregar o módulo de redimensionamento de imagem:', error);
-    });
+    ImageResize = require('quill-image-resize-module-react').default;
+    ImageDrop = require('quill-image-drop-module').default;
     
-    import('quill-image-drop-module').then(module => {
-      ImageDrop = module.default || module;
-      if (ImageDrop && typeof ImageDrop === 'function') {
-        Quill.register('modules/imageDrop', ImageDrop);
-      }
-    }).catch(error => {
-      console.warn('Não foi possível carregar o módulo de arrastar e soltar imagem:', error);
-    });
+    if (ImageResize) {
+      Quill.register('modules/imageResize', ImageResize);
+    }
+    if (ImageDrop) {
+      Quill.register('modules/imageDrop', ImageDrop);
+    }
   } catch (error) {
     console.warn('Não foi possível carregar os módulos de imagem:', error);
   }
@@ -76,6 +67,11 @@ export function RichTextEditor({ value, onChange, placeholder = "Digite seu cont
         'image': () => handleImageUpload(),
         'video': () => handleYoutubeVideo()
       }
+    },
+    imageDrop: true,
+    imageResize: {
+      parchment: Quill.import('parchment'),
+      modules: ['Resize', 'DisplaySize', 'Toolbar']
     },
     clipboard: {
       matchVisual: false,
