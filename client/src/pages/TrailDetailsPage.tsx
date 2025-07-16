@@ -59,6 +59,7 @@ export default function TrailDetailsPage() {
   // Selecionar o primeiro conteúdo automaticamente quando a trilha carrega
   useEffect(() => {
     if (trail && trail.contents && trail.contents.length > 0 && !selectedContent) {
+      console.log('Definindo primeiro conteúdo:', trail.contents[0]);
       setSelectedContent(trail.contents[0]);
     }
   }, [trail, selectedContent]);

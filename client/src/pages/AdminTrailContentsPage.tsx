@@ -13,11 +13,11 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { Link, useParams } from "wouter";
-import { Editor } from "@tinymce/tinymce-react";
+import { RichTextEditor } from "@/components/RichTextEditor";
 
 interface TrailContent {
   id: number;
@@ -61,7 +61,7 @@ export default function AdminTrailContentsPage() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const editorRef = useRef<any>(null);
+
 
   const { data: trail, isLoading: isLoadingTrail } = useQuery<Trail>({
     queryKey: ['/api/trails', trailId],
@@ -296,28 +296,11 @@ export default function AdminTrailContentsPage() {
                           <FormItem>
                             <FormLabel>Conteúdo</FormLabel>
                             <FormControl>
-                              <div className="min-h-96">
-                                <Editor
-                                  apiKey="qagffr3pkuv17a8on1afax661irst1hbr4e6tbv888sz91jc"
-                                  onInit={(evt, editor) => editorRef.current = editor}
-                                  initialValue={field.value}
-                                  init={{
-                                    height: 400,
-                                    menubar: false,
-                                    plugins: [
-                                      'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
-                                      'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
-                                      'insertdatetime', 'media', 'table', 'code', 'help', 'wordcount'
-                                    ],
-                                    toolbar: 'undo redo | blocks | ' +
-                                      'bold italic forecolor | alignleft aligncenter ' +
-                                      'alignright alignjustify | bullist numlist outdent indent | ' +
-                                      'removeformat | help',
-                                    content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }'
-                                  }}
-                                  onEditorChange={(content) => field.onChange(content)}
-                                />
-                              </div>
+                              <RichTextEditor
+                                value={field.value}
+                                onChange={field.onChange}
+                                placeholder="Digite o conteúdo da trilha..."
+                              />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -520,27 +503,11 @@ export default function AdminTrailContentsPage() {
                   <FormItem>
                     <FormLabel>Conteúdo</FormLabel>
                     <FormControl>
-                      <div className="min-h-96">
-                        <Editor
-                          apiKey="qagffr3pkuv17a8on1afax661irst1hbr4e6tbv888sz91jc"
-                          value={field.value}
-                          init={{
-                            height: 400,
-                            menubar: false,
-                            plugins: [
-                              'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
-                              'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
-                              'insertdatetime', 'media', 'table', 'code', 'help', 'wordcount'
-                            ],
-                            toolbar: 'undo redo | blocks | ' +
-                              'bold italic forecolor | alignleft aligncenter ' +
-                              'alignright alignjustify | bullist numlist outdent indent | ' +
-                              'removeformat | help',
-                            content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }'
-                          }}
-                          onEditorChange={(content) => field.onChange(content)}
-                        />
-                      </div>
+                      <RichTextEditor
+                        value={field.value}
+                        onChange={field.onChange}
+                        placeholder="Digite o conteúdo da trilha..."
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
