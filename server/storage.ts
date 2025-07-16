@@ -1935,7 +1935,12 @@ export class DatabaseStorage implements IStorage {
       const contentsQuery = db
         .select()
         .from(trailContents)
-        .where(eq(trailContents.trailId, id))
+        .where(
+          and(
+            eq(trailContents.trailId, id),
+            eq(trailContents.isDraft, false)
+          )
+        )
         .orderBy(trailContents.order, trailContents.createdAt);
 
       const contents = await contentsQuery;
