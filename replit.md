@@ -18,7 +18,7 @@ Preferred communication style: Simple, everyday language.
 - **State Management**: TanStack Query for server state management
 - **Routing**: Wouter for client-side routing
 - **Forms**: React Hook Form with Zod validation
-- **Rich Text Editing**: TinyMCE integration for content creation
+- **Rich Text Editing**: React-Quill integration with advanced features for content creation
 
 ### Backend Architecture
 - **Runtime**: Node.js with Express.js server
@@ -95,6 +95,7 @@ Preferred communication style: Simple, everyday language.
 - **Trails Rich Text Editor**: Fixed and maintained Quill-based rich text editor for trail content management in admin interface
 - **Trail Content Display**: Resolved issues with trail content listing in both admin and public areas - contents now display correctly in both contexts
 - **API Query Optimization**: Fixed query keys and endpoints for proper data fetching and cache invalidation
+- **Rich Text Editor Enhancement**: Enhanced Quill editor with image resizing, drag-and-drop functionality, improved YouTube video embedding, and better link insertion capabilities
 
 ## External Dependencies
 

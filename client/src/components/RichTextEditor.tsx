@@ -13,6 +13,37 @@ import {
 } from "@/components/ui/dialog";
 import { Link, Image, Youtube, Table } from "lucide-react";
 
+// Import dos módulos do Quill para funcionalidades avançadas
+import ImageResize from 'quill-image-resize-module-react';
+import { ImageDrop } from 'quill-image-drop-module';
+
+// Criar um blot customizado para vídeos do YouTube
+const BlockEmbed = Quill.import('blots/block/embed');
+class VideoBlot extends BlockEmbed {
+  static create(value: string) {
+    const node = super.create();
+    node.setAttribute('src', value);
+    node.setAttribute('frameborder', '0');
+    node.setAttribute('allowfullscreen', 'true');
+    node.setAttribute('width', '100%');
+    node.setAttribute('height', '315');
+    node.style.display = 'block';
+    node.style.margin = '10px 0';
+    return node;
+  }
+
+  static value(node: HTMLElement) {
+    return node.getAttribute('src');
+  }
+}
+VideoBlot.blotName = 'video';
+VideoBlot.tagName = 'iframe';
+
+// Registrar os módulos no Quill
+Quill.register('modules/imageResize', ImageResize);
+Quill.register('modules/imageDrop', ImageDrop);
+Quill.register(VideoBlot);
+
 interface RichTextEditorProps {
   value: string;
   onChange: (value: string) => void;
@@ -33,7 +64,7 @@ export function RichTextEditor({
   const [isLinkDialogOpen, setIsLinkDialogOpen] = useState(false);
   const [isYoutubeDialogOpen, setIsYoutubeDialogOpen] = useState(false);
 
-  // Configuração básica do Quill (sem módulos problemáticos)
+  // Configuração avançada do Quill com módulos de redimensionamento e drag-drop
   const modules = {
     toolbar: [
       [{ 'header': [1, 2, 3, false] }],
@@ -48,14 +79,19 @@ export function RichTextEditor({
     ],
     clipboard: {
       matchVisual: false,
-    }
+    },
+    imageResize: {
+      parchment: Quill.import('parchment'),
+      modules: ['Resize', 'DisplaySize', 'Toolbar']
+    },
+    imageDrop: true
   };
 
   // Formatos suportados
   const formats = [
     'header', 'bold', 'italic', 'underline', 'strike',
     'color', 'background', 'align', 'list', 'indent',
-    'blockquote', 'code-block', 'link', 'image'
+    'blockquote', 'code-block', 'link', 'image', 'video'
   ];
 
   // Função para inserir link personalizado
@@ -65,15 +101,26 @@ export function RichTextEditor({
 
   // Função para inserir link
   const insertLink = () => {
-    if (quillRef.current) {
+    if (quillRef.current && linkUrl) {
       const quill = quillRef.current.getEditor();
       const range = quill.getSelection();
       
       if (range) {
         if (linkText) {
-          quill.insertText(range.index, linkText, 'link', linkUrl);
-        } else {
+          // Inserir texto com link
+          quill.insertText(range.index, linkText);
+          quill.setSelection(range.index, linkText.length);
           quill.format('link', linkUrl);
+        } else {
+          // Aplicar link ao texto selecionado
+          if (range.length > 0) {
+            quill.format('link', linkUrl);
+          } else {
+            // Inserir URL como texto e link
+            quill.insertText(range.index, linkUrl);
+            quill.setSelection(range.index, linkUrl.length);
+            quill.format('link', linkUrl);
+          }
         }
       }
     }
@@ -142,8 +189,8 @@ export function RichTextEditor({
       const range = quill.getSelection();
       
       if (range) {
-        const videoHtml = `<iframe src="${embedUrl}" frameborder="0" allowfullscreen style="width: 100%; height: 315px;"></iframe>`;
-        quill.clipboard.dangerouslyPasteHTML(range.index, videoHtml);
+        quill.insertEmbed(range.index, 'video', embedUrl);
+        quill.setSelection(range.index + 1);
       }
     }
     
@@ -243,6 +290,92 @@ export function RichTextEditor({
           
           .quill-editor-container .ql-tooltip {
             z-index: 1000;
+          }
+
+          /* Estilos para redimensionamento de imagens */
+          .quill-editor-container .ql-editor .ql-image-resize-box {
+            position: absolute;
+            box-sizing: border-box;
+            border: 1px dashed #007cdc;
+            background: rgba(0, 124, 220, 0.1);
+          }
+
+          .quill-editor-container .ql-editor .ql-image-resize-handle {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background: #007cdc;
+            border: 1px solid #ffffff;
+            cursor: nw-resize;
+          }
+
+          .quill-editor-container .ql-editor .ql-image-resize-handle:hover {
+            background: #0056b3;
+          }
+
+          .quill-editor-container .ql-editor .ql-image-resize-handle-nw {
+            top: -4px;
+            left: -4px;
+            cursor: nw-resize;
+          }
+
+          .quill-editor-container .ql-editor .ql-image-resize-handle-ne {
+            top: -4px;
+            right: -4px;
+            cursor: ne-resize;
+          }
+
+          .quill-editor-container .ql-editor .ql-image-resize-handle-sw {
+            bottom: -4px;
+            left: -4px;
+            cursor: sw-resize;
+          }
+
+          .quill-editor-container .ql-editor .ql-image-resize-handle-se {
+            bottom: -4px;
+            right: -4px;
+            cursor: se-resize;
+          }
+
+          /* Estilos para toolbar de redimensionamento */
+          .quill-editor-container .ql-editor .ql-image-resize-toolbar {
+            position: absolute;
+            top: -30px;
+            left: 0;
+            background: #333;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            white-space: nowrap;
+          }
+
+          /* Melhorar a aparência das imagens */
+          .quill-editor-container .ql-editor img {
+            max-width: 100%;
+            height: auto;
+            cursor: pointer;
+            border-radius: 4px;
+          }
+
+          .quill-editor-container .ql-editor img:hover {
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+          }
+
+          /* Estilos para vídeos */
+          .quill-editor-container .ql-editor iframe {
+            max-width: 100%;
+            width: 100%;
+            height: 315px;
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+            margin: 10px 0;
+          }
+
+          /* Drag and drop styling */
+          .quill-editor-container .ql-editor.ql-dragging {
+            border: 2px dashed #007cdc;
+            background-color: rgba(0, 124, 220, 0.05);
           }
         `
       }} />
