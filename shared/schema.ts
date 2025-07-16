@@ -253,6 +253,7 @@ export const news = pgTable("news", {
   description: text("description").notNull(),
   content: text("content").notNull(), // HTML content from Plate editor
   imageUrl: text("image_url"),
+  sourceUrl: text("source_url"), // URL original da notícia da CESURG
   categoryId: integer("category_id").references(() => newsCategories.id),
   creatorId: integer("creator_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
   isPublished: boolean("is_published").notNull().default(false),

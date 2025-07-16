@@ -5,6 +5,56 @@ import fs from "fs";
 import { storage } from "./storage";
 import { InsertNews, InsertNewsCategory } from "@shared/schema";
 
+// Função para extrair informações da notícia da CESURG
+async function extractCesurgNews(url: string) {
+  try {
+    // Validar URL
+    if (!url.includes('cesurgmarau.com.br/noticia/')) {
+      throw new Error('URL deve ser de uma notícia da CESURG');
+    }
+
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error(`Erro ao acessar a URL: ${response.status}`);
+    }
+
+    const html = await response.text();
+    
+    // Extrair título
+    const titleMatch = html.match(/<h1[^>]*>(.*?)<\/h1>/s);
+    const title = titleMatch ? titleMatch[1].trim() : '';
+    
+    // Extrair data
+    const dateMatch = html.match(/(\d{2}\/\d{2}\/\d{4})/);
+    const dateStr = dateMatch ? dateMatch[1] : '';
+    
+    // Extrair conteúdo principal
+    const contentMatch = html.match(/<h1[^>]*>.*?<\/h1>(.*?)(?=<img|<div|$)/s);
+    let content = contentMatch ? contentMatch[1].trim() : '';
+    
+    // Limpar tags HTML desnecessárias do conteúdo
+    content = content.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+    
+    // Extrair primeira imagem
+    const imageMatch = html.match(/https:\/\/cesurgmarau\.com\.br\/upload\/noticia\/[^"]+\.jpg/);
+    const imageUrl = imageMatch ? imageMatch[0] : null;
+    
+    // Gerar descrição a partir do início do conteúdo (primeiros 200 caracteres)
+    const description = content.length > 200 ? content.substring(0, 200) + '...' : content;
+    
+    return {
+      title,
+      description,
+      content,
+      imageUrl,
+      publishedAt: dateStr ? new Date(dateStr.split('/').reverse().join('-')) : new Date(),
+    };
+  } catch (error) {
+    console.error('Erro ao extrair notícia da CESURG:', error);
+    throw error;
+  }
+}
+
 // Configurar o multer para upload de imagens
 const uploadDir = path.join(process.cwd(), "public", "uploads", "news");
 
@@ -224,6 +274,56 @@ router.get("/:id", async (req: Request, res: Response) => {
   } catch (error) {
     console.error("Erro ao buscar notícia:", error);
     res.status(500).json({ error: "Erro ao buscar notícia" });
+  }
+});
+
+// Rota para importar notícia da CESURG
+router.post("/import-cesurg", isAdmin, async (req: Request, res: Response) => {
+  try {
+    const { url, categoryId } = req.body;
+    
+    if (!url) {
+      return res.status(400).json({ 
+        error: "URL da notícia é obrigatória" 
+      });
+    }
+
+    // Extrair informações da notícia
+    const extractedData = await extractCesurgNews(url);
+    
+    if (!extractedData.title || !extractedData.content) {
+      return res.status(400).json({ 
+        error: "Não foi possível extrair informações da notícia" 
+      });
+    }
+
+    const newsData: InsertNews = {
+      title: extractedData.title,
+      description: extractedData.description,
+      content: extractedData.content,
+      sourceUrl: url,
+      imageUrl: extractedData.imageUrl,
+      creatorId: req.user.id,
+      isPublished: true,
+      publishedAt: extractedData.publishedAt,
+    };
+
+    // Se tiver categoria, adicionar
+    if (categoryId) {
+      const categoryIdNum = parseInt(categoryId);
+      if (!isNaN(categoryIdNum)) {
+        const category = await storage.getNewsCategory(categoryIdNum);
+        if (category) {
+          newsData.categoryId = categoryIdNum;
+        }
+      }
+    }
+
+    const newNews = await storage.createNews(newsData);
+    res.status(201).json(newNews);
+  } catch (error) {
+    console.error("Erro ao importar notícia:", error);
+    res.status(500).json({ error: error.message || "Erro ao importar notícia" });
   }
 });
 

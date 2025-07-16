@@ -317,6 +317,9 @@ function NewsListTab() {
   const [searchTerm, setSearchTerm] = useState("");
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [newsToDelete, setNewsToDelete] = useState<number | null>(null);
+  const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
+  const [importUrl, setImportUrl] = useState("");
+  const [importCategoryId, setImportCategoryId] = useState("");
   
   const { toast } = useToast();
 
@@ -390,10 +393,48 @@ function NewsListTab() {
     },
   });
 
+  // Mutação para importar notícia da CESURG
+  const importNews = useMutation({
+    mutationFn: (data: { url: string; categoryId?: string }) => {
+      return apiRequest('/api/news/import-cesurg', {
+        method: 'POST',
+        body: data,
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Notícia importada com sucesso",
+        description: "A notícia foi importada da CESURG e publicada.",
+      });
+      refetch();
+      setIsImportDialogOpen(false);
+      setImportUrl("");
+      setImportCategoryId("");
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Erro ao importar notícia",
+        description: error.message || "Ocorreu um erro ao importar a notícia.",
+        variant: "destructive",
+      });
+      console.error("Erro ao importar notícia:", error);
+    },
+  });
+
   // Confirmar exclusão
   const confirmDelete = () => {
     if (newsToDelete !== null) {
       deleteNews.mutate(newsToDelete);
+    }
+  };
+
+  // Função para confirmar importação
+  const confirmImport = () => {
+    if (importUrl.trim()) {
+      importNews.mutate({
+        url: importUrl.trim(),
+        categoryId: importCategoryId || undefined,
+      });
     }
   };
 
@@ -417,12 +458,21 @@ function NewsListTab() {
             className="pl-8"
           />
         </div>
-        <Button
-          onClick={() => window.location.href = '/admin/noticias/nova'}
-          className="flex items-center"
-        >
-          <Plus className="mr-2 h-4 w-4" /> Nova Notícia
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            onClick={() => setIsImportDialogOpen(true)}
+            className="flex items-center"
+          >
+            <Plus className="mr-2 h-4 w-4" /> Importar da CESURG
+          </Button>
+          <Button
+            onClick={() => window.location.href = '/admin/noticias/nova'}
+            className="flex items-center"
+          >
+            <Plus className="mr-2 h-4 w-4" /> Nova Notícia
+          </Button>
+        </div>
       </div>
 
       {/* Lista de notícias */}
@@ -522,6 +572,63 @@ function NewsListTab() {
           ))}
         </div>
       )}
+
+      {/* Diálogo de importação da CESURG */}
+      <Dialog open={isImportDialogOpen} onOpenChange={setIsImportDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Importar Notícia da CESURG</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="importUrl">URL da Notícia</Label>
+              <Input
+                id="importUrl"
+                value={importUrl}
+                onChange={(e) => setImportUrl(e.target.value)}
+                placeholder="https://cesurgmarau.com.br/noticia/..."
+              />
+              <p className="text-sm text-muted-foreground">
+                Cole o link completo da notícia do site da CESURG
+              </p>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="importCategory">Categoria (opcional)</Label>
+              <Select value={importCategoryId} onValueChange={setImportCategoryId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione uma categoria" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Sem categoria</SelectItem>
+                  {categories?.map((category: NewsCategory) => (
+                    <SelectItem key={category.id} value={category.id.toString()}>
+                      {category.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setIsImportDialogOpen(false);
+                setImportUrl("");
+                setImportCategoryId("");
+              }}
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={confirmImport}
+              disabled={!importUrl.trim() || importNews.isPending}
+            >
+              {importNews.isPending ? "Importando..." : "Importar Notícia"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Diálogo de confirmação de exclusão */}
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
