@@ -24,6 +24,7 @@ import MaterialsPage from "@/pages/MaterialsPage";
 import AdminMaterialsPage from "@/pages/AdminMaterialsPage";
 import AdminAnnouncementsPage from "@/pages/AdminAnnouncementsPage";
 import AdminFeatureSettingsPage from "@/pages/AdminFeatureSettingsPage";
+import GamificationPage from "@/pages/GamificationPage";
 import { AuthProvider } from "./providers/AuthProvider";
 import { useAuth } from "./lib/auth";
 
@@ -60,6 +61,9 @@ function Router() {
       </Route>
       <Route path="/ai">
         {() => <ProtectedRoute component={AIPage} />}
+      </Route>
+      <Route path="/gamificacao">
+        {() => <ProtectedRoute component={GamificationPage} />}
       </Route>
       <Route path="/admin/ai">
         {() => <ProtectedRoute component={AdminAIPage} adminOnly={true} />}

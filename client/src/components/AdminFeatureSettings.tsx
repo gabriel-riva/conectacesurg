@@ -58,11 +58,17 @@ export function AdminFeatureSettings() {
       isEnabled: boolean;
       disabledMessage: string;
     }) => {
-      return apiRequest(`/api/feature-settings/${featureName}`, {
+      const response = await fetch(`/api/feature-settings/${featureName}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ isEnabled, disabledMessage }),
       });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/feature-settings'] });

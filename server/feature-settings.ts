@@ -56,12 +56,12 @@ router.get('/check/:featureName', async (req: Request, res: Response) => {
     });
 
     if (!setting) {
-      return res.json({ isEnabled: true, message: null }); // Default: habilitado
+      return res.json({ isEnabled: true, disabledMessage: null }); // Default: habilitado
     }
 
     res.json({
       isEnabled: setting.isEnabled,
-      message: setting.isEnabled ? null : setting.disabledMessage,
+      disabledMessage: setting.isEnabled ? null : setting.disabledMessage,
     });
   } catch (error) {
     console.error('Erro ao verificar configuração:', error);
