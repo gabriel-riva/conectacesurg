@@ -29,6 +29,7 @@ import TrilhasPage from "@/pages/TrilhasPage";
 import TrailDetailsPage from "@/pages/TrailDetailsPage";
 import AdminTrilhasPage from "@/pages/AdminTrilhasPage";
 import AdminTrailContentsPage from "@/pages/AdminTrailContentsPage";
+import AdminGamificationPage from "@/pages/AdminGamificationPage";
 import { AuthProvider } from "./providers/AuthProvider";
 import { useAuth } from "./lib/auth";
 
@@ -114,6 +115,9 @@ function Router() {
       </Route>
       <Route path="/admin/funcionalidades">
         {() => <ProtectedRoute component={AdminFeatureSettingsPage} adminOnly={true} />}
+      </Route>
+      <Route path="/admin/gamificacao">
+        {() => <ProtectedRoute component={AdminGamificationPage} adminOnly={true} />}
       </Route>
       <Route path="/materiais">
         {() => <ProtectedRoute component={MaterialsPage} />}

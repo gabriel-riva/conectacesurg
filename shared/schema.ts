@@ -370,6 +370,28 @@ export const trailProgress = pgTable("trail_progress", {
   };
 });
 
+// Tabelas para Gamificação
+export const gamificationSettings = pgTable("gamification_settings", {
+  id: serial("id").primaryKey(),
+  generalCategoryId: integer("general_category_id").references(() => userCategories.id),
+  enabledCategoryIds: integer("enabled_category_ids").array().default([]),
+  cycleStartDate: date("cycle_start_date"),
+  cycleEndDate: date("cycle_end_date"),
+  annualStartDate: date("annual_start_date"),
+  annualEndDate: date("annual_end_date"),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const gamificationPoints = pgTable("gamification_points", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  points: integer("points").notNull(),
+  description: text("description").notNull(),
+  type: text("type").notNull().default("manual"), // 'manual', 'automatic'
+  createdBy: integer("created_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Tipos e esquemas para o UtilityLink estão definidos abaixo junto com os outros esquemas
 
 // Relations
@@ -701,6 +723,26 @@ export const trailProgressRelations = relations(trailProgress, ({ one }) => ({
   }),
 }));
 
+// Relações para Gamificação
+export const gamificationSettingsRelations = relations(gamificationSettings, ({ one }) => ({
+  generalCategory: one(userCategories, {
+    fields: [gamificationSettings.generalCategoryId],
+    references: [userCategories.id],
+  }),
+}));
+
+export const gamificationPointsRelations = relations(gamificationPoints, ({ one }) => ({
+  user: one(users, {
+    fields: [gamificationPoints.userId],
+    references: [users.id],
+  }),
+  creator: one(users, {
+    fields: [gamificationPoints.createdBy],
+    references: [users.id],
+    relationName: "createdBy"
+  }),
+}));
+
 // Schemas
 export const insertUserCategorySchema = createInsertSchema(userCategories).omit({
   id: true,
@@ -873,6 +915,19 @@ export const insertFeatureSettingSchema = createInsertSchema(featureSettings).om
   updatedAt: true,
 });
 
+// Schemas para Gamificação
+export const insertGamificationSettingsSchema = createInsertSchema(gamificationSettings).omit({
+  id: true,
+  updatedAt: true,
+});
+
+export const insertGamificationPointsSchema = createInsertSchema(gamificationPoints).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const updateGamificationSettingsSchema = insertGamificationSettingsSchema.partial();
+
 // Types
 export type InsertUserCategory = z.infer<typeof insertUserCategorySchema>;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -901,6 +956,9 @@ export type InsertNewsCategory = z.infer<typeof insertNewsCategorySchema>;
 export type InsertNews = z.infer<typeof insertNewsSchema>;
 export type InsertAnnouncement = z.infer<typeof insertAnnouncementSchema>;
 export type InsertFeatureSetting = z.infer<typeof insertFeatureSettingSchema>;
+export type InsertGamificationSettings = z.infer<typeof insertGamificationSettingsSchema>;
+export type InsertGamificationPoints = z.infer<typeof insertGamificationPointsSchema>;
+export type UpdateGamificationSettings = z.infer<typeof updateGamificationSettingsSchema>;
 
 export type UserCategory = typeof userCategories.$inferSelect;
 export type User = typeof users.$inferSelect;
@@ -927,6 +985,8 @@ export type NewsCategory = typeof newsCategories.$inferSelect;
 export type News = typeof news.$inferSelect;
 export type Announcement = typeof announcements.$inferSelect;
 export type FeatureSetting = typeof featureSettings.$inferSelect;
+export type GamificationSettings = typeof gamificationSettings.$inferSelect;
+export type GamificationPoints = typeof gamificationPoints.$inferSelect;
 
 // Tabela para pastas de materiais
 export const materialFolders = pgTable("material_folders", {
