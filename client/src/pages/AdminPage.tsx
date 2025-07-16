@@ -17,6 +17,7 @@ import { UserDocumentsModal } from "@/components/UserDocumentsModal";
 import { EditUserModal } from "@/components/EditUserModal";
 import { EditGroupModal } from "@/components/EditGroupModal";
 import { AdminIdeas } from "@/components/AdminIdeas";
+import { UserCategoryModal } from "@/components/UserCategoryModal";
 import { 
   AlertDialog,
   AlertDialogAction,
@@ -36,6 +37,7 @@ export default function AdminPage({ activeTab: initialActiveTab }: { activeTab?:
   const [searchTerm, setSearchTerm] = useState("");
   const [isUserModalOpen, setIsUserModalOpen] = useState(false);
   const [isGroupModalOpen, setIsGroupModalOpen] = useState(false);
+  const [isUserCategoryModalOpen, setIsUserCategoryModalOpen] = useState(false);
   const [isUserGroupsModalOpen, setIsUserGroupsModalOpen] = useState(false);
   const [isUserDocumentsModalOpen, setIsUserDocumentsModalOpen] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
@@ -173,6 +175,19 @@ export default function AdminPage({ activeTab: initialActiveTab }: { activeTab?:
     setIsGroupModalOpen(false);
   };
 
+  // Fetch user categories
+  const { data: userCategories = [] } = useQuery({
+    queryKey: ['/api/user-categories'],
+    queryFn: async () => {
+      return await apiRequest("GET", "/api/user-categories");
+    }
+  });
+
+  const handleUserCategoryCreated = () => {
+    queryClient.invalidateQueries({ queryKey: ['/api/user-categories'] });
+    setIsUserCategoryModalOpen(false);
+  };
+
   const handleDeleteUser = (userId: number) => {
     setUserToDelete(userId);
     setIsDeleteDialogOpen(true);
@@ -297,6 +312,15 @@ export default function AdminPage({ activeTab: initialActiveTab }: { activeTab?:
                 </svg>
                 Adicionar Usuário
               </Button>
+            ) : activeTab === "categorias" ? (
+              <Button 
+                onClick={() => setIsUserCategoryModalOpen(true)}
+                className="btn-primary flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                </svg>
+                Nova Categoria
+              </Button>
             ) : activeTab === "grupos" ? (
               <Button 
                 onClick={() => setIsGroupModalOpen(true)}
@@ -304,7 +328,7 @@ export default function AdminPage({ activeTab: initialActiveTab }: { activeTab?:
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                 </svg>
-                Adicionar Grupo
+                Novo Grupo da Comunidade
               </Button>
             ) : null}
           </div>
@@ -312,7 +336,8 @@ export default function AdminPage({ activeTab: initialActiveTab }: { activeTab?:
           <Tabs defaultValue={activeTab} className="w-full" onValueChange={setActiveTab}>
             <TabsList className="mb-4">
               <TabsTrigger value="usuarios">Usuários</TabsTrigger>
-              <TabsTrigger value="grupos">Grupos</TabsTrigger>
+              <TabsTrigger value="categorias">Categorias</TabsTrigger>
+              <TabsTrigger value="grupos">Grupos da Comunidade</TabsTrigger>
               <TabsTrigger value="acessos">Acessos</TabsTrigger>
             </TabsList>
             
@@ -565,6 +590,106 @@ export default function AdminPage({ activeTab: initialActiveTab }: { activeTab?:
               </Card>
             </TabsContent>
             
+            <TabsContent value="categorias">
+              <Card>
+                <CardContent className="pt-6">
+                  <div className="flex flex-col md:flex-row justify-between items-center mb-6">
+                    <h2 className="text-lg font-semibold text-primary mb-4 md:mb-0">Categorias de Usuários</h2>
+                    <div className="relative w-full md:w-auto">
+                      <Input
+                        type="text"
+                        placeholder="Buscar categorias..."
+                        className="w-full md:w-64 pl-10 pr-4"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                      />
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400 absolute left-3 top-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                      </svg>
+                    </div>
+                  </div>
+                  
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-gray-200">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nome</th>
+                          <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Descrição</th>
+                          <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cor</th>
+                          <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                          <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-200">
+                        {userCategories.length === 0 ? (
+                          <tr>
+                            <td colSpan={5} className="px-6 py-4 text-center text-sm text-gray-500">
+                              Nenhuma categoria encontrada
+                            </td>
+                          </tr>
+                        ) : (
+                          userCategories
+                            .filter(category => 
+                              category.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                              (category.description && category.description.toLowerCase().includes(searchTerm.toLowerCase()))
+                            )
+                            .sort((a, b) => a.name.localeCompare(b.name))
+                            .map((category) => (
+                              <tr key={category.id}>
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                  <div className="text-sm font-medium text-gray-900">{category.name}</div>
+                                </td>
+                                <td className="px-6 py-4">
+                                  <div className="text-sm text-gray-900">{category.description || "Sem descrição"}</div>
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                  <div className="flex items-center">
+                                    <div 
+                                      className="w-4 h-4 rounded-full mr-2 border border-gray-300"
+                                      style={{ backgroundColor: category.color }}
+                                    />
+                                    <span className="text-sm text-gray-900">{category.color}</span>
+                                  </div>
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                  <Badge variant={category.isActive ? "default" : "secondary"}>
+                                    {category.isActive ? "Ativa" : "Inativa"}
+                                  </Badge>
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                  <div className="flex items-center space-x-2">
+                                    <Button 
+                                      variant="ghost" 
+                                      size="icon" 
+                                      className="h-8 w-8 text-blue-600 hover:text-blue-900 hover:bg-blue-50" 
+                                      title="Editar"
+                                    >
+                                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                      </svg>
+                                    </Button>
+                                    <Button 
+                                      variant="ghost" 
+                                      size="icon" 
+                                      className="h-8 w-8 text-red-600 hover:text-red-900 hover:bg-red-50" 
+                                      title="Remover"
+                                    >
+                                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                      </svg>
+                                    </Button>
+                                  </div>
+                                </td>
+                              </tr>
+                            ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+            
             <TabsContent value="grupos">
               <Card>
                 <CardContent className="pt-6">
@@ -707,6 +832,13 @@ export default function AdminPage({ activeTab: initialActiveTab }: { activeTab?:
         <AddGroupModal 
           onClose={() => setIsGroupModalOpen(false)} 
           onGroupCreated={handleGroupCreated}
+        />
+      )}
+
+      {isUserCategoryModalOpen && (
+        <UserCategoryModal 
+          onClose={() => setIsUserCategoryModalOpen(false)} 
+          onCategoryCreated={handleUserCategoryCreated}
         />
       )}
 

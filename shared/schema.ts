@@ -3,11 +3,23 @@ import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { relations } from "drizzle-orm";
 
+// Tabela para categorias/grupos de usuários (classificações)
+export const userCategories = pgTable("user_categories", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull().unique(),
+  description: text("description"),
+  color: text("color").default("#3B82F6"), // Cor para identificação visual
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   email: text("email").notNull().unique(),
   name: text("name").notNull(),
   role: text("role").notNull().default("user"),
+  userCategoryId: integer("user_category_id").references(() => userCategories.id), // Categoria do usuário
   password: text("password"),
   googleId: text("google_id").unique(),
   photoUrl: text("photo_url"),
@@ -286,7 +298,15 @@ export const featureSettings = pgTable("feature_settings", {
 // Tipos e esquemas para o UtilityLink estão definidos abaixo junto com os outros esquemas
 
 // Relations
-export const usersRelations = relations(users, ({ many }) => ({
+export const userCategoriesRelations = relations(userCategories, ({ many }) => ({
+  users: many(users),
+}));
+
+export const usersRelations = relations(users, ({ many, one }) => ({
+  userCategory: one(userCategories, {
+    fields: [users.userCategoryId],
+    references: [userCategories.id],
+  }),
   userGroups: many(userGroups),
   createdGroups: many(groups, { relationName: "creator" }),
   posts: many(posts),
@@ -542,6 +562,12 @@ export const featureSettingsRelations = relations(featureSettings, ({ one }) => 
 }));
 
 // Schemas
+export const insertUserCategorySchema = createInsertSchema(userCategories).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
   password: true,
@@ -706,6 +732,7 @@ export const insertFeatureSettingSchema = createInsertSchema(featureSettings).om
 });
 
 // Types
+export type InsertUserCategory = z.infer<typeof insertUserCategorySchema>;
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type UpdateProfile = z.infer<typeof updateProfileSchema>;
 export type InsertGoogleUser = z.infer<typeof insertGoogleUserSchema>;
@@ -732,6 +759,7 @@ export type InsertNews = z.infer<typeof insertNewsSchema>;
 export type InsertAnnouncement = z.infer<typeof insertAnnouncementSchema>;
 export type InsertFeatureSetting = z.infer<typeof insertFeatureSettingSchema>;
 
+export type UserCategory = typeof userCategories.$inferSelect;
 export type User = typeof users.$inferSelect;
 export type Group = typeof groups.$inferSelect;
 export type UserGroup = typeof userGroups.$inferSelect;
