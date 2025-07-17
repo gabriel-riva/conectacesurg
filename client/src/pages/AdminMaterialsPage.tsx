@@ -198,7 +198,6 @@ export default function AdminMaterialsPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/materials/folders'] });
-      setDeletingItem(null);
       toast({ title: 'Pasta excluída com sucesso' });
     },
     onError: (error: any) => {
@@ -220,7 +219,6 @@ export default function AdminMaterialsPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/materials/files'] });
-      setDeletingItem(null);
       toast({ title: 'Arquivo excluído com sucesso' });
     },
     onError: (error: any) => {
@@ -520,8 +518,7 @@ export default function AdminMaterialsPage() {
                                       <AlertDialogCancel>Cancelar</AlertDialogCancel>
                                       <AlertDialogAction
                                         onClick={() => {
-                                          setDeletingItem({ type: 'folder', id: folder.id });
-                                          handleDelete();
+                                          deleteFolderMutation.mutate(folder.id);
                                         }}
                                         className="bg-red-600 hover:bg-red-700"
                                       >
@@ -656,8 +653,7 @@ export default function AdminMaterialsPage() {
                                       <AlertDialogCancel>Cancelar</AlertDialogCancel>
                                       <AlertDialogAction
                                         onClick={() => {
-                                          setDeletingItem({ type: 'file', id: file.id });
-                                          handleDelete();
+                                          deleteFileMutation.mutate(file.id);
                                         }}
                                         className="bg-red-600 hover:bg-red-700"
                                       >
