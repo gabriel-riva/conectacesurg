@@ -1,0 +1,89 @@
+🗑️ Tentando excluir arquivo no frontend: 6
+queryClient.ts:57  DELETE https://07ab43da-3c9c-42fc-a263-9f29228d8b25-00-2c2lpcc7savvj.spock.replit.dev/api/materials/files/6 500 (Internal Server Error)
+apiRequest @ queryClient.ts:57
+mutationFn @ AdminMaterialsPage.tsx:213
+fn @ @tanstack_react-query.js?v=b1cafdf7:1189
+run @ @tanstack_react-query.js?v=b1cafdf7:494
+start @ @tanstack_react-query.js?v=b1cafdf7:536
+execute @ @tanstack_react-query.js?v=b1cafdf7:1225
+await in execute
+mutate @ @tanstack_react-query.js?v=b1cafdf7:2630
+(anonymous) @ @tanstack_react-query.js?v=b1cafdf7:3295
+handleDelete @ AdminMaterialsPage.tsx:271
+onClick @ AdminMaterialsPage.tsx:660
+handleEvent @ chunk-OD433RWB.js?v=b1cafdf7:4
+callCallback2 @ chunk-RPCDYKBN.js?v=b1cafdf7:3674
+invokeGuardedCallbackDev @ chunk-RPCDYKBN.js?v=b1cafdf7:3699
+invokeGuardedCallback @ chunk-RPCDYKBN.js?v=b1cafdf7:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-RPCDYKBN.js?v=b1cafdf7:3736
+executeDispatch @ chunk-RPCDYKBN.js?v=b1cafdf7:7014
+processDispatchQueueItemsInOrder @ chunk-RPCDYKBN.js?v=b1cafdf7:7034
+processDispatchQueue @ chunk-RPCDYKBN.js?v=b1cafdf7:7043
+dispatchEventsForPlugins @ chunk-RPCDYKBN.js?v=b1cafdf7:7051
+(anonymous) @ chunk-RPCDYKBN.js?v=b1cafdf7:7174
+batchedUpdates$1 @ chunk-RPCDYKBN.js?v=b1cafdf7:18913
+batchedUpdates @ chunk-RPCDYKBN.js?v=b1cafdf7:3579
+dispatchEventForPluginEventSystem @ chunk-RPCDYKBN.js?v=b1cafdf7:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-RPCDYKBN.js?v=b1cafdf7:5478
+dispatchEvent @ chunk-RPCDYKBN.js?v=b1cafdf7:5472
+dispatchDiscreteEvent @ chunk-RPCDYKBN.js?v=b1cafdf7:5449Understand this error
+AdminMaterialsPage.tsx:217 ❌ Erro ao excluir arquivo no frontend: Error: 500: {"error":"Erro interno do servidor"}
+    at throwIfResNotOk (queryClient.ts:6:11)
+    at async apiRequest (queryClient.ts:64:3)
+    at async Object.mutationFn (AdminMaterialsPage.tsx:213:24)
+mutationFn @ AdminMaterialsPage.tsx:217
+await in mutationFn
+fn @ @tanstack_react-query.js?v=b1cafdf7:1189
+run @ @tanstack_react-query.js?v=b1cafdf7:494
+start @ @tanstack_react-query.js?v=b1cafdf7:536
+execute @ @tanstack_react-query.js?v=b1cafdf7:1225
+await in execute
+mutate @ @tanstack_react-query.js?v=b1cafdf7:2630
+(anonymous) @ @tanstack_react-query.js?v=b1cafdf7:3295
+handleDelete @ AdminMaterialsPage.tsx:271
+onClick @ AdminMaterialsPage.tsx:660
+handleEvent @ chunk-OD433RWB.js?v=b1cafdf7:4
+callCallback2 @ chunk-RPCDYKBN.js?v=b1cafdf7:3674
+invokeGuardedCallbackDev @ chunk-RPCDYKBN.js?v=b1cafdf7:3699
+invokeGuardedCallback @ chunk-RPCDYKBN.js?v=b1cafdf7:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-RPCDYKBN.js?v=b1cafdf7:3736
+executeDispatch @ chunk-RPCDYKBN.js?v=b1cafdf7:7014
+processDispatchQueueItemsInOrder @ chunk-RPCDYKBN.js?v=b1cafdf7:7034
+processDispatchQueue @ chunk-RPCDYKBN.js?v=b1cafdf7:7043
+dispatchEventsForPlugins @ chunk-RPCDYKBN.js?v=b1cafdf7:7051
+(anonymous) @ chunk-RPCDYKBN.js?v=b1cafdf7:7174
+batchedUpdates$1 @ chunk-RPCDYKBN.js?v=b1cafdf7:18913
+batchedUpdates @ chunk-RPCDYKBN.js?v=b1cafdf7:3579
+dispatchEventForPluginEventSystem @ chunk-RPCDYKBN.js?v=b1cafdf7:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-RPCDYKBN.js?v=b1cafdf7:5478
+dispatchEvent @ chunk-RPCDYKBN.js?v=b1cafdf7:5472
+dispatchDiscreteEvent @ chunk-RPCDYKBN.js?v=b1cafdf7:5449Understand this error
+AdminMaterialsPage.tsx:227 ❌ Erro na mutação de exclusão: Error: 500: {"error":"Erro interno do servidor"}
+    at throwIfResNotOk (queryClient.ts:6:11)
+    at async apiRequest (queryClient.ts:64:3)
+    at async Object.mutationFn (AdminMaterialsPage.tsx:213:24)
+onError @ AdminMaterialsPage.tsx:227
+execute @ @tanstack_react-query.js?v=b1cafdf7:1254
+await in execute
+mutate @ @tanstack_react-query.js?v=b1cafdf7:2630
+(anonymous) @ @tanstack_react-query.js?v=b1cafdf7:3295
+handleDelete @ AdminMaterialsPage.tsx:271
+onClick @ AdminMaterialsPage.tsx:660
+handleEvent @ chunk-OD433RWB.js?v=b1cafdf7:4
+callCallback2 @ chunk-RPCDYKBN.js?v=b1cafdf7:3674
+invokeGuardedCallbackDev @ chunk-RPCDYKBN.js?v=b1cafdf7:3699
+invokeGuardedCallback @ chunk-RPCDYKBN.js?v=b1cafdf7:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-RPCDYKBN.js?v=b1cafdf7:3736
+executeDispatch @ chunk-RPCDYKBN.js?v=b1cafdf7:7014
+processDispatchQueueItemsInOrder @ chunk-RPCDYKBN.js?v=b1cafdf7:7034
+processDispatchQueue @ chunk-RPCDYKBN.js?v=b1cafdf7:7043
+dispatchEventsForPlugins @ chunk-RPCDYKBN.js?v=b1cafdf7:7051
+(anonymous) @ chunk-RPCDYKBN.js?v=b1cafdf7:7174
+batchedUpdates$1 @ chunk-RPCDYKBN.js?v=b1cafdf7:18913
+batchedUpdates @ chunk-RPCDYKBN.js?v=b1cafdf7:3579
+dispatchEventForPluginEventSystem @ chunk-RPCDYKBN.js?v=b1cafdf7:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-RPCDYKBN.js?v=b1cafdf7:5478
+dispatchEvent @ chunk-RPCDYKBN.js?v=b1cafdf7:5472
+dispatchDiscreteEvent @ chunk-RPCDYKBN.js?v=b1cafdf7:5449Understand this error
+AdminMaterialsPage.tsx:211 🗑️ Tentando excluir arquivo no frontend: 5
+AdminMaterialsPage.tsx:214 ✅ Arquivo excluído com sucesso no frontend: {message: 'Arquivo deletado com sucesso'}

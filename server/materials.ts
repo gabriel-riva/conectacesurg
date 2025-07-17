@@ -479,28 +479,51 @@ router.delete("/files/:id", isAdmin, async (req: Request, res: Response) => {
     
     const fileId = parseInt(req.params.id);
     
+    if (isNaN(fileId)) {
+      console.error("❌ ID do arquivo inválido:", req.params.id);
+      return res.status(400).json({ error: "ID do arquivo inválido" });
+    }
+    
     const file = await storage.getMaterialFile(fileId);
+    console.log("📄 Arquivo encontrado:", file);
     
     if (!file) {
+      console.error("❌ Arquivo não encontrado no banco:", fileId);
       return res.status(404).json({ error: "Arquivo não encontrado" });
     }
     
-    // Deletar arquivo físico
-    const filePath = path.join(process.cwd(), "public", file.fileUrl);
-    if (fs.existsSync(filePath)) {
-      fs.unlinkSync(filePath);
+    // Deletar arquivo físico se existir
+    if (file.fileUrl && typeof file.fileUrl === 'string') {
+      const filePath = path.join(process.cwd(), "public", file.fileUrl);
+      console.log("📁 Tentando deletar arquivo físico:", filePath);
+      
+      if (fs.existsSync(filePath)) {
+        try {
+          fs.unlinkSync(filePath);
+          console.log("✅ Arquivo físico deletado");
+        } catch (fsError) {
+          console.error("❌ Erro ao deletar arquivo físico:", fsError);
+          // Continuar mesmo se não conseguir deletar o arquivo físico
+        }
+      } else {
+        console.log("⚠️ Arquivo físico não encontrado:", filePath);
+      }
+    } else {
+      console.log("⚠️ Arquivo não tem URL física (provavelmente é um link do YouTube)");
     }
     
     const success = await storage.deleteMaterialFile(fileId);
+    console.log("🗃️ Resultado da exclusão no banco:", success);
     
     if (!success) {
+      console.error("❌ Falha ao deletar arquivo do banco:", fileId);
       return res.status(404).json({ error: "Arquivo não encontrado" });
     }
     
     console.log("✅ Arquivo deletado com sucesso");
     res.json({ message: "Arquivo deletado com sucesso" });
   } catch (error) {
-    console.error("Erro ao deletar arquivo:", error);
+    console.error("❌ Erro ao deletar arquivo:", error);
     res.status(500).json({ error: "Erro interno do servidor" });
   }
 });
