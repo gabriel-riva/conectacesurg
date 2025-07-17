@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { MessageCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
 import FeedbackPanel from './FeedbackPanel';
@@ -9,6 +9,18 @@ interface FeedbackTabProps {
 
 export default function FeedbackTab({ user }: FeedbackTabProps) {
   const [isPanelOpen, setIsPanelOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 640);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   const handleToggle = () => {
     setIsPanelOpen(!isPanelOpen);
@@ -19,7 +31,7 @@ export default function FeedbackTab({ user }: FeedbackTabProps) {
       {/* Feedback Tab */}
       <motion.div
         initial={{ x: '100%' }}
-        animate={{ x: isPanelOpen ? '-384px' : '0' }}
+        animate={{ x: isPanelOpen ? (isMobile ? '-100vw' : '-384px') : '0' }}
         transition={{ type: 'spring', stiffness: 300, damping: 30 }}
         className="fixed bottom-8 right-0 z-40"
       >

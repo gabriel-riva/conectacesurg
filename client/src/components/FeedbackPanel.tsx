@@ -128,11 +128,11 @@ export default function FeedbackPanel({ isOpen, onClose, user }: FeedbackPanelPr
           animate={{ opacity: 1, x: 0 }}
           exit={{ opacity: 0, x: '100%' }}
           transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-          className="fixed top-0 right-0 h-full w-96 bg-white shadow-2xl border-l border-gray-200 z-50"
+          className="fixed top-0 right-0 h-full w-full sm:w-96 bg-white shadow-2xl border-l border-gray-200 z-50"
         >
           <div className="flex flex-col h-full">
             {/* Header */}
-            <div className="flex items-center justify-between p-4 border-b border-gray-200">
+            <div className="flex items-center justify-between p-4 sm:p-4 px-3 border-b border-gray-200">
               <div className="flex items-center space-x-2">
                 {step === 'form' && (
                   <Button
@@ -144,7 +144,7 @@ export default function FeedbackPanel({ isOpen, onClose, user }: FeedbackPanelPr
                     <ChevronLeft className="h-4 w-4" />
                   </Button>
                 )}
-                <h2 className="text-lg font-semibold">
+                <h2 className="text-lg sm:text-lg text-base font-semibold">
                   {step === 'select' ? 'Feedback' : currentType?.label}
                 </h2>
               </div>
@@ -154,7 +154,7 @@ export default function FeedbackPanel({ isOpen, onClose, user }: FeedbackPanelPr
             </div>
 
             {/* Content */}
-            <div className="flex-1 overflow-y-auto p-4">
+            <div className="flex-1 overflow-y-auto p-4 sm:p-4 px-3">
               {step === 'select' && (
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
