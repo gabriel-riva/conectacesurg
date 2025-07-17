@@ -102,6 +102,7 @@ Preferred communication style: Simple, everyday language.
 - **Multi-Domain OAuth Support**: Implemented session-based domain tracking to maintain user's original domain during Google OAuth flow - users logging in from custom domain stay on custom domain
 - **Gamification Ranking Enhancement**: Modified ranking system to show all users from enabled categories including those without points, with users sorted by points (descending) then alphabetically by name. Fixed duplicate user issue for users assigned to multiple categories by using the general category as the primary eligibility filter.
 - **Feedback System Enhancements**: Implemented comprehensive feedback management system with discrete sliding panel interface, real user name display in admin tables, and admin delete functionality with confirmation dialog. System supports both anonymous and identified submissions with proper admin controls.
+- **Admin Sidebar Collapsible**: Implemented collapsible sidebar in admin pages with smooth transitions, toggle button, and tooltip support. When collapsed, sidebar shows only icons with tooltips for better space utilization while maintaining full navigation functionality.
 
 ## External Dependencies
 
