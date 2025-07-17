@@ -474,6 +474,9 @@ router.put("/files/:id", isAdmin, async (req: Request, res: Response) => {
 // Deletar arquivo (admin apenas)
 router.delete("/files/:id", isAdmin, async (req: Request, res: Response) => {
   try {
+    console.log("🗑️ Tentando deletar arquivo:", req.params.id);
+    console.log("👤 Usuário:", req.user);
+    
     const fileId = parseInt(req.params.id);
     
     const file = await storage.getMaterialFile(fileId);
@@ -494,6 +497,7 @@ router.delete("/files/:id", isAdmin, async (req: Request, res: Response) => {
       return res.status(404).json({ error: "Arquivo não encontrado" });
     }
     
+    console.log("✅ Arquivo deletado com sucesso");
     res.json({ message: "Arquivo deletado com sucesso" });
   } catch (error) {
     console.error("Erro ao deletar arquivo:", error);

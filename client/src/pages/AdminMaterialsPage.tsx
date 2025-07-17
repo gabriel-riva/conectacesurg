@@ -195,16 +195,20 @@ export default function AdminMaterialsPage() {
     mutationFn: async (id: number) => {
       const response = await fetch(`/api/materials/folders/${id}`, {
         method: 'DELETE',
+        credentials: 'include',
       });
-      if (!response.ok) throw new Error('Failed to delete folder');
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to delete folder');
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/materials/folders'] });
       setDeletingItem(null);
       toast({ title: 'Pasta excluída com sucesso' });
     },
-    onError: () => {
-      toast({ title: 'Erro ao excluir pasta', variant: 'destructive' });
+    onError: (error: any) => {
+      toast({ title: 'Erro ao excluir pasta', description: error.message, variant: 'destructive' });
     },
   });
 
@@ -212,16 +216,20 @@ export default function AdminMaterialsPage() {
     mutationFn: async (id: number) => {
       const response = await fetch(`/api/materials/files/${id}`, {
         method: 'DELETE',
+        credentials: 'include',
       });
-      if (!response.ok) throw new Error('Failed to delete file');
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to delete file');
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/materials/files'] });
       setDeletingItem(null);
       toast({ title: 'Arquivo excluído com sucesso' });
     },
-    onError: () => {
-      toast({ title: 'Erro ao excluir arquivo', variant: 'destructive' });
+    onError: (error: any) => {
+      toast({ title: 'Erro ao excluir arquivo', description: error.message, variant: 'destructive' });
     },
   });
 
