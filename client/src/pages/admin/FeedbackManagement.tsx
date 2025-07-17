@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
-import { Bug, Lightbulb, MessageCircle, User, Calendar, Eye, Edit } from 'lucide-react';
+import { Bug, Lightbulb, MessageCircle, User, Calendar, Eye, Edit, Trash2 } from 'lucide-react';
 import { apiRequest } from '@/lib/queryClient';
 import { format } from 'date-fns';
 import { Header } from '@/components/Header';
@@ -83,6 +83,27 @@ const FeedbackManagement: React.FC = () => {
     },
   });
 
+  const deleteFeedbackMutation = useMutation({
+    mutationFn: (id: number) =>
+      apiRequest(`/api/feedback/${id}`, {
+        method: 'DELETE',
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/feedback'] });
+      toast({
+        title: 'Feedback excluído',
+        description: 'O feedback foi excluído com sucesso.',
+      });
+    },
+    onError: () => {
+      toast({
+        title: 'Erro',
+        description: 'Falha ao excluir o feedback.',
+        variant: 'destructive',
+      });
+    },
+  });
+
   const handleUpdateFeedback = () => {
     if (!selectedFeedback) return;
 
@@ -94,6 +115,12 @@ const FeedbackManagement: React.FC = () => {
         resolvedAt: status === 'resolved' ? new Date().toISOString() : null,
       },
     });
+  };
+
+  const handleDeleteFeedback = (feedbackId: number) => {
+    if (window.confirm('Tem certeza que deseja excluir este feedback? Esta ação não pode ser desfeita.')) {
+      deleteFeedbackMutation.mutate(feedbackId);
+    }
   };
 
   const getTypeIcon = (type: string) => {
@@ -249,21 +276,22 @@ const FeedbackManagement: React.FC = () => {
                     </div>
                   </TableCell>
                   <TableCell>
-                    <Dialog>
-                      <DialogTrigger asChild>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            setSelectedFeedback(feedback);
-                            setAdminNotes(feedback.adminNotes || '');
-                            setStatus(feedback.status);
-                          }}
-                        >
-                          <Edit className="w-4 h-4 mr-2" />
-                          Gerenciar
-                        </Button>
-                      </DialogTrigger>
+                    <div className="flex gap-2">
+                      <Dialog>
+                        <DialogTrigger asChild>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setSelectedFeedback(feedback);
+                              setAdminNotes(feedback.adminNotes || '');
+                              setStatus(feedback.status);
+                            }}
+                          >
+                            <Edit className="w-4 h-4 mr-2" />
+                            Gerenciar
+                          </Button>
+                        </DialogTrigger>
                       <DialogContent className="max-w-2xl">
                         <DialogHeader>
                           <DialogTitle>Gerenciar Feedback #{feedback.id}</DialogTitle>
@@ -336,6 +364,17 @@ const FeedbackManagement: React.FC = () => {
                         </div>
                       </DialogContent>
                     </Dialog>
+                    
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => handleDeleteFeedback(feedback.id)}
+                      disabled={deleteFeedbackMutation.isPending}
+                    >
+                      <Trash2 className="w-4 h-4 mr-2" />
+                      Excluir
+                    </Button>
+                  </div>
                   </TableCell>
                 </TableRow>
               ))}
