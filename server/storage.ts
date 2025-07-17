@@ -20,6 +20,7 @@ import {
   trailContents,
   trailComments,
   trailProgress,
+  feedbacks,
   type User, 
   type InsertUser, 
   type InsertGoogleUser,
@@ -59,7 +60,10 @@ import {
   type InsertTrail,
   type InsertTrailContent,
   type InsertTrailComment,
-  type InsertTrailProgress
+  type InsertTrailProgress,
+  type Feedback,
+  type InsertFeedback,
+  type UpdateFeedback
 } from "@shared/schema";
 import { db, pool } from "./db";
 import { and, asc, desc, eq, gte, lte, or, inArray, SQL, isNull, sql } from "drizzle-orm";
@@ -219,6 +223,13 @@ export interface IStorage {
   getUserTrailProgress(userId: number, trailId: number): Promise<TrailProgress | undefined>;
   createOrUpdateTrailProgress(progress: InsertTrailProgress): Promise<TrailProgress>;
   getUserTrailProgresses(userId: number): Promise<(TrailProgress & { trail: Trail })[]>;
+
+  // Feedback methods
+  getAllFeedbacks(): Promise<(Feedback & { user?: User })[]>;
+  getFeedback(id: number): Promise<(Feedback & { user?: User }) | undefined>;
+  createFeedback(feedback: InsertFeedback): Promise<Feedback>;
+  updateFeedback(id: number, updates: UpdateFeedback): Promise<Feedback | undefined>;
+  deleteFeedback(id: number): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -2266,6 +2277,93 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error("Error getting user trail progresses:", error);
       return [];
+    }
+  }
+
+  // Feedback methods
+  async getAllFeedbacks(): Promise<(Feedback & { user?: User })[]> {
+    try {
+      const results = await db
+        .select({
+          feedback: feedbacks,
+          user: users,
+        })
+        .from(feedbacks)
+        .leftJoin(users, eq(feedbacks.userId, users.id))
+        .orderBy(desc(feedbacks.createdAt));
+
+      return results.map(result => ({
+        ...result.feedback,
+        user: result.user || undefined,
+      }));
+    } catch (error) {
+      console.error("Error getting all feedbacks:", error);
+      return [];
+    }
+  }
+
+  async getFeedback(id: number): Promise<(Feedback & { user?: User }) | undefined> {
+    try {
+      const [result] = await db
+        .select({
+          feedback: feedbacks,
+          user: users,
+        })
+        .from(feedbacks)
+        .leftJoin(users, eq(feedbacks.userId, users.id))
+        .where(eq(feedbacks.id, id));
+
+      if (!result) return undefined;
+
+      return {
+        ...result.feedback,
+        user: result.user || undefined,
+      };
+    } catch (error) {
+      console.error("Error getting feedback:", error);
+      return undefined;
+    }
+  }
+
+  async createFeedback(feedback: InsertFeedback): Promise<Feedback> {
+    try {
+      const [newFeedback] = await db
+        .insert(feedbacks)
+        .values(feedback)
+        .returning();
+
+      return newFeedback;
+    } catch (error) {
+      console.error("Error creating feedback:", error);
+      throw new Error("Failed to create feedback");
+    }
+  }
+
+  async updateFeedback(id: number, updates: UpdateFeedback): Promise<Feedback | undefined> {
+    try {
+      const [updatedFeedback] = await db
+        .update(feedbacks)
+        .set({
+          ...updates,
+          updatedAt: sql`now()`,
+        })
+        .where(eq(feedbacks.id, id))
+        .returning();
+
+      return updatedFeedback;
+    } catch (error) {
+      console.error("Error updating feedback:", error);
+      return undefined;
+    }
+  }
+
+  async deleteFeedback(id: number): Promise<boolean> {
+    try {
+      const result = await db.delete(feedbacks).where(eq(feedbacks.id, id)).returning();
+      return result.length > 0;
+    } catch (error) {
+      console.error("Error deleting feedback:", error);
+      return false;
     }
   }
 }

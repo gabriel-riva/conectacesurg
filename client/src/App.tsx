@@ -32,6 +32,7 @@ import AdminTrailContentsPage from "@/pages/AdminTrailContentsPage";
 import AdminGamificationPage from "@/pages/AdminGamificationPage";
 import { AuthProvider } from "./providers/AuthProvider";
 import { useAuth } from "./lib/auth";
+import FeedbackWrapper from "./components/FeedbackWrapper";
 
 function ProtectedRoute({ component: Component, adminOnly = false, ...rest }: any) {
   const { user, isLoading } = useAuth();
@@ -57,10 +58,11 @@ function ProtectedRoute({ component: Component, adminOnly = false, ...rest }: an
 
 function Router() {
   return (
-    <Switch>
-      <Route path="/ideas">
-        {() => <ProtectedRoute component={IdeasPage} />}
-      </Route>
+    <FeedbackWrapper>
+      <Switch>
+        <Route path="/ideas">
+          {() => <ProtectedRoute component={IdeasPage} />}
+        </Route>
       <Route path="/ideias">
         {() => <ProtectedRoute component={IdeasPage} />}
       </Route>
@@ -152,7 +154,8 @@ function Router() {
       <Route path="/access-denied" component={AccessDeniedPage} />
       <Route path="/" component={LoginPage} />
       <Route component={NotFound} />
-    </Switch>
+      </Switch>
+    </FeedbackWrapper>
   );
 }
 

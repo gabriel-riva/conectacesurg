@@ -928,6 +928,45 @@ export const insertGamificationPointsSchema = createInsertSchema(gamificationPoi
 
 export const updateGamificationSettingsSchema = insertGamificationSettingsSchema.partial();
 
+// Tabela para feedbacks do sistema
+export const feedbacks = pgTable("feedbacks", {
+  id: serial("id").primaryKey(),
+  type: text("type").notNull(), // 'bug', 'suggestion', 'general'
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  userEmail: text("user_email"),
+  userName: text("user_name"),
+  userId: integer("user_id").references(() => users.id),
+  isAnonymous: boolean("is_anonymous").notNull().default(false),
+  status: text("status").notNull().default("pending"), // 'pending', 'read', 'resolved'
+  adminNotes: text("admin_notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Relações para feedbacks
+export const feedbacksRelations = relations(feedbacks, ({ one }) => ({
+  user: one(users, {
+    fields: [feedbacks.userId],
+    references: [users.id],
+  }),
+}));
+
+// Schema para inserir feedback
+export const insertFeedbackSchema = createInsertSchema(feedbacks).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  status: true,
+  adminNotes: true,
+});
+
+// Schema para atualizar feedback (admin)
+export const updateFeedbackSchema = createInsertSchema(feedbacks).pick({
+  status: true,
+  adminNotes: true,
+});
+
 // Types
 export type InsertUserCategory = z.infer<typeof insertUserCategorySchema>;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -959,6 +998,8 @@ export type InsertFeatureSetting = z.infer<typeof insertFeatureSettingSchema>;
 export type InsertGamificationSettings = z.infer<typeof insertGamificationSettingsSchema>;
 export type InsertGamificationPoints = z.infer<typeof insertGamificationPointsSchema>;
 export type UpdateGamificationSettings = z.infer<typeof updateGamificationSettingsSchema>;
+export type InsertFeedback = z.infer<typeof insertFeedbackSchema>;
+export type UpdateFeedback = z.infer<typeof updateFeedbackSchema>;
 
 export type UserCategory = typeof userCategories.$inferSelect;
 export type User = typeof users.$inferSelect;
@@ -987,6 +1028,7 @@ export type Announcement = typeof announcements.$inferSelect;
 export type FeatureSetting = typeof featureSettings.$inferSelect;
 export type GamificationSettings = typeof gamificationSettings.$inferSelect;
 export type GamificationPoints = typeof gamificationPoints.$inferSelect;
+export type Feedback = typeof feedbacks.$inferSelect;
 
 // Tabela para pastas de materiais
 export const materialFolders = pgTable("material_folders", {

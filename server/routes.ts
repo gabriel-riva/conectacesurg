@@ -24,6 +24,7 @@ import userCategoriesRouter from "./user-categories";
 import userCategoryAssignmentsRouter from "./user-category-assignments";
 import trailsRouter from "./trails";
 import gamificationRouter from "./gamification";
+import feedbackRouter from "./feedback";
 
 // Create PostgreSQL session store for production or memory store for development
 const createSessionStore = () => {
@@ -746,6 +747,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Adicionar rotas de gamificação
   app.use('/api/gamification', gamificationRouter);
+  
+  // Adicionar rotas de feedback
+  app.use('/api/feedback', feedbackRouter);
   
   // Configurar acesso estático para a pasta de uploads
   app.use('/uploads', express.static('uploads'));
