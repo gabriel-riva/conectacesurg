@@ -13,7 +13,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useToast } from "@/hooks/use-toast";
-import { AdminHeader } from "@/components/AdminHeader";
+import { Header } from "@/components/Header";
 import { AdminSidebar } from "@/components/AdminSidebar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -223,20 +223,34 @@ export default function AdminGamificationPage() {
   };
 
   if (settingsLoading || categoriesLoading || usersLoading) {
-    return <div className="flex items-center justify-center min-h-screen">Carregando...</div>;
+    return (
+      <div className="min-h-screen bg-background flex flex-col">
+        <Header />
+        
+        <div className="flex flex-1">
+          <AdminSidebar />
+          
+          <main className="flex-1 p-6 overflow-auto">
+            <div className="flex items-center justify-center min-h-screen">Carregando...</div>
+          </main>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className="flex h-screen bg-gray-50">
-      <AdminSidebar />
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <AdminHeader />
-        <main className="flex-1 overflow-y-auto p-8">
-          <div className="max-w-7xl mx-auto">
-            <div className="flex items-center justify-between mb-8">
+    <div className="min-h-screen bg-background flex flex-col">
+      <Header />
+      
+      <div className="flex flex-1">
+        <AdminSidebar />
+        
+        <main className="flex-1 p-6 overflow-auto">
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
               <div>
-                <h1 className="text-3xl font-bold text-gray-900">Administração de Gamificação</h1>
-                <p className="text-gray-600">Gerencie pontos, rankings e configurações do sistema de gamificação</p>
+                <h1 className="text-2xl font-bold text-primary">Administração de Gamificação</h1>
+                <p className="text-muted-foreground mt-2">Gerencie pontos, rankings e configurações do sistema de gamificação</p>
               </div>
               <div className="flex space-x-4">
                 <Dialog open={isSettingsDialogOpen} onOpenChange={setIsSettingsDialogOpen}>
