@@ -28,6 +28,11 @@ interface Feedback {
   adminNotes: string | null;
   resolvedAt: string | null;
   resolvedBy: number | null;
+  user?: {
+    id: number;
+    name: string;
+    email: string;
+  };
 }
 
 const FeedbackManagement: React.FC = () => {
@@ -41,6 +46,19 @@ const FeedbackManagement: React.FC = () => {
     queryKey: ['/api/feedback'],
     queryFn: () => apiRequest('/api/feedback'),
   });
+
+  const { data: users } = useQuery({
+    queryKey: ['/api/users'],
+    queryFn: () => apiRequest('/api/users'),
+  });
+
+  const getUserName = (userId: number | null, isAnonymous: boolean) => {
+    if (isAnonymous) return 'Anônimo';
+    if (!userId) return 'Usuário desconhecido';
+    
+    const user = users?.find((u: any) => u.id === userId);
+    return user ? user.name : `Usuário ${userId}`;
+  };
 
   const updateFeedbackMutation = useMutation({
     mutationFn: ({ id, data }: { id: number; data: any }) =>
@@ -221,7 +239,7 @@ const FeedbackManagement: React.FC = () => {
                   <TableCell>
                     <div className="flex items-center gap-2">
                       <User className="w-4 h-4" />
-                      {feedback.isAnonymous ? 'Anônimo' : `Usuário ${feedback.userId}`}
+                      {getUserName(feedback.userId, feedback.isAnonymous)}
                     </div>
                   </TableCell>
                   <TableCell>
@@ -272,7 +290,7 @@ const FeedbackManagement: React.FC = () => {
                           <div>
                             <Label className="text-sm font-medium">Usuário</Label>
                             <p className="mt-1">
-                              {feedback.isAnonymous ? 'Anônimo' : `Usuário ${feedback.userId}`}
+                              {getUserName(feedback.userId, feedback.isAnonymous)}
                             </p>
                           </div>
 
