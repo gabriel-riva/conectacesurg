@@ -104,8 +104,45 @@ router.get("/ranking", isAuthenticated, async (req: Request, res: Response) => {
       );
     }
 
-    // Primeiro, buscar todos os usuários elegíveis baseado nas categorias configuradas
-    let eligibleUsersQuery = db
+    // Buscar usuários elegíveis baseados na configuração de gamificação
+    let eligibleUserIds: number[] = [];
+    
+    // Se há filtro por categoria específica (para visualização)
+    if (categoryId) {
+      const categoryUsers = await db
+        .select({ userId: userCategoryAssignments.userId })
+        .from(userCategoryAssignments)
+        .where(eq(userCategoryAssignments.categoryId, parseInt(categoryId as string)));
+      
+      eligibleUserIds = categoryUsers.map(u => u.userId);
+    }
+    // Se há categoria geral configurada, usar ela como base para participação na gamificação
+    else if (currentSettings?.generalCategoryId) {
+      const generalCategoryUsers = await db
+        .select({ userId: userCategoryAssignments.userId })
+        .from(userCategoryAssignments)
+        .where(eq(userCategoryAssignments.categoryId, currentSettings.generalCategoryId));
+      
+      eligibleUserIds = generalCategoryUsers.map(u => u.userId);
+    }
+    // Se há categorias habilitadas configuradas, usar elas como base
+    else if (currentSettings?.enabledCategoryIds?.length > 0) {
+      const enabledCategoryUsers = await db
+        .select({ userId: userCategoryAssignments.userId })
+        .from(userCategoryAssignments)
+        .where(inArray(userCategoryAssignments.categoryId, currentSettings.enabledCategoryIds));
+      
+      // Remover duplicatas usando Set
+      eligibleUserIds = Array.from(new Set(enabledCategoryUsers.map(u => u.userId)));
+    }
+
+    // Se não há usuários elegíveis, retornar array vazio
+    if (eligibleUserIds.length === 0) {
+      return res.json([]);
+    }
+
+    // Buscar dados dos usuários elegíveis
+    const eligibleUsers = await db
       .select({
         userId: users.id,
         userName: users.name,
@@ -114,27 +151,10 @@ router.get("/ranking", isAuthenticated, async (req: Request, res: Response) => {
         isActive: users.isActive
       })
       .from(users)
-      .innerJoin(userCategoryAssignments, eq(users.id, userCategoryAssignments.userId))
-      .where(eq(users.isActive, true));
-
-    // Filtrar por categoria específica se especificado
-    if (categoryId) {
-      eligibleUsersQuery = eligibleUsersQuery
-        .where(and(
-          eq(users.isActive, true),
-          eq(userCategoryAssignments.categoryId, parseInt(categoryId as string))
-        ));
-    }
-    // Filtrar por categorias habilitadas se for classificação geral ou se não há filtro específico
-    else if (currentSettings?.enabledCategoryIds?.length > 0) {
-      eligibleUsersQuery = eligibleUsersQuery
-        .where(and(
-          eq(users.isActive, true),
-          inArray(userCategoryAssignments.categoryId, currentSettings.enabledCategoryIds)
-        ));
-    }
-
-    const eligibleUsers = await eligibleUsersQuery;
+      .where(and(
+        eq(users.isActive, true),
+        inArray(users.id, eligibleUserIds)
+      ));
 
     // Buscar pontos para cada usuário elegível
     const userPointsMap = new Map<number, number>();
