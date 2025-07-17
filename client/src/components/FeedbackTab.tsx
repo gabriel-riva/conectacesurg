@@ -25,12 +25,9 @@ export default function FeedbackTab({ user }: FeedbackTabProps) {
       >
         <div
           onClick={handleToggle}
-          className="bg-blue-600 hover:bg-blue-700 text-white rounded-l-lg shadow-lg cursor-pointer px-3 py-6 flex items-center space-x-2 transition-colors"
+          className="bg-blue-600 hover:bg-blue-700 text-white rounded-l-lg shadow-lg cursor-pointer px-2 py-3 flex items-center justify-center transition-colors"
         >
-          <MessageCircle className="h-5 w-5" />
-          <span className="text-sm font-medium transform -rotate-90 whitespace-nowrap">
-            Feedback
-          </span>
+          <MessageCircle className="h-4 w-4" />
         </div>
       </motion.div>
 

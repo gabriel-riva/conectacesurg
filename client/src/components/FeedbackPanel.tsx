@@ -3,6 +3,7 @@ import { ChevronLeft, MessageCircle, Bug, Lightbulb, Heart, X } from 'lucide-rea
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
@@ -44,6 +45,7 @@ const feedbackTypes = [
 export default function FeedbackPanel({ isOpen, onClose, user }: FeedbackPanelProps) {
   const [step, setStep] = useState<'select' | 'form'>('select');
   const [selectedType, setSelectedType] = useState<FeedbackType | null>(null);
+  const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [isAnonymous, setIsAnonymous] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -74,11 +76,15 @@ export default function FeedbackPanel({ isOpen, onClose, user }: FeedbackPanelPr
     setIsSubmitting(true);
 
     try {
+      // Gerar título automaticamente se não fornecido
+      const finalTitle = title.trim() || currentType?.label || selectedType;
+      
       await apiRequest('/api/feedback', {
         method: 'POST',
         body: JSON.stringify({
           type: selectedType,
-          content: content.trim(),
+          title: finalTitle,
+          description: content.trim(),
           isAnonymous: isAnonymous
         }),
         headers: {
@@ -93,6 +99,7 @@ export default function FeedbackPanel({ isOpen, onClose, user }: FeedbackPanelPr
       });
 
       // Reset form
+      setTitle('');
       setContent('');
       setIsAnonymous(false);
       setStep('select');
@@ -188,6 +195,17 @@ export default function FeedbackPanel({ isOpen, onClose, user }: FeedbackPanelPr
                   <div className="flex items-center space-x-2 p-3 bg-gray-50 rounded-lg">
                     <currentType.icon className={`h-5 w-5 ${currentType.color}`} />
                     <span className="text-sm text-gray-700">{currentType.description}</span>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="title">Título (opcional)</Label>
+                    <Input
+                      id="title"
+                      value={title}
+                      onChange={(e) => setTitle(e.target.value)}
+                      placeholder="Um título breve para seu feedback"
+                      className="w-full"
+                    />
                   </div>
 
                   <div className="space-y-2">
