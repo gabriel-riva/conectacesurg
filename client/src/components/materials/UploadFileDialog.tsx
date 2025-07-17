@@ -2,25 +2,76 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Upload, X, FileText, Youtube, File } from 'lucide-react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { Upload, X, FileText, Youtube, File, Folder } from 'lucide-react';
 import { DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from '@/hooks/use-toast';
+
+interface MaterialFolder {
+  id: number;
+  name: string;
+  description: string | null;
+  creatorId: number;
+  parentId: number | null;
+  imageUrl: string | null;
+  isPublic: boolean;
+  groupIds: number[];
+  createdAt: Date;
+  updatedAt: Date;
+  creator: {
+    id: number;
+    name: string;
+    email: string;
+    photoUrl: string | null;
+  };
+  children?: MaterialFolder[];
+  files?: MaterialFile[];
+}
+
+interface MaterialFile {
+  id: number;
+  name: string;
+  description: string | null;
+  folderId: number | null;
+  uploaderId: number;
+  fileUrl: string | null;
+  fileName: string | null;
+  fileType: string;
+  fileSize: number;
+  downloadCount: number;
+  contentType?: string;
+  youtubeUrl?: string;
+  createdAt: Date;
+  updatedAt: Date;
+  uploader: {
+    id: number;
+    name: string;
+    email: string;
+    photoUrl: string | null;
+  };
+  folder?: {
+    id: number;
+    name: string;
+  };
+}
 
 const uploadFileSchema = z.object({
   name: z.string().min(1, 'Nome é obrigatório'),
   description: z.string().optional(),
+  folderId: z.number().optional(),
   file: z.any().refine((file) => file && file.length > 0, 'Arquivo é obrigatório')
 });
 
 const youtubeVideoSchema = z.object({
   name: z.string().min(1, 'Nome é obrigatório'),
   description: z.string().optional(),
+  folderId: z.number().optional(),
   youtubeUrl: z.string().url('URL inválida').refine((url) => 
     url.includes('youtube.com') || url.includes('youtu.be'), 
     'URL deve ser do YouTube'
@@ -40,11 +91,22 @@ export default function UploadFileDialog({ folderId, onSuccess }: UploadFileDial
   const [dragActive, setDragActive] = useState(false);
   const queryClient = useQueryClient();
 
+  // Query para buscar pastas
+  const { data: folders = [], isLoading: foldersLoading } = useQuery<MaterialFolder[]>({
+    queryKey: ['/api/materials/folders'],
+    queryFn: async () => {
+      const response = await fetch('/api/materials/folders');
+      if (!response.ok) throw new Error('Failed to fetch folders');
+      return response.json();
+    }
+  });
+
   const fileForm = useForm<UploadFileData>({
     resolver: zodResolver(uploadFileSchema),
     defaultValues: {
       name: '',
       description: '',
+      folderId: folderId || undefined,
       file: null
     }
   });
@@ -54,6 +116,7 @@ export default function UploadFileDialog({ folderId, onSuccess }: UploadFileDial
     defaultValues: {
       name: '',
       description: '',
+      folderId: folderId || undefined,
       youtubeUrl: ''
     }
   });
@@ -66,7 +129,7 @@ export default function UploadFileDialog({ folderId, onSuccess }: UploadFileDial
       formData.append('file', data.file[0]);
       formData.append('name', data.name);
       if (data.description) formData.append('description', data.description);
-      if (folderId) formData.append('folderId', folderId.toString());
+      if (data.folderId) formData.append('folderId', data.folderId.toString());
 
       const response = await fetch('/api/materials/files', {
         method: 'POST',
@@ -104,7 +167,7 @@ export default function UploadFileDialog({ folderId, onSuccess }: UploadFileDial
       if (data.description) formData.append('description', data.description);
       formData.append('youtubeUrl', data.youtubeUrl);
       formData.append('contentType', 'youtube');
-      if (folderId) formData.append('folderId', folderId.toString());
+      if (data.folderId) formData.append('folderId', data.folderId.toString());
 
       const response = await fetch('/api/materials/files', {
         method: 'POST',
@@ -301,6 +364,35 @@ export default function UploadFileDialog({ folderId, onSuccess }: UploadFileDial
 
               <FormField
                 control={fileForm.control}
+                name="folderId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Pasta</FormLabel>
+                    <Select onValueChange={(value) => field.onChange(value ? parseInt(value) : undefined)} value={field.value?.toString()}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione uma pasta (opcional)" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="">Raiz (sem pasta)</SelectItem>
+                        {folders.map((folder) => (
+                          <SelectItem key={folder.id} value={folder.id.toString()}>
+                            <div className="flex items-center gap-2">
+                              <Folder className="w-4 h-4" />
+                              {folder.name}
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={fileForm.control}
                 name="description"
                 render={({ field }) => (
                   <FormItem>
@@ -358,6 +450,35 @@ export default function UploadFileDialog({ folderId, onSuccess }: UploadFileDial
                     <FormControl>
                       <Input placeholder="Digite o nome do vídeo" {...field} />
                     </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={youtubeForm.control}
+                name="folderId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Pasta</FormLabel>
+                    <Select onValueChange={(value) => field.onChange(value ? parseInt(value) : undefined)} value={field.value?.toString()}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione uma pasta (opcional)" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="">Raiz (sem pasta)</SelectItem>
+                        {folders.map((folder) => (
+                          <SelectItem key={folder.id} value={folder.id.toString()}>
+                            <div className="flex items-center gap-2">
+                              <Folder className="w-4 h-4" />
+                              {folder.name}
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                     <FormMessage />
                   </FormItem>
                 )}
