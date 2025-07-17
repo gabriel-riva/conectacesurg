@@ -368,14 +368,14 @@ export default function UploadFileDialog({ folderId, onSuccess }: UploadFileDial
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Pasta</FormLabel>
-                    <Select onValueChange={(value) => field.onChange(value ? parseInt(value) : undefined)} value={field.value?.toString()}>
+                    <Select onValueChange={(value) => field.onChange(value === "root" ? undefined : parseInt(value))} value={field.value?.toString() || "root"}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Selecione uma pasta (opcional)" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="">Raiz (sem pasta)</SelectItem>
+                        <SelectItem value="root">Raiz (sem pasta)</SelectItem>
                         {folders.map((folder) => (
                           <SelectItem key={folder.id} value={folder.id.toString()}>
                             <div className="flex items-center gap-2">
@@ -461,14 +461,14 @@ export default function UploadFileDialog({ folderId, onSuccess }: UploadFileDial
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Pasta</FormLabel>
-                    <Select onValueChange={(value) => field.onChange(value ? parseInt(value) : undefined)} value={field.value?.toString()}>
+                    <Select onValueChange={(value) => field.onChange(value === "root" ? undefined : parseInt(value))} value={field.value?.toString() || "root"}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Selecione uma pasta (opcional)" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="">Raiz (sem pasta)</SelectItem>
+                        <SelectItem value="root">Raiz (sem pasta)</SelectItem>
                         {folders.map((folder) => (
                           <SelectItem key={folder.id} value={folder.id.toString()}>
                             <div className="flex items-center gap-2">
