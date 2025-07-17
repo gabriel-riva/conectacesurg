@@ -25,12 +25,14 @@ export default function FeedbackTab({ user }: FeedbackTabProps) {
       >
         <div
           onClick={handleToggle}
-          className="bg-green-600 hover:bg-green-700 text-white rounded-l-lg shadow-lg cursor-pointer px-1 py-8 flex flex-col items-center justify-center gap-1 transition-colors min-w-[24px]"
+          className="bg-green-600 hover:bg-green-700 text-white rounded-l-lg shadow-lg cursor-pointer transition-colors relative"
+          style={{ width: '16px', height: '100px' }}
         >
-          <MessageCircle className="h-3 w-3" />
-          <span className="text-xs font-medium tracking-wider transform -rotate-90 whitespace-nowrap mt-2">
-            FEEDBACK
-          </span>
+          <div className="absolute inset-0 flex items-center justify-center">
+            <span className="text-xs font-semibold tracking-wider transform -rotate-90 whitespace-nowrap select-none">
+              FEEDBACK
+            </span>
+          </div>
         </div>
       </motion.div>
 
