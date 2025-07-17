@@ -193,14 +193,7 @@ export default function AdminMaterialsPage() {
 
   const deleteFolderMutation = useMutation({
     mutationFn: async (id: number) => {
-      const response = await fetch(`/api/materials/folders/${id}`, {
-        method: 'DELETE',
-        credentials: 'include',
-      });
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Failed to delete folder');
-      }
+      return await apiRequest(`/api/materials/folders/${id}`, { method: 'DELETE' });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/materials/folders'] });
@@ -214,14 +207,7 @@ export default function AdminMaterialsPage() {
 
   const deleteFileMutation = useMutation({
     mutationFn: async (id: number) => {
-      const response = await fetch(`/api/materials/files/${id}`, {
-        method: 'DELETE',
-        credentials: 'include',
-      });
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Failed to delete file');
-      }
+      return await apiRequest(`/api/materials/files/${id}`, { method: 'DELETE' });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/materials/files'] });
