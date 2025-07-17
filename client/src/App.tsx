@@ -61,7 +61,13 @@ function Router() {
       <Route path="/ideas">
         {() => <ProtectedRoute component={IdeasPage} />}
       </Route>
+      <Route path="/ideias">
+        {() => <ProtectedRoute component={IdeasPage} />}
+      </Route>
       <Route path="/community">
+        {() => <ProtectedRoute component={CommunityPage} />}
+      </Route>
+      <Route path="/comunidades">
         {() => <ProtectedRoute component={CommunityPage} />}
       </Route>
       <Route path="/ai">
