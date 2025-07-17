@@ -12,6 +12,8 @@ import { useToast } from '@/hooks/use-toast';
 import { Bug, Lightbulb, MessageCircle, User, Calendar, Eye, Edit } from 'lucide-react';
 import { apiRequest } from '@/lib/queryClient';
 import { format } from 'date-fns';
+import { AdminHeader } from '@/components/AdminHeader';
+import { AdminSidebar } from '@/components/AdminSidebar';
 
 interface Feedback {
   id: number;
@@ -122,23 +124,36 @@ const FeedbackManagement: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold">Gerenciamento de Feedbacks</h1>
+      <div className="flex h-screen bg-gray-50">
+        <AdminSidebar />
+        <div className="flex-1 flex flex-col overflow-hidden">
+          <AdminHeader />
+          <div className="flex-1 overflow-y-auto p-6">
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h1 className="text-2xl font-bold">Gerenciamento de Feedbacks</h1>
+              </div>
+              <div className="text-center py-8">Carregando feedbacks...</div>
+            </div>
+          </div>
         </div>
-        <div className="text-center py-8">Carregando feedbacks...</div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Gerenciamento de Feedbacks</h1>
-        <div className="text-sm text-gray-600">
-          Total: {feedbacks?.length || 0} feedbacks
-        </div>
-      </div>
+    <div className="flex h-screen bg-gray-50">
+      <AdminSidebar />
+      <div className="flex-1 flex flex-col overflow-hidden">
+        <AdminHeader />
+        <div className="flex-1 overflow-y-auto p-6">
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <h1 className="text-2xl font-bold">Gerenciamento de Feedbacks</h1>
+              <div className="text-sm text-gray-600">
+                Total: {feedbacks?.length || 0} feedbacks
+              </div>
+            </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         {['open', 'in_progress', 'resolved', 'closed'].map((statusType) => {
@@ -314,6 +329,9 @@ const FeedbackManagement: React.FC = () => {
           )}
         </CardContent>
       </Card>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };
