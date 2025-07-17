@@ -21,7 +21,7 @@ export default function FeedbackTab({ user }: FeedbackTabProps) {
         initial={{ x: '100%' }}
         animate={{ x: isPanelOpen ? '-384px' : '0' }}
         transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-        className="fixed top-1/2 -translate-y-1/2 right-0 z-40"
+        className="fixed bottom-32 right-0 z-40"
       >
         <div
           onClick={handleToggle}
