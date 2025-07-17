@@ -931,17 +931,17 @@ export const updateGamificationSettingsSchema = insertGamificationSettingsSchema
 // Tabela para feedbacks do sistema
 export const feedbacks = pgTable("feedbacks", {
   id: serial("id").primaryKey(),
-  type: text("type").notNull(), // 'bug', 'suggestion', 'general'
   title: text("title").notNull(),
   description: text("description").notNull(),
-  userEmail: text("user_email"),
-  userName: text("user_name"),
-  userId: integer("user_id").references(() => users.id),
-  isAnonymous: boolean("is_anonymous").notNull().default(false),
+  type: text("type").notNull(), // 'bug', 'improvement', 'general'
+  isAnonymous: boolean("isAnonymous").notNull().default(false),
+  userId: integer("userId").references(() => users.id),
+  createdAt: timestamp("createdAt").defaultNow(),
+  updatedAt: timestamp("updatedAt").defaultNow(),
   status: text("status").notNull().default("pending"), // 'pending', 'read', 'resolved'
-  adminNotes: text("admin_notes"),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
+  adminNotes: text("adminNotes"),
+  resolvedAt: timestamp("resolvedAt"),
+  resolvedBy: integer("resolvedBy").references(() => users.id),
 });
 
 // Relações para feedbacks
