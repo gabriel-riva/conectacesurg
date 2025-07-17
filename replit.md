@@ -32,10 +32,11 @@ Preferred communication style: Simple, everyday language.
 ## Key Components
 
 ### Authentication System
-- **OAuth Integration**: Google OAuth 2.0 restricted to @cesurg.com domain
+- **OAuth Integration**: Google OAuth 2.0 restricted to @cesurg.com domain with multi-domain support
 - **Session Management**: Secure session handling with PostgreSQL persistence
 - **Role-Based Access**: Three-tier access control (user, admin, superadmin)
 - **Protected Routes**: Authentication middleware for API endpoints
+- **Multi-Domain Support**: Configured for both conectacesurg.replit.app and conecta.cesurgmarau.com.br domains
 
 ### Database Schema
 - **Users**: Core user information with Google integration
@@ -98,6 +99,7 @@ Preferred communication style: Simple, everyday language.
 - **Rich Text Editor Enhancement**: Enhanced Quill editor with image resizing, drag-and-drop functionality, improved YouTube video embedding, and better link insertion capabilities
 - **Video Resize Functionality**: Added custom resize handles for YouTube videos in rich text editor allowing users to resize embedded videos directly
 - **Link URL Handling**: Fixed link creation to automatically add https:// protocol prefix and open links in new tabs to prevent relative URL issues
+- **Multi-Domain OAuth Support**: Implemented session-based domain tracking to maintain user's original domain during Google OAuth flow - users logging in from custom domain stay on custom domain
 
 ## External Dependencies
 

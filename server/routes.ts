@@ -94,7 +94,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   passport.use(new GoogleStrategy({
     clientID: "1033430857520-a0q61g5f6dl8o20g1oejuukrqdb4lol1.apps.googleusercontent.com",
     clientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
-    callbackURL: "https://conectacesurg.replit.app/api/auth/google/callback",
+    callbackURL: "/api/auth/google/callback", // Use relative URL to work with any domain
     scope: ["profile", "email"]
   }, async (accessToken, refreshToken, profile, done) => {
     try {
@@ -225,6 +225,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Google auth routes
   app.get('/api/auth/google', 
+    (req, res, next) => {
+      // Store the original domain in the session for later redirect
+      const host = req.get('host');
+      const protocol = req.get('x-forwarded-proto') || (req.secure ? 'https' : 'http');
+      const originalDomain = `${protocol}://${host}`;
+      
+      if (req.session) {
+        (req.session as any).originalDomain = originalDomain;
+      }
+      
+      console.log(`🔄 Iniciando Google OAuth a partir de: ${originalDomain}`);
+      next();
+    },
     passport.authenticate('google', { 
       scope: ['profile', 'email'],
       hd: 'cesurg.com' // Hosted domain restriction
@@ -240,46 +253,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
     },
     (req, res, next) => {
       passport.authenticate('google', (err, user, info) => {
+        // Get the original domain from session for error redirects
+        const originalDomain = (req.session as any)?.originalDomain;
+        const host = req.get('host');
+        const protocol = req.get('x-forwarded-proto') || (req.secure ? 'https' : 'http');
+        const currentDomain = `${protocol}://${host}`;
+        const redirectDomain = originalDomain || currentDomain;
+        
         if (err) {
           console.error("Erro na autenticação:", err);
-          return res.redirect('/?error=auth_failed');
+          return res.redirect(`${redirectDomain}/?error=auth_failed`);
         }
         
         // Access denied for user not registered in the system
         if (!user && info && info.message === 'access_denied') {
           console.log(`⛔ Redirecionando para página de acesso negado, email: ${info.email}`);
-          return res.redirect(`/access-denied?email=${encodeURIComponent(info.email)}`);
+          return res.redirect(`${redirectDomain}/access-denied?email=${encodeURIComponent(info.email)}`);
         }
         
         // Other authentication failures
         if (!user) {
-          return res.redirect('/?error=auth_failed');
+          return res.redirect(`${redirectDomain}/?error=auth_failed`);
         }
         
         // Check if user is active
         if (user.isActive === false) {
           console.log(`⛔ Usuário inativo tentando fazer login: ${user.email}`);
-          return res.redirect('/?error=account_inactive');
+          return res.redirect(`${redirectDomain}/?error=account_inactive`);
         }
         
         // Login successful user
         req.login(user, (loginErr) => {
           if (loginErr) {
             console.error("Erro ao criar sessão:", loginErr);
-            return res.redirect('/?error=auth_failed');
+            return res.redirect(`${redirectDomain}/?error=auth_failed`);
           }
           
           // Log autenticação bem-sucedida
           console.log("✅ Autenticação bem-sucedida, redirecionando para dashboard");
           console.log(`👤 Usuário: ${user?.name || 'Desconhecido'}`);
           
-          // Get the current host to maintain the domain
+          // Get the original domain from session, fallback to current domain
+          const originalDomain = (req.session as any)?.originalDomain;
           const host = req.get('host');
           const protocol = req.get('x-forwarded-proto') || (req.secure ? 'https' : 'http');
           const currentDomain = `${protocol}://${host}`;
+          const redirectDomain = originalDomain || currentDomain;
           
-          // Successful authentication, redirect to dashboard maintaining current domain
-          return res.redirect(`${currentDomain}/dashboard`);
+          console.log(`🔄 Redirecionando para: ${redirectDomain}/dashboard`);
+          
+          // Successful authentication, redirect to dashboard maintaining original domain
+          return res.redirect(`${redirectDomain}/dashboard`);
         });
       })(req, res, next);
     }
