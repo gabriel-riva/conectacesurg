@@ -24,6 +24,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { toast } from '@/hooks/use-toast';
 import { formatFileSize } from '@/lib/utils';
+import { apiRequest } from '@/lib/queryClient';
 import UploadFileDialog from '@/components/materials/UploadFileDialog';
 import EditFileDialog from '@/components/materials/EditFileDialog';
 
@@ -207,7 +208,15 @@ export default function AdminMaterialsPage() {
 
   const deleteFileMutation = useMutation({
     mutationFn: async (id: number) => {
-      return await apiRequest(`/api/materials/files/${id}`, { method: 'DELETE' });
+      console.log('🗑️ Tentando excluir arquivo no frontend:', id);
+      try {
+        const result = await apiRequest(`/api/materials/files/${id}`, { method: 'DELETE' });
+        console.log('✅ Arquivo excluído com sucesso no frontend:', result);
+        return result;
+      } catch (error) {
+        console.error('❌ Erro ao excluir arquivo no frontend:', error);
+        throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/materials/files'] });
@@ -215,6 +224,7 @@ export default function AdminMaterialsPage() {
       toast({ title: 'Arquivo excluído com sucesso' });
     },
     onError: (error: any) => {
+      console.error('❌ Erro na mutação de exclusão:', error);
       toast({ title: 'Erro ao excluir arquivo', description: error.message, variant: 'destructive' });
     },
   });
