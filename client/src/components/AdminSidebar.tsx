@@ -1,4 +1,5 @@
 import { Link, useLocation } from "wouter";
+import { useState } from "react";
 
 // Interface de item de menu
 interface MenuItem {
@@ -9,6 +10,7 @@ interface MenuItem {
 
 export function AdminSidebar() {
   const [location] = useLocation();
+  const [isCollapsed, setIsCollapsed] = useState(false);
   
   // Determinar a página ativa
   const isActive = (path: string) => location === path;
@@ -135,10 +137,33 @@ export function AdminSidebar() {
   ];
 
   return (
-    <div className="w-64 bg-white shadow-sm border-r min-h-screen">
+    <div className={`bg-white shadow-sm border-r min-h-screen transition-all duration-300 ${
+      isCollapsed ? 'w-16' : 'w-64'
+    }`}>
       <div className="flex h-14 items-center gap-2 border-b px-3">
-        <div className="flex items-center">
-          <span className="text-lg font-semibold text-primary">Configurações</span>
+        <div className="flex items-center justify-between w-full">
+          <span className={`text-lg font-semibold text-primary transition-opacity duration-300 ${
+            isCollapsed ? 'opacity-0 hidden' : 'opacity-100'
+          }`}>
+            Configurações
+          </span>
+          <button
+            onClick={() => setIsCollapsed(!isCollapsed)}
+            className="flex items-center justify-center p-1 rounded-md hover:bg-gray-100 transition-colors"
+            title={isCollapsed ? "Expandir sidebar" : "Recolher sidebar"}
+          >
+            <svg 
+              xmlns="http://www.w3.org/2000/svg" 
+              className={`h-5 w-5 transition-transform duration-300 ${
+                isCollapsed ? 'rotate-180' : ''
+              }`} 
+              fill="none" 
+              viewBox="0 0 24 24" 
+              stroke="currentColor"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
+            </svg>
+          </button>
         </div>
       </div>
       <div className="mt-5">
@@ -150,9 +175,14 @@ export function AdminSidebar() {
                 className={`flex items-center p-2 w-full rounded-md hover:bg-gray-100 ${
                   isActive(item.href) ? 'bg-primary/10 text-primary font-medium' : 'text-gray-700'
                 }`}
+                title={isCollapsed ? item.label : undefined}
               >
-                <span className="mr-3">{item.icon}</span>
-                <span>{item.label}</span>
+                <span className="flex-shrink-0">{item.icon}</span>
+                <span className={`ml-3 transition-all duration-300 ${
+                  isCollapsed ? 'opacity-0 hidden' : 'opacity-100'
+                }`}>
+                  {item.label}
+                </span>
               </Link>
             </li>
           ))}

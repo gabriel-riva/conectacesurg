@@ -15,3 +15,5 @@ export function AdminHeader({ title, description }: AdminHeaderProps) {
     </div>
   );
 }
+
+export default AdminHeader;
