@@ -103,47 +103,85 @@ router.get("/ranking", isAuthenticated, async (req: Request, res: Response) => {
         lte(gamificationPoints.createdAt, new Date(currentSettings.annualEndDate))
       );
     }
-    
-    // Query base - usando subquery para categorias do usuário
-    let baseQuery = db
+
+    // Primeiro, buscar todos os usuários elegíveis baseado nas categorias configuradas
+    let eligibleUsersQuery = db
       .select({
         userId: users.id,
         userName: users.name,
         userEmail: users.email,
         photoUrl: users.photoUrl,
-        totalPoints: sql<number>`sum(${gamificationPoints.points})`
+        isActive: users.isActive
       })
-      .from(gamificationPoints)
-      .innerJoin(users, eq(gamificationPoints.userId, users.id))
-      .where(dateCondition)
-      .groupBy(users.id, users.name, users.email, users.photoUrl)
-      .orderBy(desc(sql<number>`sum(${gamificationPoints.points})`));
-    
+      .from(users)
+      .innerJoin(userCategoryAssignments, eq(users.id, userCategoryAssignments.userId))
+      .where(eq(users.isActive, true));
+
     // Filtrar por categoria específica se especificado
     if (categoryId) {
-      baseQuery = baseQuery
-        .innerJoin(userCategoryAssignments, eq(users.id, userCategoryAssignments.userId))
+      eligibleUsersQuery = eligibleUsersQuery
         .where(and(
-          dateCondition,
+          eq(users.isActive, true),
           eq(userCategoryAssignments.categoryId, parseInt(categoryId as string))
         ));
     }
-    
-    // Filtrar por categorias habilitadas se for classificação geral
-    else if (filter === 'general' && currentSettings?.enabledCategoryIds?.length > 0) {
-      baseQuery = baseQuery
-        .innerJoin(userCategoryAssignments, eq(users.id, userCategoryAssignments.userId))
+    // Filtrar por categorias habilitadas se for classificação geral ou se não há filtro específico
+    else if (currentSettings?.enabledCategoryIds?.length > 0) {
+      eligibleUsersQuery = eligibleUsersQuery
         .where(and(
-          dateCondition,
+          eq(users.isActive, true),
           inArray(userCategoryAssignments.categoryId, currentSettings.enabledCategoryIds)
         ));
     }
+
+    const eligibleUsers = await eligibleUsersQuery;
+
+    // Buscar pontos para cada usuário elegível
+    const userPointsMap = new Map<number, number>();
     
-    const ranking = await baseQuery;
-    
+    if (eligibleUsers.length > 0) {
+      const userIds = eligibleUsers.map(u => u.userId);
+      
+      const pointsQuery = db
+        .select({
+          userId: gamificationPoints.userId,
+          totalPoints: sql<number>`sum(${gamificationPoints.points})`
+        })
+        .from(gamificationPoints)
+        .where(and(
+          inArray(gamificationPoints.userId, userIds),
+          dateCondition
+        ))
+        .groupBy(gamificationPoints.userId);
+
+      const pointsResults = await pointsQuery;
+      
+      // Criar mapa de pontos por usuário
+      pointsResults.forEach(result => {
+        userPointsMap.set(result.userId, result.totalPoints || 0);
+      });
+    }
+
+    // Combinar dados de usuários com pontos e ordenar
+    const rankingData = eligibleUsers.map(user => ({
+      userId: user.userId,
+      userName: user.userName,
+      userEmail: user.userEmail,
+      photoUrl: user.photoUrl,
+      totalPoints: userPointsMap.get(user.userId) || 0
+    }));
+
+    // Ordenar: primeiro por pontos (decrescente), depois por nome (alfabética) para empates
+    rankingData.sort((a, b) => {
+      if (a.totalPoints !== b.totalPoints) {
+        return b.totalPoints - a.totalPoints; // Pontos decrescentes
+      }
+      return a.userName.localeCompare(b.userName); // Nome alfabético para empates
+    });
+
     // Buscar informações de categoria para cada usuário
     const rankingWithCategories = await Promise.all(
-      ranking.map(async (user, index) => {
+      rankingData.map(async (user, index) => {
         let categoryInfo = null;
         
         // Se há filtro por categoria específica, buscar a categoria

@@ -20,7 +20,7 @@ interface RankingUser {
   userName: string;
   userEmail: string;
   photoUrl: string | null;
-  totalPoints: string;
+  totalPoints: number;
   position: number;
   categoryId: number | null;
   categoryName: string | null;
