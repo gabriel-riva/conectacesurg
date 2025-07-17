@@ -128,7 +128,7 @@ function Router() {
       <Route path="/admin/gamificacao">
         {() => <ProtectedRoute component={AdminGamificationPage} adminOnly={true} />}
       </Route>
-      <Route path="/admin/feedback">
+      <Route path="/admin/feedbacks">
         {() => <ProtectedRoute component={FeedbackManagement} adminOnly={true} />}
       </Route>
       <Route path="/materiais">
