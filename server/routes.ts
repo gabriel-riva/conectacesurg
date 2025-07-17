@@ -273,8 +273,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.log("✅ Autenticação bem-sucedida, redirecionando para dashboard");
           console.log(`👤 Usuário: ${user?.name || 'Desconhecido'}`);
           
-          // Successful authentication, redirect to dashboard
-          return res.redirect('/dashboard');
+          // Get the current host to maintain the domain
+          const host = req.get('host');
+          const protocol = req.get('x-forwarded-proto') || (req.secure ? 'https' : 'http');
+          const currentDomain = `${protocol}://${host}`;
+          
+          // Successful authentication, redirect to dashboard maintaining current domain
+          return res.redirect(`${currentDomain}/dashboard`);
         });
       })(req, res, next);
     }
