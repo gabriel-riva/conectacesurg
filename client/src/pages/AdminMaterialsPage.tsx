@@ -25,6 +25,7 @@ import { z } from 'zod';
 import { toast } from '@/hooks/use-toast';
 import { formatFileSize } from '@/lib/utils';
 import UploadFileDialog from '@/components/materials/UploadFileDialog';
+import EditFileDialog from '@/components/materials/EditFileDialog';
 
 interface MaterialFolder {
   id: number;
@@ -96,6 +97,7 @@ export default function AdminMaterialsPage() {
   const [activeTab, setActiveTab] = useState('pastas');
   const [isFolderDialogOpen, setIsFolderDialogOpen] = useState(false);
   const [isFileDialogOpen, setIsFileDialogOpen] = useState(false);
+  const [isEditFileDialogOpen, setIsEditFileDialogOpen] = useState(false);
   const [editingFolder, setEditingFolder] = useState<MaterialFolder | null>(null);
   const [editingFile, setEditingFile] = useState<MaterialFile | null>(null);
   const [deletingItem, setDeletingItem] = useState<{type: 'folder' | 'file', id: number} | null>(null);
@@ -623,6 +625,16 @@ export default function AdminMaterialsPage() {
                                 >
                                   <Download className="w-4 h-4" />
                                 </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => {
+                                    setEditingFile(file);
+                                    setIsEditFileDialogOpen(true);
+                                  }}
+                                >
+                                  <Edit className="w-4 h-4" />
+                                </Button>
                                 <AlertDialog>
                                   <AlertDialogTrigger asChild>
                                     <Button variant="ghost" size="sm">
@@ -663,6 +675,21 @@ export default function AdminMaterialsPage() {
           </Tabs>
         </div>
       </div>
+
+      {/* Diálogo de edição de arquivo */}
+      {editingFile && (
+        <Dialog open={isEditFileDialogOpen} onOpenChange={setIsEditFileDialogOpen}>
+          <DialogContent className="max-w-2xl">
+            <EditFileDialog
+              file={editingFile}
+              onSuccess={() => {
+                setIsEditFileDialogOpen(false);
+                setEditingFile(null);
+              }}
+            />
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }
