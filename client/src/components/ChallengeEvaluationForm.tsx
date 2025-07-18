@@ -67,7 +67,7 @@ export const ChallengeEvaluationForm: React.FC<ChallengeEvaluationFormProps> = (
   useEffect(() => {
     return () => {
       if (qrScanner) {
-        qrScanner.clear();
+        qrScanner.stop().catch(console.error);
       }
     };
   }, [qrScanner]);
@@ -151,29 +151,51 @@ export const ChallengeEvaluationForm: React.FC<ChallengeEvaluationFormProps> = (
 
   const startQRScanner = async () => {
     try {
-      if (qrScanner) {
-        qrScanner.clear();
+      // Verificar se o navegador suporta getUserMedia
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        toast({
+          title: "Erro",
+          description: "Seu navegador não suporta acesso à câmera.",
+          variant: "destructive"
+        });
+        return;
       }
 
-      // Importação dinâmica para evitar erros de build
-      const { Html5QrcodeScanner } = await import('html5-qrcode');
+      // Solicitar permissão para usar a câmera
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        video: { facingMode: 'environment' } // Usar câmera traseira se disponível
+      });
 
-      const scanner = new Html5QrcodeScanner(
-        "qr-reader",
+      const video = document.getElementById('qr-video') as HTMLVideoElement;
+      if (!video) {
+        toast({
+          title: "Erro",
+          description: "Elemento de vídeo não encontrado.",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      video.srcObject = stream;
+      video.play();
+      setQrScannerActive(true);
+
+      // Importar e usar a biblioteca html5-qrcode
+      const { Html5Qrcode } = await import('html5-qrcode');
+      
+      const html5QrCode = new Html5Qrcode("qr-video");
+      
+      html5QrCode.start(
+        { facingMode: "environment" },
         {
           fps: 10,
-          qrbox: { width: 250, height: 250 },
-          aspectRatio: 1.0,
-          disableFlip: false,
+          qrbox: { width: 250, height: 250 }
         },
-        /* verbose= */ false
-      );
-
-      scanner.render(
         (decodedText) => {
           setScannedData(decodedText);
           setQrScannerActive(false);
-          scanner.clear();
+          html5QrCode.stop();
+          stream.getTracks().forEach(track => track.stop());
           toast({
             title: "Sucesso",
             description: "QR Code escaneado com sucesso!",
@@ -185,24 +207,39 @@ export const ChallengeEvaluationForm: React.FC<ChallengeEvaluationFormProps> = (
         }
       );
 
-      setQrScanner(scanner);
-      setQrScannerActive(true);
+      setQrScanner(html5QrCode);
+      
     } catch (error) {
       console.error('Erro ao inicializar scanner:', error);
+      setQrScannerActive(false);
       toast({
         title: "Erro",
-        description: "Não foi possível inicializar o scanner de QR Code.",
+        description: "Não foi possível acessar a câmera. Verifique as permissões.",
         variant: "destructive"
       });
     }
   };
 
-  const stopQRScanner = () => {
-    if (qrScanner) {
-      qrScanner.clear();
-      setQrScanner(null);
+  const stopQRScanner = async () => {
+    try {
+      if (qrScanner) {
+        await qrScanner.stop();
+        setQrScanner(null);
+      }
+      
+      // Parar o stream de vídeo
+      const video = document.getElementById('qr-video') as HTMLVideoElement;
+      if (video && video.srcObject) {
+        const stream = video.srcObject as MediaStream;
+        stream.getTracks().forEach(track => track.stop());
+        video.srcObject = null;
+      }
+      
+      setQrScannerActive(false);
+    } catch (error) {
+      console.error('Erro ao parar scanner:', error);
+      setQrScannerActive(false);
     }
-    setQrScannerActive(false);
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -426,9 +463,12 @@ export const ChallengeEvaluationForm: React.FC<ChallengeEvaluationFormProps> = (
               {qrScannerActive && (
                 <div className="space-y-4">
                   <div className="text-center">
-                    <div 
-                      id="qr-reader" 
+                    <video 
+                      id="qr-video" 
                       className="w-full max-w-md mx-auto border rounded"
+                      autoPlay
+                      muted
+                      playsInline
                     />
                   </div>
                   <Button 
