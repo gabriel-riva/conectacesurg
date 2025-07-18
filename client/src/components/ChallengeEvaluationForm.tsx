@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { QrCode, Upload, FileText, Brain, CheckCircle, Camera } from 'lucide-react';
+import jsQR from 'jsqr';
 
 interface QuizQuestion {
   id: string;
@@ -60,10 +61,12 @@ export const ChallengeEvaluationForm: React.FC<ChallengeEvaluationFormProps> = (
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [qrScannerActive, setQrScannerActive] = useState(false);
   const [scannedData, setScannedData] = useState<string>('');
-  const [manualCode, setManualCode] = useState<string>('');
+
   const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
+  const [scanningActive, setScanningActive] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const scanIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const { toast } = useToast();
 
   // Cleanup da câmera quando o componente desmontar
@@ -71,6 +74,9 @@ export const ChallengeEvaluationForm: React.FC<ChallengeEvaluationFormProps> = (
     return () => {
       if (cameraStream) {
         cameraStream.getTracks().forEach(track => track.stop());
+      }
+      if (scanIntervalRef.current) {
+        clearInterval(scanIntervalRef.current);
       }
     };
   }, [cameraStream]);
@@ -152,10 +158,44 @@ export const ChallengeEvaluationForm: React.FC<ChallengeEvaluationFormProps> = (
     onSubmit(submission);
   };
 
+  const scanQRCode = () => {
+    if (!videoRef.current || !canvasRef.current) return;
+
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    const context = canvas.getContext('2d');
+
+    if (!context || video.videoWidth === 0 || video.videoHeight === 0) return;
+
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+    const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+    const code = jsQR(imageData.data, imageData.width, imageData.height, {
+      inversionAttempts: "dontInvert",
+    });
+
+    if (code) {
+      setScannedData(code.data);
+      setQrScannerActive(false);
+      setScanningActive(false);
+      stopQRScanner();
+      toast({
+        title: "QR Code encontrado!",
+        description: "Código escaneado automaticamente com sucesso.",
+      });
+    }
+  };
+
   const startQRScanner = async () => {
     try {
       if (cameraStream) {
         cameraStream.getTracks().forEach(track => track.stop());
+      }
+
+      if (scanIntervalRef.current) {
+        clearInterval(scanIntervalRef.current);
       }
 
       // Verificar se o navegador suporta getUserMedia
@@ -195,10 +235,14 @@ export const ChallengeEvaluationForm: React.FC<ChallengeEvaluationFormProps> = (
 
           videoRef.current.srcObject = stream;
           setCameraStream(stream);
+          setScanningActive(true);
+          
+          // Iniciar escaneamento automático
+          scanIntervalRef.current = setInterval(scanQRCode, 100);
           
           toast({
-            title: "Câmera ativa",
-            description: "Posicione o QR Code na frente da câmera e clique em 'Capturar'.",
+            title: "Scanner ativo",
+            description: "Posicione o QR Code na frente da câmera. Escaneamento automático em andamento...",
           });
           
         } catch (error) {
@@ -224,6 +268,10 @@ export const ChallengeEvaluationForm: React.FC<ChallengeEvaluationFormProps> = (
   };
 
   const stopQRScanner = () => {
+    if (scanIntervalRef.current) {
+      clearInterval(scanIntervalRef.current);
+      scanIntervalRef.current = null;
+    }
     if (cameraStream) {
       cameraStream.getTracks().forEach(track => track.stop());
       setCameraStream(null);
@@ -231,40 +279,11 @@ export const ChallengeEvaluationForm: React.FC<ChallengeEvaluationFormProps> = (
     if (videoRef.current) {
       videoRef.current.srcObject = null;
     }
+    setScanningActive(false);
     setQrScannerActive(false);
   };
 
-  const captureQRCode = () => {
-    // Permitir entrada manual do código QR
-    const userInput = prompt("Digite o código QR que você vê na câmera ou no evento:");
-    if (userInput && userInput.trim()) {
-      setScannedData(userInput.trim());
-      setQrScannerActive(false);
-      stopQRScanner();
-      toast({
-        title: "Sucesso",
-        description: "Código QR registrado com sucesso!",
-      });
-    }
-  };
 
-  const submitManualCode = () => {
-    if (!manualCode.trim()) {
-      toast({
-        title: "Erro",
-        description: "Digite o código QR primeiro.",
-        variant: "destructive"
-      });
-      return;
-    }
-    
-    setScannedData(manualCode.trim());
-    setManualCode('');
-    toast({
-      title: "Sucesso",
-      description: "Código QR registrado com sucesso!",
-    });
-  };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
@@ -466,54 +485,32 @@ export const ChallengeEvaluationForm: React.FC<ChallengeEvaluationFormProps> = (
               <div className="text-center bg-orange-50 p-4 rounded-lg">
                 <QrCode className="w-12 h-12 text-orange-600 mx-auto mb-2" />
                 <p className="text-sm text-orange-800 mb-2">
-                  Para completar este desafio, você precisa obter o código QR fornecido no evento.
+                  Para completar este desafio, você precisa escanear o QR Code fornecido no evento.
                 </p>
                 <p className="text-xs text-orange-700">
-                  Use a câmera para visualizar melhor ou digite diretamente o código.
+                  A câmera irá detectar automaticamente o código QR quando você posicioná-lo na frente dela.
                 </p>
               </div>
 
               {!qrScannerActive && !scannedData && (
-                <div className="space-y-3">
-                  <div className="flex gap-2">
-                    <Button 
-                      onClick={startQRScanner} 
-                      className="flex-1"
-                      variant="outline"
-                    >
-                      <Camera className="w-4 h-4 mr-2" />
-                      Abrir Câmera
-                    </Button>
-                  </div>
-                  
-                  <div className="text-center text-sm text-gray-500">ou</div>
-                  
-                  <div className="flex gap-2">
-                    <Input
-                      type="text"
-                      placeholder="Digite o código QR manualmente"
-                      value={manualCode}
-                      onChange={(e) => setManualCode(e.target.value)}
-                      className="flex-1"
-                    />
-                    <Button 
-                      onClick={submitManualCode}
-                      variant="default"
-                      disabled={!manualCode.trim()}
-                    >
-                      <QrCode className="w-4 h-4 mr-2" />
-                      Registrar
-                    </Button>
-                  </div>
+                <div className="text-center">
+                  <Button 
+                    onClick={startQRScanner} 
+                    className="px-8 py-3"
+                    variant="default"
+                  >
+                    <Camera className="w-4 h-4 mr-2" />
+                    Iniciar Scanner QR
+                  </Button>
                 </div>
               )}
 
               {qrScannerActive && (
                 <div className="space-y-4">
-                  <div className="text-center">
+                  <div className="relative">
                     <video 
                       ref={videoRef}
-                      className="w-full max-w-md mx-auto border rounded"
+                      className="w-full h-64 bg-black rounded-lg object-cover"
                       autoPlay
                       muted
                       playsInline
@@ -522,22 +519,24 @@ export const ChallengeEvaluationForm: React.FC<ChallengeEvaluationFormProps> = (
                       ref={canvasRef}
                       className="hidden"
                     />
+                    {scanningActive && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 rounded-lg">
+                        <div className="text-white text-center">
+                          <div className="animate-pulse">
+                            <QrCode className="w-8 h-8 mx-auto mb-2" />
+                            <p className="text-sm">Procurando QR Code...</p>
+                            <p className="text-xs opacity-75">Posicione o código na frente da câmera</p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
-                  <div className="flex gap-2">
-                    <Button 
-                      onClick={captureQRCode} 
-                      className="flex-1"
-                      variant="default"
-                    >
-                      <QrCode className="w-4 h-4 mr-2" />
-                      Inserir Código
-                    </Button>
+                  <div className="text-center">
                     <Button 
                       onClick={stopQRScanner} 
-                      className="flex-1"
                       variant="outline"
                     >
-                      Parar
+                      Parar Scanner
                     </Button>
                   </div>
                 </div>
