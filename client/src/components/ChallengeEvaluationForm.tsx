@@ -151,41 +151,16 @@ export const ChallengeEvaluationForm: React.FC<ChallengeEvaluationFormProps> = (
 
   const startQRScanner = async () => {
     try {
-      // Verificar se o navegador suporta getUserMedia
-      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        toast({
-          title: "Erro",
-          description: "Seu navegador não suporta acesso à câmera.",
-          variant: "destructive"
-        });
-        return;
+      if (qrScanner) {
+        await qrScanner.stop();
       }
-
-      // Solicitar permissão para usar a câmera
-      const stream = await navigator.mediaDevices.getUserMedia({ 
-        video: { facingMode: 'environment' } // Usar câmera traseira se disponível
-      });
-
-      const video = document.getElementById('qr-video') as HTMLVideoElement;
-      if (!video) {
-        toast({
-          title: "Erro",
-          description: "Elemento de vídeo não encontrado.",
-          variant: "destructive"
-        });
-        return;
-      }
-
-      video.srcObject = stream;
-      video.play();
-      setQrScannerActive(true);
 
       // Importar e usar a biblioteca html5-qrcode
       const { Html5Qrcode } = await import('html5-qrcode');
       
       const html5QrCode = new Html5Qrcode("qr-video");
       
-      html5QrCode.start(
+      await html5QrCode.start(
         { facingMode: "environment" },
         {
           fps: 10,
@@ -195,7 +170,6 @@ export const ChallengeEvaluationForm: React.FC<ChallengeEvaluationFormProps> = (
           setScannedData(decodedText);
           setQrScannerActive(false);
           html5QrCode.stop();
-          stream.getTracks().forEach(track => track.stop());
           toast({
             title: "Sucesso",
             description: "QR Code escaneado com sucesso!",
@@ -208,6 +182,7 @@ export const ChallengeEvaluationForm: React.FC<ChallengeEvaluationFormProps> = (
       );
 
       setQrScanner(html5QrCode);
+      setQrScannerActive(true);
       
     } catch (error) {
       console.error('Erro ao inicializar scanner:', error);
@@ -226,15 +201,6 @@ export const ChallengeEvaluationForm: React.FC<ChallengeEvaluationFormProps> = (
         await qrScanner.stop();
         setQrScanner(null);
       }
-      
-      // Parar o stream de vídeo
-      const video = document.getElementById('qr-video') as HTMLVideoElement;
-      if (video && video.srcObject) {
-        const stream = video.srcObject as MediaStream;
-        stream.getTracks().forEach(track => track.stop());
-        video.srcObject = null;
-      }
-      
       setQrScannerActive(false);
     } catch (error) {
       console.error('Erro ao parar scanner:', error);
@@ -463,12 +429,9 @@ export const ChallengeEvaluationForm: React.FC<ChallengeEvaluationFormProps> = (
               {qrScannerActive && (
                 <div className="space-y-4">
                   <div className="text-center">
-                    <video 
+                    <div 
                       id="qr-video" 
                       className="w-full max-w-md mx-auto border rounded"
-                      autoPlay
-                      muted
-                      playsInline
                     />
                   </div>
                   <Button 
