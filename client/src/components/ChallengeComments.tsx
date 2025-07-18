@@ -35,6 +35,7 @@ export default function ChallengeComments({ challengeId }: ChallengeCommentsProp
   const [newComment, setNewComment] = useState("");
   const [replyTo, setReplyTo] = useState<number | null>(null);
   const [replyContent, setReplyContent] = useState("");
+  const [replyContents, setReplyContents] = useState<{ [key: number]: string }>({});
   const { toast } = useToast();
   const { user } = useUser();
   const queryClient = useQueryClient();
@@ -56,7 +57,7 @@ export default function ChallengeComments({ challengeId }: ChallengeCommentsProp
         queryKey: [`/api/gamification/challenges/${challengeId}/comments`],
       });
       setNewComment("");
-      setReplyContent("");
+      setReplyContents({});
       setReplyTo(null);
       toast({
         title: "Comentário criado",
@@ -125,12 +126,20 @@ export default function ChallengeComments({ challengeId }: ChallengeCommentsProp
   };
 
   const handleReply = (commentId: number) => {
-    if (!replyContent.trim()) return;
+    const content = replyContents[commentId];
+    if (!content?.trim()) return;
     
     createCommentMutation.mutate({
-      content: replyContent,
+      content: content,
       parentId: commentId,
     });
+  };
+
+  const updateReplyContent = (commentId: number, content: string) => {
+    setReplyContents(prev => ({
+      ...prev,
+      [commentId]: content
+    }));
   };
 
   const handleLike = (commentId: number) => {
@@ -161,18 +170,18 @@ export default function ChallengeComments({ challengeId }: ChallengeCommentsProp
   };
 
   const CommentItem = ({ comment }: { comment: ChallengeComment }) => (
-    <div className="space-y-3">
-      <div className="flex gap-3">
-        <Avatar className="h-8 w-8">
+    <div className="space-y-2">
+      <div className="flex gap-2">
+        <Avatar className="h-6 w-6 mt-0.5">
           <AvatarImage src={comment.userPhotoUrl} />
           <AvatarFallback className="text-xs">
             {getInitials(comment.userName)}
           </AvatarFallback>
         </Avatar>
-        <div className="flex-1 space-y-2">
-          <div className="bg-gray-50 rounded-lg p-3">
+        <div className="flex-1 space-y-1">
+          <div className="bg-gray-50 rounded-lg p-2">
             <div className="flex items-center gap-2 mb-1">
-              <span className="font-medium text-sm">{comment.userName}</span>
+              <span className="font-medium text-xs">{comment.userName}</span>
               <span className="text-xs text-gray-500">
                 {format(new Date(comment.createdAt), "dd/MM/yyyy 'às' HH:mm", {
                   locale: ptBR,
@@ -181,17 +190,17 @@ export default function ChallengeComments({ challengeId }: ChallengeCommentsProp
             </div>
             <p className="text-sm text-gray-800">{comment.content}</p>
           </div>
-          <div className="flex items-center gap-4 text-sm text-gray-500">
+          <div className="flex items-center gap-3 text-xs text-gray-500">
             <Button
               variant="ghost"
               size="sm"
               onClick={() => handleLike(comment.id)}
-              className={`p-0 h-auto font-normal ${
+              className={`p-0 h-auto font-normal text-xs ${
                 comment.isLikedByUser ? "text-red-500" : "text-gray-500"
               }`}
             >
               <Heart
-                className={`h-4 w-4 mr-1 ${
+                className={`h-3 w-3 mr-1 ${
                   comment.isLikedByUser ? "fill-current" : ""
                 }`}
               />
@@ -201,9 +210,9 @@ export default function ChallengeComments({ challengeId }: ChallengeCommentsProp
               variant="ghost"
               size="sm"
               onClick={() => setReplyTo(comment.id)}
-              className="p-0 h-auto font-normal text-gray-500"
+              className="p-0 h-auto font-normal text-xs text-gray-500"
             >
-              <Reply className="h-4 w-4 mr-1" />
+              <Reply className="h-3 w-3 mr-1" />
               Responder
             </Button>
             {canDeleteComment(comment) && (
@@ -211,9 +220,9 @@ export default function ChallengeComments({ challengeId }: ChallengeCommentsProp
                 variant="ghost"
                 size="sm"
                 onClick={() => handleDelete(comment.id)}
-                className="p-0 h-auto font-normal text-red-500"
+                className="p-0 h-auto font-normal text-xs text-red-500"
               >
-                <Trash2 className="h-4 w-4" />
+                <Trash2 className="h-3 w-3" />
               </Button>
             )}
           </div>
@@ -222,18 +231,19 @@ export default function ChallengeComments({ challengeId }: ChallengeCommentsProp
 
       {/* Campo de resposta */}
       {replyTo === comment.id && (
-        <div className="ml-11 space-y-2">
+        <div className="ml-8 space-y-2">
           <Textarea
-            value={replyContent}
-            onChange={(e) => setReplyContent(e.target.value)}
+            value={replyContents[comment.id] || ""}
+            onChange={(e) => updateReplyContent(comment.id, e.target.value)}
             placeholder="Escreva sua resposta..."
-            className="min-h-[80px]"
+            className="min-h-[60px] text-sm"
           />
           <div className="flex gap-2">
             <Button
               size="sm"
               onClick={() => handleReply(comment.id)}
-              disabled={!replyContent.trim() || createCommentMutation.isPending}
+              disabled={!replyContents[comment.id]?.trim() || createCommentMutation.isPending}
+              className="text-xs py-1 px-2 h-auto"
             >
               Responder
             </Button>
@@ -242,8 +252,9 @@ export default function ChallengeComments({ challengeId }: ChallengeCommentsProp
               variant="outline"
               onClick={() => {
                 setReplyTo(null);
-                setReplyContent("");
+                updateReplyContent(comment.id, "");
               }}
+              className="text-xs py-1 px-2 h-auto"
             >
               Cancelar
             </Button>
@@ -253,7 +264,7 @@ export default function ChallengeComments({ challengeId }: ChallengeCommentsProp
 
       {/* Respostas */}
       {comment.replies.length > 0 && (
-        <div className="ml-11 space-y-3">
+        <div className="ml-8 space-y-2">
           {comment.replies.map((reply) => (
             <CommentItem key={reply.id} comment={reply} />
           ))}
@@ -283,11 +294,11 @@ export default function ChallengeComments({ challengeId }: ChallengeCommentsProp
           Comentários
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-6">
+      <CardContent className="space-y-4">
         {/* Novo comentário */}
-        <div className="space-y-3">
-          <div className="flex gap-3">
-            <Avatar className="h-8 w-8">
+        <div className="space-y-2">
+          <div className="flex gap-2">
+            <Avatar className="h-6 w-6 mt-0.5">
               <AvatarImage src={user.photoUrl} />
               <AvatarFallback className="text-xs">
                 {getInitials(user.name)}
@@ -298,7 +309,7 @@ export default function ChallengeComments({ challengeId }: ChallengeCommentsProp
                 value={newComment}
                 onChange={(e) => setNewComment(e.target.value)}
                 placeholder="Escreva um comentário..."
-                className="min-h-[80px]"
+                className="min-h-[60px] text-sm"
               />
             </div>
           </div>
@@ -306,6 +317,8 @@ export default function ChallengeComments({ challengeId }: ChallengeCommentsProp
             <Button
               onClick={handleCreateComment}
               disabled={!newComment.trim() || createCommentMutation.isPending}
+              size="sm"
+              className="text-xs py-1 px-3 h-auto"
             >
               {createCommentMutation.isPending ? "Enviando..." : "Comentar"}
             </Button>
@@ -316,18 +329,18 @@ export default function ChallengeComments({ challengeId }: ChallengeCommentsProp
 
         {/* Lista de comentários */}
         {isLoading ? (
-          <div className="text-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-            <p className="mt-2 text-sm text-gray-500">Carregando comentários...</p>
+          <div className="text-center py-4">
+            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mx-auto"></div>
+            <p className="mt-2 text-xs text-gray-500">Carregando comentários...</p>
           </div>
         ) : comments.length === 0 ? (
-          <div className="text-center py-8 text-gray-500">
-            <MessageCircle className="h-12 w-12 mx-auto mb-4 opacity-50" />
-            <p>Nenhum comentário ainda</p>
-            <p className="text-sm">Seja o primeiro a comentar!</p>
+          <div className="text-center py-4 text-gray-500">
+            <MessageCircle className="h-8 w-8 mx-auto mb-2 opacity-50" />
+            <p className="text-sm">Nenhum comentário ainda</p>
+            <p className="text-xs">Seja o primeiro a comentar!</p>
           </div>
         ) : (
-          <div className="space-y-6">
+          <div className="space-y-4">
             {comments.map((comment: ChallengeComment) => (
               <CommentItem key={comment.id} comment={comment} />
             ))}
