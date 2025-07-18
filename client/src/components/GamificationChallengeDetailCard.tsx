@@ -191,15 +191,44 @@ export function GamificationChallengeDetailCard({ challenge, onBackClick }: Gami
       </Card>
 
       {/* Formulário de avaliação */}
-      {challenge.evaluationType && challenge.evaluationType !== 'none' && isActive && (
-        <ChallengeEvaluationForm
-          challengeId={challenge.id}
-          evaluationType={challenge.evaluationType}
-          evaluationConfig={challenge.evaluationConfig || {}}
-          onSubmit={submitChallengeMutation.mutate}
-          isLoading={submitChallengeMutation.isPending}
-          existingSubmission={existingSubmission}
-        />
+      {challenge.evaluationType && challenge.evaluationType !== 'none' && (
+        <div className="space-y-4">
+          {/* Debug info */}
+          <div className="bg-yellow-100 p-3 rounded-lg text-sm">
+            <p><strong>Debug Info:</strong></p>
+            <p>Tipo de avaliação: {challenge.evaluationType}</p>
+            <p>Desafio ativo: {isActive ? 'Sim' : 'Não'}</p>
+            <p>Configuração existe: {challenge.evaluationConfig ? 'Sim' : 'Não'}</p>
+          </div>
+          
+          {isActive ? (
+            <ChallengeEvaluationForm
+              challengeId={challenge.id}
+              evaluationType={challenge.evaluationType}
+              evaluationConfig={challenge.evaluationConfig || {}}
+              onSubmit={submitChallengeMutation.mutate}
+              isLoading={submitChallengeMutation.isPending}
+              existingSubmission={existingSubmission}
+            />
+          ) : (
+            <Card>
+              <CardContent className="p-6">
+                <div className="text-center">
+                  <h3 className="text-lg font-semibold mb-2">Avaliação Disponível</h3>
+                  <p className="text-gray-600">
+                    Este desafio possui uma avaliação do tipo <strong>{challenge.evaluationType}</strong>.
+                  </p>
+                  {!isActive && (
+                    <p className="text-sm text-gray-500 mt-2">
+                      {isUpcoming && "A avaliação estará disponível quando o desafio começar."}
+                      {isExpired && "A avaliação não está mais disponível pois o desafio foi encerrado."}
+                    </p>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </div>
       )}
 
       {/* Seção de comentários */}
