@@ -2262,6 +2262,23 @@ export class DatabaseStorage implements IStorage {
 
   async deleteTrailComment(id: number): Promise<boolean> {
     try {
+      // Primeiro, deletar as curtidas dos comentários filhos
+      const childComments = await db
+        .select()
+        .from(trailComments)
+        .where(eq(trailComments.parentId, id));
+      
+      for (const childComment of childComments) {
+        await db.delete(trailCommentLikes).where(eq(trailCommentLikes.commentId, childComment.id));
+      }
+      
+      // Deletar comentários filhos
+      await db.delete(trailComments).where(eq(trailComments.parentId, id));
+      
+      // Deletar curtidas do comentário principal
+      await db.delete(trailCommentLikes).where(eq(trailCommentLikes.commentId, id));
+      
+      // Deletar o comentário principal
       const result = await db.delete(trailComments).where(eq(trailComments.id, id)).returning();
       return result.length > 0;
     } catch (error) {

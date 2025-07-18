@@ -213,15 +213,21 @@ router.delete('/comments/:id', isAuthenticated, async (req: Request, res: Respon
     const userId = req.user!.id;
     const userRole = req.user!.role;
     
-    // Verificar se o usuário é admin ou autor do comentário
-    const comment = await storage.getTrailComments(commentId);
+    // Buscar o comentário específico para verificar permissões
+    const commentQuery = await db
+      .select()
+      .from(trailComments)
+      .where(eq(trailComments.id, commentId))
+      .limit(1);
     
-    if (!comment || comment.length === 0) {
+    if (commentQuery.length === 0) {
       return res.status(404).json({ error: 'Comentário não encontrado' });
     }
     
+    const comment = commentQuery[0];
+    
     // Permitir apenas admin/superadmin ou autor do comentário
-    if (!['admin', 'superadmin'].includes(userRole)) {
+    if (!['admin', 'superadmin'].includes(userRole) && comment.userId !== userId) {
       return res.status(403).json({ error: 'Acesso negado' });
     }
     
