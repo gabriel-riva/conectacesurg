@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { QrCode, Upload, FileText, Brain, CheckCircle } from 'lucide-react';
-import QrScanner from 'qr-scanner';
+import { Html5QrcodeScanner } from 'html5-qrcode';
 
 interface QuizQuestion {
   id: string;
@@ -61,6 +61,7 @@ export const ChallengeEvaluationForm: React.FC<ChallengeEvaluationFormProps> = (
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [qrScannerActive, setQrScannerActive] = useState(false);
   const [scannedData, setScannedData] = useState<string>('');
+  const [qrScanner, setQrScanner] = useState<Html5QrcodeScanner | null>(null);
   const { toast } = useToast();
 
   const handleQuizSubmit = () => {
@@ -140,49 +141,49 @@ export const ChallengeEvaluationForm: React.FC<ChallengeEvaluationFormProps> = (
     onSubmit(submission);
   };
 
-  const startQRScanner = async () => {
-    try {
-      setQrScannerActive(true);
-      const video = document.getElementById('qr-video') as HTMLVideoElement;
-      
-      if (video) {
-        const qrScanner = new QrScanner(
-          video,
-          (result) => {
-            setScannedData(result.data);
-            setQrScannerActive(false);
-            qrScanner.destroy();
-            toast({
-              title: "QR Code escaneado!",
-              description: "Código lido com sucesso.",
-            });
-          },
-          {
-            highlightScanRegion: true,
-            highlightCodeOutline: true,
-          }
-        );
-        
-        await qrScanner.start();
-      }
-    } catch (error) {
-      console.error('Erro ao iniciar scanner:', error);
-      setQrScannerActive(false);
-      toast({
-        title: "Erro",
-        description: "Não foi possível acessar a câmera.",
-        variant: "destructive"
-      });
+  const startQRScanner = () => {
+    if (qrScanner) {
+      qrScanner.clear();
     }
+
+    const scanner = new Html5QrcodeScanner(
+      "qr-reader",
+      {
+        fps: 10,
+        qrbox: { width: 250, height: 250 },
+        aspectRatio: 1.0,
+        disableFlip: false,
+      },
+      /* verbose= */ false
+    );
+
+    scanner.render(
+      (decodedText) => {
+        setScannedData(decodedText);
+        setQrScannerActive(false);
+        scanner.clear();
+        toast({
+          title: "Sucesso",
+          description: "QR Code escaneado com sucesso!",
+          variant: "default"
+        });
+      },
+      (error) => {
+        // Ignorar erros de escaneamento contínuo
+        console.log("QR Scanner error:", error);
+      }
+    );
+
+    setQrScanner(scanner);
+    setQrScannerActive(true);
   };
 
   const stopQRScanner = () => {
-    setQrScannerActive(false);
-    const video = document.getElementById('qr-video') as HTMLVideoElement;
-    if (video && video.srcObject) {
-      const stream = video.srcObject as MediaStream;
-      stream.getTracks().forEach(track => track.stop());
+    if (qrScanner) {
+      qrScanner.clear();
+      setQrScanner(null);
     }
+    setQrScannerActive(false);
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -382,16 +383,15 @@ export const ChallengeEvaluationForm: React.FC<ChallengeEvaluationFormProps> = (
             </div>
 
             <div className="space-y-4">
-              {qrConfig.qrCodeImage && (
-                <div className="text-center">
-                  <p className="text-sm text-gray-600 mb-2">QR Code para escanear:</p>
-                  <img 
-                    src={qrConfig.qrCodeImage} 
-                    alt="QR Code" 
-                    className="mx-auto max-w-48 h-auto border rounded"
-                  />
-                </div>
-              )}
+              <div className="text-center bg-orange-50 p-4 rounded-lg">
+                <QrCode className="w-12 h-12 text-orange-600 mx-auto mb-2" />
+                <p className="text-sm text-orange-800 mb-2">
+                  Para completar este desafio, você precisa escanear o QR Code fornecido no evento.
+                </p>
+                <p className="text-xs text-orange-700">
+                  O QR Code será disponibilizado pelos organizadores.
+                </p>
+              </div>
 
               {!qrScannerActive && !scannedData && (
                 <Button 
@@ -399,17 +399,19 @@ export const ChallengeEvaluationForm: React.FC<ChallengeEvaluationFormProps> = (
                   className="w-full"
                   variant="outline"
                 >
+                  <QrCode className="w-4 h-4 mr-2" />
                   Iniciar Scanner
                 </Button>
               )}
 
               {qrScannerActive && (
                 <div className="space-y-4">
-                  <video 
-                    id="qr-video" 
-                    className="w-full max-w-md mx-auto border rounded"
-                    style={{ display: 'block' }}
-                  />
+                  <div className="text-center">
+                    <div 
+                      id="qr-reader" 
+                      className="w-full max-w-md mx-auto border rounded"
+                    />
+                  </div>
                   <Button 
                     onClick={stopQRScanner} 
                     className="w-full"

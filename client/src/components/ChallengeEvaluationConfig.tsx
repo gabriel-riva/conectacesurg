@@ -428,6 +428,21 @@ export const ChallengeEvaluationConfig: React.FC<ChallengeEvaluationConfigProps>
                       className="mx-auto border rounded"
                     />
                   </div>
+                  <div className="mt-4">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => {
+                        const link = document.createElement('a');
+                        link.href = qrCodePreview;
+                        link.download = `qrcode-${Date.now()}.png`;
+                        link.click();
+                      }}
+                    >
+                      <QrCode className="w-4 h-4 mr-2" />
+                      Salvar QR Code
+                    </Button>
+                  </div>
                 </div>
               )}
             </div>
