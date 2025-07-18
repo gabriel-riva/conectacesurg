@@ -92,7 +92,7 @@ function NewGamificationPageContent() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           {/* Coluna esquerda - Período atual e pontos */}
           <div className="lg:col-span-3 flex flex-col gap-6">
-            <div className="flex-1">
+            <div className="h-[400px]">
               <GamificationPeriodCard settings={settings} />
             </div>
             <GamificationPointsHistoryCard pointsExtract={pointsExtract} />
@@ -108,7 +108,7 @@ function NewGamificationPageContent() {
             ) : (
               <>
                 {/* Desafios do período */}
-                <Card className="shadow-md hover:shadow-lg transition-shadow duration-300 border-none flex-1 flex flex-col">
+                <Card className="shadow-md hover:shadow-lg transition-shadow duration-300 border-none h-[400px] flex flex-col">
                   <CardHeader className="pb-4 bg-gradient-to-r from-primary/5 to-transparent flex-shrink-0">
                     <CardTitle className="text-primary/90 flex items-center">
                       <span className="inline-block w-1 h-5 bg-primary rounded mr-2"></span>
@@ -116,14 +116,14 @@ function NewGamificationPageContent() {
                       Desafios do Período
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="p-6 flex-1 flex flex-col">
+                  <CardContent className="p-6 flex-1 flex flex-col overflow-hidden">
                     {periodicChallenges.length === 0 ? (
                       <div className="text-center py-8 text-gray-500 flex-1 flex flex-col justify-center">
                         <Target className="h-12 w-12 mx-auto mb-4 opacity-50" />
                         <p>Nenhum desafio disponível no momento</p>
                       </div>
                     ) : (
-                      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 flex-1">
+                      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 flex-1 overflow-y-auto">
                         {periodicChallenges.map((challenge) => (
                           <div key={challenge.id} className="h-48">
                             <GamificationChallengeCard
