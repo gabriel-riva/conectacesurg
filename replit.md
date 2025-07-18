@@ -103,6 +103,7 @@ Preferred communication style: Simple, everyday language.
 - **Gamification Ranking Enhancement**: Modified ranking system to show all users from enabled categories including those without points, with users sorted by points (descending) then alphabetically by name. Fixed duplicate user issue for users assigned to multiple categories by using the general category as the primary eligibility filter.
 - **Feedback System Enhancements**: Implemented comprehensive feedback management system with discrete sliding panel interface, real user name display in admin tables, and admin delete functionality with confirmation dialog. System supports both anonymous and identified submissions with proper admin controls.
 - **Admin Sidebar Collapsible**: Implemented collapsible sidebar in admin pages with smooth transitions, toggle button, and tooltip support. When collapsed, sidebar shows only icons with tooltips for better space utilization while maintaining full navigation functionality.
+- **Trail Comments System**: Implemented complete commenting system for trail content pages with hierarchical comments, replies, like/unlike functionality, and proper user permissions. Features include real-time comment updates, admin/author deletion permissions, and cascading deletion of likes and replies.
 
 ## External Dependencies
 
