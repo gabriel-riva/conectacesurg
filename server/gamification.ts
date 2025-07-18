@@ -1,10 +1,10 @@
 import { Router } from "express";
 import type { Request, Response } from "express";
 import { db } from "./db";
-import { gamificationSettings, gamificationPoints, gamificationChallenges, users, userCategories, userCategoryAssignments, challengeComments, challengeCommentLikes } from "@/shared/schema";
+import { gamificationSettings, gamificationPoints, gamificationChallenges, users, userCategories, userCategoryAssignments, challengeComments, challengeCommentLikes, challengeSubmissions } from "@/shared/schema";
 import { eq, desc, and, gte, lte, sql, inArray } from "drizzle-orm";
 import { z } from "zod";
-import { insertGamificationSettingsSchema, insertGamificationPointsSchema, insertGamificationChallengeSchema, updateGamificationChallengeSchema, updateGamificationSettingsSchema, insertChallengeCommentSchema, insertChallengeCommentLikeSchema } from "@/shared/schema";
+import { insertGamificationSettingsSchema, insertGamificationPointsSchema, insertGamificationChallengeSchema, updateGamificationChallengeSchema, updateGamificationSettingsSchema, insertChallengeCommentSchema, insertChallengeCommentLikeSchema, insertChallengeSubmissionSchema, updateChallengeSubmissionSchema } from "@/shared/schema";
 
 const router = Router();
 
@@ -736,6 +736,346 @@ router.delete("/comments/:id", isAuthenticated, async (req: Request, res: Respon
     res.json({ success: true });
   } catch (error) {
     console.error("Error deleting challenge comment:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// =================== ROTAS PARA SUBMISSÕES DE DESAFIOS ===================
+
+// Criar uma submissão de desafio
+router.post("/challenges/:id/submit", isAuthenticated, async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const challengeId = parseInt(id);
+    const userId = req.user?.id;
+    
+    if (!userId) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    // Verificar se o desafio existe e está ativo
+    const challenge = await db
+      .select()
+      .from(gamificationChallenges)
+      .where(and(
+        eq(gamificationChallenges.id, challengeId),
+        eq(gamificationChallenges.isActive, true)
+      ))
+      .limit(1);
+
+    if (challenge.length === 0) {
+      return res.status(404).json({ error: "Challenge not found or inactive" });
+    }
+
+    const challengeData = challenge[0];
+    
+    // Verificar se o desafio está dentro do período válido
+    const now = new Date();
+    const startDate = new Date(challengeData.startDate);
+    const endDate = new Date(challengeData.endDate);
+    
+    if (now < startDate || now > endDate) {
+      return res.status(400).json({ error: "Challenge is not in active period" });
+    }
+
+    // Verificar se o usuário já tem uma submissão para este desafio
+    const existingSubmission = await db
+      .select()
+      .from(challengeSubmissions)
+      .where(and(
+        eq(challengeSubmissions.challengeId, challengeId),
+        eq(challengeSubmissions.userId, userId)
+      ))
+      .limit(1);
+
+    // Para quiz, permitir múltiplas tentativas se configurado
+    if (existingSubmission.length > 0 && challengeData.evaluationType === 'quiz') {
+      const config = challengeData.evaluationConfig as any;
+      const quizConfig = config?.quiz;
+      
+      if (quizConfig && quizConfig.allowMultipleAttempts) {
+        const currentAttempts = existingSubmission.length;
+        if (currentAttempts >= quizConfig.maxAttempts) {
+          return res.status(400).json({ error: "Maximum attempts reached" });
+        }
+      } else if (existingSubmission.length > 0) {
+        return res.status(400).json({ error: "You have already submitted this challenge" });
+      }
+    } else if (existingSubmission.length > 0) {
+      return res.status(400).json({ error: "You have already submitted this challenge" });
+    }
+
+    // Processar dados da submissão baseado no tipo
+    const submissionData = req.body;
+    let points = 0;
+    let status = 'pending';
+
+    switch (challengeData.evaluationType) {
+      case 'quiz':
+        // Calcular pontuação para quiz
+        const quizSubmission = submissionData.quiz;
+        const config = challengeData.evaluationConfig as any;
+        const quizConfig = config?.quiz;
+        
+        if (quizConfig && quizSubmission) {
+          const score = calculateQuizScore(quizSubmission.answers, quizConfig.questions);
+          const attemptNumber = existingSubmission.length + 1;
+          
+          if (score >= quizConfig.minScore) {
+            let basePoints = challengeData.points;
+            
+            // Aplicar redução de pontos por tentativa
+            if (attemptNumber > 1 && quizConfig.scoreReductionPerAttempt > 0) {
+              const reduction = (attemptNumber - 1) * quizConfig.scoreReductionPerAttempt;
+              basePoints = Math.max(0, basePoints - (basePoints * reduction / 100));
+            }
+            
+            points = Math.round(basePoints);
+            status = 'completed';
+          } else {
+            status = 'pending';
+          }
+          
+          submissionData.quiz.score = score;
+          submissionData.quiz.totalQuestions = quizConfig.questions.length;
+          submissionData.quiz.attemptNumber = attemptNumber;
+        }
+        break;
+        
+      case 'qrcode':
+        // Para QR code, verificar se o código está correto
+        const qrSubmission = submissionData.qrcode;
+        const qrConfig = challengeData.evaluationConfig as any;
+        
+        if (qrConfig?.qrcode && qrSubmission?.scannedData === qrConfig.qrcode.qrCodeData) {
+          points = challengeData.points;
+          status = 'completed';
+        } else {
+          return res.status(400).json({ error: "Invalid QR code" });
+        }
+        break;
+        
+      case 'text':
+      case 'file':
+        // Para texto e arquivo, pontos são atribuídos provisoriamente
+        points = challengeData.points;
+        status = 'pending';
+        break;
+    }
+
+    // Criar a submissão
+    const submission = await db
+      .insert(challengeSubmissions)
+      .values({
+        challengeId,
+        userId,
+        submissionType: challengeData.evaluationType,
+        submissionData,
+        points,
+        status
+      })
+      .returning();
+
+    // Se a submissão foi aprovada automaticamente, adicionar pontos
+    if (status === 'completed') {
+      await db
+        .insert(gamificationPoints)
+        .values({
+          userId,
+          points,
+          description: `Desafio concluído: ${challengeData.title}`,
+          type: 'automatic'
+        });
+    }
+
+    res.json(submission[0]);
+  } catch (error) {
+    console.error("Error submitting challenge:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// Função auxiliar para calcular pontuação do quiz
+function calculateQuizScore(answers: { questionId: string; answer: number }[], questions: any[]): number {
+  let correct = 0;
+  
+  for (const answer of answers) {
+    const question = questions.find(q => q.id === answer.questionId);
+    if (question && question.correctAnswer === answer.answer) {
+      correct++;
+    }
+  }
+  
+  return Math.round((correct / questions.length) * 100);
+}
+
+// Buscar submissões de um desafio (admin)
+router.get("/challenges/:id/submissions", isAdmin, async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const challengeId = parseInt(id);
+    
+    const submissions = await db
+      .select({
+        id: challengeSubmissions.id,
+        challengeId: challengeSubmissions.challengeId,
+        userId: challengeSubmissions.userId,
+        submissionType: challengeSubmissions.submissionType,
+        submissionData: challengeSubmissions.submissionData,
+        status: challengeSubmissions.status,
+        points: challengeSubmissions.points,
+        adminFeedback: challengeSubmissions.adminFeedback,
+        reviewedBy: challengeSubmissions.reviewedBy,
+        reviewedAt: challengeSubmissions.reviewedAt,
+        createdAt: challengeSubmissions.createdAt,
+        updatedAt: challengeSubmissions.updatedAt,
+        userName: users.name,
+        userEmail: users.email,
+        userPhotoUrl: users.photoUrl,
+      })
+      .from(challengeSubmissions)
+      .leftJoin(users, eq(challengeSubmissions.userId, users.id))
+      .where(eq(challengeSubmissions.challengeId, challengeId))
+      .orderBy(desc(challengeSubmissions.createdAt));
+    
+    res.json(submissions);
+  } catch (error) {
+    console.error("Error fetching challenge submissions:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// Revisar uma submissão (admin)
+router.put("/submissions/:id/review", isAdmin, async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const submissionId = parseInt(id);
+    const { status, points, adminFeedback } = req.body;
+    const reviewerId = req.user?.id;
+    
+    if (!reviewerId) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    // Buscar a submissão
+    const submission = await db
+      .select()
+      .from(challengeSubmissions)
+      .where(eq(challengeSubmissions.id, submissionId))
+      .limit(1);
+
+    if (submission.length === 0) {
+      return res.status(404).json({ error: "Submission not found" });
+    }
+
+    const currentSubmission = submission[0];
+    
+    // Atualizar a submissão
+    const updatedSubmission = await db
+      .update(challengeSubmissions)
+      .set({
+        status,
+        points: points || currentSubmission.points,
+        adminFeedback,
+        reviewedBy: reviewerId,
+        reviewedAt: new Date(),
+        updatedAt: new Date()
+      })
+      .where(eq(challengeSubmissions.id, submissionId))
+      .returning();
+
+    // Se foi aprovada, adicionar pontos
+    if (status === 'approved' && currentSubmission.status !== 'approved') {
+      const challenge = await db
+        .select()
+        .from(gamificationChallenges)
+        .where(eq(gamificationChallenges.id, currentSubmission.challengeId))
+        .limit(1);
+
+      if (challenge.length > 0) {
+        await db
+          .insert(gamificationPoints)
+          .values({
+            userId: currentSubmission.userId,
+            points: points || currentSubmission.points,
+            description: `Desafio aprovado: ${challenge[0].title}`,
+            type: 'automatic',
+            createdBy: reviewerId
+          });
+      }
+    }
+
+    res.json(updatedSubmission[0]);
+  } catch (error) {
+    console.error("Error reviewing submission:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// Buscar submissões do usuário atual
+router.get("/my-submissions", isAuthenticated, async (req: Request, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    
+    if (!userId) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    const submissions = await db
+      .select({
+        id: challengeSubmissions.id,
+        challengeId: challengeSubmissions.challengeId,
+        submissionType: challengeSubmissions.submissionType,
+        submissionData: challengeSubmissions.submissionData,
+        status: challengeSubmissions.status,
+        points: challengeSubmissions.points,
+        adminFeedback: challengeSubmissions.adminFeedback,
+        reviewedAt: challengeSubmissions.reviewedAt,
+        createdAt: challengeSubmissions.createdAt,
+        updatedAt: challengeSubmissions.updatedAt,
+        challengeTitle: gamificationChallenges.title,
+        challengeDescription: gamificationChallenges.description,
+      })
+      .from(challengeSubmissions)
+      .leftJoin(gamificationChallenges, eq(challengeSubmissions.challengeId, gamificationChallenges.id))
+      .where(eq(challengeSubmissions.userId, userId))
+      .orderBy(desc(challengeSubmissions.createdAt));
+    
+    res.json(submissions);
+  } catch (error) {
+    console.error("Error fetching user submissions:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// Buscar submissão específica do usuário para um desafio
+router.get("/challenges/:id/my-submission", isAuthenticated, async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const challengeId = parseInt(id);
+    const userId = req.user?.id;
+    
+    if (!userId) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    const submission = await db
+      .select()
+      .from(challengeSubmissions)
+      .where(and(
+        eq(challengeSubmissions.challengeId, challengeId),
+        eq(challengeSubmissions.userId, userId)
+      ))
+      .orderBy(desc(challengeSubmissions.createdAt))
+      .limit(1);
+    
+    if (submission.length === 0) {
+      return res.status(404).json({ error: "Submission not found" });
+    }
+
+    res.json(submission[0]);
+  } catch (error) {
+    console.error("Error fetching user submission:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 });

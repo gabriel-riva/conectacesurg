@@ -24,6 +24,8 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
+import { ChallengeEvaluationConfig } from "@/components/ChallengeEvaluationConfig";
+import { AdminSubmissionReview } from "@/components/AdminSubmissionReview";
 
 const addPointsSchema = z.object({
   userId: z.string(),
@@ -64,6 +66,8 @@ export default function AdminGamificationPage() {
   const [isChallengeDialogOpen, setIsChallengeDialogOpen] = useState(false);
   const [editingChallenge, setEditingChallenge] = useState<any>(null);
   const [quillValue, setQuillValue] = useState("");
+  const [evaluationType, setEvaluationType] = useState<'none' | 'quiz' | 'text' | 'file' | 'qrcode'>('none');
+  const [evaluationConfig, setEvaluationConfig] = useState<any>({});
 
   // Queries
   const { data: settings, isLoading: settingsLoading } = useQuery({
@@ -203,6 +207,8 @@ export default function AdminGamificationPage() {
           ...data,
           startDate: new Date(data.startDate),
           endDate: new Date(data.endDate),
+          evaluationType,
+          evaluationConfig,
         }),
       });
       
@@ -240,6 +246,8 @@ export default function AdminGamificationPage() {
           ...data,
           startDate: new Date(data.startDate),
           endDate: new Date(data.endDate),
+          evaluationType,
+          evaluationConfig,
         }),
       });
       
@@ -377,6 +385,8 @@ export default function AdminGamificationPage() {
   const onEditChallenge = (challenge: any) => {
     setEditingChallenge(challenge);
     setQuillValue(challenge.detailedDescription || "");
+    setEvaluationType(challenge.evaluationType || 'none');
+    setEvaluationConfig(challenge.evaluationConfig || {});
     challengeForm.reset({
       title: challenge.title,
       description: challenge.description,
@@ -400,6 +410,8 @@ export default function AdminGamificationPage() {
   const openCreateChallengeDialog = () => {
     setEditingChallenge(null);
     setQuillValue("");
+    setEvaluationType('none');
+    setEvaluationConfig({});
     challengeForm.reset();
     setIsChallengeDialogOpen(true);
   };
@@ -685,6 +697,10 @@ export default function AdminGamificationPage() {
                 <TabsTrigger value="challenges">
                   <Target className="h-4 w-4 mr-2" />
                   Desafios
+                </TabsTrigger>
+                <TabsTrigger value="submissions">
+                  <Award className="h-4 w-4 mr-2" />
+                  Submissões
                 </TabsTrigger>
               </TabsList>
 
@@ -1036,6 +1052,13 @@ export default function AdminGamificationPage() {
                           </div>
                         </div>
 
+                        <ChallengeEvaluationConfig
+                          evaluationType={evaluationType}
+                          evaluationConfig={evaluationConfig}
+                          onEvaluationTypeChange={setEvaluationType}
+                          onConfigChange={setEvaluationConfig}
+                        />
+
                         <FormField
                           control={challengeForm.control}
                           name="isActive"
@@ -1069,6 +1092,39 @@ export default function AdminGamificationPage() {
                     </Form>
                   </DialogContent>
                 </Dialog>
+              </TabsContent>
+
+              <TabsContent value="submissions">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Submissões de Desafios</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {challengesLoading ? (
+                      <div className="text-center py-8">Carregando desafios...</div>
+                    ) : challenges && challenges.length > 0 ? (
+                      <div className="space-y-6">
+                        {challenges.filter((challenge: any) => challenge.evaluationType !== 'none').map((challenge: any) => (
+                          <div key={challenge.id}>
+                            <AdminSubmissionReview
+                              challengeId={challenge.id}
+                              challengeTitle={challenge.title}
+                            />
+                          </div>
+                        ))}
+                        {challenges.filter((challenge: any) => challenge.evaluationType !== 'none').length === 0 && (
+                          <div className="text-center py-8 text-gray-500">
+                            Nenhum desafio com avaliação encontrado
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="text-center py-8 text-gray-500">
+                        Nenhum desafio encontrado
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
               </TabsContent>
             </Tabs>
           </div>

@@ -413,6 +413,47 @@ export const gamificationChallenges = pgTable("gamification_challenges", {
   endDate: timestamp("end_date").notNull(),
   type: text("type").notNull().default("periodic"), // 'periodic', 'annual'
   isActive: boolean("is_active").notNull().default(true),
+  // Novos campos para tipos de avaliação
+  evaluationType: text("evaluation_type").notNull().default("none"), // 'none', 'quiz', 'text', 'file', 'qrcode'
+  evaluationConfig: jsonb("evaluation_config").$type<{
+    // Quiz config
+    quiz?: {
+      questions: {
+        id: string;
+        question: string;
+        options: string[];
+        correctAnswer: number;
+      }[];
+      minScore: number;
+      maxAttempts: number;
+      allowMultipleAttempts: boolean;
+      scoreReductionPerAttempt: number;
+    };
+    // Text config
+    text?: {
+      placeholder: string;
+      maxLength?: number;
+      instructions?: string;
+    };
+    // File config
+    file?: {
+      fileRequirements: {
+        id: string;
+        name: string;
+        description: string;
+        points: number;
+        acceptedTypes: string[];
+        maxSize: number;
+      }[];
+      maxFiles: number;
+    };
+    // QR Code config
+    qrcode?: {
+      qrCodeData: string;
+      qrCodeImage: string;
+      instructions: string;
+    };
+  }>().default({}),
   createdBy: integer("created_by").notNull().references(() => users.id),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
@@ -436,6 +477,49 @@ export const challengeCommentLikes = pgTable("challenge_comment_likes", {
   return {
     pk: primaryKey({ columns: [table.userId, table.commentId] }),
   };
+});
+
+// Tabela para submissões de desafios
+export const challengeSubmissions = pgTable("challenge_submissions", {
+  id: serial("id").primaryKey(),
+  challengeId: integer("challenge_id").notNull().references(() => gamificationChallenges.id, { onDelete: 'cascade' }),
+  userId: integer("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  submissionType: text("submission_type").notNull(), // 'quiz', 'text', 'file', 'qrcode'
+  submissionData: jsonb("submission_data").$type<{
+    // Quiz submission
+    quiz?: {
+      answers: { questionId: string; answer: number }[];
+      score: number;
+      totalQuestions: number;
+      attemptNumber: number;
+    };
+    // Text submission
+    text?: {
+      content: string;
+    };
+    // File submission
+    file?: {
+      files: {
+        requirementId: string;
+        fileName: string;
+        fileUrl: string;
+        fileSize: number;
+        mimeType: string;
+      }[];
+    };
+    // QR Code submission
+    qrcode?: {
+      scannedData: string;
+      timestamp: string;
+    };
+  }>().notNull(),
+  status: text("status").notNull().default("pending"), // 'pending', 'approved', 'rejected', 'completed'
+  points: integer("points").notNull().default(0),
+  adminFeedback: text("admin_feedback"),
+  reviewedBy: integer("reviewed_by").references(() => users.id),
+  reviewedAt: timestamp("reviewed_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 // Tipos e esquemas para o UtilityLink estão definidos abaixo junto com os outros esquemas
@@ -837,6 +921,22 @@ export const challengeCommentLikesRelations = relations(challengeCommentLikes, (
   }),
 }));
 
+export const challengeSubmissionsRelations = relations(challengeSubmissions, ({ one }) => ({
+  challenge: one(gamificationChallenges, {
+    fields: [challengeSubmissions.challengeId],
+    references: [gamificationChallenges.id],
+  }),
+  user: one(users, {
+    fields: [challengeSubmissions.userId],
+    references: [users.id],
+  }),
+  reviewer: one(users, {
+    fields: [challengeSubmissions.reviewedBy],
+    references: [users.id],
+    relationName: "reviewer"
+  }),
+}));
+
 // Schemas
 export const insertUserCategorySchema = createInsertSchema(userCategories).omit({
   id: true,
@@ -1051,6 +1151,23 @@ export const insertChallengeCommentLikeSchema = createInsertSchema(challengeComm
   createdAt: true,
 });
 
+export const insertChallengeSubmissionSchema = createInsertSchema(challengeSubmissions).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  reviewedBy: true,
+  reviewedAt: true,
+});
+
+export const updateChallengeSubmissionSchema = createInsertSchema(challengeSubmissions).omit({
+  id: true,
+  challengeId: true,
+  userId: true,
+  createdAt: true,
+}).extend({
+  updatedAt: z.date().optional(),
+});
+
 // Tabela para feedbacks do sistema
 export const feedbacks = pgTable("feedbacks", {
   id: serial("id").primaryKey(),
@@ -1125,6 +1242,8 @@ export type UpdateGamificationChallenge = z.infer<typeof updateGamificationChall
 export type UpdateGamificationSettings = z.infer<typeof updateGamificationSettingsSchema>;
 export type InsertChallengeComment = z.infer<typeof insertChallengeCommentSchema>;
 export type InsertChallengeCommentLike = z.infer<typeof insertChallengeCommentLikeSchema>;
+export type InsertChallengeSubmission = z.infer<typeof insertChallengeSubmissionSchema>;
+export type UpdateChallengeSubmission = z.infer<typeof updateChallengeSubmissionSchema>;
 export type InsertFeedback = z.infer<typeof insertFeedbackSchema>;
 export type UpdateFeedback = z.infer<typeof updateFeedbackSchema>;
 
@@ -1158,6 +1277,7 @@ export type GamificationPoints = typeof gamificationPoints.$inferSelect;
 export type GamificationChallenge = typeof gamificationChallenges.$inferSelect;
 export type ChallengeComment = typeof challengeComments.$inferSelect;
 export type ChallengeCommentLike = typeof challengeCommentLikes.$inferSelect;
+export type ChallengeSubmission = typeof challengeSubmissions.$inferSelect;
 export type Feedback = typeof feedbacks.$inferSelect;
 
 // Tabela para pastas de materiais

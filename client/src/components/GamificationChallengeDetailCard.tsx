@@ -6,6 +6,10 @@ import { format, isPast, isFuture } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import type { GamificationChallenge } from "@/shared/schema";
 import ChallengeComments from "./ChallengeComments";
+import { ChallengeEvaluationForm } from "./ChallengeEvaluationForm";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
 
 interface GamificationChallengeDetailCardProps {
   challenge: GamificationChallenge;
@@ -20,6 +24,45 @@ export function GamificationChallengeDetailCard({ challenge, onBackClick }: Gami
   const isActive = now >= startDate && now <= endDate;
   const isUpcoming = isFuture(startDate);
   const isExpired = isPast(endDate);
+  
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  // Buscar submissão existente do usuário
+  const { data: existingSubmission, isLoading: submissionLoading } = useQuery({
+    queryKey: ['/api/gamification/challenges', challenge.id, 'my-submission'],
+    queryFn: () => apiRequest(`/api/gamification/challenges/${challenge.id}/my-submission`),
+    enabled: challenge.evaluationType !== 'none',
+  });
+
+  // Mutação para submeter o desafio
+  const submitChallengeMutation = useMutation({
+    mutationFn: async (submissionData: any) => {
+      return apiRequest(`/api/gamification/challenges/${challenge.id}/submit`, {
+        method: 'POST',
+        body: JSON.stringify(submissionData)
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Sucesso!",
+        description: "Sua submissão foi enviada com sucesso!",
+      });
+      queryClient.invalidateQueries({
+        queryKey: ['/api/gamification/challenges', challenge.id, 'my-submission']
+      });
+      queryClient.invalidateQueries({
+        queryKey: ['/api/gamification/my-submissions']
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Erro",
+        description: error.message || "Erro ao enviar submissão",
+        variant: "destructive"
+      });
+    }
+  });
 
   const getStatusBadge = () => {
     if (isUpcoming) {
@@ -146,6 +189,18 @@ export function GamificationChallengeDetailCard({ challenge, onBackClick }: Gami
           </div>
         </CardContent>
       </Card>
+
+      {/* Formulário de avaliação */}
+      {challenge.evaluationType && challenge.evaluationType !== 'none' && isActive && (
+        <ChallengeEvaluationForm
+          challengeId={challenge.id}
+          evaluationType={challenge.evaluationType}
+          evaluationConfig={challenge.evaluationConfig || {}}
+          onSubmit={submitChallengeMutation.mutate}
+          isLoading={submitChallengeMutation.isPending}
+          existingSubmission={existingSubmission}
+        />
+      )}
 
       {/* Seção de comentários */}
       <ChallengeComments challengeId={challenge.id} />
