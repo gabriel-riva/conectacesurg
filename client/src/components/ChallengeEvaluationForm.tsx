@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { QrCode, Upload, FileText, Brain, CheckCircle } from 'lucide-react';
+import QrScanner from 'qr-scanner';
 
 interface QuizQuestion {
   id: string;
@@ -60,14 +61,15 @@ export const ChallengeEvaluationForm: React.FC<ChallengeEvaluationFormProps> = (
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [qrScannerActive, setQrScannerActive] = useState(false);
   const [scannedData, setScannedData] = useState<string>('');
-  const [qrScanner, setQrScanner] = useState<any>(null);
+  const [qrScanner, setQrScanner] = useState<QrScanner | null>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
   const { toast } = useToast();
 
   // Cleanup do scanner quando o componente desmontar
   useEffect(() => {
     return () => {
       if (qrScanner) {
-        qrScanner.stop().catch(console.error);
+        qrScanner.destroy();
       }
     };
   }, [qrScanner]);
@@ -152,36 +154,50 @@ export const ChallengeEvaluationForm: React.FC<ChallengeEvaluationFormProps> = (
   const startQRScanner = async () => {
     try {
       if (qrScanner) {
-        await qrScanner.stop();
+        qrScanner.destroy();
       }
 
-      // Importar e usar a biblioteca html5-qrcode
-      const { Html5Qrcode } = await import('html5-qrcode');
-      
-      const html5QrCode = new Html5Qrcode("qr-video");
-      
-      await html5QrCode.start(
-        { facingMode: "environment" },
-        {
-          fps: 10,
-          qrbox: { width: 250, height: 250 }
-        },
-        (decodedText) => {
-          setScannedData(decodedText);
+      if (!videoRef.current) {
+        toast({
+          title: "Erro",
+          description: "Elemento de vídeo não encontrado.",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Verificar se o dispositivo tem câmera
+      const hasCamera = await QrScanner.hasCamera();
+      if (!hasCamera) {
+        toast({
+          title: "Erro",
+          description: "Nenhuma câmera foi encontrada no dispositivo.",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      const scanner = new QrScanner(
+        videoRef.current,
+        (result) => {
+          setScannedData(result.data);
           setQrScannerActive(false);
-          html5QrCode.stop();
+          scanner.destroy();
           toast({
             title: "Sucesso",
             description: "QR Code escaneado com sucesso!",
           });
         },
-        (error) => {
-          // Ignorar erros de escaneamento contínuo
-          console.log("QR Scanner error:", error);
+        {
+          returnDetailedScanResult: true,
+          highlightScanRegion: true,
+          highlightCodeOutline: true,
+          preferredCamera: 'environment'
         }
       );
 
-      setQrScanner(html5QrCode);
+      await scanner.start();
+      setQrScanner(scanner);
       setQrScannerActive(true);
       
     } catch (error) {
@@ -195,17 +211,12 @@ export const ChallengeEvaluationForm: React.FC<ChallengeEvaluationFormProps> = (
     }
   };
 
-  const stopQRScanner = async () => {
-    try {
-      if (qrScanner) {
-        await qrScanner.stop();
-        setQrScanner(null);
-      }
-      setQrScannerActive(false);
-    } catch (error) {
-      console.error('Erro ao parar scanner:', error);
-      setQrScannerActive(false);
+  const stopQRScanner = () => {
+    if (qrScanner) {
+      qrScanner.destroy();
+      setQrScanner(null);
     }
+    setQrScannerActive(false);
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -429,9 +440,12 @@ export const ChallengeEvaluationForm: React.FC<ChallengeEvaluationFormProps> = (
               {qrScannerActive && (
                 <div className="space-y-4">
                   <div className="text-center">
-                    <div 
-                      id="qr-video" 
+                    <video 
+                      ref={videoRef}
                       className="w-full max-w-md mx-auto border rounded"
+                      autoPlay
+                      muted
+                      playsInline
                     />
                   </div>
                   <Button 
