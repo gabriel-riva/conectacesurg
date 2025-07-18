@@ -24,7 +24,7 @@ import MaterialsPage from "@/pages/MaterialsPage";
 import AdminMaterialsPage from "@/pages/AdminMaterialsPage";
 import AdminAnnouncementsPage from "@/pages/AdminAnnouncementsPage";
 import AdminFeatureSettingsPage from "@/pages/AdminFeatureSettingsPage";
-import GamificationPage from "@/pages/GamificationPage";
+import NewGamificationPage from "@/pages/NewGamificationPage";
 import TrilhasPage from "@/pages/TrilhasPage";
 import TrailDetailsPage from "@/pages/TrailDetailsPage";
 import AdminTrilhasPage from "@/pages/AdminTrilhasPage";
@@ -77,7 +77,7 @@ function Router() {
         {() => <ProtectedRoute component={AIPage} />}
       </Route>
       <Route path="/gamificacao">
-        {() => <ProtectedRoute component={GamificationPage} />}
+        {() => <ProtectedRoute component={NewGamificationPage} />}
       </Route>
 
       <Route path="/admin">

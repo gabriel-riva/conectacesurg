@@ -1,10 +1,10 @@
 import { Router } from "express";
 import type { Request, Response } from "express";
 import { db } from "./db";
-import { gamificationSettings, gamificationPoints, users, userCategories, userCategoryAssignments } from "@/shared/schema";
+import { gamificationSettings, gamificationPoints, gamificationChallenges, users, userCategories, userCategoryAssignments } from "@/shared/schema";
 import { eq, desc, and, gte, lte, sql, inArray } from "drizzle-orm";
 import { z } from "zod";
-import { insertGamificationSettingsSchema, insertGamificationPointsSchema, updateGamificationSettingsSchema } from "@/shared/schema";
+import { insertGamificationSettingsSchema, insertGamificationPointsSchema, insertGamificationChallengeSchema, updateGamificationChallengeSchema, updateGamificationSettingsSchema } from "@/shared/schema";
 
 const router = Router();
 
@@ -372,6 +372,149 @@ router.get("/categories", isAuthenticated, async (req: Request, res: Response) =
     res.json(categories);
   } catch (error) {
     console.error("Error fetching categories:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// Listar desafios
+router.get("/challenges", isAuthenticated, async (req: Request, res: Response) => {
+  try {
+    const { type = "all" } = req.query;
+    
+    let query = db
+      .select({
+        id: gamificationChallenges.id,
+        title: gamificationChallenges.title,
+        description: gamificationChallenges.description,
+        detailedDescription: gamificationChallenges.detailedDescription,
+        imageUrl: gamificationChallenges.imageUrl,
+        points: gamificationChallenges.points,
+        startDate: gamificationChallenges.startDate,
+        endDate: gamificationChallenges.endDate,
+        type: gamificationChallenges.type,
+        isActive: gamificationChallenges.isActive,
+        createdAt: gamificationChallenges.createdAt,
+        createdBy: gamificationChallenges.createdBy,
+        creatorName: users.name,
+      })
+      .from(gamificationChallenges)
+      .leftJoin(users, eq(gamificationChallenges.createdBy, users.id))
+      .where(eq(gamificationChallenges.isActive, true))
+      .orderBy(desc(gamificationChallenges.createdAt));
+    
+    if (type !== "all") {
+      query = query.where(eq(gamificationChallenges.type, type as string));
+    }
+    
+    const challenges = await query;
+    
+    res.json(challenges);
+  } catch (error) {
+    console.error("Error fetching challenges:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// Buscar desafio por ID
+router.get("/challenges/:id", isAuthenticated, async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    
+    const challenge = await db
+      .select({
+        id: gamificationChallenges.id,
+        title: gamificationChallenges.title,
+        description: gamificationChallenges.description,
+        detailedDescription: gamificationChallenges.detailedDescription,
+        imageUrl: gamificationChallenges.imageUrl,
+        points: gamificationChallenges.points,
+        startDate: gamificationChallenges.startDate,
+        endDate: gamificationChallenges.endDate,
+        type: gamificationChallenges.type,
+        isActive: gamificationChallenges.isActive,
+        createdAt: gamificationChallenges.createdAt,
+        createdBy: gamificationChallenges.createdBy,
+        creatorName: users.name,
+      })
+      .from(gamificationChallenges)
+      .leftJoin(users, eq(gamificationChallenges.createdBy, users.id))
+      .where(eq(gamificationChallenges.id, parseInt(id)))
+      .limit(1);
+    
+    if (challenge.length === 0) {
+      return res.status(404).json({ error: "Challenge not found" });
+    }
+    
+    res.json(challenge[0]);
+  } catch (error) {
+    console.error("Error fetching challenge:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// Criar desafio (admin)
+router.post("/challenges", isAdmin, async (req: Request, res: Response) => {
+  try {
+    const data = insertGamificationChallengeSchema.parse({
+      ...req.body,
+      createdBy: req.user.id
+    });
+    
+    const result = await db
+      .insert(gamificationChallenges)
+      .values(data)
+      .returning();
+    
+    res.json(result[0]);
+  } catch (error) {
+    console.error("Error creating challenge:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// Atualizar desafio (admin)
+router.put("/challenges/:id", isAdmin, async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const data = updateGamificationChallengeSchema.parse({
+      ...req.body,
+      updatedAt: new Date()
+    });
+    
+    const result = await db
+      .update(gamificationChallenges)
+      .set(data)
+      .where(eq(gamificationChallenges.id, parseInt(id)))
+      .returning();
+    
+    if (result.length === 0) {
+      return res.status(404).json({ error: "Challenge not found" });
+    }
+    
+    res.json(result[0]);
+  } catch (error) {
+    console.error("Error updating challenge:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// Deletar desafio (admin)
+router.delete("/challenges/:id", isAdmin, async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    
+    const result = await db
+      .delete(gamificationChallenges)
+      .where(eq(gamificationChallenges.id, parseInt(id)))
+      .returning();
+    
+    if (result.length === 0) {
+      return res.status(404).json({ error: "Challenge not found" });
+    }
+    
+    res.json({ success: true });
+  } catch (error) {
+    console.error("Error deleting challenge:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 });

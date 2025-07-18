@@ -392,6 +392,22 @@ export const gamificationPoints = pgTable("gamification_points", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+export const gamificationChallenges = pgTable("gamification_challenges", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  detailedDescription: text("detailed_description").notNull(), // Rich text content
+  imageUrl: text("image_url"),
+  points: integer("points").notNull(),
+  startDate: timestamp("start_date").notNull(),
+  endDate: timestamp("end_date").notNull(),
+  type: text("type").notNull().default("periodic"), // 'periodic', 'annual'
+  isActive: boolean("is_active").notNull().default(true),
+  createdBy: integer("created_by").notNull().references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Tipos e esquemas para o UtilityLink estão definidos abaixo junto com os outros esquemas
 
 // Relations
@@ -743,6 +759,13 @@ export const gamificationPointsRelations = relations(gamificationPoints, ({ one 
   }),
 }));
 
+export const gamificationChallengesRelations = relations(gamificationChallenges, ({ one }) => ({
+  creator: one(users, {
+    fields: [gamificationChallenges.createdBy],
+    references: [users.id],
+  }),
+}));
+
 // Schemas
 export const insertUserCategorySchema = createInsertSchema(userCategories).omit({
   id: true,
@@ -926,6 +949,20 @@ export const insertGamificationPointsSchema = createInsertSchema(gamificationPoi
   createdAt: true,
 });
 
+export const insertGamificationChallengeSchema = createInsertSchema(gamificationChallenges).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const updateGamificationChallengeSchema = createInsertSchema(gamificationChallenges).omit({
+  id: true,
+  createdBy: true,
+  createdAt: true,
+}).extend({
+  updatedAt: z.date().optional(),
+});
+
 export const updateGamificationSettingsSchema = insertGamificationSettingsSchema.partial();
 
 // Tabela para feedbacks do sistema
@@ -997,6 +1034,8 @@ export type InsertAnnouncement = z.infer<typeof insertAnnouncementSchema>;
 export type InsertFeatureSetting = z.infer<typeof insertFeatureSettingSchema>;
 export type InsertGamificationSettings = z.infer<typeof insertGamificationSettingsSchema>;
 export type InsertGamificationPoints = z.infer<typeof insertGamificationPointsSchema>;
+export type InsertGamificationChallenge = z.infer<typeof insertGamificationChallengeSchema>;
+export type UpdateGamificationChallenge = z.infer<typeof updateGamificationChallengeSchema>;
 export type UpdateGamificationSettings = z.infer<typeof updateGamificationSettingsSchema>;
 export type InsertFeedback = z.infer<typeof insertFeedbackSchema>;
 export type UpdateFeedback = z.infer<typeof updateFeedbackSchema>;
@@ -1028,6 +1067,7 @@ export type Announcement = typeof announcements.$inferSelect;
 export type FeatureSetting = typeof featureSettings.$inferSelect;
 export type GamificationSettings = typeof gamificationSettings.$inferSelect;
 export type GamificationPoints = typeof gamificationPoints.$inferSelect;
+export type GamificationChallenge = typeof gamificationChallenges.$inferSelect;
 export type Feedback = typeof feedbacks.$inferSelect;
 
 // Tabela para pastas de materiais
