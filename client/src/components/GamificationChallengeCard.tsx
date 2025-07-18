@@ -50,49 +50,41 @@ export function GamificationChallengeCard({ challenge, onClick }: GamificationCh
     >
       <CardContent className="p-3 flex-1 flex flex-col">
         {/* Imagem do desafio */}
-        <div className="mb-3">
+        <div className="mb-2">
           {challenge.imageUrl ? (
             <img 
               src={challenge.imageUrl} 
               alt={challenge.title}
-              className="w-full h-16 object-cover rounded-lg"
+              className="w-full h-12 object-cover rounded-lg"
             />
           ) : (
-            <div className="w-full h-16 bg-gradient-to-br from-primary/10 to-primary/5 rounded-lg flex items-center justify-center">
-              <Trophy className="h-6 w-6 text-primary/40" />
+            <div className="w-full h-12 bg-gradient-to-br from-primary/10 to-primary/5 rounded-lg flex items-center justify-center">
+              <Trophy className="h-5 w-5 text-primary/40" />
             </div>
           )}
         </div>
 
-        {/* Título e status */}
-        <div className="mb-3 flex-1">
-          <div className="flex items-start justify-between mb-2">
-            <h3 className="text-sm font-semibold text-gray-900 flex-1 leading-tight">
-              {challenge.title}
-            </h3>
-            {getStatusBadge()}
-          </div>
-        </div>
-
-        {/* Informações do desafio */}
-        <div className="space-y-2 mt-auto">
-          {/* Pontos com destaque */}
-          <div className="flex items-center justify-center">
-            <div className="flex items-center bg-primary/10 px-3 py-1 rounded-full">
-              <Trophy className="h-4 w-4 mr-1 text-primary" />
-              <span className="text-sm font-bold text-primary">{challenge.points} pontos</span>
+        {/* Título e informações */}
+        <div className="flex-1 flex flex-col justify-between">
+          <h3 className="text-sm font-semibold text-gray-900 leading-tight mb-2">
+            {challenge.title}
+          </h3>
+          
+          {/* Pontos e período em linha */}
+          <div className="flex items-center justify-between text-xs">
+            <div className="flex items-center bg-primary/10 px-2 py-1 rounded-full">
+              <Trophy className="h-3 w-3 mr-1 text-primary" />
+              <span className="font-bold text-primary">{challenge.points} pts</span>
             </div>
-          </div>
-
-          {/* Período compacto */}
-          <div className="flex items-center justify-center text-xs text-gray-500">
-            <Clock className="h-3 w-3 mr-1" />
-            <span>
-              {isValidStartDate && isValidEndDate ? 
-                `${format(startDate, "dd/MM", { locale: ptBR })} - ${format(endDate, "dd/MM", { locale: ptBR })}` :
-                "Datas não disponíveis"
-              }
-            </span>
+            <div className="flex items-center text-gray-500">
+              <Clock className="h-3 w-3 mr-1" />
+              <span>
+                {isValidStartDate && isValidEndDate ? 
+                  `${format(startDate, "dd/MM", { locale: ptBR })} - ${format(endDate, "dd/MM", { locale: ptBR })}` :
+                  "Datas não disponíveis"
+                }
+              </span>
+            </div>
           </div>
         </div>
       </CardContent>
