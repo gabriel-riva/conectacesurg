@@ -21,6 +21,8 @@ import {
   trailComments,
   trailProgress,
   feedbacks,
+  challengeComments,
+  challengeCommentLikes,
   type User, 
   type InsertUser, 
   type InsertGoogleUser,
@@ -63,7 +65,11 @@ import {
   type InsertTrailProgress,
   type Feedback,
   type InsertFeedback,
-  type UpdateFeedback
+  type UpdateFeedback,
+  type ChallengeComment,
+  type InsertChallengeComment,
+  type ChallengeCommentLike,
+  type InsertChallengeCommentLike
 } from "@shared/schema";
 import { db, pool } from "./db";
 import { and, asc, desc, eq, gte, lte, or, inArray, SQL, isNull, sql } from "drizzle-orm";
@@ -230,6 +236,17 @@ export interface IStorage {
   createFeedback(feedback: InsertFeedback): Promise<Feedback>;
   updateFeedback(id: number, updates: UpdateFeedback): Promise<Feedback | undefined>;
   deleteFeedback(id: number): Promise<boolean>;
+
+  // Challenge Comment methods
+  getChallengeComments(challengeId: number): Promise<(ChallengeComment & { user: User; replies: (ChallengeComment & { user: User; likeCount: number; isLikedByUser: boolean })[] ; likeCount: number; isLikedByUser: boolean })[]>;
+  createChallengeComment(comment: InsertChallengeComment): Promise<ChallengeComment>;
+  updateChallengeComment(id: number, commentData: Partial<InsertChallengeComment>): Promise<ChallengeComment | undefined>;
+  deleteChallengeComment(id: number): Promise<boolean>;
+
+  // Challenge Comment Like methods
+  likeChallengeComment(userId: number, commentId: number): Promise<boolean>;
+  unlikeChallengeComment(userId: number, commentId: number): Promise<boolean>;
+  getChallengeCommentLikes(commentId: number): Promise<ChallengeCommentLike[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -2364,6 +2381,160 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error("Error deleting feedback:", error);
       return false;
+    }
+  }
+
+  // Challenge Comment methods
+  async getChallengeComments(challengeId: number): Promise<(ChallengeComment & { user: User; replies: (ChallengeComment & { user: User; likeCount: number; isLikedByUser: boolean })[] ; likeCount: number; isLikedByUser: boolean })[]> {
+    try {
+      // Get all comments for the challenge
+      const comments = await db
+        .select({
+          comment: challengeComments,
+          user: users,
+        })
+        .from(challengeComments)
+        .leftJoin(users, eq(challengeComments.userId, users.id))
+        .where(eq(challengeComments.challengeId, challengeId))
+        .orderBy(asc(challengeComments.createdAt));
+
+      // Get like counts for all comments
+      const likeCounts = await db
+        .select({
+          commentId: challengeCommentLikes.commentId,
+          likeCount: sql<number>`count(*)`.as('likeCount'),
+        })
+        .from(challengeCommentLikes)
+        .where(inArray(challengeCommentLikes.commentId, comments.map(c => c.comment.id)))
+        .groupBy(challengeCommentLikes.commentId);
+
+      // Build the result structure
+      const result: (ChallengeComment & { user: User; replies: (ChallengeComment & { user: User; likeCount: number; isLikedByUser: boolean })[] ; likeCount: number; isLikedByUser: boolean })[] = [];
+      
+      // First pass: create main comments
+      for (const comment of comments) {
+        if (!comment.comment.parentId) {
+          const likes = likeCounts.find(l => l.commentId === comment.comment.id)?.likeCount || 0;
+          result.push({
+            ...comment.comment,
+            user: comment.user,
+            replies: [],
+            likeCount: likes,
+            isLikedByUser: false, // TODO: implement user-specific like status
+          });
+        }
+      }
+
+      // Second pass: add replies
+      for (const comment of comments) {
+        if (comment.comment.parentId) {
+          const parentComment = result.find(c => c.id === comment.comment.parentId);
+          if (parentComment) {
+            const likes = likeCounts.find(l => l.commentId === comment.comment.id)?.likeCount || 0;
+            parentComment.replies.push({
+              ...comment.comment,
+              user: comment.user,
+              likeCount: likes,
+              isLikedByUser: false, // TODO: implement user-specific like status
+            });
+          }
+        }
+      }
+
+      return result;
+    } catch (error) {
+      console.error("Error getting challenge comments:", error);
+      return [];
+    }
+  }
+
+  async createChallengeComment(comment: InsertChallengeComment): Promise<ChallengeComment> {
+    try {
+      const [newComment] = await db
+        .insert(challengeComments)
+        .values(comment)
+        .returning();
+      
+      return newComment;
+    } catch (error) {
+      console.error("Error creating challenge comment:", error);
+      throw error;
+    }
+  }
+
+  async updateChallengeComment(id: number, commentData: Partial<InsertChallengeComment>): Promise<ChallengeComment | undefined> {
+    try {
+      const [updatedComment] = await db
+        .update(challengeComments)
+        .set({
+          ...commentData,
+          updatedAt: sql`now()`,
+        })
+        .where(eq(challengeComments.id, id))
+        .returning();
+      
+      return updatedComment;
+    } catch (error) {
+      console.error("Error updating challenge comment:", error);
+      return undefined;
+    }
+  }
+
+  async deleteChallengeComment(id: number): Promise<boolean> {
+    try {
+      const result = await db.delete(challengeComments).where(eq(challengeComments.id, id)).returning();
+      return result.length > 0;
+    } catch (error) {
+      console.error("Error deleting challenge comment:", error);
+      return false;
+    }
+  }
+
+  // Challenge Comment Like methods
+  async likeChallengeComment(userId: number, commentId: number): Promise<boolean> {
+    try {
+      await db
+        .insert(challengeCommentLikes)
+        .values({
+          userId,
+          commentId,
+        });
+      
+      return true;
+    } catch (error) {
+      console.error("Error liking challenge comment:", error);
+      return false;
+    }
+  }
+
+  async unlikeChallengeComment(userId: number, commentId: number): Promise<boolean> {
+    try {
+      const result = await db
+        .delete(challengeCommentLikes)
+        .where(
+          and(
+            eq(challengeCommentLikes.userId, userId),
+            eq(challengeCommentLikes.commentId, commentId)
+          )
+        )
+        .returning();
+      
+      return result.length > 0;
+    } catch (error) {
+      console.error("Error unliking challenge comment:", error);
+      return false;
+    }
+  }
+
+  async getChallengeCommentLikes(commentId: number): Promise<ChallengeCommentLike[]> {
+    try {
+      return await db
+        .select()
+        .from(challengeCommentLikes)
+        .where(eq(challengeCommentLikes.commentId, commentId));
+    } catch (error) {
+      console.error("Error getting challenge comment likes:", error);
+      return [];
     }
   }
 }

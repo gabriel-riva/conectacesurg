@@ -408,6 +408,26 @@ export const gamificationChallenges = pgTable("gamification_challenges", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+export const challengeComments = pgTable("challenge_comments", {
+  id: serial("id").primaryKey(),
+  challengeId: integer("challenge_id").notNull().references(() => gamificationChallenges.id, { onDelete: 'cascade' }),
+  userId: integer("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  content: text("content").notNull(),
+  parentId: integer("parent_id").references(() => challengeComments.id, { onDelete: 'cascade' }),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const challengeCommentLikes = pgTable("challenge_comment_likes", {
+  userId: integer("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  commentId: integer("comment_id").notNull().references(() => challengeComments.id, { onDelete: 'cascade' }),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => {
+  return {
+    pk: primaryKey({ columns: [table.userId, table.commentId] }),
+  };
+});
+
 // Tipos e esquemas para o UtilityLink estão definidos abaixo junto com os outros esquemas
 
 // Relations
@@ -759,10 +779,39 @@ export const gamificationPointsRelations = relations(gamificationPoints, ({ one 
   }),
 }));
 
-export const gamificationChallengesRelations = relations(gamificationChallenges, ({ one }) => ({
+export const gamificationChallengesRelations = relations(gamificationChallenges, ({ one, many }) => ({
   creator: one(users, {
     fields: [gamificationChallenges.createdBy],
     references: [users.id],
+  }),
+  comments: many(challengeComments),
+}));
+
+export const challengeCommentsRelations = relations(challengeComments, ({ one, many }) => ({
+  challenge: one(gamificationChallenges, {
+    fields: [challengeComments.challengeId],
+    references: [gamificationChallenges.id],
+  }),
+  user: one(users, {
+    fields: [challengeComments.userId],
+    references: [users.id],
+  }),
+  parent: one(challengeComments, {
+    fields: [challengeComments.parentId],
+    references: [challengeComments.id],
+  }),
+  replies: many(challengeComments),
+  likes: many(challengeCommentLikes),
+}));
+
+export const challengeCommentLikesRelations = relations(challengeCommentLikes, ({ one }) => ({
+  user: one(users, {
+    fields: [challengeCommentLikes.userId],
+    references: [users.id],
+  }),
+  comment: one(challengeComments, {
+    fields: [challengeCommentLikes.commentId],
+    references: [challengeComments.id],
   }),
 }));
 
@@ -970,6 +1019,16 @@ export const updateGamificationChallengeSchema = createInsertSchema(gamification
 
 export const updateGamificationSettingsSchema = insertGamificationSettingsSchema.partial();
 
+export const insertChallengeCommentSchema = createInsertSchema(challengeComments).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertChallengeCommentLikeSchema = createInsertSchema(challengeCommentLikes).omit({
+  createdAt: true,
+});
+
 // Tabela para feedbacks do sistema
 export const feedbacks = pgTable("feedbacks", {
   id: serial("id").primaryKey(),
@@ -1042,6 +1101,8 @@ export type InsertGamificationPoints = z.infer<typeof insertGamificationPointsSc
 export type InsertGamificationChallenge = z.infer<typeof insertGamificationChallengeSchema>;
 export type UpdateGamificationChallenge = z.infer<typeof updateGamificationChallengeSchema>;
 export type UpdateGamificationSettings = z.infer<typeof updateGamificationSettingsSchema>;
+export type InsertChallengeComment = z.infer<typeof insertChallengeCommentSchema>;
+export type InsertChallengeCommentLike = z.infer<typeof insertChallengeCommentLikeSchema>;
 export type InsertFeedback = z.infer<typeof insertFeedbackSchema>;
 export type UpdateFeedback = z.infer<typeof updateFeedbackSchema>;
 
@@ -1073,6 +1134,8 @@ export type FeatureSetting = typeof featureSettings.$inferSelect;
 export type GamificationSettings = typeof gamificationSettings.$inferSelect;
 export type GamificationPoints = typeof gamificationPoints.$inferSelect;
 export type GamificationChallenge = typeof gamificationChallenges.$inferSelect;
+export type ChallengeComment = typeof challengeComments.$inferSelect;
+export type ChallengeCommentLike = typeof challengeCommentLikes.$inferSelect;
 export type Feedback = typeof feedbacks.$inferSelect;
 
 // Tabela para pastas de materiais

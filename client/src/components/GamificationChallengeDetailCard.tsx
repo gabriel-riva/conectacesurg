@@ -5,6 +5,7 @@ import { ArrowLeft, Calendar, Trophy, Clock, User } from "lucide-react";
 import { format, isPast, isFuture } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import type { GamificationChallenge } from "@/shared/schema";
+import ChallengeComments from "./ChallengeComments";
 
 interface GamificationChallengeDetailCardProps {
   challenge: GamificationChallenge;
@@ -40,109 +41,114 @@ export function GamificationChallengeDetailCard({ challenge, onBackClick }: Gami
   };
 
   return (
-    <Card className={`shadow-md hover:shadow-lg transition-shadow duration-300 border-none ${getStatusColor()}`}>
-      <CardHeader className="pb-4 bg-gradient-to-r from-primary/5 to-transparent">
-        <div className="flex items-center justify-between">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onBackClick}
-            className="text-primary/70 hover:text-primary"
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Voltar
-          </Button>
-          {getStatusBadge()}
-        </div>
-        <CardTitle className="text-primary/90 flex items-center">
-          <span className="inline-block w-1 h-5 bg-primary rounded mr-2"></span>
-          {challenge.title}
-        </CardTitle>
-      </CardHeader>
-      
-      <CardContent className="p-6 space-y-6">
-        {/* Imagem do desafio */}
-        {challenge.imageUrl && (
-          <div className="w-full">
-            <img 
-              src={challenge.imageUrl} 
-              alt={challenge.title}
-              className="w-full h-64 object-cover rounded-lg"
-            />
-          </div>
-        )}
-
-        {/* Informações básicas */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="flex items-center space-x-2">
-            <Trophy className="h-5 w-5 text-primary" />
-            <div>
-              <p className="text-sm text-gray-600">Pontuação</p>
-              <p className="font-semibold">{challenge.points} pontos</p>
-            </div>
-          </div>
-          
-          <div className="flex items-center space-x-2">
-            <Calendar className="h-5 w-5 text-primary" />
-            <div>
-              <p className="text-sm text-gray-600">Período</p>
-              <p className="font-semibold text-sm">
-                {format(startDate, "dd/MM/yyyy", { locale: ptBR })} - {format(endDate, "dd/MM/yyyy", { locale: ptBR })}
-              </p>
-            </div>
-          </div>
-          
-          <div className="flex items-center space-x-2">
-            <Clock className="h-5 w-5 text-primary" />
-            <div>
-              <p className="text-sm text-gray-600">Tipo</p>
-              <p className="font-semibold">{challenge.type === 'periodic' ? 'Período' : 'Anual'}</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Descrição curta */}
-        <div>
-          <h3 className="text-lg font-semibold mb-2">Descrição</h3>
-          <p className="text-gray-700">{challenge.description}</p>
-        </div>
-
-        {/* Conteúdo detalhado */}
-        <div>
-          <h3 className="text-lg font-semibold mb-2">Detalhes do Desafio</h3>
-          <div 
-            className="prose prose-sm max-w-none text-gray-700"
-            dangerouslySetInnerHTML={{ __html: challenge.detailedDescription }}
-          />
-        </div>
-
-        {/* Informações do criador */}
-        {challenge.creatorName && (
-          <div className="pt-4 border-t">
-            <div className="flex items-center space-x-2 text-sm text-gray-600">
-              <User className="h-4 w-4" />
-              <span>Criado por {challenge.creatorName}</span>
-              <span>•</span>
-              <span>{format(new Date(challenge.createdAt), "dd/MM/yyyy", { locale: ptBR })}</span>
-            </div>
-          </div>
-        )}
-
-        {/* Status do desafio */}
-        <div className="bg-gray-50 p-4 rounded-lg">
+    <div className="space-y-6">
+      <Card className={`shadow-md hover:shadow-lg transition-shadow duration-300 border-none ${getStatusColor()}`}>
+        <CardHeader className="pb-4 bg-gradient-to-r from-primary/5 to-transparent">
           <div className="flex items-center justify-between">
-            <div>
-              <h4 className="font-medium text-gray-900">Status do Desafio</h4>
-              <p className="text-sm text-gray-600">
-                {isUpcoming && "Este desafio ainda não começou."}
-                {isActive && "Este desafio está ativo! Você pode participar agora."}
-                {isExpired && "Este desafio já foi encerrado."}
-              </p>
-            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onBackClick}
+              className="text-primary/70 hover:text-primary"
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Voltar
+            </Button>
             {getStatusBadge()}
           </div>
-        </div>
-      </CardContent>
-    </Card>
+          <CardTitle className="text-primary/90 flex items-center">
+            <span className="inline-block w-1 h-5 bg-primary rounded mr-2"></span>
+            {challenge.title}
+          </CardTitle>
+        </CardHeader>
+        
+        <CardContent className="p-6 space-y-6">
+          {/* Imagem do desafio */}
+          {challenge.imageUrl && (
+            <div className="w-full">
+              <img 
+                src={challenge.imageUrl} 
+                alt={challenge.title}
+                className="w-full h-64 object-cover rounded-lg"
+              />
+            </div>
+          )}
+
+          {/* Informações básicas */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="flex items-center space-x-2">
+              <Trophy className="h-5 w-5 text-primary" />
+              <div>
+                <p className="text-sm text-gray-600">Pontuação</p>
+                <p className="font-semibold">{challenge.points} pontos</p>
+              </div>
+            </div>
+            
+            <div className="flex items-center space-x-2">
+              <Calendar className="h-5 w-5 text-primary" />
+              <div>
+                <p className="text-sm text-gray-600">Período</p>
+                <p className="font-semibold text-sm">
+                  {format(startDate, "dd/MM/yyyy", { locale: ptBR })} - {format(endDate, "dd/MM/yyyy", { locale: ptBR })}
+                </p>
+              </div>
+            </div>
+            
+            <div className="flex items-center space-x-2">
+              <Clock className="h-5 w-5 text-primary" />
+              <div>
+                <p className="text-sm text-gray-600">Tipo</p>
+                <p className="font-semibold">{challenge.type === 'periodic' ? 'Período' : 'Anual'}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Descrição curta */}
+          <div>
+            <h3 className="text-lg font-semibold mb-2">Descrição</h3>
+            <p className="text-gray-700">{challenge.description}</p>
+          </div>
+
+          {/* Conteúdo detalhado */}
+          <div>
+            <h3 className="text-lg font-semibold mb-2">Detalhes do Desafio</h3>
+            <div 
+              className="prose prose-sm max-w-none text-gray-700"
+              dangerouslySetInnerHTML={{ __html: challenge.detailedDescription }}
+            />
+          </div>
+
+          {/* Informações do criador */}
+          {challenge.creatorName && (
+            <div className="pt-4 border-t">
+              <div className="flex items-center space-x-2 text-sm text-gray-600">
+                <User className="h-4 w-4" />
+                <span>Criado por {challenge.creatorName}</span>
+                <span>•</span>
+                <span>{format(new Date(challenge.createdAt), "dd/MM/yyyy", { locale: ptBR })}</span>
+              </div>
+            </div>
+          )}
+
+          {/* Status do desafio */}
+          <div className="bg-gray-50 p-4 rounded-lg">
+            <div className="flex items-center justify-between">
+              <div>
+                <h4 className="font-medium text-gray-900">Status do Desafio</h4>
+                <p className="text-sm text-gray-600">
+                  {isUpcoming && "Este desafio ainda não começou."}
+                  {isActive && "Este desafio está ativo! Você pode participar agora."}
+                  {isExpired && "Este desafio já foi encerrado."}
+                </p>
+              </div>
+              {getStatusBadge()}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Seção de comentários */}
+      <ChallengeComments challengeId={challenge.id} />
+    </div>
   );
 }

@@ -1,10 +1,10 @@
 import { Router } from "express";
 import type { Request, Response } from "express";
 import { db } from "./db";
-import { gamificationSettings, gamificationPoints, gamificationChallenges, users, userCategories, userCategoryAssignments } from "@/shared/schema";
+import { gamificationSettings, gamificationPoints, gamificationChallenges, users, userCategories, userCategoryAssignments, challengeComments, challengeCommentLikes } from "@/shared/schema";
 import { eq, desc, and, gte, lte, sql, inArray } from "drizzle-orm";
 import { z } from "zod";
-import { insertGamificationSettingsSchema, insertGamificationPointsSchema, insertGamificationChallengeSchema, updateGamificationChallengeSchema, updateGamificationSettingsSchema } from "@/shared/schema";
+import { insertGamificationSettingsSchema, insertGamificationPointsSchema, insertGamificationChallengeSchema, updateGamificationChallengeSchema, updateGamificationSettingsSchema, insertChallengeCommentSchema, insertChallengeCommentLikeSchema } from "@/shared/schema";
 
 const router = Router();
 
@@ -515,6 +515,227 @@ router.delete("/challenges/:id", isAdmin, async (req: Request, res: Response) =>
     res.json({ success: true });
   } catch (error) {
     console.error("Error deleting challenge:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// Buscar comentários de um desafio
+router.get("/challenges/:id/comments", isAuthenticated, async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const challengeId = parseInt(id);
+    
+    const comments = await db
+      .select({
+        id: challengeComments.id,
+        challengeId: challengeComments.challengeId,
+        userId: challengeComments.userId,
+        content: challengeComments.content,
+        parentId: challengeComments.parentId,
+        createdAt: challengeComments.createdAt,
+        updatedAt: challengeComments.updatedAt,
+        userName: users.name,
+        userPhotoUrl: users.photoUrl,
+      })
+      .from(challengeComments)
+      .leftJoin(users, eq(challengeComments.userId, users.id))
+      .where(eq(challengeComments.challengeId, challengeId))
+      .orderBy(challengeComments.createdAt);
+
+    // Obter contagem de likes para cada comentário
+    const commentIds = comments.map(c => c.id);
+    const likeCounts = await db
+      .select({
+        commentId: challengeCommentLikes.commentId,
+        count: sql<number>`count(*)`.as('count'),
+      })
+      .from(challengeCommentLikes)
+      .where(inArray(challengeCommentLikes.commentId, commentIds))
+      .groupBy(challengeCommentLikes.commentId);
+
+    // Verificar se o usuário atual curtiu os comentários
+    const currentUserId = req.user?.id;
+    let userLikes: { commentId: number }[] = [];
+    
+    if (currentUserId) {
+      userLikes = await db
+        .select({
+          commentId: challengeCommentLikes.commentId,
+        })
+        .from(challengeCommentLikes)
+        .where(
+          and(
+            eq(challengeCommentLikes.userId, currentUserId),
+            inArray(challengeCommentLikes.commentId, commentIds)
+          )
+        );
+    }
+
+    // Organizar comentários em estrutura hierárquica
+    const commentsWithMeta = comments.map(comment => ({
+      ...comment,
+      likeCount: likeCounts.find(l => l.commentId === comment.id)?.count || 0,
+      isLikedByUser: userLikes.some(l => l.commentId === comment.id),
+      replies: [] as any[],
+    }));
+
+    const topLevelComments = commentsWithMeta.filter(c => !c.parentId);
+    const replies = commentsWithMeta.filter(c => c.parentId);
+
+    // Organizar replies dentro dos comentários pai
+    replies.forEach(reply => {
+      const parentComment = topLevelComments.find(c => c.id === reply.parentId);
+      if (parentComment) {
+        parentComment.replies.push(reply);
+      }
+    });
+
+    res.json(topLevelComments);
+  } catch (error) {
+    console.error("Error fetching challenge comments:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// Criar comentário em um desafio
+router.post("/challenges/:id/comments", isAuthenticated, async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const challengeId = parseInt(id);
+    const userId = req.user?.id;
+    
+    if (!userId) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    const data = insertChallengeCommentSchema.parse({
+      ...req.body,
+      challengeId,
+      userId,
+    });
+
+    const result = await db
+      .insert(challengeComments)
+      .values(data)
+      .returning();
+
+    // Buscar o comentário criado com informações do usuário
+    const [comment] = await db
+      .select({
+        id: challengeComments.id,
+        challengeId: challengeComments.challengeId,
+        userId: challengeComments.userId,
+        content: challengeComments.content,
+        parentId: challengeComments.parentId,
+        createdAt: challengeComments.createdAt,
+        updatedAt: challengeComments.updatedAt,
+        userName: users.name,
+        userPhotoUrl: users.photoUrl,
+      })
+      .from(challengeComments)
+      .leftJoin(users, eq(challengeComments.userId, users.id))
+      .where(eq(challengeComments.id, result[0].id));
+
+    res.json({
+      ...comment,
+      likeCount: 0,
+      isLikedByUser: false,
+      replies: [],
+    });
+  } catch (error) {
+    console.error("Error creating challenge comment:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// Curtir/descurtir comentário
+router.post("/comments/:id/like", isAuthenticated, async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const commentId = parseInt(id);
+    const userId = req.user?.id;
+    
+    if (!userId) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    // Verificar se já curtiu
+    const existingLike = await db
+      .select()
+      .from(challengeCommentLikes)
+      .where(
+        and(
+          eq(challengeCommentLikes.userId, userId),
+          eq(challengeCommentLikes.commentId, commentId)
+        )
+      )
+      .limit(1);
+
+    if (existingLike.length > 0) {
+      // Descurtir
+      await db
+        .delete(challengeCommentLikes)
+        .where(
+          and(
+            eq(challengeCommentLikes.userId, userId),
+            eq(challengeCommentLikes.commentId, commentId)
+          )
+        );
+      
+      res.json({ liked: false });
+    } else {
+      // Curtir
+      await db
+        .insert(challengeCommentLikes)
+        .values({
+          userId,
+          commentId,
+        });
+      
+      res.json({ liked: true });
+    }
+  } catch (error) {
+    console.error("Error liking challenge comment:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// Deletar comentário
+router.delete("/comments/:id", isAuthenticated, async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const commentId = parseInt(id);
+    const userId = req.user?.id;
+    
+    if (!userId) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    // Verificar se o usuário é o autor do comentário ou é admin
+    const comment = await db
+      .select()
+      .from(challengeComments)
+      .where(eq(challengeComments.id, commentId))
+      .limit(1);
+
+    if (comment.length === 0) {
+      return res.status(404).json({ error: "Comment not found" });
+    }
+
+    const isOwner = comment[0].userId === userId;
+    const isAdmin = req.user?.role === "admin" || req.user?.role === "superadmin";
+
+    if (!isOwner && !isAdmin) {
+      return res.status(403).json({ error: "Forbidden" });
+    }
+
+    await db
+      .delete(challengeComments)
+      .where(eq(challengeComments.id, commentId));
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error("Error deleting challenge comment:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 });
