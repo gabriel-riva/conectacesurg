@@ -10,9 +10,8 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Trophy, Eye, Calendar, Users } from "lucide-react";
+import { Trophy, Calendar, Users } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
-import { useLocation } from "wouter";
 import { useState } from "react";
 
 interface RankingUser {
@@ -34,7 +33,6 @@ interface Category {
 }
 
 export function RankingCard() {
-  const [, navigate] = useLocation();
   const [period, setPeriod] = useState<'cycle' | 'annual'>('cycle');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
 
@@ -64,9 +62,7 @@ export function RankingCard() {
   // Limitar a 20 registros
   const topUsers = ranking.slice(0, 20);
 
-  const handleViewAll = () => {
-    navigate('/gamificacao');
-  };
+
 
   const getInitials = (name: string) => {
     return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
@@ -75,20 +71,9 @@ export function RankingCard() {
   return (
     <Card className="h-[280px] flex flex-col shadow-md hover:shadow-lg transition-shadow duration-300 border-none overflow-hidden">
       <CardHeader className="pb-2 bg-gradient-to-r from-primary/5 to-transparent">
-        <CardTitle className="text-primary/90 flex items-center justify-between">
-          <div className="flex items-center">
-            <span className="inline-block w-1 h-5 bg-primary rounded mr-2"></span>
-            Ranking
-          </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleViewAll}
-            className="text-primary/70 hover:text-primary"
-          >
-            <Eye className="h-4 w-4 mr-1" />
-            Ver tudo
-          </Button>
+        <CardTitle className="text-primary/90 flex items-center">
+          <span className="inline-block w-1 h-5 bg-primary rounded mr-2"></span>
+          Ranking
         </CardTitle>
       </CardHeader>
       
