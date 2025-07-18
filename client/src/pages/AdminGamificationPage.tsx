@@ -43,7 +43,7 @@ const settingsSchema = z.object({
 const challengeSchema = z.object({
   title: z.string().min(1, "Título é obrigatório"),
   description: z.string().min(1, "Descrição é obrigatória"),
-  detailedDescription: z.string().min(1, "Descrição detalhada é obrigatória"),
+  detailedDescription: z.string().optional(),
   imageUrl: z.string().url("URL da imagem deve ser válida").optional().or(z.literal("")),
   points: z.number().min(1, "Pontos devem ser maior que 0"),
   startDate: z.string().min(1, "Data de início é obrigatória"),
@@ -362,10 +362,16 @@ export default function AdminGamificationPage() {
   };
 
   const onChallengeSubmit = (data: ChallengeForm) => {
+    console.log("Form submitted with data:", data);
+    console.log("Quill value:", quillValue);
+    console.log("Editing challenge:", editingChallenge);
+    
     const formData = {
       ...data,
       detailedDescription: quillValue,
     };
+    
+    console.log("Final form data:", formData);
     
     if (editingChallenge) {
       updateChallengeMutation.mutate({ ...formData, id: editingChallenge.id });
