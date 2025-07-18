@@ -192,43 +192,61 @@ export function GamificationChallengeDetailCard({ challenge, onBackClick }: Gami
 
       {/* Formulário de avaliação */}
       {challenge.evaluationType && challenge.evaluationType !== 'none' && (
-        <div className="space-y-4">
-          {/* Debug info */}
-          <div className="bg-yellow-100 p-3 rounded-lg text-sm">
-            <p><strong>Debug Info:</strong></p>
-            <p>Tipo de avaliação: {challenge.evaluationType}</p>
-            <p>Desafio ativo: {isActive ? 'Sim' : 'Não'}</p>
-            <p>Configuração existe: {challenge.evaluationConfig ? 'Sim' : 'Não'}</p>
-          </div>
-          
-          {isActive ? (
-            <ChallengeEvaluationForm
-              challengeId={challenge.id}
-              evaluationType={challenge.evaluationType}
-              evaluationConfig={challenge.evaluationConfig || {}}
-              onSubmit={submitChallengeMutation.mutate}
-              isLoading={submitChallengeMutation.isPending}
-              existingSubmission={existingSubmission}
-            />
-          ) : (
-            <Card>
-              <CardContent className="p-6">
-                <div className="text-center">
-                  <h3 className="text-lg font-semibold mb-2">Avaliação Disponível</h3>
-                  <p className="text-gray-600">
-                    Este desafio possui uma avaliação do tipo <strong>{challenge.evaluationType}</strong>.
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Target className="h-5 w-5" />
+              Avaliação do Desafio
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {isActive ? (
+              <div className="space-y-4">
+                <div className="bg-blue-50 p-4 rounded-lg">
+                  <p className="text-sm text-blue-800">
+                    <strong>Tipo de avaliação:</strong> {challenge.evaluationType}
                   </p>
-                  {!isActive && (
-                    <p className="text-sm text-gray-500 mt-2">
-                      {isUpcoming && "A avaliação estará disponível quando o desafio começar."}
-                      {isExpired && "A avaliação não está mais disponível pois o desafio foi encerrado."}
-                    </p>
-                  )}
+                  <p className="text-sm text-blue-800">
+                    <strong>Status:</strong> Ativo
+                  </p>
                 </div>
-              </CardContent>
-            </Card>
-          )}
-        </div>
+                <ChallengeEvaluationForm
+                  challengeId={challenge.id}
+                  evaluationType={challenge.evaluationType}
+                  evaluationConfig={challenge.evaluationConfig || {}}
+                  onSubmit={submitChallengeMutation.mutate}
+                  isLoading={submitChallengeMutation.isPending}
+                  existingSubmission={existingSubmission}
+                />
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <div className="mb-4">
+                  <Badge variant="outline" className="px-4 py-2">
+                    {challenge.evaluationType === 'quiz' && 'Quiz'}
+                    {challenge.evaluationType === 'text' && 'Texto Livre'}
+                    {challenge.evaluationType === 'file' && 'Upload de Arquivo'}
+                    {challenge.evaluationType === 'qrcode' && 'QR Code'}
+                  </Badge>
+                </div>
+                <h3 className="text-lg font-semibold mb-2">Avaliação Disponível</h3>
+                <p className="text-gray-600 mb-4">
+                  Este desafio possui uma avaliação que será liberada quando o período estiver ativo.
+                </p>
+                {isUpcoming && (
+                  <p className="text-sm text-blue-600">
+                    A avaliação estará disponível a partir de {format(new Date(challenge.startDate), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                  </p>
+                )}
+                {isExpired && (
+                  <p className="text-sm text-red-600">
+                    A avaliação não está mais disponível. O desafio foi encerrado em {format(new Date(challenge.endDate), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                  </p>
+                )}
+              </div>
+            )}
+          </CardContent>
+        </Card>
       )}
 
       {/* Seção de comentários */}
