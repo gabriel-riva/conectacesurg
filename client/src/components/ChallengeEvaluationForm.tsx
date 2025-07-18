@@ -236,7 +236,7 @@ export const ChallengeEvaluationForm: React.FC<ChallengeEvaluationFormProps> = (
 
   const captureQRCode = () => {
     // Permitir entrada manual do código QR
-    const userInput = prompt("Digite o código QR que você está vendo na tela:");
+    const userInput = prompt("Digite o código QR que você vê na câmera ou no evento:");
     if (userInput && userInput.trim()) {
       setScannedData(userInput.trim());
       setQrScannerActive(false);
@@ -466,10 +466,10 @@ export const ChallengeEvaluationForm: React.FC<ChallengeEvaluationFormProps> = (
               <div className="text-center bg-orange-50 p-4 rounded-lg">
                 <QrCode className="w-12 h-12 text-orange-600 mx-auto mb-2" />
                 <p className="text-sm text-orange-800 mb-2">
-                  Para completar este desafio, você precisa escanear o QR Code fornecido no evento.
+                  Para completar este desafio, você precisa obter o código QR fornecido no evento.
                 </p>
                 <p className="text-xs text-orange-700">
-                  O QR Code será disponibilizado pelos organizadores.
+                  Use a câmera para visualizar melhor ou digite diretamente o código.
                 </p>
               </div>
 
@@ -530,7 +530,7 @@ export const ChallengeEvaluationForm: React.FC<ChallengeEvaluationFormProps> = (
                       variant="default"
                     >
                       <QrCode className="w-4 h-4 mr-2" />
-                      Capturar QR Code
+                      Inserir Código
                     </Button>
                     <Button 
                       onClick={stopQRScanner} 
