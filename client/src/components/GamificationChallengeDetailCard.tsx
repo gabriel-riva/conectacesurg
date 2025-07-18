@@ -190,6 +190,26 @@ export function GamificationChallengeDetailCard({ challenge, onBackClick }: Gami
         </CardContent>
       </Card>
 
+      {/* DEBUG: Sempre mostrar informações do desafio */}
+      <Card className="bg-red-50 border-red-200">
+        <CardHeader>
+          <CardTitle className="text-red-800">DEBUG - Informações do Desafio</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-2 text-sm">
+            <p><strong>ID:</strong> {challenge.id}</p>
+            <p><strong>Título:</strong> {challenge.title}</p>
+            <p><strong>Tipo de Avaliação:</strong> {challenge.evaluationType || 'undefined'}</p>
+            <p><strong>Config de Avaliação:</strong> {JSON.stringify(challenge.evaluationConfig) || 'undefined'}</p>
+            <p><strong>Data Início:</strong> {challenge.startDate}</p>
+            <p><strong>Data Fim:</strong> {challenge.endDate}</p>
+            <p><strong>É Ativo:</strong> {isActive ? 'Sim' : 'Não'}</p>
+            <p><strong>É Futuro:</strong> {isUpcoming ? 'Sim' : 'Não'}</p>
+            <p><strong>Expirou:</strong> {isExpired ? 'Sim' : 'Não'}</p>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Formulário de avaliação */}
       {challenge.evaluationType && challenge.evaluationType !== 'none' && (
         <Card>
