@@ -121,13 +121,14 @@ function NewGamificationPageContent() {
                         <p>Nenhum desafio disponível no momento</p>
                       </div>
                     ) : (
-                      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 max-h-64 overflow-y-auto">
                         {periodicChallenges.map((challenge) => (
-                          <GamificationChallengeCard
-                            key={challenge.id}
-                            challenge={challenge}
-                            onClick={() => handleChallengeClick(challenge)}
-                          />
+                          <div key={challenge.id} className="h-48">
+                            <GamificationChallengeCard
+                              challenge={challenge}
+                              onClick={() => handleChallengeClick(challenge)}
+                            />
+                          </div>
                         ))}
                       </div>
                     )}
@@ -150,13 +151,14 @@ function NewGamificationPageContent() {
                         <p>Nenhum desafio anual disponível</p>
                       </div>
                     ) : (
-                      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 max-h-64 overflow-y-auto">
                         {annualChallenges.map((challenge) => (
-                          <GamificationChallengeCard
-                            key={challenge.id}
-                            challenge={challenge}
-                            onClick={() => handleChallengeClick(challenge)}
-                          />
+                          <div key={challenge.id} className="h-48">
+                            <GamificationChallengeCard
+                              challenge={challenge}
+                              onClick={() => handleChallengeClick(challenge)}
+                            />
+                          </div>
                         ))}
                       </div>
                     )}
