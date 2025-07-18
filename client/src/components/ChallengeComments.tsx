@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, memo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -30,6 +30,160 @@ interface ChallengeComment {
 interface ChallengeCommentsProps {
   challengeId: number;
 }
+
+const getInitials = (name: string) => {
+  return name
+    .split(" ")
+    .map((part) => part[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
+};
+
+interface CommentItemProps {
+  comment: ChallengeComment;
+  replyTo: number | null;
+  replyContents: { [key: number]: string };
+  onSetReplyTo: (commentId: number) => void;
+  onUpdateReplyContent: (commentId: number, content: string) => void;
+  onHandleReply: (commentId: number) => void;
+  onHandleLike: (commentId: number) => void;
+  onHandleDelete: (commentId: number) => void;
+  canDeleteComment: (comment: ChallengeComment) => boolean;
+  isReplying: boolean;
+}
+
+const CommentItem = memo(({ 
+  comment, 
+  replyTo, 
+  replyContents, 
+  onSetReplyTo, 
+  onUpdateReplyContent, 
+  onHandleReply, 
+  onHandleLike, 
+  onHandleDelete, 
+  canDeleteComment, 
+  isReplying 
+}: CommentItemProps) => {
+  const replyText = replyContents[comment.id] || "";
+  
+  return (
+    <div className="space-y-2">
+      <div className="flex gap-2">
+        <Avatar className="h-6 w-6 mt-0.5">
+          <AvatarImage src={comment.userPhotoUrl} />
+          <AvatarFallback className="text-xs">
+            {getInitials(comment.userName)}
+          </AvatarFallback>
+        </Avatar>
+        <div className="flex-1 space-y-1">
+          <div className="bg-gray-50 rounded-lg p-2">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="font-medium text-xs">{comment.userName}</span>
+              <span className="text-xs text-gray-500">
+                {format(new Date(comment.createdAt), "dd/MM/yyyy 'às' HH:mm", {
+                  locale: ptBR,
+                })}
+              </span>
+            </div>
+            <p className="text-sm text-gray-800">{comment.content}</p>
+          </div>
+          <div className="flex items-center gap-3 text-xs text-gray-500">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => onHandleLike(comment.id)}
+              className={`p-0 h-auto font-normal text-xs ${
+                comment.isLikedByUser ? "text-red-500" : "text-gray-500"
+              }`}
+            >
+              <Heart
+                className={`h-3 w-3 mr-1 ${
+                  comment.isLikedByUser ? "fill-current" : ""
+                }`}
+              />
+              {comment.likeCount > 0 && comment.likeCount}
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => onSetReplyTo(comment.id)}
+              className="p-0 h-auto font-normal text-xs text-gray-500"
+            >
+              <Reply className="h-3 w-3 mr-1" />
+              Responder
+            </Button>
+            {canDeleteComment(comment) && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => onHandleDelete(comment.id)}
+                className="p-0 h-auto font-normal text-xs text-red-500"
+              >
+                <Trash2 className="h-3 w-3" />
+              </Button>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Campo de resposta */}
+      {isReplying && (
+        <div className="ml-8 space-y-2">
+          <Textarea
+            value={replyText}
+            onChange={(e) => onUpdateReplyContent(comment.id, e.target.value)}
+            placeholder="Escreva sua resposta..."
+            className="min-h-[60px] text-sm"
+            autoFocus
+          />
+          <div className="flex gap-2">
+            <Button
+              size="sm"
+              onClick={() => onHandleReply(comment.id)}
+              disabled={!replyText.trim()}
+              className="text-xs py-1 px-2 h-auto"
+            >
+              Responder
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => {
+                onSetReplyTo(null);
+                onUpdateReplyContent(comment.id, "");
+              }}
+              className="text-xs py-1 px-2 h-auto"
+            >
+              Cancelar
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Respostas */}
+      {comment.replies.length > 0 && (
+        <div className="ml-8 space-y-2">
+          {comment.replies.map((reply) => (
+            <CommentItem 
+              key={reply.id} 
+              comment={reply}
+              replyTo={replyTo}
+              replyContents={replyContents}
+              onSetReplyTo={onSetReplyTo}
+              onUpdateReplyContent={onUpdateReplyContent}
+              onHandleReply={onHandleReply}
+              onHandleLike={onHandleLike}
+              onHandleDelete={onHandleDelete}
+              canDeleteComment={canDeleteComment}
+              isReplying={replyTo === reply.id}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+});
 
 export default function ChallengeComments({ challengeId }: ChallengeCommentsProps) {
   const [newComment, setNewComment] = useState("");
@@ -125,7 +279,7 @@ export default function ChallengeComments({ challengeId }: ChallengeCommentsProp
     });
   };
 
-  const handleReply = (commentId: number) => {
+  const handleReply = useCallback((commentId: number) => {
     const content = replyContents[commentId];
     if (!content?.trim()) return;
     
@@ -133,151 +287,38 @@ export default function ChallengeComments({ challengeId }: ChallengeCommentsProp
       content: content,
       parentId: commentId,
     });
-  };
+  }, [replyContents, createCommentMutation]);
 
-  const updateReplyContent = (commentId: number, content: string) => {
+  const updateReplyContent = useCallback((commentId: number, content: string) => {
     setReplyContents(prev => ({
       ...prev,
       [commentId]: content
     }));
-  };
+  }, []);
 
-  const handleLike = (commentId: number) => {
+  const handleLike = useCallback((commentId: number) => {
     likeCommentMutation.mutate(commentId);
-  };
+  }, [likeCommentMutation]);
 
-  const handleDelete = (commentId: number) => {
+  const handleDelete = useCallback((commentId: number) => {
     if (window.confirm("Tem certeza que deseja deletar este comentário?")) {
       deleteCommentMutation.mutate(commentId);
     }
-  };
+  }, [deleteCommentMutation]);
 
-  const getInitials = (name: string) => {
-    return name
-      .split(" ")
-      .map((word) => word[0])
-      .join("")
-      .toUpperCase()
-      .slice(0, 2);
-  };
-
-  const canDeleteComment = (comment: ChallengeComment) => {
+  const canDeleteComment = useCallback((comment: ChallengeComment) => {
     return (
       user?.id === comment.userId ||
       user?.role === "admin" ||
       user?.role === "superadmin"
     );
-  };
+  }, [user]);
 
-  const CommentItem = ({ comment }: { comment: ChallengeComment }) => {
-    const isReplying = replyTo === comment.id;
-    const replyText = replyContents[comment.id] || "";
-    
-    return (
-      <div className="space-y-2">
-        <div className="flex gap-2">
-          <Avatar className="h-6 w-6 mt-0.5">
-            <AvatarImage src={comment.userPhotoUrl} />
-            <AvatarFallback className="text-xs">
-              {getInitials(comment.userName)}
-            </AvatarFallback>
-          </Avatar>
-          <div className="flex-1 space-y-1">
-            <div className="bg-gray-50 rounded-lg p-2">
-              <div className="flex items-center gap-2 mb-1">
-                <span className="font-medium text-xs">{comment.userName}</span>
-                <span className="text-xs text-gray-500">
-                  {format(new Date(comment.createdAt), "dd/MM/yyyy 'às' HH:mm", {
-                    locale: ptBR,
-                  })}
-                </span>
-              </div>
-              <p className="text-sm text-gray-800">{comment.content}</p>
-            </div>
-            <div className="flex items-center gap-3 text-xs text-gray-500">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => handleLike(comment.id)}
-                className={`p-0 h-auto font-normal text-xs ${
-                  comment.isLikedByUser ? "text-red-500" : "text-gray-500"
-                }`}
-              >
-                <Heart
-                  className={`h-3 w-3 mr-1 ${
-                    comment.isLikedByUser ? "fill-current" : ""
-                  }`}
-                />
-                {comment.likeCount > 0 && comment.likeCount}
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setReplyTo(comment.id)}
-                className="p-0 h-auto font-normal text-xs text-gray-500"
-              >
-                <Reply className="h-3 w-3 mr-1" />
-                Responder
-              </Button>
-              {canDeleteComment(comment) && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => handleDelete(comment.id)}
-                  className="p-0 h-auto font-normal text-xs text-red-500"
-                >
-                  <Trash2 className="h-3 w-3" />
-                </Button>
-              )}
-            </div>
-          </div>
-        </div>
+  const handleSetReplyTo = useCallback((commentId: number | null) => {
+    setReplyTo(commentId);
+  }, []);
 
-        {/* Campo de resposta */}
-        {isReplying && (
-          <div className="ml-8 space-y-2">
-            <Textarea
-              value={replyText}
-              onChange={(e) => updateReplyContent(comment.id, e.target.value)}
-              placeholder="Escreva sua resposta..."
-              className="min-h-[60px] text-sm"
-              autoFocus
-            />
-            <div className="flex gap-2">
-              <Button
-                size="sm"
-                onClick={() => handleReply(comment.id)}
-                disabled={!replyText.trim() || createCommentMutation.isPending}
-                className="text-xs py-1 px-2 h-auto"
-              >
-                Responder
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => {
-                  setReplyTo(null);
-                  updateReplyContent(comment.id, "");
-                }}
-                className="text-xs py-1 px-2 h-auto"
-              >
-                Cancelar
-              </Button>
-            </div>
-          </div>
-        )}
 
-        {/* Respostas */}
-        {comment.replies.length > 0 && (
-          <div className="ml-8 space-y-2">
-            {comment.replies.map((reply) => (
-              <CommentItem key={reply.id} comment={reply} />
-            ))}
-          </div>
-        )}
-      </div>
-    );
-  };
 
   if (!user) {
     return (
@@ -348,7 +389,19 @@ export default function ChallengeComments({ challengeId }: ChallengeCommentsProp
         ) : (
           <div className="space-y-4">
             {comments.map((comment: ChallengeComment) => (
-              <CommentItem key={comment.id} comment={comment} />
+              <CommentItem 
+                key={comment.id} 
+                comment={comment}
+                replyTo={replyTo}
+                replyContents={replyContents}
+                onSetReplyTo={handleSetReplyTo}
+                onUpdateReplyContent={updateReplyContent}
+                onHandleReply={handleReply}
+                onHandleLike={handleLike}
+                onHandleDelete={handleDelete}
+                canDeleteComment={canDeleteComment}
+                isReplying={replyTo === comment.id}
+              />
             ))}
           </div>
         )}
