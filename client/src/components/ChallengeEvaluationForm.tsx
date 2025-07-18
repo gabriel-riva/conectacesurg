@@ -65,6 +65,7 @@ export const ChallengeEvaluationForm: React.FC<ChallengeEvaluationFormProps> = (
   const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
   const [scanningActive, setScanningActive] = useState(false);
   const [scanAttempts, setScanAttempts] = useState(0);
+  const [detectionStatus, setDetectionStatus] = useState<'scanning' | 'found' | 'processing'>('scanning');
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const scanIntervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -161,10 +162,6 @@ export const ChallengeEvaluationForm: React.FC<ChallengeEvaluationFormProps> = (
 
   const scanQRCode = () => {
     if (!videoRef.current || !canvasRef.current) {
-      console.log('Elementos não encontrados:', { 
-        video: !!videoRef.current, 
-        canvas: !!canvasRef.current 
-      });
       return;
     }
 
@@ -173,47 +170,53 @@ export const ChallengeEvaluationForm: React.FC<ChallengeEvaluationFormProps> = (
     const context = canvas.getContext('2d');
 
     if (!context || video.videoWidth === 0 || video.videoHeight === 0) {
-      console.log('Vídeo não pronto:', { 
-        context: !!context, 
-        width: video.videoWidth, 
-        height: video.videoHeight 
-      });
       return;
     }
 
     try {
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-      context.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-      const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+      // Usar tamanho fixo para melhor performance
+      const width = video.videoWidth;
+      const height = video.videoHeight;
       
-      // Tentar múltiplas configurações de detecção
-      const configs = [
-        { inversionAttempts: "dontInvert" },
-        { inversionAttempts: "onlyInvert" },
-        { inversionAttempts: "attemptBoth" },
-        { inversionAttempts: "attemptBoth", locationHint: { x: canvas.width / 2, y: canvas.height / 2 } }
-      ];
+      canvas.width = width;
+      canvas.height = height;
+      
+      // Desenhar frame atual
+      context.drawImage(video, 0, 0, width, height);
+      
+      // Obter dados da imagem
+      const imageData = context.getImageData(0, 0, width, height);
+      
+      // Tentar detectar QR code com configurações otimizadas
+      const code = jsQR(imageData.data, imageData.width, imageData.height, {
+        inversionAttempts: "attemptBoth",
+        allowUndefinedSymbols: true,
+        assumeGS1: false,
+        canOverwriteImage: true
+      });
 
-      for (const config of configs) {
-        const code = jsQR(imageData.data, imageData.width, imageData.height, config);
-        if (code) {
-          console.log('QR Code detectado:', code.data);
+      if (code && code.data) {
+        console.log('✅ QR Code detectado:', code.data);
+        setDetectionStatus('found');
+        
+        // Breve pausa para mostrar feedback visual
+        setTimeout(() => {
+          setDetectionStatus('processing');
           setScannedData(code.data);
           setQrScannerActive(false);
           setScanningActive(false);
           stopQRScanner();
           toast({
             title: "QR Code encontrado!",
-            description: `Código: ${code.data.substring(0, 50)}${code.data.length > 50 ? '...' : ''}`,
+            description: `Código detectado automaticamente: ${code.data}`,
           });
-          return;
-        }
+        }, 200);
+        return;
       }
-      
+
       // Incrementar tentativas para debug
       setScanAttempts(prev => prev + 1);
+      
     } catch (error) {
       console.error('Erro durante escaneamento:', error);
     }
@@ -272,14 +275,15 @@ export const ChallengeEvaluationForm: React.FC<ChallengeEvaluationFormProps> = (
           videoRef.current.onloadedmetadata = () => {
             setTimeout(() => {
               setScanningActive(true);
-              // Iniciar escaneamento automático com frequência mais alta
-              scanIntervalRef.current = setInterval(scanQRCode, 50);
+              setDetectionStatus('scanning');
+              // Iniciar escaneamento automático com alta frequência
+              scanIntervalRef.current = setInterval(scanQRCode, 100);
               
               toast({
                 title: "Scanner ativo",
-                description: "Posicione o QR Code na frente da câmera. Escaneamento automático em andamento...",
+                description: "Posicione o QR Code na frente da câmera. Detecção automática ativada!",
               });
-            }, 500); // Aguardar 500ms para garantir que o vídeo está pronto
+            }, 1000); // Aguardar 1 segundo para garantir que o vídeo está completamente pronto
           };
           
         } catch (error) {
@@ -547,33 +551,7 @@ export const ChallengeEvaluationForm: React.FC<ChallengeEvaluationFormProps> = (
                     </p>
                   </div>
                   
-                  <div className="border-t pt-4">
-                    <p className="text-xs text-gray-600 mb-2">Caso o scanner automático não funcione, você pode inserir o código manualmente:</p>
-                    <div className="flex gap-2">
-                      <Input
-                        type="text"
-                        placeholder="Digite o código QR aqui"
-                        value={scannedData}
-                        onChange={(e) => setScannedData(e.target.value)}
-                        className="flex-1"
-                      />
-                      <Button
-                        onClick={() => {
-                          if (scannedData.trim()) {
-                            toast({
-                              title: "Código registrado!",
-                              description: "Código QR inserido manualmente com sucesso."
-                            });
-                          }
-                        }}
-                        variant="outline"
-                        size="sm"
-                        disabled={!scannedData.trim()}
-                      >
-                        OK
-                      </Button>
-                    </div>
-                  </div>
+
                 </div>
               )}
 
@@ -594,12 +572,26 @@ export const ChallengeEvaluationForm: React.FC<ChallengeEvaluationFormProps> = (
                     {scanningActive && (
                       <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 rounded-lg">
                         <div className="text-white text-center">
-                          <div className="animate-pulse">
-                            <QrCode className="w-8 h-8 mx-auto mb-2" />
-                            <p className="text-sm">Procurando QR Code...</p>
-                            <p className="text-xs opacity-75">Posicione o código na frente da câmera</p>
-                            <p className="text-xs opacity-50 mt-1">Tentativas: {scanAttempts}</p>
-                          </div>
+                          {detectionStatus === 'scanning' && (
+                            <div className="animate-pulse">
+                              <QrCode className="w-8 h-8 mx-auto mb-2" />
+                              <p className="text-sm">Procurando QR Code...</p>
+                              <p className="text-xs opacity-75">Posicione o código na frente da câmera</p>
+                              <p className="text-xs opacity-50 mt-1">Tentativas: {scanAttempts}</p>
+                            </div>
+                          )}
+                          {detectionStatus === 'found' && (
+                            <div className="animate-bounce">
+                              <CheckCircle className="w-8 h-8 mx-auto mb-2 text-green-400" />
+                              <p className="text-sm text-green-400">QR Code Detectado!</p>
+                            </div>
+                          )}
+                          {detectionStatus === 'processing' && (
+                            <div className="animate-spin">
+                              <QrCode className="w-8 h-8 mx-auto mb-2" />
+                              <p className="text-sm">Processando...</p>
+                            </div>
+                          )}
                         </div>
                       </div>
                     )}
