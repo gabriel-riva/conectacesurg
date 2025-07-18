@@ -9,6 +9,7 @@ import { BookOpen, Clock, Users, CheckCircle, PlayCircle, ArrowLeft, Eye, User }
 import { useQuery } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
 import { Link, useParams } from "wouter";
+import TrailComments from "@/components/TrailComments";
 
 interface TrailCategory {
   id: number;
@@ -232,29 +233,34 @@ export default function TrailDetailsPage() {
               {/* Área de Conteúdo */}
               <div className="lg:col-span-2">
                 {selectedContent ? (
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-xl">{selectedContent.title}</CardTitle>
-                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                        {selectedContent.estimatedMinutes > 0 && (
+                  <div className="space-y-6">
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="text-xl">{selectedContent.title}</CardTitle>
+                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                          {selectedContent.estimatedMinutes > 0 && (
+                            <div className="flex items-center gap-1">
+                              <Clock className="w-4 h-4" />
+                              {selectedContent.estimatedMinutes} minutos
+                            </div>
+                          )}
                           <div className="flex items-center gap-1">
-                            <Clock className="w-4 h-4" />
-                            {selectedContent.estimatedMinutes} minutos
+                            <Eye className="w-4 h-4" />
+                            {selectedContent.viewCount} visualizações
                           </div>
-                        )}
-                        <div className="flex items-center gap-1">
-                          <Eye className="w-4 h-4" />
-                          {selectedContent.viewCount} visualizações
                         </div>
-                      </div>
-                    </CardHeader>
-                    <CardContent>
-                      <div 
-                        className="prose prose-sm max-w-none text-foreground"
-                        dangerouslySetInnerHTML={{ __html: selectedContent.content }}
-                      />
-                    </CardContent>
-                  </Card>
+                      </CardHeader>
+                      <CardContent>
+                        <div 
+                          className="prose prose-sm max-w-none text-foreground"
+                          dangerouslySetInnerHTML={{ __html: selectedContent.content }}
+                        />
+                      </CardContent>
+                    </Card>
+                    
+                    {/* Comentários do conteúdo */}
+                    <TrailComments contentId={selectedContent.id} />
+                  </div>
                 ) : (
                   <Card>
                     <CardContent className="flex items-center justify-center py-16">

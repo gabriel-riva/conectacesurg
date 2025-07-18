@@ -19,6 +19,7 @@ import {
   trails,
   trailContents,
   trailComments,
+  trailCommentLikes,
   trailProgress,
   feedbacks,
   challengeComments,
@@ -57,11 +58,13 @@ import {
   type Trail,
   type TrailContent,
   type TrailComment,
+  type TrailCommentLike,
   type TrailProgress,
   type InsertTrailCategory,
   type InsertTrail,
   type InsertTrailContent,
   type InsertTrailComment,
+  type InsertTrailCommentLike,
   type InsertTrailProgress,
   type Feedback,
   type InsertFeedback,
@@ -220,10 +223,15 @@ export interface IStorage {
   incrementTrailContentViewCount(id: number): Promise<boolean>;
 
   // Trail Comment methods
-  getTrailComments(contentId: number): Promise<(TrailComment & { user: User; replies: (TrailComment & { user: User })[] })[]>;
+  getTrailComments(contentId: number, userId?: number): Promise<(TrailComment & { user: User; replies: (TrailComment & { user: User; likeCount: number; isLikedByUser: boolean })[] ; likeCount: number; isLikedByUser: boolean })[]>;
   createTrailComment(comment: InsertTrailComment): Promise<TrailComment>;
   updateTrailComment(id: number, commentData: Partial<InsertTrailComment>): Promise<TrailComment | undefined>;
   deleteTrailComment(id: number): Promise<boolean>;
+
+  // Trail Comment Like methods
+  likeTrailComment(userId: number, commentId: number): Promise<boolean>;
+  unlikeTrailComment(userId: number, commentId: number): Promise<boolean>;
+  getTrailCommentLikes(commentId: number): Promise<TrailCommentLike[]>;
 
   // Trail Progress methods
   getUserTrailProgress(userId: number, trailId: number): Promise<TrailProgress | undefined>;
@@ -2150,7 +2158,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Trail Comment methods
-  async getTrailComments(contentId: number): Promise<(TrailComment & { user: User; replies: (TrailComment & { user: User })[] })[]> {
+  async getTrailComments(contentId: number, userId?: number): Promise<(TrailComment & { user: User; replies: (TrailComment & { user: User; likeCount: number; isLikedByUser: boolean })[] ; likeCount: number; isLikedByUser: boolean })[]> {
     try {
       const commentsQuery = db
         .select({
@@ -2166,6 +2174,16 @@ export class DatabaseStorage implements IStorage {
 
       const commentsWithReplies = await Promise.all(
         comments.map(async (comment: any) => {
+          // Get likes for this comment
+          const likes = await db
+            .select()
+            .from(trailCommentLikes)
+            .where(eq(trailCommentLikes.commentId, comment.comment.id));
+
+          // Check if current user liked this comment
+          const isLikedByUser = userId ? likes.some(like => like.userId === userId) : false;
+
+          // Get replies for this comment
           const repliesQuery = db
             .select({
               comment: trailComments,
@@ -2178,13 +2196,30 @@ export class DatabaseStorage implements IStorage {
 
           const replies = await repliesQuery;
 
+          const repliesWithLikes = await Promise.all(
+            replies.map(async (reply: any) => {
+              const replyLikes = await db
+                .select()
+                .from(trailCommentLikes)
+                .where(eq(trailCommentLikes.commentId, reply.comment.id));
+
+              const isReplyLikedByUser = userId ? replyLikes.some(like => like.userId === userId) : false;
+
+              return {
+                ...reply.comment,
+                user: reply.user,
+                likeCount: replyLikes.length,
+                isLikedByUser: isReplyLikedByUser,
+              };
+            })
+          );
+
           return {
             ...comment.comment,
             user: comment.user,
-            replies: replies.map((reply: any) => ({
-              ...reply.comment,
-              user: reply.user,
-            })),
+            likeCount: likes.length,
+            isLikedByUser: isLikedByUser,
+            replies: repliesWithLikes,
           };
         })
       );
@@ -2232,6 +2267,46 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error("Error deleting trail comment:", error);
       return false;
+    }
+  }
+
+  // Trail Comment Like methods
+  async likeTrailComment(userId: number, commentId: number): Promise<boolean> {
+    try {
+      await db
+        .insert(trailCommentLikes)
+        .values({ userId, commentId })
+        .onConflictDoNothing();
+      return true;
+    } catch (error) {
+      console.error("Error liking trail comment:", error);
+      return false;
+    }
+  }
+
+  async unlikeTrailComment(userId: number, commentId: number): Promise<boolean> {
+    try {
+      const result = await db
+        .delete(trailCommentLikes)
+        .where(and(eq(trailCommentLikes.userId, userId), eq(trailCommentLikes.commentId, commentId)))
+        .returning();
+      return result.length > 0;
+    } catch (error) {
+      console.error("Error unliking trail comment:", error);
+      return false;
+    }
+  }
+
+  async getTrailCommentLikes(commentId: number): Promise<TrailCommentLike[]> {
+    try {
+      const likes = await db
+        .select()
+        .from(trailCommentLikes)
+        .where(eq(trailCommentLikes.commentId, commentId));
+      return likes;
+    } catch (error) {
+      console.error("Error getting trail comment likes:", error);
+      return [];
     }
   }
 

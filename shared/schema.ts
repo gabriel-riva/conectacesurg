@@ -356,6 +356,16 @@ export const trailComments = pgTable("trail_comments", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+export const trailCommentLikes = pgTable("trail_comment_likes", {
+  userId: integer("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  commentId: integer("comment_id").notNull().references(() => trailComments.id, { onDelete: 'cascade' }),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => {
+  return {
+    pk: primaryKey({ columns: [table.userId, table.commentId] }),
+  };
+});
+
 export const trailProgress = pgTable("trail_progress", {
   userId: integer("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
   trailId: integer("trail_id").notNull().references(() => trails.id, { onDelete: 'cascade' }),
@@ -746,6 +756,18 @@ export const trailCommentsRelations = relations(trailComments, ({ one, many }) =
     references: [trailComments.id],
   }),
   replies: many(trailComments, { relationName: 'parent' }),
+  likes: many(trailCommentLikes),
+}));
+
+export const trailCommentLikesRelations = relations(trailCommentLikes, ({ one }) => ({
+  user: one(users, {
+    fields: [trailCommentLikes.userId],
+    references: [users.id],
+  }),
+  comment: one(trailComments, {
+    fields: [trailCommentLikes.commentId],
+    references: [trailComments.id],
+  }),
 }));
 
 export const trailProgressRelations = relations(trailProgress, ({ one }) => ({
@@ -1236,6 +1258,10 @@ export const insertTrailCommentSchema = createInsertSchema(trailComments).omit({
   updatedAt: true,
 });
 
+export const insertTrailCommentLikeSchema = createInsertSchema(trailCommentLikes).omit({
+  createdAt: true,
+});
+
 export const insertTrailProgressSchema = createInsertSchema(trailProgress).omit({
   createdAt: true,
   updatedAt: true,
@@ -1246,6 +1272,7 @@ export type InsertTrailCategory = z.infer<typeof insertTrailCategorySchema>;
 export type InsertTrail = z.infer<typeof insertTrailSchema>;
 export type InsertTrailContent = z.infer<typeof insertTrailContentSchema>;
 export type InsertTrailComment = z.infer<typeof insertTrailCommentSchema>;
+export type InsertTrailCommentLike = z.infer<typeof insertTrailCommentLikeSchema>;
 export type InsertTrailProgress = z.infer<typeof insertTrailProgressSchema>;
 
 // Tipos para seleção das trilhas
@@ -1253,4 +1280,5 @@ export type TrailCategory = typeof trailCategories.$inferSelect;
 export type Trail = typeof trails.$inferSelect;
 export type TrailContent = typeof trailContents.$inferSelect;
 export type TrailComment = typeof trailComments.$inferSelect;
+export type TrailCommentLike = typeof trailCommentLikes.$inferSelect;
 export type TrailProgress = typeof trailProgress.$inferSelect;

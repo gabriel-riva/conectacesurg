@@ -133,7 +133,8 @@ router.get('/content/:id', async (req: Request, res: Response) => {
 router.get('/content/:id/comments', async (req: Request, res: Response) => {
   try {
     const contentId = parseInt(req.params.id);
-    const comments = await storage.getTrailComments(contentId);
+    const userId = req.isAuthenticated && req.isAuthenticated() ? req.user?.id : undefined;
+    const comments = await storage.getTrailComments(contentId, userId);
     
     res.json(comments);
   } catch (error) {
@@ -163,6 +164,76 @@ router.post('/content/:id/comments', isAuthenticated, async (req: Request, res: 
     res.status(201).json(comment);
   } catch (error) {
     console.error('Erro ao criar comentário:', error);
+    res.status(500).json({ error: 'Erro interno do servidor' });
+  }
+});
+
+// Curtir comentário de trilha (requer autenticação)
+router.post('/comments/:id/like', isAuthenticated, async (req: Request, res: Response) => {
+  try {
+    const commentId = parseInt(req.params.id);
+    const userId = req.user!.id;
+    
+    const success = await storage.likeTrailComment(userId, commentId);
+    
+    if (success) {
+      res.json({ success: true });
+    } else {
+      res.status(500).json({ error: 'Erro ao curtir comentário' });
+    }
+  } catch (error) {
+    console.error('Erro ao curtir comentário:', error);
+    res.status(500).json({ error: 'Erro interno do servidor' });
+  }
+});
+
+// Descurtir comentário de trilha (requer autenticação)
+router.delete('/comments/:id/like', isAuthenticated, async (req: Request, res: Response) => {
+  try {
+    const commentId = parseInt(req.params.id);
+    const userId = req.user!.id;
+    
+    const success = await storage.unlikeTrailComment(userId, commentId);
+    
+    if (success) {
+      res.json({ success: true });
+    } else {
+      res.status(500).json({ error: 'Erro ao descurtir comentário' });
+    }
+  } catch (error) {
+    console.error('Erro ao descurtir comentário:', error);
+    res.status(500).json({ error: 'Erro interno do servidor' });
+  }
+});
+
+// Deletar comentário de trilha (admin ou autor)
+router.delete('/comments/:id', isAuthenticated, async (req: Request, res: Response) => {
+  try {
+    const commentId = parseInt(req.params.id);
+    const userId = req.user!.id;
+    const userRole = req.user!.role;
+    
+    // Verificar se o usuário é admin ou autor do comentário
+    const comment = await storage.getTrailComments(commentId);
+    
+    if (!comment || comment.length === 0) {
+      return res.status(404).json({ error: 'Comentário não encontrado' });
+    }
+    
+    // Permitir apenas admin/superadmin ou autor do comentário
+    if (!['admin', 'superadmin'].includes(userRole)) {
+      return res.status(403).json({ error: 'Acesso negado' });
+    }
+    
+    const success = await storage.deleteTrailComment(commentId);
+    
+    if (success) {
+      res.json({ success: true });
+    } else {
+      res.status(500).json({ error: 'Erro ao deletar comentário' });
+    }
+  } catch (error) {
+    console.error('Erro ao deletar comentário:', error);
     res.status(500).json({ error: 'Erro interno do servidor' });
   }
 });
