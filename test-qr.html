@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>QR Code de Teste</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 20px;
+            background: white;
+        }
+        .qr-container {
+            display: inline-block;
+            padding: 20px;
+            border: 2px solid #333;
+            margin: 20px;
+            background: white;
+        }
+        h1 {
+            color: #333;
+        }
+        .instructions {
+            max-width: 600px;
+            margin: 0 auto;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <h1>QR Code de Teste para Scanner</h1>
+    
+    <div class="instructions">
+        <p>Use este QR code para testar o scanner automático no sistema de gamificação.</p>
+        <p>Abra o desafio QR no sistema e posicione este código na frente da câmera.</p>
+    </div>
+    
+    <div class="qr-container">
+        <div id="qrcode"></div>
+    </div>
+    
+    <p><strong>Código:</strong> TESTE-QR-GAMIFICACAO-2025</p>
+    
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+    <script>
+        QRCode.toCanvas(document.getElementById('qrcode'), 'TESTE-QR-GAMIFICACAO-2025', {
+            width: 300,
+            margin: 2,
+            color: {
+                dark: '#000000',
+                light: '#FFFFFF'
+            }
+        }, function (error) {
+            if (error) console.error(error);
+            console.log('QR Code gerado com sucesso!');
+        });
+    </script>
+</body>
+</html>
