@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,7 +8,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { QrCode, Upload, FileText, Brain, CheckCircle } from 'lucide-react';
-import { Html5QrcodeScanner } from 'html5-qrcode';
 
 interface QuizQuestion {
   id: string;
@@ -61,8 +60,17 @@ export const ChallengeEvaluationForm: React.FC<ChallengeEvaluationFormProps> = (
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [qrScannerActive, setQrScannerActive] = useState(false);
   const [scannedData, setScannedData] = useState<string>('');
-  const [qrScanner, setQrScanner] = useState<Html5QrcodeScanner | null>(null);
+  const [qrScanner, setQrScanner] = useState<any>(null);
   const { toast } = useToast();
+
+  // Cleanup do scanner quando o componente desmontar
+  useEffect(() => {
+    return () => {
+      if (qrScanner) {
+        qrScanner.clear();
+      }
+    };
+  }, [qrScanner]);
 
   const handleQuizSubmit = () => {
     const config = evaluationConfig.quiz;
@@ -141,41 +149,52 @@ export const ChallengeEvaluationForm: React.FC<ChallengeEvaluationFormProps> = (
     onSubmit(submission);
   };
 
-  const startQRScanner = () => {
-    if (qrScanner) {
-      qrScanner.clear();
-    }
-
-    const scanner = new Html5QrcodeScanner(
-      "qr-reader",
-      {
-        fps: 10,
-        qrbox: { width: 250, height: 250 },
-        aspectRatio: 1.0,
-        disableFlip: false,
-      },
-      /* verbose= */ false
-    );
-
-    scanner.render(
-      (decodedText) => {
-        setScannedData(decodedText);
-        setQrScannerActive(false);
-        scanner.clear();
-        toast({
-          title: "Sucesso",
-          description: "QR Code escaneado com sucesso!",
-          variant: "default"
-        });
-      },
-      (error) => {
-        // Ignorar erros de escaneamento contínuo
-        console.log("QR Scanner error:", error);
+  const startQRScanner = async () => {
+    try {
+      if (qrScanner) {
+        qrScanner.clear();
       }
-    );
 
-    setQrScanner(scanner);
-    setQrScannerActive(true);
+      // Importação dinâmica para evitar erros de build
+      const { Html5QrcodeScanner } = await import('html5-qrcode');
+
+      const scanner = new Html5QrcodeScanner(
+        "qr-reader",
+        {
+          fps: 10,
+          qrbox: { width: 250, height: 250 },
+          aspectRatio: 1.0,
+          disableFlip: false,
+        },
+        /* verbose= */ false
+      );
+
+      scanner.render(
+        (decodedText) => {
+          setScannedData(decodedText);
+          setQrScannerActive(false);
+          scanner.clear();
+          toast({
+            title: "Sucesso",
+            description: "QR Code escaneado com sucesso!",
+          });
+        },
+        (error) => {
+          // Ignorar erros de escaneamento contínuo
+          console.log("QR Scanner error:", error);
+        }
+      );
+
+      setQrScanner(scanner);
+      setQrScannerActive(true);
+    } catch (error) {
+      console.error('Erro ao inicializar scanner:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível inicializar o scanner de QR Code.",
+        variant: "destructive"
+      });
+    }
   };
 
   const stopQRScanner = () => {
