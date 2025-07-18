@@ -46,8 +46,8 @@ export function GamificationPointsHistoryCard({ pointsExtract }: GamificationPoi
   const { totalPoints, history } = pointsExtract;
 
   return (
-    <Card className="shadow-md hover:shadow-lg transition-shadow duration-300 border-none">
-      <CardHeader className="pb-4 bg-gradient-to-r from-primary/5 to-transparent">
+    <Card className="shadow-md hover:shadow-lg transition-shadow duration-300 border-none h-full flex flex-col">
+      <CardHeader className="pb-4 bg-gradient-to-r from-primary/5 to-transparent flex-shrink-0">
         <CardTitle className="text-primary/90 flex items-center justify-between">
           <div className="flex items-center">
             <span className="inline-block w-1 h-5 bg-primary rounded mr-2"></span>
@@ -60,8 +60,8 @@ export function GamificationPointsHistoryCard({ pointsExtract }: GamificationPoi
         </CardTitle>
       </CardHeader>
       
-      <CardContent className="p-4">
-        <div className="h-64 overflow-hidden">
+      <CardContent className="p-4 flex-grow flex flex-col">
+        <div className="flex-grow overflow-hidden">
           {history.length === 0 ? (
             <div className="flex items-center justify-center h-full">
               <div className="text-center text-gray-500">

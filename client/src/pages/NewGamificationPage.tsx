@@ -86,21 +86,18 @@ function NewGamificationPageContent() {
           <div className="absolute -left-80 top-60 w-[600px] h-[600px] rounded-full bg-primary/20 blur-3xl"></div>
         </div>
 
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-primary mb-2">Gamificação</h1>
-          <p className="text-gray-600">Acompanhe seu desempenho, participe dos desafios e veja o ranking da comunidade</p>
-        </div>
+
 
         {/* Layout principal */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           {/* Coluna esquerda - Período atual e pontos */}
-          <div className="lg:col-span-3 space-y-6">
+          <div className="lg:col-span-3 flex flex-col gap-6">
             <GamificationPeriodCard settings={settings} />
             <GamificationPointsHistoryCard pointsExtract={pointsExtract} />
           </div>
 
           {/* Coluna central - Desafios ou detalhes do desafio */}
-          <div className="lg:col-span-6 space-y-6">
+          <div className="lg:col-span-6 flex flex-col gap-6">
             {selectedChallenge ? (
               <GamificationChallengeDetailCard 
                 challenge={selectedChallenge} 
@@ -170,7 +167,7 @@ function NewGamificationPageContent() {
           </div>
 
           {/* Coluna direita - Ranking */}
-          <div className="lg:col-span-3 space-y-6">
+          <div className="lg:col-span-3 flex flex-col">
             <GamificationRankingCard />
           </div>
         </div>

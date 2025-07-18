@@ -49,8 +49,8 @@ export function GamificationPeriodCard({ settings }: GamificationPeriodCardProps
   }
 
   return (
-    <Card className="shadow-md hover:shadow-lg transition-shadow duration-300 border-none">
-      <CardHeader className="pb-4 bg-gradient-to-r from-primary/5 to-transparent">
+    <Card className="shadow-md hover:shadow-lg transition-shadow duration-300 border-none h-full flex flex-col">
+      <CardHeader className="pb-4 bg-gradient-to-r from-primary/5 to-transparent flex-shrink-0">
         <CardTitle className="text-primary/90 flex items-center">
           <span className="inline-block w-1 h-5 bg-primary rounded mr-2"></span>
           <Calendar className="h-5 w-5 mr-2" />
@@ -58,7 +58,7 @@ export function GamificationPeriodCard({ settings }: GamificationPeriodCardProps
         </CardTitle>
       </CardHeader>
       
-      <CardContent className="p-4 space-y-4">
+      <CardContent className="p-4 space-y-4 flex-grow flex flex-col justify-between">
         {/* Informações do período */}
         <div className="space-y-2">
           {cycleStart && cycleEnd && (
