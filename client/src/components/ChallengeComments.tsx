@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -169,109 +169,115 @@ export default function ChallengeComments({ challengeId }: ChallengeCommentsProp
     );
   };
 
-  const CommentItem = ({ comment }: { comment: ChallengeComment }) => (
-    <div className="space-y-2">
-      <div className="flex gap-2">
-        <Avatar className="h-6 w-6 mt-0.5">
-          <AvatarImage src={comment.userPhotoUrl} />
-          <AvatarFallback className="text-xs">
-            {getInitials(comment.userName)}
-          </AvatarFallback>
-        </Avatar>
-        <div className="flex-1 space-y-1">
-          <div className="bg-gray-50 rounded-lg p-2">
-            <div className="flex items-center gap-2 mb-1">
-              <span className="font-medium text-xs">{comment.userName}</span>
-              <span className="text-xs text-gray-500">
-                {format(new Date(comment.createdAt), "dd/MM/yyyy 'às' HH:mm", {
-                  locale: ptBR,
-                })}
-              </span>
+  const CommentItem = ({ comment }: { comment: ChallengeComment }) => {
+    const isReplying = replyTo === comment.id;
+    const replyText = replyContents[comment.id] || "";
+    
+    return (
+      <div className="space-y-2">
+        <div className="flex gap-2">
+          <Avatar className="h-6 w-6 mt-0.5">
+            <AvatarImage src={comment.userPhotoUrl} />
+            <AvatarFallback className="text-xs">
+              {getInitials(comment.userName)}
+            </AvatarFallback>
+          </Avatar>
+          <div className="flex-1 space-y-1">
+            <div className="bg-gray-50 rounded-lg p-2">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="font-medium text-xs">{comment.userName}</span>
+                <span className="text-xs text-gray-500">
+                  {format(new Date(comment.createdAt), "dd/MM/yyyy 'às' HH:mm", {
+                    locale: ptBR,
+                  })}
+                </span>
+              </div>
+              <p className="text-sm text-gray-800">{comment.content}</p>
             </div>
-            <p className="text-sm text-gray-800">{comment.content}</p>
-          </div>
-          <div className="flex items-center gap-3 text-xs text-gray-500">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => handleLike(comment.id)}
-              className={`p-0 h-auto font-normal text-xs ${
-                comment.isLikedByUser ? "text-red-500" : "text-gray-500"
-              }`}
-            >
-              <Heart
-                className={`h-3 w-3 mr-1 ${
-                  comment.isLikedByUser ? "fill-current" : ""
-                }`}
-              />
-              {comment.likeCount > 0 && comment.likeCount}
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setReplyTo(comment.id)}
-              className="p-0 h-auto font-normal text-xs text-gray-500"
-            >
-              <Reply className="h-3 w-3 mr-1" />
-              Responder
-            </Button>
-            {canDeleteComment(comment) && (
+            <div className="flex items-center gap-3 text-xs text-gray-500">
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => handleDelete(comment.id)}
-                className="p-0 h-auto font-normal text-xs text-red-500"
+                onClick={() => handleLike(comment.id)}
+                className={`p-0 h-auto font-normal text-xs ${
+                  comment.isLikedByUser ? "text-red-500" : "text-gray-500"
+                }`}
               >
-                <Trash2 className="h-3 w-3" />
+                <Heart
+                  className={`h-3 w-3 mr-1 ${
+                    comment.isLikedByUser ? "fill-current" : ""
+                  }`}
+                />
+                {comment.likeCount > 0 && comment.likeCount}
               </Button>
-            )}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setReplyTo(comment.id)}
+                className="p-0 h-auto font-normal text-xs text-gray-500"
+              >
+                <Reply className="h-3 w-3 mr-1" />
+                Responder
+              </Button>
+              {canDeleteComment(comment) && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleDelete(comment.id)}
+                  className="p-0 h-auto font-normal text-xs text-red-500"
+                >
+                  <Trash2 className="h-3 w-3" />
+                </Button>
+              )}
+            </div>
           </div>
         </div>
+
+        {/* Campo de resposta */}
+        {isReplying && (
+          <div className="ml-8 space-y-2">
+            <Textarea
+              value={replyText}
+              onChange={(e) => updateReplyContent(comment.id, e.target.value)}
+              placeholder="Escreva sua resposta..."
+              className="min-h-[60px] text-sm"
+              autoFocus
+            />
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                onClick={() => handleReply(comment.id)}
+                disabled={!replyText.trim() || createCommentMutation.isPending}
+                className="text-xs py-1 px-2 h-auto"
+              >
+                Responder
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => {
+                  setReplyTo(null);
+                  updateReplyContent(comment.id, "");
+                }}
+                className="text-xs py-1 px-2 h-auto"
+              >
+                Cancelar
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* Respostas */}
+        {comment.replies.length > 0 && (
+          <div className="ml-8 space-y-2">
+            {comment.replies.map((reply) => (
+              <CommentItem key={reply.id} comment={reply} />
+            ))}
+          </div>
+        )}
       </div>
-
-      {/* Campo de resposta */}
-      {replyTo === comment.id && (
-        <div className="ml-8 space-y-2">
-          <Textarea
-            value={replyContents[comment.id] || ""}
-            onChange={(e) => updateReplyContent(comment.id, e.target.value)}
-            placeholder="Escreva sua resposta..."
-            className="min-h-[60px] text-sm"
-          />
-          <div className="flex gap-2">
-            <Button
-              size="sm"
-              onClick={() => handleReply(comment.id)}
-              disabled={!replyContents[comment.id]?.trim() || createCommentMutation.isPending}
-              className="text-xs py-1 px-2 h-auto"
-            >
-              Responder
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => {
-                setReplyTo(null);
-                updateReplyContent(comment.id, "");
-              }}
-              className="text-xs py-1 px-2 h-auto"
-            >
-              Cancelar
-            </Button>
-          </div>
-        </div>
-      )}
-
-      {/* Respostas */}
-      {comment.replies.length > 0 && (
-        <div className="ml-8 space-y-2">
-          {comment.replies.map((reply) => (
-            <CommentItem key={reply.id} comment={reply} />
-          ))}
-        </div>
-      )}
-    </div>
-  );
+    );
+  };
 
   if (!user) {
     return (
