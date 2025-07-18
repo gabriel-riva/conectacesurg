@@ -11,17 +11,14 @@ interface GamificationChallengeCardProps {
 }
 
 export function GamificationChallengeCard({ challenge, onClick }: GamificationChallengeCardProps) {
-  // Garantir que as datas sejam tratadas corretamente sem problemas de timezone
-  const startDateStr = typeof challenge.startDate === 'string' 
-    ? challenge.startDate 
-    : challenge.startDate?.toISOString().split('T')[0] || '';
-  const endDateStr = typeof challenge.endDate === 'string' 
-    ? challenge.endDate 
-    : challenge.endDate?.toISOString().split('T')[0] || '';
-  
-  const startDate = new Date(startDateStr + 'T00:00:00');
-  const endDate = new Date(endDateStr + 'T23:59:59');
+  // Tratamento simples e seguro das datas
+  const startDate = new Date(challenge.startDate);
+  const endDate = new Date(challenge.endDate);
   const now = new Date();
+  
+  // Verificar se as datas são válidas
+  const isValidStartDate = !isNaN(startDate.getTime());
+  const isValidEndDate = !isNaN(endDate.getTime());
   
   const isActive = now >= startDate && now <= endDate;
   const isUpcoming = isFuture(startDate);
@@ -91,7 +88,10 @@ export function GamificationChallengeCard({ challenge, onClick }: GamificationCh
           <div className="flex items-center justify-center text-xs text-gray-500">
             <Clock className="h-3 w-3 mr-1" />
             <span>
-              {format(startDate, "dd/MM", { locale: ptBR })} - {format(endDate, "dd/MM", { locale: ptBR })}
+              {isValidStartDate && isValidEndDate ? 
+                `${format(startDate, "dd/MM", { locale: ptBR })} - ${format(endDate, "dd/MM", { locale: ptBR })}` :
+                "Datas não disponíveis"
+              }
             </span>
           </div>
         </div>
