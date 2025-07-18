@@ -11,10 +11,18 @@ interface GamificationChallengeCardProps {
 }
 
 export function GamificationChallengeCard({ challenge, onClick }: GamificationChallengeCardProps) {
-  // Tratamento simples e seguro das datas
+  // Debug: vamos verificar o que está chegando
+  console.log('Challenge data:', challenge);
+  console.log('Start date raw:', challenge.startDate);
+  console.log('End date raw:', challenge.endDate);
+  
+  // Tratamento das datas com mais cuidado
   const startDate = new Date(challenge.startDate);
   const endDate = new Date(challenge.endDate);
   const now = new Date();
+  
+  console.log('Parsed start date:', startDate);
+  console.log('Parsed end date:', endDate);
   
   // Verificar se as datas são válidas
   const isValidStartDate = !isNaN(startDate.getTime());

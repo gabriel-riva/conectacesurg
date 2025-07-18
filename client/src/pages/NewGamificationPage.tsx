@@ -123,7 +123,7 @@ function NewGamificationPageContent() {
                     ) : (
                       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                         {periodicChallenges.map((challenge) => (
-                          <div key={challenge.id} className="h-40">
+                          <div key={challenge.id} className="h-64">
                             <GamificationChallengeCard
                               challenge={challenge}
                               onClick={() => handleChallengeClick(challenge)}
@@ -153,7 +153,7 @@ function NewGamificationPageContent() {
                     ) : (
                       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                         {annualChallenges.map((challenge) => (
-                          <div key={challenge.id} className="h-40">
+                          <div key={challenge.id} className="h-64">
                             <GamificationChallengeCard
                               challenge={challenge}
                               onClick={() => handleChallengeClick(challenge)}
