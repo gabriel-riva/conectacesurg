@@ -158,15 +158,6 @@ export const ChallengeEvaluationForm: React.FC<ChallengeEvaluationFormProps> = (
         cameraStream.getTracks().forEach(track => track.stop());
       }
 
-      if (!videoRef.current) {
-        toast({
-          title: "Erro",
-          description: "Elemento de vídeo não encontrado.",
-          variant: "destructive"
-        });
-        return;
-      }
-
       // Verificar se o navegador suporta getUserMedia
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
         toast({
@@ -177,30 +168,56 @@ export const ChallengeEvaluationForm: React.FC<ChallengeEvaluationFormProps> = (
         return;
       }
 
-      // Solicitar acesso à câmera
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { 
-          facingMode: 'environment',
-          width: { ideal: 1280 },
-          height: { ideal: 720 }
-        }
-      });
-
-      videoRef.current.srcObject = stream;
-      setCameraStream(stream);
+      // Ativar a interface da câmera primeiro
       setQrScannerActive(true);
       
-      toast({
-        title: "Câmera ativa",
-        description: "Posicione o QR Code na frente da câmera e clique em 'Capturar'.",
-      });
+      // Aguardar um pouco para o elemento ser renderizado
+      setTimeout(async () => {
+        try {
+          if (!videoRef.current) {
+            toast({
+              title: "Erro",
+              description: "Elemento de vídeo não encontrado.",
+              variant: "destructive"
+            });
+            setQrScannerActive(false);
+            return;
+          }
+
+          // Solicitar acesso à câmera
+          const stream = await navigator.mediaDevices.getUserMedia({
+            video: { 
+              facingMode: 'environment',
+              width: { ideal: 1280 },
+              height: { ideal: 720 }
+            }
+          });
+
+          videoRef.current.srcObject = stream;
+          setCameraStream(stream);
+          
+          toast({
+            title: "Câmera ativa",
+            description: "Posicione o QR Code na frente da câmera e clique em 'Capturar'.",
+          });
+          
+        } catch (error) {
+          console.error('Erro ao inicializar câmera:', error);
+          setQrScannerActive(false);
+          toast({
+            title: "Erro",
+            description: "Não foi possível acessar a câmera. Verifique as permissões.",
+            variant: "destructive"
+          });
+        }
+      }, 100);
       
     } catch (error) {
-      console.error('Erro ao inicializar câmera:', error);
+      console.error('Erro ao inicializar scanner:', error);
       setQrScannerActive(false);
       toast({
         title: "Erro",
-        description: "Não foi possível acessar a câmera. Verifique as permissões.",
+        description: "Erro inesperado ao inicializar câmera.",
         variant: "destructive"
       });
     }
