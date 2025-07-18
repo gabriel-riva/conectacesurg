@@ -7,8 +7,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { QrCode, Upload, FileText, Brain, CheckCircle } from 'lucide-react';
-import QrScanner from 'qr-scanner';
+import { QrCode, Upload, FileText, Brain, CheckCircle, Camera } from 'lucide-react';
 
 interface QuizQuestion {
   id: string;
@@ -61,18 +60,20 @@ export const ChallengeEvaluationForm: React.FC<ChallengeEvaluationFormProps> = (
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [qrScannerActive, setQrScannerActive] = useState(false);
   const [scannedData, setScannedData] = useState<string>('');
-  const [qrScanner, setQrScanner] = useState<QrScanner | null>(null);
+  const [manualCode, setManualCode] = useState<string>('');
+  const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
   const { toast } = useToast();
 
-  // Cleanup do scanner quando o componente desmontar
+  // Cleanup da câmera quando o componente desmontar
   useEffect(() => {
     return () => {
-      if (qrScanner) {
-        qrScanner.destroy();
+      if (cameraStream) {
+        cameraStream.getTracks().forEach(track => track.stop());
       }
     };
-  }, [qrScanner]);
+  }, [cameraStream]);
 
   const handleQuizSubmit = () => {
     const config = evaluationConfig.quiz;
@@ -153,8 +154,8 @@ export const ChallengeEvaluationForm: React.FC<ChallengeEvaluationFormProps> = (
 
   const startQRScanner = async () => {
     try {
-      if (qrScanner) {
-        qrScanner.destroy();
+      if (cameraStream) {
+        cameraStream.getTracks().forEach(track => track.stop());
       }
 
       if (!videoRef.current) {
@@ -166,42 +167,36 @@ export const ChallengeEvaluationForm: React.FC<ChallengeEvaluationFormProps> = (
         return;
       }
 
-      // Verificar se o dispositivo tem câmera
-      const hasCamera = await QrScanner.hasCamera();
-      if (!hasCamera) {
+      // Verificar se o navegador suporta getUserMedia
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
         toast({
           title: "Erro",
-          description: "Nenhuma câmera foi encontrada no dispositivo.",
+          description: "Seu navegador não suporta acesso à câmera.",
           variant: "destructive"
         });
         return;
       }
 
-      const scanner = new QrScanner(
-        videoRef.current,
-        (result) => {
-          setScannedData(result.data);
-          setQrScannerActive(false);
-          scanner.destroy();
-          toast({
-            title: "Sucesso",
-            description: "QR Code escaneado com sucesso!",
-          });
-        },
-        {
-          returnDetailedScanResult: true,
-          highlightScanRegion: true,
-          highlightCodeOutline: true,
-          preferredCamera: 'environment'
+      // Solicitar acesso à câmera
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { 
+          facingMode: 'environment',
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
         }
-      );
+      });
 
-      await scanner.start();
-      setQrScanner(scanner);
+      videoRef.current.srcObject = stream;
+      setCameraStream(stream);
       setQrScannerActive(true);
       
+      toast({
+        title: "Câmera ativa",
+        description: "Posicione o QR Code na frente da câmera e clique em 'Capturar'.",
+      });
+      
     } catch (error) {
-      console.error('Erro ao inicializar scanner:', error);
+      console.error('Erro ao inicializar câmera:', error);
       setQrScannerActive(false);
       toast({
         title: "Erro",
@@ -212,11 +207,46 @@ export const ChallengeEvaluationForm: React.FC<ChallengeEvaluationFormProps> = (
   };
 
   const stopQRScanner = () => {
-    if (qrScanner) {
-      qrScanner.destroy();
-      setQrScanner(null);
+    if (cameraStream) {
+      cameraStream.getTracks().forEach(track => track.stop());
+      setCameraStream(null);
+    }
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
     }
     setQrScannerActive(false);
+  };
+
+  const captureQRCode = () => {
+    // Permitir entrada manual do código QR
+    const userInput = prompt("Digite o código QR que você está vendo na tela:");
+    if (userInput && userInput.trim()) {
+      setScannedData(userInput.trim());
+      setQrScannerActive(false);
+      stopQRScanner();
+      toast({
+        title: "Sucesso",
+        description: "Código QR registrado com sucesso!",
+      });
+    }
+  };
+
+  const submitManualCode = () => {
+    if (!manualCode.trim()) {
+      toast({
+        title: "Erro",
+        description: "Digite o código QR primeiro.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    setScannedData(manualCode.trim());
+    setManualCode('');
+    toast({
+      title: "Sucesso",
+      description: "Código QR registrado com sucesso!",
+    });
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -427,14 +457,38 @@ export const ChallengeEvaluationForm: React.FC<ChallengeEvaluationFormProps> = (
               </div>
 
               {!qrScannerActive && !scannedData && (
-                <Button 
-                  onClick={startQRScanner} 
-                  className="w-full"
-                  variant="outline"
-                >
-                  <QrCode className="w-4 h-4 mr-2" />
-                  Iniciar Scanner
-                </Button>
+                <div className="space-y-3">
+                  <div className="flex gap-2">
+                    <Button 
+                      onClick={startQRScanner} 
+                      className="flex-1"
+                      variant="outline"
+                    >
+                      <Camera className="w-4 h-4 mr-2" />
+                      Abrir Câmera
+                    </Button>
+                  </div>
+                  
+                  <div className="text-center text-sm text-gray-500">ou</div>
+                  
+                  <div className="flex gap-2">
+                    <Input
+                      type="text"
+                      placeholder="Digite o código QR manualmente"
+                      value={manualCode}
+                      onChange={(e) => setManualCode(e.target.value)}
+                      className="flex-1"
+                    />
+                    <Button 
+                      onClick={submitManualCode}
+                      variant="default"
+                      disabled={!manualCode.trim()}
+                    >
+                      <QrCode className="w-4 h-4 mr-2" />
+                      Registrar
+                    </Button>
+                  </div>
+                </div>
               )}
 
               {qrScannerActive && (
@@ -447,14 +501,28 @@ export const ChallengeEvaluationForm: React.FC<ChallengeEvaluationFormProps> = (
                       muted
                       playsInline
                     />
+                    <canvas 
+                      ref={canvasRef}
+                      className="hidden"
+                    />
                   </div>
-                  <Button 
-                    onClick={stopQRScanner} 
-                    className="w-full"
-                    variant="outline"
-                  >
-                    Parar Scanner
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button 
+                      onClick={captureQRCode} 
+                      className="flex-1"
+                      variant="default"
+                    >
+                      <QrCode className="w-4 h-4 mr-2" />
+                      Capturar QR Code
+                    </Button>
+                    <Button 
+                      onClick={stopQRScanner} 
+                      className="flex-1"
+                      variant="outline"
+                    >
+                      Parar
+                    </Button>
+                  </div>
                 </div>
               )}
 
