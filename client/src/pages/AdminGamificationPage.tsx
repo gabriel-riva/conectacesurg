@@ -362,16 +362,10 @@ export default function AdminGamificationPage() {
   };
 
   const onChallengeSubmit = (data: ChallengeForm) => {
-    console.log("Form submitted with data:", data);
-    console.log("Quill value:", quillValue);
-    console.log("Editing challenge:", editingChallenge);
-    
     const formData = {
       ...data,
       detailedDescription: quillValue,
     };
-    
-    console.log("Final form data:", formData);
     
     if (editingChallenge) {
       updateChallengeMutation.mutate({ ...formData, id: editingChallenge.id });

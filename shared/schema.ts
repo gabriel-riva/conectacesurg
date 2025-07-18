@@ -953,6 +953,9 @@ export const insertGamificationChallengeSchema = createInsertSchema(gamification
   id: true,
   createdAt: true,
   updatedAt: true,
+}).extend({
+  startDate: z.union([z.date(), z.string()]).transform(val => typeof val === 'string' ? new Date(val) : val),
+  endDate: z.union([z.date(), z.string()]).transform(val => typeof val === 'string' ? new Date(val) : val),
 });
 
 export const updateGamificationChallengeSchema = createInsertSchema(gamificationChallenges).omit({
@@ -960,6 +963,8 @@ export const updateGamificationChallengeSchema = createInsertSchema(gamification
   createdBy: true,
   createdAt: true,
 }).extend({
+  startDate: z.union([z.date(), z.string()]).transform(val => typeof val === 'string' ? new Date(val) : val),
+  endDate: z.union([z.date(), z.string()]).transform(val => typeof val === 'string' ? new Date(val) : val),
   updatedAt: z.date().optional(),
 });
 
