@@ -121,9 +121,9 @@ function NewGamificationPageContent() {
                         <p>Nenhum desafio disponível no momento</p>
                       </div>
                     ) : (
-                      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 max-h-64 overflow-y-auto">
+                      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                         {periodicChallenges.map((challenge) => (
-                          <div key={challenge.id} className="h-48">
+                          <div key={challenge.id} className="h-40">
                             <GamificationChallengeCard
                               challenge={challenge}
                               onClick={() => handleChallengeClick(challenge)}
@@ -151,9 +151,9 @@ function NewGamificationPageContent() {
                         <p>Nenhum desafio anual disponível</p>
                       </div>
                     ) : (
-                      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 max-h-64 overflow-y-auto">
+                      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                         {annualChallenges.map((challenge) => (
-                          <div key={challenge.id} className="h-48">
+                          <div key={challenge.id} className="h-40">
                             <GamificationChallengeCard
                               challenge={challenge}
                               onClick={() => handleChallengeClick(challenge)}
