@@ -393,6 +393,8 @@ router.get("/challenges", isAuthenticated, async (req: Request, res: Response) =
         endDate: sql<string>`DATE(${gamificationChallenges.endDate})`,
         type: gamificationChallenges.type,
         isActive: gamificationChallenges.isActive,
+        evaluationType: gamificationChallenges.evaluationType,
+        evaluationConfig: gamificationChallenges.evaluationConfig,
         createdAt: gamificationChallenges.createdAt,
         createdBy: gamificationChallenges.createdBy,
         creatorName: users.name,
