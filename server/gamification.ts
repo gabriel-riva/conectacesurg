@@ -2,7 +2,7 @@ import { Router } from "express";
 import type { Request, Response } from "express";
 import { db } from "./db";
 import { gamificationSettings, gamificationPoints, gamificationChallenges, users, userCategories, userCategoryAssignments, challengeComments, challengeCommentLikes, challengeSubmissions } from "@/shared/schema";
-import { eq, desc, and, gte, lte, sql, inArray } from "drizzle-orm";
+import { eq, desc, and, gte, lte, sql, inArray, like } from "drizzle-orm";
 import { z } from "zod";
 import { insertGamificationSettingsSchema, insertGamificationPointsSchema, insertGamificationChallengeSchema, updateGamificationChallengeSchema, updateGamificationSettingsSchema, insertChallengeCommentSchema, insertChallengeCommentLikeSchema, insertChallengeSubmissionSchema, updateChallengeSubmissionSchema } from "@/shared/schema";
 
@@ -1013,7 +1013,7 @@ router.put("/submissions/:id/review", isAdmin, async (req: Request, res: Respons
           .where(and(
             eq(gamificationPoints.userId, currentSubmission.userId),
             eq(gamificationPoints.type, 'provisional'),
-            sql`${gamificationPoints.description} LIKE '%${challenge[0].title}%'`
+            like(gamificationPoints.description, `%${challenge[0].title}%`)
           ));
 
         // Adicionar pontos aprovados
@@ -1042,7 +1042,7 @@ router.put("/submissions/:id/review", isAdmin, async (req: Request, res: Respons
           .where(and(
             eq(gamificationPoints.userId, currentSubmission.userId),
             eq(gamificationPoints.type, 'provisional'),
-            sql`${gamificationPoints.description} LIKE '%${challenge[0].title}%'`
+            like(gamificationPoints.description, `%${challenge[0].title}%`)
           ));
 
         // Adicionar entrada negativa para mostrar rejeição
