@@ -1,8 +1,10 @@
 import { Router, Request, Response } from 'express';
 import { storage } from './storage';
-import { insertTrailCategorySchema, insertTrailSchema, insertTrailContentSchema, insertTrailCommentSchema } from '@shared/schema';
+import { insertTrailCategorySchema, insertTrailSchema, insertTrailContentSchema, insertTrailCommentSchema, trailComments } from '@shared/schema';
 import { body, validationResult } from 'express-validator';
 import multer from 'multer';
+import { db } from './db';
+import { eq } from 'drizzle-orm';
 
 const router = Router();
 
