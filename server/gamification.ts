@@ -878,8 +878,9 @@ router.post("/challenges/:id/submit", isAuthenticated, async (req: Request, res:
       })
       .returning();
 
-    // Se a submissão foi aprovada automaticamente, adicionar pontos
+    // Adicionar pontos baseado no status
     if (status === 'completed') {
+      // Para submissões automaticamente aprovadas (quiz, qrcode)
       await db
         .insert(gamificationPoints)
         .values({
@@ -887,6 +888,16 @@ router.post("/challenges/:id/submit", isAuthenticated, async (req: Request, res:
           points,
           description: `Desafio concluído: ${challengeData.title}`,
           type: 'automatic'
+        });
+    } else if (status === 'pending' && points > 0) {
+      // Para submissões pendentes (texto, arquivo), adicionar pontos provisórios
+      await db
+        .insert(gamificationPoints)
+        .values({
+          userId,
+          points,
+          description: `Desafio submetido (aguardando aprovação): ${challengeData.title}`,
+          type: 'provisional'
         });
     }
 
@@ -986,8 +997,9 @@ router.put("/submissions/:id/review", isAdmin, async (req: Request, res: Respons
       .where(eq(challengeSubmissions.id, submissionId))
       .returning();
 
-    // Se foi aprovada, adicionar pontos
+    // Gerenciar pontos baseado no status
     if (status === 'approved' && currentSubmission.status !== 'approved') {
+      // Buscar o desafio
       const challenge = await db
         .select()
         .from(gamificationChallenges)
@@ -995,13 +1007,52 @@ router.put("/submissions/:id/review", isAdmin, async (req: Request, res: Respons
         .limit(1);
 
       if (challenge.length > 0) {
+        // Remover pontos provisórios se existirem
+        await db
+          .delete(gamificationPoints)
+          .where(and(
+            eq(gamificationPoints.userId, currentSubmission.userId),
+            eq(gamificationPoints.type, 'provisional'),
+            sql`${gamificationPoints.description} LIKE '%${challenge[0].title}%'`
+          ));
+
+        // Adicionar pontos aprovados
         await db
           .insert(gamificationPoints)
           .values({
             userId: currentSubmission.userId,
             points: points || currentSubmission.points,
             description: `Desafio aprovado: ${challenge[0].title}`,
-            type: 'automatic',
+            type: 'approved',
+            createdBy: reviewerId
+          });
+      }
+    } else if (status === 'rejected' && currentSubmission.status !== 'rejected') {
+      // Buscar o desafio para feedback
+      const challenge = await db
+        .select()
+        .from(gamificationChallenges)
+        .where(eq(gamificationChallenges.id, currentSubmission.challengeId))
+        .limit(1);
+
+      if (challenge.length > 0) {
+        // Remover pontos provisórios
+        await db
+          .delete(gamificationPoints)
+          .where(and(
+            eq(gamificationPoints.userId, currentSubmission.userId),
+            eq(gamificationPoints.type, 'provisional'),
+            sql`${gamificationPoints.description} LIKE '%${challenge[0].title}%'`
+          ));
+
+        // Adicionar entrada negativa para mostrar rejeição
+        await db
+          .insert(gamificationPoints)
+          .values({
+            userId: currentSubmission.userId,
+            points: 0,
+            description: `Desafio rejeitado: ${challenge[0].title}`,
+            type: 'rejected',
             createdBy: reviewerId
           });
       }

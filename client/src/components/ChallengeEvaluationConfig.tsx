@@ -229,7 +229,7 @@ export const ChallengeEvaluationConfig: React.FC<ChallengeEvaluationConfigProps>
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <h4 className="text-md font-semibold">Questões</h4>
-                <Button onClick={addQuizQuestion} size="sm">
+                <Button type="button" onClick={addQuizQuestion} size="sm">
                   <Plus className="w-4 h-4 mr-2" />
                   Adicionar Questão
                 </Button>
@@ -241,6 +241,7 @@ export const ChallengeEvaluationConfig: React.FC<ChallengeEvaluationConfigProps>
                     <div className="flex items-center justify-between">
                       <CardTitle className="text-sm">Questão {index + 1}</CardTitle>
                       <Button
+                        type="button"
                         variant="ghost"
                         size="sm"
                         onClick={() => removeQuizQuestion(question.id)}
@@ -271,6 +272,7 @@ export const ChallengeEvaluationConfig: React.FC<ChallengeEvaluationConfigProps>
                               placeholder={`Opção ${optionIndex + 1}`}
                             />
                             <Button
+                              type="button"
                               variant={question.correctAnswer === optionIndex ? "default" : "outline"}
                               size="sm"
                               onClick={() => updateQuizQuestion(question.id, { correctAnswer: optionIndex })}
