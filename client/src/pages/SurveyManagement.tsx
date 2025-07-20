@@ -20,6 +20,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { Header } from "@/components/Header";
+import { AdminSidebar } from "@/components/AdminSidebar";
 
 interface Survey {
   survey: {
@@ -296,13 +298,17 @@ export default function SurveyManagement() {
   );
 
   return (
-    <div className="container mx-auto p-6">
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-3xl font-bold">Gerenciamento de Pesquisas</h1>
-          <p className="text-gray-600">Crie e gerencie pesquisas de opinião para os usuários</p>
-        </div>
-        <div className="flex space-x-2">
+    <div className="min-h-screen bg-gray-50">
+      <Header />
+      <div className="flex">
+        <AdminSidebar />
+        <div className="flex-1 p-6">
+          <div className="flex justify-between items-center mb-6">
+            <div>
+              <h1 className="text-3xl font-bold">Gerenciamento de Pesquisas</h1>
+              <p className="text-gray-600">Crie e gerencie pesquisas de opinião para os usuários</p>
+            </div>
+            <div className="flex space-x-2">
           <Dialog open={isSettingsDialogOpen} onOpenChange={setIsSettingsDialogOpen}>
             <DialogTrigger asChild>
               <Button variant="outline">
@@ -338,10 +344,10 @@ export default function SurveyManagement() {
               <SurveyForm onSubmit={handleCreateSurvey} />
             </DialogContent>
           </Dialog>
-        </div>
-      </div>
+            </div>
+          </div>
 
-      {isLoading ? (
+          {isLoading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {[1, 2, 3].map((i) => (
             <Card key={i} className="animate-pulse">
@@ -357,9 +363,9 @@ export default function SurveyManagement() {
               </CardContent>
             </Card>
           ))}
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {(surveys as Survey[])?.map((survey: Survey) => (
             <Card key={survey.survey.id} className="hover:shadow-lg transition-shadow">
               <CardHeader>
@@ -425,10 +431,10 @@ export default function SurveyManagement() {
               </CardContent>
             </Card>
           ))}
-        </div>
-      )}
+            </div>
+          )}
 
-      {/* Edit Survey Dialog */}
+          {/* Edit Survey Dialog */}
       <Dialog open={!!editingSurvey} onOpenChange={() => setEditingSurvey(null)}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
@@ -442,6 +448,8 @@ export default function SurveyManagement() {
           )}
         </DialogContent>
       </Dialog>
+        </div>
+      </div>
     </div>
   );
 }
