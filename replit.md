@@ -7,6 +7,46 @@ Portal Conecta CESURG is a web-based institutional platform designed for CESURG 
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.
+- Portuguese language for communication and interface
+- Focus on practical functionality over complex features
+- Prefers clear, direct explanations without technical jargon
+
+## Development Patterns & Best Practices
+
+### Admin Page Layout Pattern (CRITICAL)
+**ALWAYS follow this pattern when creating new admin pages:**
+
+```tsx
+// Import required components
+import { Header } from "@/components/Header";
+import { AdminSidebar } from "@/components/AdminSidebar";
+
+// Page structure MUST be:
+export default function NewAdminPage() {
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <Header />
+      <div className="flex">
+        <AdminSidebar />
+        <div className="flex-1 p-6">
+          {/* Page content goes here */}
+        </div>
+      </div>
+    </div>
+  );
+}
+```
+
+**Key Points:**
+- ALL admin pages must include `<Header />` and `<AdminSidebar />`
+- Use the exact structure above for consistent layout
+- Content goes inside the `flex-1 p-6` container
+- This pattern ensures proper navigation and consistent UI
+
+### Adding Admin Navigation Links
+When creating new admin functionality, remember to:
+1. Add the route to `client/src/App.tsx` with `adminOnly={true}`
+2. Add the navigation link to `client/src/components/AdminSidebar.tsx` in the `menuItems` array
 
 ## System Architecture
 
@@ -108,6 +148,7 @@ Preferred communication style: Simple, everyday language.
 - **QR Code System Implementation**: Successfully implemented fully automatic QR code detection system using jsQR library. Camera captures video stream and continuously scans for QR codes at 100ms intervals with real-time detection. Features include visual feedback states (scanning, found, processing), automatic code recognition without manual input, and comprehensive error handling. System includes admin QR code generation/saving functionality and provides test QR codes for validation.
 - **Admin User Profile Management**: Implemented comprehensive user profile viewing system for administrators. Features include UserProfileModal component with tabbed interface showing user information (phone, address, emergency contacts) and uploaded documents. Consolidated document viewing functionality into profile modal and removed redundant document button from users table. System includes API endpoints for fetching complete user profile data and documents with proper admin access controls.
 - **Feedback Widget Toggle Control**: Implemented discrete toggle control in the feedback admin page to enable/disable the feedback widget platform-wide. The toggle is positioned in the page header as a minimal switch with status indicators. Uses existing feature-settings system for persistent configuration and real-time updates across the platform.
+- **Survey/Polls System Implementation**: Implemented comprehensive survey functionality with complete backend API, SurveyWidget component for home screen display, admin management interface, and database integration. Features include multiple question types (multiple choice, Likert scale, free text), user category targeting, widget configuration controls, and proper admin navigation integration. Fixed common admin layout pattern issues by documenting required Header and AdminSidebar structure.
 
 ## External Dependencies
 
