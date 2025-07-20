@@ -12,7 +12,6 @@ import { User, Group, UserCategory } from "@shared/schema";
 import { AdminSidebar } from "@/components/AdminSidebar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AddGroupModal } from "@/components/AddGroupModal";
-import { UserDocumentsModal } from "@/components/UserDocumentsModal";
 import { UserProfileModal } from "@/components/UserProfileModal";
 import { EditUserModal } from "@/components/EditUserModal";
 import { EditGroupModal } from "@/components/EditGroupModal";
@@ -40,7 +39,7 @@ export default function AdminPage({ activeTab: initialActiveTab }: { activeTab?:
   const [isUserModalOpen, setIsUserModalOpen] = useState(false);
   const [isGroupModalOpen, setIsGroupModalOpen] = useState(false);
   const [isUserCategoryModalOpen, setIsUserCategoryModalOpen] = useState(false);
-  const [isUserDocumentsModalOpen, setIsUserDocumentsModalOpen] = useState(false);
+
   const [isUserProfileModalOpen, setIsUserProfileModalOpen] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
   const [selectedUserName, setSelectedUserName] = useState("");
@@ -287,12 +286,6 @@ export default function AdminPage({ activeTab: initialActiveTab }: { activeTab?:
       setIsDeleteDialogOpen(false);
     }
   };
-
-  const handleUserDocuments = useCallback((userId: number, userName: string) => {
-    setSelectedUserId(userId);
-    setSelectedUserName(userName);
-    setIsUserDocumentsModalOpen(true);
-  }, []);
 
   const handleUserProfile = useCallback((userId: number, userName: string) => {
     setSelectedUserId(userId);
@@ -622,17 +615,7 @@ ${userCategoriesMapping[user.id].map(c => `• ${c.name}`).join('\n')}`}
                                           )}
                                         </Button>
 
-                                        <Button 
-                                          variant="ghost" 
-                                          size="icon" 
-                                          className="h-8 w-8 text-purple-600 hover:text-purple-900 hover:bg-purple-50" 
-                                          title="Ver Documentos"
-                                          onClick={() => handleUserDocuments(user.id, user.name)}
-                                        >
-                                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                          </svg>
-                                        </Button>
+
                                         <Button 
                                           variant="ghost" 
                                           size="icon" 
@@ -1005,19 +988,6 @@ ${userCategoriesMapping[user.id].map(c => `• ${c.name}`).join('\n')}`}
         />
       )}
       
-      {isUserDocumentsModalOpen && selectedUserId && (
-        <UserDocumentsModal 
-          userId={selectedUserId}
-          userName={selectedUserName}
-          isOpen={isUserDocumentsModalOpen}
-          onClose={() => {
-            setIsUserDocumentsModalOpen(false);
-            setSelectedUserId(null);
-            setSelectedUserName("");
-          }}
-        />
-      )}
-
       {isUserProfileModalOpen && selectedUserId && (
         <UserProfileModal 
           userId={selectedUserId}
