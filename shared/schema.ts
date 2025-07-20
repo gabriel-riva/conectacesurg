@@ -1526,12 +1526,12 @@ export const insertSurveySchema = createInsertSchema(surveys).omit({
   createdAt: true,
   updatedAt: true,
 }).extend({
-  startDate: z.union([z.string(), z.date()]).optional().transform((val) => {
-    if (!val) return undefined;
+  startDate: z.union([z.string(), z.date()]).optional().nullable().transform((val) => {
+    if (!val || val === '') return null;
     return typeof val === 'string' ? new Date(val) : val;
   }),
-  endDate: z.union([z.string(), z.date()]).optional().transform((val) => {
-    if (!val) return undefined;
+  endDate: z.union([z.string(), z.date()]).optional().nullable().transform((val) => {
+    if (!val || val === '') return null;
     return typeof val === 'string' ? new Date(val) : val;
   }),
 });

@@ -52,8 +52,10 @@ interface UserCategory {
 export default function SurveyManagement() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isSettingsDialogOpen, setIsSettingsDialogOpen] = useState(false);
+  const [isCategoryDialogOpen, setIsCategoryDialogOpen] = useState(false);
   const [editingSurvey, setEditingSurvey] = useState<Survey | null>(null);
   const [surveyQuestions, setSurveyQuestions] = useState<SurveyQuestion[]>([]);
+  const [selectedCategories, setSelectedCategories] = useState<number[]>([]);
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -145,6 +147,9 @@ export default function SurveyManagement() {
   });
 
   const handleCreateSurvey = async (formData: FormData) => {
+    const startDate = formData.get('startDate') as string;
+    const endDate = formData.get('endDate') as string;
+    
     const data = {
       title: formData.get('title'),
       description: formData.get('description'),
@@ -152,9 +157,9 @@ export default function SurveyManagement() {
       isActive: formData.get('isActive') === 'on',
       allowMultipleResponses: formData.get('allowMultipleResponses') === 'on',
       allowAnonymousResponses: formData.get('allowAnonymousResponses') === 'on',
-      targetUserCategories: formData.getAll('targetUserCategories').map(Number),
-      startDate: formData.get('startDate') || null,
-      endDate: formData.get('endDate') || null
+      targetUserCategories: selectedCategories,
+      startDate: startDate && startDate.trim() !== '' ? startDate : null,
+      endDate: endDate && endDate.trim() !== '' ? endDate : null
     };
 
     // Create survey first
@@ -268,20 +273,48 @@ export default function SurveyManagement() {
 
         <div>
           <Label>Público-alvo (categorias)</Label>
-          <div className="grid grid-cols-2 gap-2 mt-2">
-            {(userCategories as UserCategory[])?.map((category: UserCategory) => (
-              <div key={category.id} className="flex items-center space-x-2">
-                <Checkbox 
-                  id={`category-${category.id}`}
-                  name="targetUserCategories"
-                  value={category.id}
-                  defaultChecked={survey?.survey.targetUserCategories.includes(category.id)}
-                />
-                <Label htmlFor={`category-${category.id}`} className="text-sm">
-                  {category.name}
-                </Label>
+          <div className="space-y-2">
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full justify-between"
+              onClick={() => setIsCategoryDialogOpen(true)}
+            >
+              <span>
+                {selectedCategories.length > 0 
+                  ? `${selectedCategories.length} categoria(s) selecionada(s)`
+                  : 'Selecionar categorias (opcional)'
+                }
+              </span>
+              <Settings className="w-4 h-4" />
+            </Button>
+            {selectedCategories.length > 0 && (
+              <div className="flex flex-wrap gap-1">
+                {selectedCategories.map(categoryId => {
+                  const category = userCategories?.find((c: UserCategory) => c.id === categoryId);
+                  return category ? (
+                    <span 
+                      key={categoryId}
+                      className="inline-flex items-center px-2 py-1 text-xs font-medium rounded-full"
+                      style={{ 
+                        backgroundColor: category.color + '20', 
+                        color: category.color,
+                        border: `1px solid ${category.color}40`
+                      }}
+                    >
+                      {category.name}
+                      <button
+                        type="button"
+                        onClick={() => setSelectedCategories(prev => prev.filter(id => id !== categoryId))}
+                        className="ml-1 hover:text-red-600"
+                      >
+                        ×
+                      </button>
+                    </span>
+                  ) : null;
+                })}
               </div>
-            ))}
+            )}
           </div>
           <p className="text-xs text-gray-500 mt-1">
             Se nenhuma categoria for selecionada, a pesquisa será exibida para todos os usuários
@@ -318,6 +351,8 @@ export default function SurveyManagement() {
           <Button type="button" variant="outline" onClick={() => {
             setIsCreateDialogOpen(false);
             setEditingSurvey(null);
+            setSurveyQuestions([]);
+            setSelectedCategories([]);
           }}>
             Cancelar
           </Button>
@@ -334,6 +369,61 @@ export default function SurveyManagement() {
         </div>
       </div>
     </form>
+  );
+
+  const CategorySelectionDialog = () => (
+    <Dialog open={isCategoryDialogOpen} onOpenChange={setIsCategoryDialogOpen}>
+      <DialogContent className="max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>Selecionar Categorias de Usuário</DialogTitle>
+          <DialogDescription>
+            Escolha as categorias de usuários que poderão ver esta pesquisa
+          </DialogDescription>
+        </DialogHeader>
+        <div className="grid grid-cols-2 gap-3 max-h-96 overflow-y-auto">
+          {userCategories?.map((category: UserCategory) => (
+            <div key={category.id} className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-gray-50">
+              <Checkbox 
+                id={`category-${category.id}`}
+                checked={selectedCategories.includes(category.id)}
+                onCheckedChange={(checked) => {
+                  if (checked) {
+                    setSelectedCategories(prev => [...prev, category.id]);
+                  } else {
+                    setSelectedCategories(prev => prev.filter(id => id !== category.id));
+                  }
+                }}
+              />
+              <div className="flex-1">
+                <Label 
+                  htmlFor={`category-${category.id}`} 
+                  className="font-medium cursor-pointer"
+                  style={{ color: category.color || '#000' }}
+                >
+                  {category.name}
+                </Label>
+                {category.description && (
+                  <p className="text-xs text-gray-500 mt-1">{category.description}</p>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="flex justify-between items-center pt-4">
+          <p className="text-sm text-gray-600">
+            {selectedCategories.length} categoria(s) selecionada(s)
+          </p>
+          <div className="space-x-2">
+            <Button variant="outline" onClick={() => setSelectedCategories([])}>
+              Limpar Todas
+            </Button>
+            <Button onClick={() => setIsCategoryDialogOpen(false)}>
+              Confirmar Seleção
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 
   return (
@@ -385,6 +475,8 @@ export default function SurveyManagement() {
           </Dialog>
             </div>
           </div>
+
+          <CategorySelectionDialog />
 
           {isLoading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
