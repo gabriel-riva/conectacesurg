@@ -327,7 +327,7 @@ export default function SurveyWidget() {
               )}
 
               <div className="space-y-4">
-                {currentSurvey.questions
+                {(currentSurvey.questions || [])
                   .sort((a: SurveyQuestion, b: SurveyQuestion) => a.order - b.order)
                   .map((question: SurveyQuestion) => (
                     <div key={question.id} className="space-y-2">

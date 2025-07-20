@@ -389,38 +389,28 @@ router.get("/public/active", async (req, res) => {
     // 3. São direcionadas para a categoria do usuário atual ou para todas as categorias (array vazio)
     const now = new Date();
     
-    const activeSurveys = await db
-      .select({
-        survey: surveys,
-        questions: sql<any[]>`(
-          SELECT json_agg(
-            json_build_object(
-              'id', id,
-              'question', question,
-              'type', type,
-              'order', "order",
-              'isRequired', is_required,
-              'options', options
-            ) ORDER BY "order"
-          )
-          FROM ${surveyQuestions}
-          WHERE ${surveyQuestions.surveyId} = ${surveys.id}
-        )`
-      })
+    // Buscar pesquisas ativas primeiro
+    const activeSurveysData = await db
+      .select()
       .from(surveys)
-      .where(
-        and(
-          eq(surveys.isActive, true),
-          sql`(${surveys.startDate} IS NULL OR ${surveys.startDate} <= ${now})`,
-          sql`(${surveys.endDate} IS NULL OR ${surveys.endDate} >= ${now})`,
-          sql`(
-            array_length(${surveys.targetUserCategories}, 1) IS NULL 
-            OR array_length(${surveys.targetUserCategories}, 1) = 0
-            OR ${(user as any).userCategoryId} = ANY(${surveys.targetUserCategories})
-          )`
-        )
-      )
+      .where(eq(surveys.isActive, true))
       .orderBy(desc(surveys.createdAt));
+
+    // Para cada pesquisa, buscar suas perguntas
+    const activeSurveys = await Promise.all(
+      activeSurveysData.map(async (survey) => {
+        const questions = await db
+          .select()
+          .from(surveyQuestions)
+          .where(eq(surveyQuestions.surveyId, survey.id))
+          .orderBy(asc(surveyQuestions.order));
+        
+        return {
+          survey,
+          questions
+        };
+      })
+    );
 
     // Se o usuário não permite múltiplas respostas, filtrar pesquisas já respondidas
     const surveysToShow = [];
