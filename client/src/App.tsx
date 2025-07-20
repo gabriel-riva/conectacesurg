@@ -31,9 +31,11 @@ import AdminTrilhasPage from "@/pages/AdminTrilhasPage";
 import AdminTrailContentsPage from "@/pages/AdminTrailContentsPage";
 import AdminGamificationPage from "@/pages/AdminGamificationPage";
 import FeedbackManagement from "@/pages/admin/FeedbackManagement";
+import SurveyManagement from "@/pages/SurveyManagement";
 import { AuthProvider } from "./providers/AuthProvider";
 import { useAuth } from "./lib/auth";
 import FeedbackWrapper from "./components/FeedbackWrapper";
+import SurveyWidget from "./components/SurveyWidget";
 
 function ProtectedRoute({ component: Component, adminOnly = false, ...rest }: any) {
   const { user, isLoading } = useAuth();
@@ -60,6 +62,7 @@ function ProtectedRoute({ component: Component, adminOnly = false, ...rest }: an
 function Router() {
   return (
     <FeedbackWrapper>
+      <SurveyWidget />
       <Switch>
         <Route path="/ideas">
           {() => <ProtectedRoute component={IdeasPage} />}
@@ -130,6 +133,9 @@ function Router() {
       </Route>
       <Route path="/admin/feedbacks">
         {() => <ProtectedRoute component={FeedbackManagement} adminOnly={true} />}
+      </Route>
+      <Route path="/admin/pesquisas">
+        {() => <ProtectedRoute component={SurveyManagement} adminOnly={true} />}
       </Route>
       <Route path="/materiais">
         {() => <ProtectedRoute component={MaterialsPage} />}

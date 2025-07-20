@@ -95,7 +95,7 @@ export const ideaVotes = pgTable("idea_votes", {
   };
 });
 
-export const ideaComments = pgTable("idea_comments", {
+export const ideaComments: any = pgTable("idea_comments", {
   id: serial("id").primaryKey(),
   ideaId: integer("idea_id").notNull().references(() => ideas.id, { onDelete: 'cascade' }),
   userId: integer("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
@@ -345,7 +345,7 @@ export const trailContents = pgTable("trail_contents", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-export const trailComments = pgTable("trail_comments", {
+export const trailComments: any = pgTable("trail_comments", {
   id: serial("id").primaryKey(),
   contentId: integer("content_id").notNull().references(() => trailContents.id, { onDelete: 'cascade' }),
   userId: integer("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
@@ -459,7 +459,7 @@ export const gamificationChallenges = pgTable("gamification_challenges", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-export const challengeComments = pgTable("challenge_comments", {
+export const challengeComments: any = pgTable("challenge_comments", {
   id: serial("id").primaryKey(),
   challengeId: integer("challenge_id").notNull().references(() => gamificationChallenges.id, { onDelete: 'cascade' }),
   userId: integer("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
@@ -1281,7 +1281,7 @@ export type ChallengeSubmission = typeof challengeSubmissions.$inferSelect;
 export type Feedback = typeof feedbacks.$inferSelect;
 
 // Tabela para pastas de materiais
-export const materialFolders = pgTable("material_folders", {
+export const materialFolders: any = pgTable("material_folders", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
   description: text("description"),
@@ -1402,3 +1402,154 @@ export type TrailContent = typeof trailContents.$inferSelect;
 export type TrailComment = typeof trailComments.$inferSelect;
 export type TrailCommentLike = typeof trailCommentLikes.$inferSelect;
 export type TrailProgress = typeof trailProgress.$inferSelect;
+
+// =====================================
+// SISTEMA DE PESQUISAS DE OPINIÃO
+// =====================================
+
+// Tabela principal para pesquisas
+export const surveys = pgTable("surveys", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  description: text("description"),
+  instructions: text("instructions"), // Instruções para o usuário
+  isActive: boolean("is_active").notNull().default(false), // Se a pesquisa está ativa
+  allowMultipleResponses: boolean("allow_multiple_responses").notNull().default(false),
+  targetUserCategories: integer("target_user_categories").array().default([]), // IDs das categorias de usuário
+  startDate: timestamp("start_date"),
+  endDate: timestamp("end_date"),
+  creatorId: integer("creator_id").notNull().references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Tabela para perguntas das pesquisas
+export const surveyQuestions = pgTable("survey_questions", {
+  id: serial("id").primaryKey(),
+  surveyId: integer("survey_id").notNull().references(() => surveys.id, { onDelete: 'cascade' }),
+  question: text("question").notNull(),
+  type: text("type").notNull(), // 'multiple_choice', 'likert_scale', 'text_free', 'yes_no'
+  order: integer("order").notNull().default(0),
+  isRequired: boolean("is_required").notNull().default(true),
+  options: jsonb("options").$type<{
+    // Para multiple_choice
+    choices?: string[];
+    // Para likert_scale
+    scale?: {
+      min: number;
+      max: number;
+      minLabel: string;
+      maxLabel: string;
+      step?: number;
+    };
+    // Para text_free
+    textConfig?: {
+      placeholder?: string;
+      maxLength?: number;
+      multiline?: boolean;
+    };
+  }>().default({}),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Tabela para respostas das pesquisas
+export const surveyResponses = pgTable("survey_responses", {
+  id: serial("id").primaryKey(),
+  surveyId: integer("survey_id").notNull().references(() => surveys.id, { onDelete: 'cascade' }),
+  userId: integer("user_id").references(() => users.id, { onDelete: 'cascade' }), // null para respostas anônimas
+  isAnonymous: boolean("is_anonymous").notNull().default(false),
+  responseData: jsonb("response_data").$type<{
+    [questionId: string]: {
+      questionType: string;
+      answer: string | number | string[]; // Dependendo do tipo da pergunta
+    };
+  }>().notNull(),
+  completedAt: timestamp("completed_at").defaultNow(),
+  ipAddress: text("ip_address"), // Para controle de respostas duplicadas em pesquisas anônimas
+  userAgent: text("user_agent"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Configurações globais do widget de pesquisas
+export const surveyWidgetSettings = pgTable("survey_widget_settings", {
+  id: serial("id").primaryKey(),
+  isEnabled: boolean("is_enabled").notNull().default(true),
+  displayStyle: text("display_style").notNull().default("floating"), // 'floating', 'banner', 'sidebar'
+  position: text("position").notNull().default("bottom-right"), // 'top-left', 'top-right', 'bottom-left', 'bottom-right'
+  showCloseButton: boolean("show_close_button").notNull().default(true),
+  autoShowDelay: integer("auto_show_delay").notNull().default(3000), // ms
+  primaryColor: text("primary_color").default("#3B82F6"),
+  updatedBy: integer("updated_by").references(() => users.id),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Relações para surveys
+export const surveysRelations = relations(surveys, ({ one, many }) => ({
+  creator: one(users, {
+    fields: [surveys.creatorId],
+    references: [users.id],
+  }),
+  questions: many(surveyQuestions),
+  responses: many(surveyResponses),
+}));
+
+export const surveyQuestionsRelations = relations(surveyQuestions, ({ one, many }) => ({
+  survey: one(surveys, {
+    fields: [surveyQuestions.surveyId],
+    references: [surveys.id],
+  }),
+}));
+
+export const surveyResponsesRelations = relations(surveyResponses, ({ one }) => ({
+  survey: one(surveys, {
+    fields: [surveyResponses.surveyId],
+    references: [surveys.id],
+  }),
+  user: one(users, {
+    fields: [surveyResponses.userId],
+    references: [users.id],
+  }),
+}));
+
+export const surveyWidgetSettingsRelations = relations(surveyWidgetSettings, ({ one }) => ({
+  updatedByUser: one(users, {
+    fields: [surveyWidgetSettings.updatedBy],
+    references: [users.id],
+  }),
+}));
+
+// Schemas para inserção
+export const insertSurveySchema = createInsertSchema(surveys).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertSurveyQuestionSchema = createInsertSchema(surveyQuestions).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertSurveyResponseSchema = createInsertSchema(surveyResponses).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertSurveyWidgetSettingsSchema = createInsertSchema(surveyWidgetSettings).omit({
+  id: true,
+  updatedAt: true,
+});
+
+// Tipos para inserção
+export type InsertSurvey = z.infer<typeof insertSurveySchema>;
+export type InsertSurveyQuestion = z.infer<typeof insertSurveyQuestionSchema>;
+export type InsertSurveyResponse = z.infer<typeof insertSurveyResponseSchema>;
+export type InsertSurveyWidgetSettings = z.infer<typeof insertSurveyWidgetSettingsSchema>;
+
+// Tipos para seleção
+export type Survey = typeof surveys.$inferSelect;
+export type SurveyQuestion = typeof surveyQuestions.$inferSelect;
+export type SurveyResponse = typeof surveyResponses.$inferSelect;
+export type SurveyWidgetSettings = typeof surveyWidgetSettings.$inferSelect;
