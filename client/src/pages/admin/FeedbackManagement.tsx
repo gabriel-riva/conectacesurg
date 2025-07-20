@@ -228,38 +228,24 @@ const FeedbackManagement: React.FC = () => {
           <div className="space-y-6">
             <div className="flex items-center justify-between">
               <h1 className="text-2xl font-bold text-primary">Gerenciamento de Feedbacks</h1>
-              <div className="text-sm text-gray-600">
-                Total: {feedbacks?.length || 0} feedbacks
-              </div>
-            </div>
-
-            {/* Widget Toggle Settings */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Settings className="w-5 h-5" />
-                  Configurações do Widget
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center justify-between">
-                  <div className="space-y-1">
-                    <Label className="text-base font-medium">Widget de Feedback</Label>
-                    <p className="text-sm text-gray-600">
-                      Controla se o widget de feedback aparece na plataforma para os usuários
-                    </p>
-                  </div>
+              <div className="flex items-center gap-6">
+                <div className="flex items-center gap-2 text-sm">
+                  <Label className="text-xs text-gray-600">Widget:</Label>
                   <Switch
                     checked={feedbackWidgetSettings?.isEnabled || false}
                     onCheckedChange={(checked) => toggleWidgetMutation.mutate(checked)}
                     disabled={toggleWidgetMutation.isPending}
+                    className="scale-75"
                   />
+                  <span className="text-xs text-gray-500">
+                    {feedbackWidgetSettings?.isEnabled ? 'Ativo' : 'Inativo'}
+                  </span>
                 </div>
-                <div className="mt-3 text-xs text-gray-500">
-                  Status atual: {feedbackWidgetSettings?.isEnabled ? 'Habilitado' : 'Desabilitado'}
+                <div className="text-sm text-gray-600">
+                  Total: {feedbacks?.length || 0} feedbacks
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         {['open', 'in_progress', 'resolved', 'closed'].map((statusType) => {
