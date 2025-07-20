@@ -345,15 +345,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Atenção! Esta rota deve estar antes das rotas dinâmicas como "/api/users/:id" por conflito de rotas
-  // Filtrar usuários por grupo ou retornar todos os usuários se groupId não for fornecido
+  // Filtrar usuários por grupo ou categoria ou retornar todos os usuários se nenhum filtro for fornecido
   app.get("/api/users/filter", checkAdmin, async (req, res) => {
     try {
       const groupId = req.query.groupId ? parseInt(req.query.groupId as string) : null;
+      const categoryId = req.query.categoryId ? parseInt(req.query.categoryId as string) : null;
       
-      // Verificar se o grupo ID é válido quando fornecido
+      // Verificar se os IDs são válidos quando fornecidos
       if (groupId !== null && isNaN(groupId)) {
         console.error(`ID de grupo inválido: ${req.query.groupId}`);
         return res.status(400).json({ message: "Invalid group ID" });
+      }
+      
+      if (categoryId !== null && isNaN(categoryId)) {
+        console.error(`ID de categoria inválido: ${req.query.categoryId}`);
+        return res.status(400).json({ message: "Invalid category ID" });
       }
       
       if (groupId) {
@@ -362,15 +368,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const users = await storage.getGroupUsers(groupId);
         console.log(`Filtrando usuários do grupo ${groupId}: Encontrados ${users.length} usuários`);
         return res.json(users);
+      } else if (categoryId) {
+        // Se o categoryId foi fornecido, retorna usuários dessa categoria
+        console.log(`Buscando usuários da categoria com ID: ${categoryId}`);
+        const users = await storage.getCategoryUsers(categoryId);
+        console.log(`Filtrando usuários da categoria ${categoryId}: Encontrados ${users.length} usuários`);
+        return res.json(users);
       } else {
-        // Se não foi fornecido groupId, retorna todos os usuários
+        // Se não foi fornecido nem groupId nem categoryId, retorna todos os usuários
         const users = await storage.getAllUsers();
         console.log(`Retornando todos os usuários: Encontrados ${users.length} usuários`);
         return res.json(users);
       }
     } catch (error) {
-      console.error("Erro ao filtrar usuários por grupo:", error);
-      res.status(500).json({ message: "Failed to filter users by group" });
+      console.error("Erro ao filtrar usuários:", error);
+      res.status(500).json({ message: "Failed to filter users" });
     }
   });
 

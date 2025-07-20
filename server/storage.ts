@@ -3,6 +3,7 @@ import {
   groups, 
   userGroups,
   userCategories,
+  userCategoryAssignments,
   aiAgents,
   aiPrompts,
   aiPromptAgents,
@@ -110,6 +111,7 @@ export interface IStorage {
   createUserCategory(category: InsertUserCategory): Promise<UserCategory>;
   updateUserCategory(id: number, categoryData: Partial<InsertUserCategory>): Promise<UserCategory | undefined>;
   deleteUserCategory(id: number): Promise<boolean>;
+  getCategoryUsers(categoryId: number): Promise<User[]>;
   
   // AI Agent methods
   getAllAiAgents(): Promise<AiAgent[]>;
@@ -1845,6 +1847,31 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error("Error deleting user category:", error);
       return false;
+    }
+  }
+
+  async getCategoryUsers(categoryId: number): Promise<User[]> {
+    try {
+      const results = await db
+        .select({
+          id: users.id,
+          email: users.email,
+          name: users.name,
+          role: users.role,
+          isActive: users.isActive,
+          googleId: users.googleId,
+          photoUrl: users.photoUrl,
+          createdAt: users.createdAt,
+          updatedAt: users.updatedAt
+        })
+        .from(users)
+        .innerJoin(userCategoryAssignments, eq(users.id, userCategoryAssignments.userId))
+        .where(eq(userCategoryAssignments.categoryId, categoryId));
+      
+      return results;
+    } catch (error) {
+      console.error("Error getting category users:", error);
+      return [];
     }
   }
 

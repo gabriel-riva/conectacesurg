@@ -50,7 +50,7 @@ export default function AdminPage({ activeTab: initialActiveTab }: { activeTab?:
   const [isGroupEditModalOpen, setIsGroupEditModalOpen] = useState(false);
   const [groupToEdit, setGroupToEdit] = useState<number | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [selectedGroupFilter, setSelectedGroupFilter] = useState<number | null>(null);
+  const [selectedCategoryFilter, setSelectedCategoryFilter] = useState<number | null>(null);
   const [sortColumn, setSortColumn] = useState<SortColumn>(null);
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
   const [categoryToDelete, setCategoryToDelete] = useState<number | null>(null);
@@ -60,16 +60,16 @@ export default function AdminPage({ activeTab: initialActiveTab }: { activeTab?:
   const [userForCategoryAssignment, setUserForCategoryAssignment] = useState<{ id: number; name: string } | null>(null);
   const { toast } = useToast();
 
-  // Fetch users - Usar endpoint filter quando um grupo está selecionado
+  // Fetch users - Usar endpoint filter quando uma categoria está selecionada
   const { data: users = [], isLoading: isLoadingUsers } = useQuery<User[]>({
-    queryKey: ['/api/users', selectedGroupFilter],
+    queryKey: ['/api/users', selectedCategoryFilter],
     queryFn: async () => {
       try {
-        // Se um grupo estiver selecionado, usamos o endpoint de filtro
-        if (selectedGroupFilter) {
-          console.log(`Buscando usuários do grupo: ${selectedGroupFilter}`);
+        // Se uma categoria estiver selecionada, usamos o endpoint de filtro
+        if (selectedCategoryFilter) {
+          console.log(`Buscando usuários da categoria: ${selectedCategoryFilter}`);
           // Usar o apiRequest do QueryClient para garantir o gerenciamento de autenticação correto
-          return await apiRequest("GET", `/api/users/filter?groupId=${selectedGroupFilter}`);
+          return await apiRequest("GET", `/api/users/filter?categoryId=${selectedCategoryFilter}`);
         } else {
           console.log("Buscando todos os usuários");
           // Usar o apiRequest do QueryClient para garantir o gerenciamento de autenticação correto
@@ -404,27 +404,28 @@ export default function AdminPage({ activeTab: initialActiveTab }: { activeTab?:
                   <div className="flex flex-col md:flex-row justify-between items-center mb-6">
                     <h2 className="text-lg font-semibold text-primary mb-4 md:mb-0">Usuários Registrados</h2>
                     <div className="flex flex-col md:flex-row gap-4 w-full md:w-auto items-end">
-                      {/* Filtro por grupo */}
-                      {!isLoadingGroups && groups.length > 0 && (
+                      {/* Filtro por categoria */}
+                      {!isLoadingUserCategoryList && userCategories.length > 0 && (
                         <div className="w-full md:w-64">
-                          <label htmlFor="group-filter" className="block text-sm font-medium text-gray-700 mb-1">
-                            Filtrar por grupo
+                          <label htmlFor="category-filter" className="block text-sm font-medium text-gray-700 mb-1">
+                            Filtrar por categoria
                           </label>
                           <select
-                            id="group-filter"
+                            id="category-filter"
                             className="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm h-10 px-3"
-                            value={selectedGroupFilter?.toString() || ""}
+                            value={selectedCategoryFilter?.toString() || ""}
                             onChange={(e) => {
                               const value = e.target.value;
-                              setSelectedGroupFilter(value ? parseInt(value) : null);
+                              setSelectedCategoryFilter(value ? parseInt(value) : null);
                             }}
                           >
                             <option value="">Todos os usuários</option>
-                            {[...groups]
+                            {[...userCategories]
+                              .filter(category => category.isActive)
                               .sort((a, b) => a.name.localeCompare(b.name))
-                              .map((group) => (
-                                <option key={group.id} value={group.id}>
-                                  {group.name}
+                              .map((category) => (
+                                <option key={category.id} value={category.id}>
+                                  {category.name}
                                 </option>
                               ))}
                           </select>
