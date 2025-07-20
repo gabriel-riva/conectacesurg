@@ -22,6 +22,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Header } from "@/components/Header";
 import { AdminSidebar } from "@/components/AdminSidebar";
+import SurveyQuestionEditor, { SurveyQuestion } from '@/components/SurveyQuestionEditor';
 
 interface Survey {
   survey: {
@@ -31,6 +32,7 @@ interface Survey {
     instructions?: string;
     isActive: boolean;
     allowMultipleResponses: boolean;
+    allowAnonymousResponses?: boolean;
     targetUserCategories: number[];
     startDate?: string;
     endDate?: string;
@@ -51,6 +53,7 @@ export default function SurveyManagement() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isSettingsDialogOpen, setIsSettingsDialogOpen] = useState(false);
   const [editingSurvey, setEditingSurvey] = useState<Survey | null>(null);
+  const [surveyQuestions, setSurveyQuestions] = useState<SurveyQuestion[]>([]);
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -62,7 +65,7 @@ export default function SurveyManagement() {
 
   // Buscar categorias de usuário
   const { data: userCategories } = useQuery({
-    queryKey: ['/api/surveys/user-categories'],
+    queryKey: ['/api/user-categories'],
     enabled: true
   });
 
@@ -148,12 +151,33 @@ export default function SurveyManagement() {
       instructions: formData.get('instructions'),
       isActive: formData.get('isActive') === 'on',
       allowMultipleResponses: formData.get('allowMultipleResponses') === 'on',
+      allowAnonymousResponses: formData.get('allowAnonymousResponses') === 'on',
       targetUserCategories: formData.getAll('targetUserCategories').map(Number),
       startDate: formData.get('startDate') || null,
       endDate: formData.get('endDate') || null
     };
 
-    await createSurveyMutation.mutateAsync(data);
+    // Create survey first
+    const createdSurvey = await createSurveyMutation.mutateAsync(data);
+    
+    // Then create questions if any
+    if (surveyQuestions.length > 0) {
+      for (const question of surveyQuestions) {
+        await apiRequest(`/api/surveys/${createdSurvey.id}/questions`, {
+          method: 'POST',
+          body: {
+            question: question.question,
+            type: question.type,
+            order: question.order,
+            isRequired: question.isRequired,
+            options: question.options
+          }
+        });
+      }
+    }
+    
+    // Reset questions after successful creation
+    setSurveyQuestions([]);
   };
 
   const handleUpdateSurvey = async (formData: FormData) => {
@@ -166,6 +190,7 @@ export default function SurveyManagement() {
       instructions: formData.get('instructions'),
       isActive: formData.get('isActive') === 'on',
       allowMultipleResponses: formData.get('allowMultipleResponses') === 'on',
+      allowAnonymousResponses: formData.get('allowAnonymousResponses') === 'on',
       targetUserCategories: formData.getAll('targetUserCategories').map(Number),
       startDate: formData.get('startDate') || null,
       endDate: formData.get('endDate') || null
@@ -182,7 +207,7 @@ export default function SurveyManagement() {
 
   const SurveyForm = ({ survey, onSubmit }: { survey?: Survey; onSubmit: (formData: FormData) => Promise<void> }) => (
     <form>
-      <div className="space-y-4">
+      <div className="space-y-6">
         <div>
           <Label htmlFor="title">Título</Label>
           <Input 
@@ -232,6 +257,15 @@ export default function SurveyManagement() {
           <Label htmlFor="allowMultipleResponses">Permitir múltiplas respostas</Label>
         </div>
 
+        <div className="flex items-center space-x-2">
+          <Checkbox 
+            id="allowAnonymousResponses" 
+            name="allowAnonymousResponses" 
+            defaultChecked={survey?.survey.allowAnonymousResponses ?? true}
+          />
+          <Label htmlFor="allowAnonymousResponses">Permitir respostas anônimas</Label>
+        </div>
+
         <div>
           <Label>Público-alvo (categorias)</Label>
           <div className="grid grid-cols-2 gap-2 mt-2">
@@ -274,6 +308,11 @@ export default function SurveyManagement() {
             />
           </div>
         </div>
+
+        <SurveyQuestionEditor 
+          questions={surveyQuestions}
+          onChange={setSurveyQuestions}
+        />
 
         <div className="flex justify-end space-x-2 pt-4">
           <Button type="button" variant="outline" onClick={() => {
@@ -334,7 +373,7 @@ export default function SurveyManagement() {
                 Nova Pesquisa
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-2xl">
+            <DialogContent className="max-w-5xl max-h-[95vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>Criar Nova Pesquisa</DialogTitle>
                 <DialogDescription>

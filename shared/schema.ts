@@ -1415,6 +1415,7 @@ export const surveys = pgTable("surveys", {
   instructions: text("instructions"), // Instruções para o usuário
   isActive: boolean("is_active").notNull().default(false), // Se a pesquisa está ativa
   allowMultipleResponses: boolean("allow_multiple_responses").notNull().default(false),
+  allowAnonymousResponses: boolean("allow_anonymous_responses").notNull().default(true), // Se permite respostas anônimas
   targetUserCategories: integer("target_user_categories").array().default([]), // IDs das categorias de usuário
   startDate: timestamp("start_date"),
   endDate: timestamp("end_date"),
@@ -1428,7 +1429,7 @@ export const surveyQuestions = pgTable("survey_questions", {
   id: serial("id").primaryKey(),
   surveyId: integer("survey_id").notNull().references(() => surveys.id, { onDelete: 'cascade' }),
   question: text("question").notNull(),
-  type: text("type").notNull(), // 'multiple_choice', 'likert_scale', 'text_free', 'yes_no'
+  type: text("type").notNull(), // 'multiple_choice', 'likert_scale', 'text_free', 'yes_no', 'rating', 'date', 'email'
   order: integer("order").notNull().default(0),
   isRequired: boolean("is_required").notNull().default(true),
   options: jsonb("options").$type<{

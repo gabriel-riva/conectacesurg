@@ -214,10 +214,7 @@ router.post("/:surveyId/questions", async (req, res) => {
 
     const [newQuestion] = await db
       .insert(surveyQuestions)
-      .values({
-        ...validatedData,
-        options: validatedData.options ? JSON.stringify(validatedData.options) : null
-      })
+      .values(validatedData)
       .returning();
 
     res.status(201).json(newQuestion);
@@ -249,7 +246,6 @@ router.put("/:surveyId/questions/:questionId", async (req, res) => {
       .update(surveyQuestions)
       .set({
         ...validatedData,
-        options: validatedData.options ? JSON.stringify(validatedData.options) : null,
         updatedAt: new Date()
       })
       .where(eq(surveyQuestions.id, questionId))
@@ -515,10 +511,7 @@ router.post("/public/:surveyId/respond", async (req, res) => {
 
     const [newResponse] = await db
       .insert(surveyResponses)
-      .values({
-        ...validatedData,
-        responseData: JSON.stringify(validatedData.responseData)
-      })
+      .values(validatedData)
       .returning();
 
     res.status(201).json({ message: "Resposta enviada com sucesso", responseId: newResponse.id });
@@ -549,6 +542,35 @@ router.get("/public/widget/settings", async (req, res) => {
     });
   } catch (error) {
     console.error("Erro ao buscar configurações do widget:", error);
+    res.status(500).json({ error: "Erro interno do servidor" });
+  }
+});
+
+// Buscar categorias de usuário disponíveis (para seleção de público-alvo)
+router.get("/user-categories", async (req, res) => {
+  try {
+    const user = req.user as any;
+    console.log('Verificando acesso a categorias. Usuário:', user ? { id: user.id, email: user.email, role: user.role } : 'não autenticado');
+    
+    if (!user || (user.role !== "admin" && user.role !== "superadmin")) {
+      return res.status(403).json({ error: "Acesso negado" });
+    }
+
+    const categories = await db
+      .select({
+        id: userCategories.id,
+        name: userCategories.name,
+        description: userCategories.description,
+        color: userCategories.color
+      })
+      .from(userCategories)
+      .where(eq(userCategories.isActive, true))
+      .orderBy(asc(userCategories.name));
+
+    console.log('Categorias encontradas:', categories.length);
+    res.json(categories);
+  } catch (error) {
+    console.error("Erro ao buscar categorias:", error);
     res.status(500).json({ error: "Erro interno do servidor" });
   }
 });
@@ -591,35 +613,6 @@ router.get("/:id/analytics", async (req, res) => {
     });
   } catch (error) {
     console.error("Erro ao buscar análise:", error);
-    res.status(500).json({ error: "Erro interno do servidor" });
-  }
-});
-
-// Buscar categorias de usuário disponíveis (para seleção de público-alvo)
-router.get("/user-categories", async (req, res) => {
-  try {
-    const user = req.user as any;
-    console.log('Verificando acesso a categorias. Usuário:', user ? { id: user.id, email: user.email, role: user.role } : 'não autenticado');
-    
-    if (!user || (user.role !== "admin" && user.role !== "superadmin")) {
-      return res.status(403).json({ error: "Acesso negado" });
-    }
-
-    const categories = await db
-      .select({
-        id: userCategories.id,
-        name: userCategories.name,
-        description: userCategories.description,
-        color: userCategories.color
-      })
-      .from(userCategories)
-      .where(eq(userCategories.isActive, true))
-      .orderBy(asc(userCategories.name));
-
-    console.log('Categorias encontradas:', categories.length);
-    res.json(categories);
-  } catch (error) {
-    console.error("Erro ao buscar categorias:", error);
     res.status(500).json({ error: "Erro interno do servidor" });
   }
 });
