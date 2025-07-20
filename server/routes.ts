@@ -543,6 +543,60 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get user profile for admin - admin only
+  app.get("/api/users/:id/profile", checkAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid user ID" });
+      }
+      
+      const user = await storage.getUser(id);
+      
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      // Return complete user profile including all personal information
+      res.json(user);
+    } catch (error) {
+      console.error("Error getting user profile:", error);
+      res.status(500).json({ message: "Failed to fetch user profile" });
+    }
+  });
+
+  // Get user documents for admin - admin only
+  app.get("/api/users/:id/documents", checkAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid user ID" });
+      }
+      
+      console.log(`Buscando documentos do usuário com ID: ${id}`);
+      
+      const user = await storage.getUser(id);
+      
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      // Return user documents
+      const userDocuments = {
+        userId: user.id,
+        userName: user.name,
+        documents: user.documents || []
+      };
+      
+      res.json(userDocuments);
+    } catch (error) {
+      console.error("Error getting user documents:", error);
+      res.status(500).json({ message: "Failed to fetch user documents" });
+    }
+  });
+
   // Group management routes
   // Get all groups - admin only
   app.get("/api/groups", checkAdmin, async (req, res) => {

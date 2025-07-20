@@ -13,6 +13,7 @@ import { AdminSidebar } from "@/components/AdminSidebar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AddGroupModal } from "@/components/AddGroupModal";
 import { UserDocumentsModal } from "@/components/UserDocumentsModal";
+import { UserProfileModal } from "@/components/UserProfileModal";
 import { EditUserModal } from "@/components/EditUserModal";
 import { EditGroupModal } from "@/components/EditGroupModal";
 import { AdminIdeas } from "@/components/AdminIdeas";
@@ -40,6 +41,7 @@ export default function AdminPage({ activeTab: initialActiveTab }: { activeTab?:
   const [isGroupModalOpen, setIsGroupModalOpen] = useState(false);
   const [isUserCategoryModalOpen, setIsUserCategoryModalOpen] = useState(false);
   const [isUserDocumentsModalOpen, setIsUserDocumentsModalOpen] = useState(false);
+  const [isUserProfileModalOpen, setIsUserProfileModalOpen] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
   const [selectedUserName, setSelectedUserName] = useState("");
   const [activeTab, setActiveTab] = useState(initialActiveTab || "usuarios");
@@ -290,6 +292,12 @@ export default function AdminPage({ activeTab: initialActiveTab }: { activeTab?:
     setSelectedUserId(userId);
     setSelectedUserName(userName);
     setIsUserDocumentsModalOpen(true);
+  }, []);
+
+  const handleUserProfile = useCallback((userId: number, userName: string) => {
+    setSelectedUserId(userId);
+    setSelectedUserName(userName);
+    setIsUserProfileModalOpen(true);
   }, []);
   
   const toggleUserStatus = (user: User) => {
@@ -623,6 +631,17 @@ ${userCategoriesMapping[user.id].map(c => `• ${c.name}`).join('\n')}`}
                                         >
                                           <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                          </svg>
+                                        </Button>
+                                        <Button 
+                                          variant="ghost" 
+                                          size="icon" 
+                                          className="h-8 w-8 text-green-600 hover:text-green-900 hover:bg-green-50" 
+                                          title="Ver Perfil"
+                                          onClick={() => handleUserProfile(user.id, user.name)}
+                                        >
+                                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                                           </svg>
                                         </Button>
                                         <Button 
@@ -993,6 +1012,19 @@ ${userCategoriesMapping[user.id].map(c => `• ${c.name}`).join('\n')}`}
           isOpen={isUserDocumentsModalOpen}
           onClose={() => {
             setIsUserDocumentsModalOpen(false);
+            setSelectedUserId(null);
+            setSelectedUserName("");
+          }}
+        />
+      )}
+
+      {isUserProfileModalOpen && selectedUserId && (
+        <UserProfileModal 
+          userId={selectedUserId}
+          userName={selectedUserName}
+          isOpen={isUserProfileModalOpen}
+          onClose={() => {
+            setIsUserProfileModalOpen(false);
             setSelectedUserId(null);
             setSelectedUserName("");
           }}
