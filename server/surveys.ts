@@ -599,16 +599,24 @@ router.get("/:id/analytics", async (req, res) => {
 router.get("/user-categories", async (req, res) => {
   try {
     const user = req.user as any;
+    console.log('Verificando acesso a categorias. Usuário:', user ? { id: user.id, email: user.email, role: user.role } : 'não autenticado');
+    
     if (!user || (user.role !== "admin" && user.role !== "superadmin")) {
       return res.status(403).json({ error: "Acesso negado" });
     }
 
     const categories = await db
-      .select()
+      .select({
+        id: userCategories.id,
+        name: userCategories.name,
+        description: userCategories.description,
+        color: userCategories.color
+      })
       .from(userCategories)
       .where(eq(userCategories.isActive, true))
       .orderBy(asc(userCategories.name));
 
+    console.log('Categorias encontradas:', categories.length);
     res.json(categories);
   } catch (error) {
     console.error("Erro ao buscar categorias:", error);
