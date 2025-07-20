@@ -168,7 +168,7 @@ export default function SurveyManagement() {
     // Then create questions if any
     if (surveyQuestions.length > 0) {
       for (const question of surveyQuestions) {
-        await apiRequest(`/api/surveys/${createdSurvey.id}/questions`, {
+        await apiRequest(`/api/surveys/${(createdSurvey as any).id}/questions`, {
           method: 'POST',
           body: {
             question: question.question,
@@ -291,7 +291,7 @@ export default function SurveyManagement() {
             {selectedCategories.length > 0 && (
               <div className="flex flex-wrap gap-1">
                 {selectedCategories.map(categoryId => {
-                  const category = userCategories?.find((c: UserCategory) => c.id === categoryId);
+                  const category = (userCategories as UserCategory[])?.find((c: UserCategory) => c.id === categoryId);
                   return category ? (
                     <span 
                       key={categoryId}
@@ -381,7 +381,7 @@ export default function SurveyManagement() {
           </DialogDescription>
         </DialogHeader>
         <div className="grid grid-cols-2 gap-3 max-h-96 overflow-y-auto">
-          {userCategories?.map((category: UserCategory) => (
+          {(userCategories as UserCategory[])?.map((category: UserCategory) => (
             <div key={category.id} className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-gray-50">
               <Checkbox 
                 id={`category-${category.id}`}
