@@ -49,7 +49,7 @@ interface SurveyWidgetSettings {
 }
 
 export default function SurveyWidget() {
-  const [isVisible, setIsVisible] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
   const [currentSurveyIndex, setCurrentSurveyIndex] = useState(0);
   const [responses, setResponses] = useState<Record<string, any>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -67,6 +67,17 @@ export default function SurveyWidget() {
     queryKey: ['/api/surveys/public/active'],
     enabled: true
   });
+
+  // Mostrar automaticamente o widget após carregar (apenas ícone)
+  useEffect(() => {
+    if (surveys && (surveys as Survey[])?.length > 0 && (settings as SurveyWidgetSettings)?.isEnabled) {
+      const timer = setTimeout(() => {
+        // Não expande automaticamente, apenas mostra o ícone
+      }, (settings as SurveyWidgetSettings)?.autoShowDelay || 3000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [surveys, settings]);
 
   // Mutation para submeter resposta
   const submitResponseMutation = useMutation({
@@ -87,7 +98,7 @@ export default function SurveyWidget() {
           setResponses({});
           setShowThankYou(false);
         } else {
-          setIsVisible(false);
+          setIsExpanded(false);
           setShowThankYou(false);
           setCurrentSurveyIndex(0);
           setResponses({});
@@ -96,18 +107,7 @@ export default function SurveyWidget() {
     }
   });
 
-  // Auto-show logic
-  useEffect(() => {
-    if (!(settings as SurveyWidgetSettings)?.isEnabled || !(surveys as Survey[])?.length || isLoading) return;
-    
-    const timer = setTimeout(() => {
-      setIsVisible(true);
-    }, (settings as SurveyWidgetSettings)?.autoShowDelay || 3000);
-
-    return () => clearTimeout(timer);
-  }, [settings, surveys, isLoading]);
-
-  const currentSurvey = (surveys as Survey[])?.[currentSurveyIndex];
+  // Não precisamos mais de auto-show logic pois o ícone sempre fica visível
 
   const handleResponseChange = (questionId: number, value: any) => {
     setResponses(prev => ({
@@ -117,10 +117,11 @@ export default function SurveyWidget() {
   };
 
   const handleSubmit = async () => {
+    const currentSurvey = (surveys as Survey[])?.[currentSurveyIndex];
     if (!currentSurvey) return;
 
     // Validar campos obrigatórios
-    const requiredQuestions = currentSurvey.questions.filter((q: SurveyQuestion) => q.isRequired);
+    const requiredQuestions = (currentSurvey.questions || []).filter((q: SurveyQuestion) => q.isRequired);
     const missingResponses = requiredQuestions.filter((q: SurveyQuestion) => !responses[q.id]);
     
     if (missingResponses.length > 0) {
@@ -256,93 +257,155 @@ export default function SurveyWidget() {
   };
 
   // Se não há pesquisas ou widget está desabilitado, não renderizar
-  if (!(settings as SurveyWidgetSettings)?.isEnabled || !(surveys as Survey[])?.length || !isVisible) {
+  if (!(settings as SurveyWidgetSettings)?.isEnabled || !(surveys as Survey[])?.length) {
     return null;
   }
 
-  const positionClasses = {
-    'top-left': 'top-4 left-4',
-    'top-right': 'top-4 right-4',
-    'bottom-left': 'bottom-4 left-4',
-    'bottom-right': 'bottom-4 right-4'
-  };
+  const currentSurvey = (surveys as Survey[])[currentSurveyIndex];
 
+  // Ícone flutuante pequeno (sempre visível quando há pesquisas)
+  if (!isExpanded) {
+    return (
+      <div className="fixed bottom-4 right-4 z-50">
+        {/* Tooltip */}
+        <div className="absolute -top-12 right-0 bg-gray-800 text-white text-xs px-2 py-1 rounded whitespace-nowrap opacity-90 pointer-events-none">
+          Nova pesquisa disponível
+        </div>
+        
+        {/* Ícone principal */}
+        <div 
+          onClick={() => setIsExpanded(true)}
+          className="w-14 h-14 rounded-full cursor-pointer shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 flex items-center justify-center relative"
+          style={{ backgroundColor: (settings as SurveyWidgetSettings)?.primaryColor || '#3B82F6' }}
+        >
+          {/* Ícone similar ao anexo - smiley com segmentos coloridos */}
+          <div className="relative w-8 h-8">
+            <svg viewBox="0 0 32 32" className="w-full h-full">
+              {/* Círculo base branco */}
+              <circle cx="16" cy="16" r="14" fill="white"/>
+              
+              {/* Segmentos coloridos ao redor */}
+              <path d="M 16 4 A 12 12 0 0 1 25.86 10" fill="none" stroke="#22C55E" strokeWidth="2.5" strokeLinecap="round"/>
+              <path d="M 25.86 10 A 12 12 0 0 1 25.86 22" fill="none" stroke="#F59E0B" strokeWidth="2.5" strokeLinecap="round"/>
+              <path d="M 25.86 22 A 12 12 0 0 1 16 28" fill="none" stroke="#EF4444" strokeWidth="2.5" strokeLinecap="round"/>
+              
+              {/* Rosto sorridente */}
+              <circle cx="13" cy="13" r="1.5" fill="#6B7280"/>
+              <circle cx="19" cy="13" r="1.5" fill="#6B7280"/>
+              <path d="M 12 19 Q 16 22 20 19" fill="none" stroke="#6B7280" strokeWidth="1.5" strokeLinecap="round"/>
+            </svg>
+          </div>
+          
+          {/* Contador de pesquisas se houver mais de uma */}
+          {(surveys as Survey[]).length > 1 && (
+            <div className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-medium">
+              {(surveys as Survey[]).length}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // Modal expandido - tela cheia no mobile, card no desktop
   return (
-    <div 
-      className={`fixed z-50 ${positionClasses[(settings as SurveyWidgetSettings)?.position as keyof typeof positionClasses] || 'bottom-4 right-4'}`}
-      style={{ maxWidth: '400px', width: '90vw' }}
-    >
-      <Card className="shadow-lg border-0 bg-white">
-        <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <MessageSquare 
-                className="w-5 h-5" 
-                style={{ color: (settings as SurveyWidgetSettings)?.primaryColor }}
+    <>
+      {/* Overlay */}
+      <div 
+        className="fixed inset-0 bg-black bg-opacity-50 z-50"
+        onClick={() => setIsExpanded(false)}
+      />
+      
+      {/* Modal */}
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-0">
+        <div className="w-full h-full md:w-auto md:h-auto md:max-w-2xl md:max-h-[90vh] bg-white rounded-none md:rounded-lg shadow-xl overflow-hidden">
+          {/* Header */}
+          <div className="bg-white border-b p-4 flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <div 
+                className="w-3 h-3 rounded-full" 
+                style={{ backgroundColor: (settings as SurveyWidgetSettings)?.primaryColor }}
               />
-              <CardTitle className="text-lg">
+              <h2 className="text-lg font-semibold">
                 {showThankYou ? 'Obrigado!' : currentSurvey?.survey.title}
-              </CardTitle>
-              {(surveys as Survey[])?.length > 1 && !showThankYou && (
+              </h2>
+              {(surveys as Survey[]).length > 1 && !showThankYou && (
                 <Badge variant="secondary" className="text-xs">
                   {currentSurveyIndex + 1}/{(surveys as Survey[]).length}
                 </Badge>
               )}
             </div>
-            {(settings as SurveyWidgetSettings)?.showCloseButton && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setIsVisible(false)}
-                className="h-8 w-8 p-0 hover:bg-gray-100"
-              >
-                <X className="w-4 h-4" />
-              </Button>
-            )}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsExpanded(false)}
+              className="h-8 w-8 p-0"
+            >
+              <X className="w-4 h-4" />
+            </Button>
           </div>
-        </CardHeader>
 
-        <CardContent className="pt-0">
-          {showThankYou ? (
-            <div className="text-center py-4">
-              <CheckCircle className="w-12 h-12 text-green-500 mx-auto mb-2" />
-              <p className="text-sm text-gray-600">
-                Sua resposta foi enviada com sucesso!
-              </p>
-            </div>
-          ) : currentSurvey ? (
-            <div className="space-y-4">
-              {currentSurvey.survey.description && (
-                <p className="text-sm text-gray-600">
-                  {currentSurvey.survey.description}
+          {/* Content */}
+          <div className="flex-1 overflow-y-auto p-4">
+            {showThankYou ? (
+              <div className="text-center py-8">
+                <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">Obrigado!</h3>
+                <p className="text-gray-600">
+                  Sua resposta foi enviada com sucesso!
                 </p>
-              )}
-              
-              {currentSurvey.survey.instructions && (
-                <div className="bg-blue-50 p-3 rounded-md">
-                  <p className="text-xs text-blue-800">
-                    {currentSurvey.survey.instructions}
-                  </p>
-                </div>
-              )}
-
-              <div className="space-y-4">
-                {(currentSurvey.questions || [])
-                  .sort((a: SurveyQuestion, b: SurveyQuestion) => a.order - b.order)
-                  .map((question: SurveyQuestion) => (
-                    <div key={question.id} className="space-y-2">
-                      <label className="block text-sm font-medium text-gray-700">
-                        {question.question}
-                        {question.isRequired && (
-                          <span className="text-red-500 ml-1">*</span>
-                        )}
-                      </label>
-                      {renderQuestion(question)}
-                    </div>
-                  ))}
               </div>
+            ) : currentSurvey ? (
+              <div className="space-y-6">
+                {currentSurvey.survey.description && (
+                  <p className="text-gray-600 leading-relaxed">
+                    {currentSurvey.survey.description}
+                  </p>
+                )}
+                
+                {currentSurvey.survey.instructions && (
+                  <div className="bg-blue-50 p-4 rounded-lg">
+                    <p className="text-sm text-blue-800">
+                      {currentSurvey.survey.instructions}
+                    </p>
+                  </div>
+                )}
 
-              <div className="flex space-x-2 pt-2">
+                <div className="space-y-6">
+                  {(currentSurvey.questions || [])
+                    .sort((a: SurveyQuestion, b: SurveyQuestion) => a.order - b.order)
+                    .map((question: SurveyQuestion) => (
+                      <div key={question.id} className="space-y-3">
+                        <label className="block text-base font-medium text-gray-900">
+                          {question.question}
+                          {question.isRequired && (
+                            <span className="text-red-500 ml-1">*</span>
+                          )}
+                        </label>
+                        {renderQuestion(question)}
+                      </div>
+                    ))}
+                </div>
+              </div>
+            ) : null}
+          </div>
+          
+          {/* Footer com botões */}
+          {!showThankYou && currentSurvey && (
+            <div className="border-t bg-gray-50 p-4">
+              <div className="flex space-x-3">
+                {(surveys as Survey[]).length > 1 && currentSurveyIndex < (surveys as Survey[]).length - 1 && (
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setCurrentSurveyIndex(prev => prev + 1);
+                      setResponses({});
+                    }}
+                    className="flex-1"
+                  >
+                    Próxima Pesquisa
+                  </Button>
+                )}
                 <Button
                   onClick={handleSubmit}
                   disabled={isSubmitting}
@@ -353,9 +416,9 @@ export default function SurveyWidget() {
                 </Button>
               </div>
             </div>
-          ) : null}
-        </CardContent>
-      </Card>
-    </div>
+          )}
+        </div>
+      </div>
+    </>
   );
 }

@@ -56,6 +56,32 @@ router.get("/", async (req, res) => {
   }
 });
 
+// Buscar perguntas de uma pesquisa específica (admin)
+router.get("/:surveyId/questions", async (req, res) => {
+  try {
+    const user = req.user as any;
+    if (!user || (user.role !== "admin" && user.role !== "superadmin")) {
+      return res.status(403).json({ error: "Acesso negado" });
+    }
+
+    const surveyId = parseInt(req.params.surveyId);
+    if (isNaN(surveyId)) {
+      return res.status(400).json({ error: "ID inválido" });
+    }
+
+    const questions = await db
+      .select()
+      .from(surveyQuestions)
+      .where(eq(surveyQuestions.surveyId, surveyId))
+      .orderBy(asc(surveyQuestions.order));
+
+    res.json(questions);
+  } catch (error) {
+    console.error("Erro ao buscar perguntas:", error);
+    res.status(500).json({ error: "Erro interno do servidor" });
+  }
+});
+
 // Buscar pesquisa específica (admin)
 router.get("/:id", async (req, res) => {
   try {
