@@ -8,8 +8,9 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
-import { Bug, Lightbulb, MessageCircle, User, Calendar, Eye, Edit, Trash2 } from 'lucide-react';
+import { Bug, Lightbulb, MessageCircle, User, Calendar, Eye, Edit, Trash2, Settings } from 'lucide-react';
 import { apiRequest } from '@/lib/queryClient';
 import { format } from 'date-fns';
 import { Header } from '@/components/Header';
@@ -47,9 +48,39 @@ const FeedbackManagement: React.FC = () => {
     queryFn: () => apiRequest('/api/feedback'),
   });
 
-  const { data: users } = useQuery({
+  const { data: users } = useQuery<Array<{id: number, name: string, email: string}>>({
     queryKey: ['/api/users'],
     queryFn: () => apiRequest('/api/users'),
+  });
+
+  const { data: feedbackWidgetSettings } = useQuery<{isEnabled: boolean, disabledMessage: string | null}>({
+    queryKey: ['/api/feature-settings/check/feedback-widget'],
+    queryFn: () => apiRequest('/api/feature-settings/check/feedback-widget'),
+  });
+
+  const toggleWidgetMutation = useMutation({
+    mutationFn: (isEnabled: boolean) =>
+      apiRequest('/api/feature-settings/feedback-widget', {
+        method: 'PUT',
+        body: JSON.stringify({ 
+          isEnabled,
+          disabledMessage: 'Widget de feedback desabilitado pelo administrador' 
+        }),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/feature-settings/check/feedback-widget'] });
+      toast({
+        title: 'Widget de feedback atualizado',
+        description: `O widget de feedback foi ${feedbackWidgetSettings?.isEnabled ? 'desabilitado' : 'habilitado'} com sucesso.`,
+      });
+    },
+    onError: () => {
+      toast({
+        title: 'Erro',
+        description: 'Falha ao atualizar a configuração do widget.',
+        variant: 'destructive',
+      });
+    },
   });
 
   const getUserName = (userId: number | null, isAnonymous: boolean) => {
@@ -201,6 +232,34 @@ const FeedbackManagement: React.FC = () => {
                 Total: {feedbacks?.length || 0} feedbacks
               </div>
             </div>
+
+            {/* Widget Toggle Settings */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Settings className="w-5 h-5" />
+                  Configurações do Widget
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center justify-between">
+                  <div className="space-y-1">
+                    <Label className="text-base font-medium">Widget de Feedback</Label>
+                    <p className="text-sm text-gray-600">
+                      Controla se o widget de feedback aparece na plataforma para os usuários
+                    </p>
+                  </div>
+                  <Switch
+                    checked={feedbackWidgetSettings?.isEnabled || false}
+                    onCheckedChange={(checked) => toggleWidgetMutation.mutate(checked)}
+                    disabled={toggleWidgetMutation.isPending}
+                  />
+                </div>
+                <div className="mt-3 text-xs text-gray-500">
+                  Status atual: {feedbackWidgetSettings?.isEnabled ? 'Habilitado' : 'Desabilitado'}
+                </div>
+              </CardContent>
+            </Card>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         {['open', 'in_progress', 'resolved', 'closed'].map((statusType) => {
