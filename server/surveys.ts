@@ -5,6 +5,7 @@ import {
   surveyResponses, 
   surveyWidgetSettings,
   userCategories,
+  users,
   insertSurveySchema,
   insertSurveyQuestionSchema,
   insertSurveyResponseSchema,
@@ -316,6 +317,40 @@ router.delete("/:surveyId/questions/:questionId", async (req, res) => {
     res.json({ message: "Pergunta deletada com sucesso" });
   } catch (error) {
     console.error("Erro ao deletar pergunta:", error);
+    res.status(500).json({ error: "Erro interno do servidor" });
+  }
+});
+
+// Buscar respostas de uma pesquisa específica (admin)
+router.get("/:surveyId/responses", async (req, res) => {
+  try {
+    const user = req.user as any;
+    if (!user || (user.role !== "admin" && user.role !== "superadmin")) {
+      return res.status(403).json({ error: "Acesso negado" });
+    }
+
+    const surveyId = parseInt(req.params.surveyId);
+    if (isNaN(surveyId)) {
+      return res.status(400).json({ error: "ID inválido" });
+    }
+
+    const responses = await db
+      .select({
+        id: surveyResponses.id,
+        userId: surveyResponses.userId,
+        isAnonymous: surveyResponses.isAnonymous,
+        responseData: surveyResponses.responseData,
+        completedAt: surveyResponses.completedAt,
+        userName: sql<string>`CASE WHEN ${surveyResponses.isAnonymous} = true THEN 'Anônimo' ELSE COALESCE(${users.name}, 'Usuário desconhecido') END`
+      })
+      .from(surveyResponses)
+      .leftJoin(users, eq(surveyResponses.userId, users.id))
+      .where(eq(surveyResponses.surveyId, surveyId))
+      .orderBy(desc(surveyResponses.completedAt));
+
+    res.json(responses);
+  } catch (error) {
+    console.error("Erro ao buscar respostas:", error);
     res.status(500).json({ error: "Erro interno do servidor" });
   }
 });

@@ -24,6 +24,128 @@ import { Header } from "@/components/Header";
 import { AdminSidebar } from "@/components/AdminSidebar";
 import SurveyQuestionEditor, { SurveyQuestion } from '@/components/SurveyQuestionEditor';
 
+// Componente para exibir detalhes da pesquisa
+function SurveyDetailsDialog({ survey }: { survey: Survey }) {
+  const [isOpen, setIsOpen] = useState(false);
+  
+  const { data: questions, isLoading: questionsLoading } = useQuery({
+    queryKey: ['/api/surveys', survey.survey.id, 'questions'],
+    enabled: isOpen
+  });
+  
+  const { data: responses, isLoading: responsesLoading } = useQuery({
+    queryKey: ['/api/surveys', survey.survey.id, 'responses'],
+    enabled: isOpen
+  });
+
+  return (
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogTrigger asChild>
+        <Button size="sm" variant="default">
+          <BarChart3 className="w-4 h-4 mr-2" />
+          Análises
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>{survey.survey.title}</DialogTitle>
+          <DialogDescription>
+            Perguntas e respostas da pesquisa
+          </DialogDescription>
+        </DialogHeader>
+        
+        <div className="space-y-6">
+          {/* Perguntas */}
+          <div>
+            <h3 className="text-lg font-semibold mb-4">Perguntas ({survey.questionCount})</h3>
+            {questionsLoading ? (
+              <div className="space-y-2">
+                {[1, 2, 3].map(i => (
+                  <div key={i} className="h-20 bg-gray-100 rounded animate-pulse" />
+                ))}
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {(questions as any[])?.map((question: any, index: number) => (
+                  <Card key={question.id}>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-base">
+                        {index + 1}. {question.question}
+                      </CardTitle>
+                      <div className="flex items-center space-x-2">
+                        <Badge variant="outline" className="text-xs">
+                          {question.type}
+                        </Badge>
+                        {question.isRequired && (
+                          <Badge variant="destructive" className="text-xs">
+                            Obrigatória
+                          </Badge>
+                        )}
+                      </div>
+                    </CardHeader>
+                    <CardContent className="pt-0">
+                      {question.options?.choices && (
+                        <div className="text-sm text-gray-600">
+                          <strong>Opções:</strong> {question.options.choices.join(', ')}
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Respostas */}
+          <div>
+            <h3 className="text-lg font-semibold mb-4">Respostas ({survey.responseCount})</h3>
+            {responsesLoading ? (
+              <div className="space-y-2">
+                {[1, 2, 3].map(i => (
+                  <div key={i} className="h-24 bg-gray-100 rounded animate-pulse" />
+                ))}
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {(responses as any[])?.map((response: any) => (
+                  <Card key={response.id}>
+                    <CardHeader className="pb-2">
+                      <div className="flex justify-between items-center">
+                        <CardTitle className="text-base">
+                          {response.userName || 'Usuário Anônimo'}
+                        </CardTitle>
+                        <Badge variant="outline" className="text-xs">
+                          {new Date(response.completedAt).toLocaleDateString('pt-BR')}
+                        </Badge>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="pt-0">
+                      <div className="space-y-2">
+                        {Object.entries(response.responseData || {}).map(([questionId, answer]: [string, any]) => {
+                          const question = (questions as any[])?.find(q => q.id === parseInt(questionId));
+                          return (
+                            <div key={questionId} className="text-sm">
+                              <span className="font-medium">{question?.question}:</span>
+                              <span className="ml-2 text-gray-600">{String(answer)}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+                {!(responses as any[])?.length && (
+                  <p className="text-gray-500 text-center py-8">Nenhuma resposta ainda</p>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 interface Survey {
   survey: {
     id: number;
@@ -554,10 +676,7 @@ export default function SurveyManagement() {
                       <Trash2 className="w-4 h-4" />
                     </Button>
                   </div>
-                  <Button size="sm" variant="default">
-                    <BarChart3 className="w-4 h-4 mr-2" />
-                    Análises
-                  </Button>
+                  <SurveyDetailsDialog survey={survey} />
                 </div>
               </CardContent>
             </Card>

@@ -137,6 +137,9 @@ function Router() {
       <Route path="/admin/pesquisas">
         {() => <ProtectedRoute component={SurveyManagement} adminOnly={true} />}
       </Route>
+      <Route path="/admin/surveys">
+        {() => <ProtectedRoute component={SurveyManagement} adminOnly={true} />}
+      </Route>
       <Route path="/materiais">
         {() => <ProtectedRoute component={MaterialsPage} />}
       </Route>
