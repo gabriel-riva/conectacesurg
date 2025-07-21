@@ -283,16 +283,11 @@ export default function SurveyWidget() {
   // Ícone flutuante pequeno (sempre visível quando há pesquisas)
   if (!isExpanded) {
     return (
-      <div className="fixed bottom-4 right-4 z-50">
-        {/* Tooltip */}
-        <div className="absolute -top-12 right-0 bg-gray-800 text-white text-xs px-2 py-1 rounded whitespace-nowrap opacity-90 pointer-events-none">
-          Nova pesquisa disponível
-        </div>
-        
+      <div className="fixed bottom-4 right-4 z-50 flex flex-col items-center">
         {/* Ícone principal */}
         <div 
           onClick={() => setIsExpanded(true)}
-          className="w-14 h-14 rounded-full cursor-pointer shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 flex items-center justify-center relative"
+          className="w-14 h-14 rounded-full cursor-pointer shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 flex items-center justify-center relative mb-2"
           style={{ backgroundColor: (settings as SurveyWidgetSettings)?.primaryColor || '#3B82F6' }}
         >
           {/* Ícone similar ao anexo - smiley com segmentos coloridos */}
@@ -319,6 +314,11 @@ export default function SurveyWidget() {
               {(surveys as Survey[]).length}
             </div>
           )}
+        </div>
+
+        {/* Texto abaixo do ícone */}
+        <div className="bg-gray-800 text-white text-xs px-2 py-1 rounded whitespace-nowrap opacity-90 pointer-events-none text-center">
+          Nova pesquisa disponível
         </div>
       </div>
     );
