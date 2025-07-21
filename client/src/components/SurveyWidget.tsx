@@ -54,6 +54,7 @@ export default function SurveyWidget() {
   const [responses, setResponses] = useState<Record<string, any>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showThankYou, setShowThankYou] = useState(false);
+  const [isHidden, setIsHidden] = useState(false);
   const queryClient = useQueryClient();
 
   // Buscar configurações do widget
@@ -273,8 +274,8 @@ export default function SurveyWidget() {
     }
   };
 
-  // Se não há pesquisas ou widget está desabilitado, não renderizar
-  if (!(settings as SurveyWidgetSettings)?.isEnabled || !(surveys as Survey[])?.length) {
+  // Se não há pesquisas, widget está desabilitado ou foi escondido pelo usuário, não renderizar
+  if (!(settings as SurveyWidgetSettings)?.isEnabled || !(surveys as Survey[])?.length || isHidden) {
     return null;
   }
 
@@ -283,37 +284,51 @@ export default function SurveyWidget() {
   // Ícone flutuante pequeno (sempre visível quando há pesquisas)
   if (!isExpanded) {
     return (
-      <div className="fixed bottom-4 right-4 z-50 flex flex-col items-center">
-        {/* Ícone principal */}
-        <div 
-          onClick={() => setIsExpanded(true)}
-          className="w-14 h-14 rounded-full cursor-pointer shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 flex items-center justify-center relative mb-2"
-          style={{ backgroundColor: (settings as SurveyWidgetSettings)?.primaryColor || '#3B82F6' }}
-        >
-          {/* Ícone similar ao anexo - smiley com segmentos coloridos */}
-          <div className="relative w-8 h-8">
-            <svg viewBox="0 0 32 32" className="w-full h-full">
-              {/* Círculo base branco */}
-              <circle cx="16" cy="16" r="14" fill="white"/>
-              
-              {/* Segmentos coloridos ao redor */}
-              <path d="M 16 4 A 12 12 0 0 1 25.86 10" fill="none" stroke="#22C55E" strokeWidth="2.5" strokeLinecap="round"/>
-              <path d="M 25.86 10 A 12 12 0 0 1 25.86 22" fill="none" stroke="#F59E0B" strokeWidth="2.5" strokeLinecap="round"/>
-              <path d="M 25.86 22 A 12 12 0 0 1 16 28" fill="none" stroke="#EF4444" strokeWidth="2.5" strokeLinecap="round"/>
-              
-              {/* Rosto sorridente */}
-              <circle cx="13" cy="13" r="1.5" fill="#6B7280"/>
-              <circle cx="19" cy="13" r="1.5" fill="#6B7280"/>
-              <path d="M 12 19 Q 16 22 20 19" fill="none" stroke="#6B7280" strokeWidth="1.5" strokeLinecap="round"/>
-            </svg>
-          </div>
-          
-          {/* Contador de pesquisas se houver mais de uma */}
-          {(surveys as Survey[]).length > 1 && (
-            <div className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-medium">
-              {(surveys as Survey[]).length}
+      <div className="fixed bottom-4 right-4 z-50 flex flex-col items-center animate-pulse">
+        {/* Container com botão X */}
+        <div className="relative">
+          {/* Botão X para esconder */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsHidden(true);
+            }}
+            className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center text-xs hover:bg-red-600 transition-colors z-10 shadow-md"
+          >
+            <X className="w-3 h-3" />
+          </button>
+
+          {/* Ícone principal */}
+          <div 
+            onClick={() => setIsExpanded(true)}
+            className="w-14 h-14 rounded-full cursor-pointer shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 flex items-center justify-center relative mb-2"
+            style={{ backgroundColor: (settings as SurveyWidgetSettings)?.primaryColor || '#3B82F6' }}
+          >
+            {/* Ícone similar ao anexo - smiley com segmentos coloridos */}
+            <div className="relative w-8 h-8">
+              <svg viewBox="0 0 32 32" className="w-full h-full">
+                {/* Círculo base branco */}
+                <circle cx="16" cy="16" r="14" fill="white"/>
+                
+                {/* Segmentos coloridos ao redor */}
+                <path d="M 16 4 A 12 12 0 0 1 25.86 10" fill="none" stroke="#22C55E" strokeWidth="2.5" strokeLinecap="round"/>
+                <path d="M 25.86 10 A 12 12 0 0 1 25.86 22" fill="none" stroke="#F59E0B" strokeWidth="2.5" strokeLinecap="round"/>
+                <path d="M 25.86 22 A 12 12 0 0 1 16 28" fill="none" stroke="#EF4444" strokeWidth="2.5" strokeLinecap="round"/>
+                
+                {/* Rosto sorridente */}
+                <circle cx="13" cy="13" r="1.5" fill="#6B7280"/>
+                <circle cx="19" cy="13" r="1.5" fill="#6B7280"/>
+                <path d="M 12 19 Q 16 22 20 19" fill="none" stroke="#6B7280" strokeWidth="1.5" strokeLinecap="round"/>
+              </svg>
             </div>
-          )}
+            
+            {/* Contador de pesquisas se houver mais de uma */}
+            {(surveys as Survey[]).length > 1 && (
+              <div className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-medium">
+                {(surveys as Survey[]).length}
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Texto abaixo do ícone */}
