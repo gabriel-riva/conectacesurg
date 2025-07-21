@@ -317,7 +317,7 @@ export default function SurveyWidget() {
         </div>
 
         {/* Texto abaixo do ícone */}
-        <div className="bg-gray-800 text-white text-xs px-2 py-1 rounded whitespace-nowrap opacity-90 pointer-events-none text-center">
+        <div className="bg-gray-800 text-white text-xs px-1.5 py-0.5 rounded whitespace-nowrap opacity-90 pointer-events-none text-center text-[10px]">
           Nova pesquisa disponível
         </div>
       </div>
