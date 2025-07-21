@@ -45,12 +45,25 @@ router.get("/", async (req, res) => {
           SELECT COUNT(*) 
           FROM ${surveyResponses} 
           WHERE ${surveyResponses.surveyId} = ${surveys.id}
-        ) AS INTEGER)`
+        ) AS INTEGER)`,
+        questions: sql<any[]>`
+          COALESCE(
+            (SELECT json_agg(row_to_json(sq.*) ORDER BY sq."order")
+             FROM ${surveyQuestions} sq
+             WHERE sq."surveyId" = ${surveys.id}),
+            '[]'::json
+          )`
       })
       .from(surveys)
       .orderBy(desc(surveys.createdAt));
 
-    res.json(surveysWithStats);
+    // Formatar resposta para incluir as perguntas
+    const formattedSurveys = surveysWithStats.map(item => ({
+      ...item,
+      questions: item.questions || []
+    }));
+    
+    res.json(formattedSurveys);
   } catch (error) {
     console.error("Erro ao buscar pesquisas:", error);
     res.status(500).json({ error: "Erro interno do servidor" });
@@ -244,7 +257,7 @@ router.post("/:surveyId/questions", async (req, res) => {
 
     const [newQuestion] = await db
       .insert(surveyQuestions)
-      .values(validatedData)
+      .values([validatedData])
       .returning();
 
     res.status(201).json(newQuestion);
@@ -489,9 +502,9 @@ router.get("/public/active", async (req, res) => {
           .where(
             and(
               eq(surveyResponses.surveyId, surveyData.survey.id),
-              user.id ? 
-                eq(surveyResponses.userId, user.id) : 
-                eq(surveyResponses.ipAddress, req.ip || req.connection?.remoteAddress || 'unknown')
+              (user as any).id ? 
+                eq(surveyResponses.userId, (user as any).id) : 
+                eq(surveyResponses.ipAddress, req.ip || (req.connection as any)?.remoteAddress || 'unknown')
             )
           )
           .limit(1);
@@ -546,7 +559,7 @@ router.post("/public/:surveyId/respond", async (req, res) => {
         .where(
           and(
             eq(surveyResponses.surveyId, surveyId),
-            eq(surveyResponses.userId, user.id)
+            (user as any)?.id ? eq(surveyResponses.userId, (user as any).id) : sql`false`
           )
         )
         .limit(1);
@@ -558,7 +571,7 @@ router.post("/public/:surveyId/respond", async (req, res) => {
 
     const validatedData = insertSurveyResponseSchema.parse({
       surveyId,
-      userId: (isAnonymous || !user) ? null : user.id,
+      userId: (isAnonymous || !user) ? null : (user as any).id,
       isAnonymous: !!(isAnonymous || !user),
       responseData: responses,
       ipAddress: req.ip,

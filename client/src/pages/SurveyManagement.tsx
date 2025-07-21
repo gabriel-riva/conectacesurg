@@ -49,6 +49,7 @@ interface Survey {
   };
   questionCount: number;
   responseCount: number;
+  questions?: SurveyQuestion[];
 }
 
 interface UserCategory {
@@ -194,31 +195,6 @@ function SurveyDetailsDialog({ survey }: { survey: Survey }) {
       </DialogContent>
     </Dialog>
   );
-}
-
-interface Survey {
-  survey: {
-    id: number;
-    title: string;
-    description: string;
-    instructions?: string;
-    isActive: boolean;
-    allowMultipleResponses: boolean;
-    allowAnonymousResponses?: boolean;
-    targetUserCategories: number[];
-    startDate?: string;
-    endDate?: string;
-    createdAt: string;
-  };
-  questionCount: number;
-  responseCount: number;
-}
-
-interface UserCategory {
-  id: number;
-  name: string;
-  description?: string;
-  color?: string;
 }
 
 // Componente para gerenciar lista de perguntas com dialogs separados
@@ -714,6 +690,13 @@ export default function SurveyManagement() {
   };
 
   const SurveyForm = ({ survey, onSubmit }: { survey?: Survey; onSubmit: (formData: FormData) => Promise<void> }) => {
+    // Use useEffect para carregar perguntas quando editar
+    useEffect(() => {
+      if (survey) {
+        setSurveyQuestions(survey.questions || []);
+      }
+    }, [survey]);
+    
     const [formData, setFormData] = useState({
       title: survey?.survey.title || '',
       description: survey?.survey.description || '',
