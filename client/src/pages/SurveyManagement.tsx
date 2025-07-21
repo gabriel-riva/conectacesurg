@@ -225,7 +225,6 @@ function QuestionListManager({
     const updatedQuestions = [...questions, newQuestion];
     console.log('Nova lista de perguntas:', updatedQuestions);
     onChange(updatedQuestions);
-    setIsAddDialogOpen(false);
     console.log('Dialog fechado e pergunta adicionada');
   };
 
@@ -235,7 +234,6 @@ function QuestionListManager({
     updated[index] = { ...questionData, order: index };
     console.log('Lista atualizada:', updated);
     onChange(updated);
-    setEditingQuestion(null);
     console.log('Edição concluída');
   };
 
@@ -691,6 +689,17 @@ export default function SurveyManagement() {
   };
 
   const SurveyForm = ({ survey, onSubmit }: { survey?: Survey; onSubmit: (formData: FormData) => Promise<void> }) => {
+    const [formData, setFormData] = useState({
+      title: survey?.survey.title || persistentFormData.title,
+      description: survey?.survey.description || persistentFormData.description,
+      instructions: survey?.survey.instructions || persistentFormData.instructions,
+      isActive: survey?.survey.isActive || persistentFormData.isActive,
+      allowMultipleResponses: survey?.survey.allowMultipleResponses || persistentFormData.allowMultipleResponses,
+      allowAnonymousResponses: survey?.survey.allowAnonymousResponses ?? persistentFormData.allowAnonymousResponses,
+      startDate: survey?.survey.startDate ? new Date(survey.survey.startDate).toISOString().slice(0, 16) : persistentFormData.startDate,
+      endDate: survey?.survey.endDate ? new Date(survey.survey.endDate).toISOString().slice(0, 16) : persistentFormData.endDate
+    });
+    
     // Use useEffect para carregar perguntas quando editar
     useEffect(() => {
       if (survey) {
@@ -702,27 +711,29 @@ export default function SurveyManagement() {
           instructions: survey.survey.instructions || '',
           isActive: survey.survey.isActive || false,
           allowMultipleResponses: survey.survey.allowMultipleResponses || false,
-          allowAnonymousResponses: survey.survey.allowAnonymousResponses ?? true
+          allowAnonymousResponses: survey.survey.allowAnonymousResponses ?? true,
+          startDate: survey.survey.startDate ? new Date(survey.survey.startDate).toISOString().slice(0, 16) : '',
+          endDate: survey.survey.endDate ? new Date(survey.survey.endDate).toISOString().slice(0, 16) : ''
         });
       } else {
         // Se está criando nova, usar o persistentFormData
         setFormData(persistentFormData);
       }
-    }, [survey]);
-    
-    const [formData, setFormData] = useState({
-      title: survey?.survey.title || persistentFormData.title,
-      description: survey?.survey.description || persistentFormData.description,
-      instructions: survey?.survey.instructions || persistentFormData.instructions,
-      isActive: survey?.survey.isActive || persistentFormData.isActive,
-      allowMultipleResponses: survey?.survey.allowMultipleResponses || persistentFormData.allowMultipleResponses,
-      allowAnonymousResponses: survey?.survey.allowAnonymousResponses ?? persistentFormData.allowAnonymousResponses
-    });
+    }, [survey, persistentFormData]);
     
     // Atualizar o estado persistente quando os dados do formulário mudarem (apenas para criação)
     useEffect(() => {
       if (!survey) {
-        setPersistentFormData(formData);
+        setPersistentFormData({
+          title: formData.title,
+          description: formData.description,
+          instructions: formData.instructions,
+          isActive: formData.isActive,
+          allowMultipleResponses: formData.allowMultipleResponses,
+          allowAnonymousResponses: formData.allowAnonymousResponses,
+          startDate: formData.startDate || '',
+          endDate: formData.endDate || ''
+        });
       }
     }, [formData, survey]);
 
@@ -735,6 +746,8 @@ export default function SurveyManagement() {
       if (formData.isActive) form.append('isActive', 'on');
       if (formData.allowMultipleResponses) form.append('allowMultipleResponses', 'on');
       if (formData.allowAnonymousResponses) form.append('allowAnonymousResponses', 'on');
+      if (formData.startDate) form.append('startDate', formData.startDate);
+      if (formData.endDate) form.append('endDate', formData.endDate);
       
       try {
         await onSubmit(form);
@@ -867,7 +880,8 @@ export default function SurveyManagement() {
               id="startDate" 
               name="startDate" 
               type="datetime-local"
-              defaultValue={survey?.survey.startDate ? new Date(survey.survey.startDate).toISOString().slice(0, 16) : ''}
+              value={formData.startDate}
+              onChange={(e) => setFormData(prev => ({ ...prev, startDate: e.target.value }))}
             />
           </div>
           <div>
@@ -876,7 +890,8 @@ export default function SurveyManagement() {
               id="endDate" 
               name="endDate" 
               type="datetime-local"
-              defaultValue={survey?.survey.endDate ? new Date(survey.survey.endDate).toISOString().slice(0, 16) : ''}
+              value={formData.endDate}
+              onChange={(e) => setFormData(prev => ({ ...prev, endDate: e.target.value }))}
             />
           </div>
         </div>
