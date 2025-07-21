@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
-import { Bug, Lightbulb, MessageCircle, User, Calendar, Eye, Edit, Trash2, Settings, Image as ImageIcon, Camera, Download } from 'lucide-react';
+import { Bug, Lightbulb, MessageCircle, User, Calendar, Eye, Edit, Trash2, Settings, Image as ImageIcon, Camera, Download, X } from 'lucide-react';
 import { apiRequest } from '@/lib/queryClient';
 import { format } from 'date-fns';
 import { Header } from '@/components/Header';
@@ -147,6 +147,27 @@ const FeedbackManagement: React.FC = () => {
     },
   });
 
+  const deleteImageMutation = useMutation({
+    mutationFn: ({ feedbackId, imageId }: { feedbackId: number; imageId: string }) =>
+      apiRequest(`/api/feedback/${feedbackId}/image/${imageId}`, {
+        method: 'DELETE',
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/feedback'] });
+      toast({
+        title: 'Imagem excluída',
+        description: 'A imagem foi excluída com sucesso.',
+      });
+    },
+    onError: () => {
+      toast({
+        title: 'Erro',
+        description: 'Falha ao excluir a imagem.',
+        variant: 'destructive',
+      });
+    },
+  });
+
   const handleUpdateFeedback = () => {
     if (!selectedFeedback) return;
 
@@ -163,6 +184,12 @@ const FeedbackManagement: React.FC = () => {
   const handleDeleteFeedback = (feedbackId: number) => {
     if (window.confirm('Tem certeza que deseja excluir este feedback? Esta ação não pode ser desfeita.')) {
       deleteFeedbackMutation.mutate(feedbackId);
+    }
+  };
+
+  const handleDeleteImage = (feedbackId: number, imageId: string, fileName: string) => {
+    if (window.confirm(`Tem certeza que deseja excluir a imagem "${fileName}"? Esta ação não pode ser desfeita.`)) {
+      deleteImageMutation.mutate({ feedbackId, imageId });
     }
   };
 
@@ -418,12 +445,23 @@ const FeedbackManagement: React.FC = () => {
                                         <Eye className="w-5 h-5 text-white" />
                                       </div>
                                     </div>
-                                    <div className="absolute -top-2 -right-2">
+                                    <div className="absolute -top-2 -right-2 flex gap-1">
                                       {image.isScreenshot && (
                                         <div className="bg-blue-500 text-white rounded-full p-1" title="Screenshot">
                                           <Camera className="w-3 h-3" />
                                         </div>
                                       )}
+                                      <button
+                                        className="bg-red-500 hover:bg-red-600 text-white rounded-full p-1 transition-colors"
+                                        title="Excluir imagem"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleDeleteImage(feedback.id, image.id, image.fileName);
+                                        }}
+                                        disabled={deleteImageMutation.isPending}
+                                      >
+                                        <X className="w-3 h-3" />
+                                      </button>
                                     </div>
                                     <div className="mt-1 text-xs text-gray-600 truncate">
                                       {image.fileName}

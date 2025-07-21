@@ -1217,6 +1217,7 @@ export const insertFeedbackSchema = createInsertSchema(feedbacks).omit({
 export const updateFeedbackSchema = createInsertSchema(feedbacks).pick({
   status: true,
   adminNotes: true,
+  attachments: true,
 });
 
 // Types

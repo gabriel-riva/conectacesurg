@@ -161,6 +161,55 @@ router.patch('/:id', requireAdmin, async (req, res) => {
   }
 });
 
+// DELETE /api/feedback/:id/image/:imageId - Deletar uma imagem específica (admin apenas)
+router.delete('/:id/image/:imageId', requireAdmin, async (req, res) => {
+  try {
+    const feedbackId = parseInt(req.params.id);
+    const imageId = req.params.imageId;
+    
+    if (isNaN(feedbackId)) {
+      return res.status(400).json({ message: 'Invalid feedback ID' });
+    }
+    
+    const feedback = await storage.getFeedback(feedbackId);
+    if (!feedback) {
+      return res.status(404).json({ message: 'Feedback not found' });
+    }
+    
+    if (!feedback.attachments?.images) {
+      return res.status(404).json({ message: 'No images found in feedback' });
+    }
+    
+    const imageIndex = feedback.attachments.images.findIndex(img => img.id === imageId);
+    if (imageIndex === -1) {
+      return res.status(404).json({ message: 'Image not found' });
+    }
+    
+    const imageToDelete = feedback.attachments.images[imageIndex];
+    
+    // Remove the image from filesystem
+    const filePath = path.join(process.cwd(), 'uploads', 'feedback', path.basename(imageToDelete.fileUrl));
+    if (fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath);
+    }
+    
+    // Remove the image from the attachments array
+    const updatedImages = feedback.attachments.images.filter(img => img.id !== imageId);
+    const updatedAttachments = {
+      ...feedback.attachments,
+      images: updatedImages
+    };
+    
+    // Update the feedback with the new attachments
+    await storage.updateFeedback(feedbackId, { attachments: JSON.stringify(updatedAttachments) });
+    
+    res.json({ message: 'Image deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting image:', error);
+    res.status(500).json({ message: 'Failed to delete image' });
+  }
+});
+
 // DELETE /api/feedback/:id - Deletar feedback (admin apenas)
 router.delete('/:id', requireAdmin, async (req, res) => {
   try {
