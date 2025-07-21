@@ -50,6 +50,7 @@ const FeedbackManagement: React.FC = () => {
   const [selectedFeedback, setSelectedFeedback] = useState<Feedback | null>(null);
   const [adminNotes, setAdminNotes] = useState('');
   const [status, setStatus] = useState<string>('');
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -406,7 +407,7 @@ const FeedbackManagement: React.FC = () => {
                                       src={image.fileUrl}
                                       alt={image.fileName}
                                       className="w-full h-24 object-cover rounded-lg border shadow-sm cursor-pointer hover:shadow-md transition-shadow"
-                                      onClick={() => window.open(image.fileUrl, '_blank')}
+                                      onClick={() => setSelectedImage(image.fileUrl)}
                                     />
                                     <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 rounded-lg transition-all flex items-center justify-center">
                                       <div className="opacity-0 group-hover:opacity-100 transition-opacity">
@@ -497,6 +498,36 @@ const FeedbackManagement: React.FC = () => {
           </div>
         </main>
       </div>
+      
+      {/* Image Viewer Dialog */}
+      <Dialog open={!!selectedImage} onOpenChange={() => setSelectedImage(null)}>
+        <DialogContent className="max-w-4xl max-h-[90vh] p-0">
+          <DialogHeader className="p-6 pb-0">
+            <DialogTitle>Visualizar Imagem</DialogTitle>
+          </DialogHeader>
+          {selectedImage && (
+            <div className="p-6 pt-0">
+              <img
+                src={selectedImage}
+                alt="Imagem anexada"
+                className="w-full h-auto max-h-[70vh] object-contain rounded-lg"
+              />
+              <div className="mt-4 flex justify-end gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => window.open(selectedImage, '_blank')}
+                >
+                  <Download className="w-4 h-4 mr-2" />
+                  Abrir em nova aba
+                </Button>
+                <Button onClick={() => setSelectedImage(null)}>
+                  Fechar
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
