@@ -383,7 +383,30 @@ export class DatabaseStorage implements IStorage {
 
   async getAllUsers(): Promise<User[]> {
     try {
-      return await db.select().from(users);
+      const allUsers = await db.select().from(users);
+      
+      // Sort users by role priority: superadmin first, then admin, then users alphabetically
+      return allUsers.sort((a, b) => {
+        // Define role priorities
+        const getRolePriority = (role: string) => {
+          switch (role) {
+            case 'superadmin': return 1;
+            case 'admin': return 2;
+            default: return 3; // regular users
+          }
+        };
+        
+        const aPriority = getRolePriority(a.role);
+        const bPriority = getRolePriority(b.role);
+        
+        // If roles are different, sort by priority
+        if (aPriority !== bPriority) {
+          return aPriority - bPriority;
+        }
+        
+        // If roles are the same, sort alphabetically by name
+        return a.name.localeCompare(b.name);
+      });
     } catch (error) {
       console.error("Error getting all users:", error);
       return [];
