@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
-import { Bug, Lightbulb, MessageCircle, User, Calendar, Eye, Edit, Trash2, Settings } from 'lucide-react';
+import { Bug, Lightbulb, MessageCircle, User, Calendar, Eye, Edit, Trash2, Settings, Image as ImageIcon, Camera, Download } from 'lucide-react';
 import { apiRequest } from '@/lib/queryClient';
 import { format } from 'date-fns';
 import { Header } from '@/components/Header';
@@ -29,6 +29,16 @@ interface Feedback {
   adminNotes: string | null;
   resolvedAt: string | null;
   resolvedBy: number | null;
+  attachments?: {
+    images: Array<{
+      id: string;
+      fileName: string;
+      fileUrl: string;
+      fileSize: number;
+      mimeType: string;
+      isScreenshot: boolean;
+    }>;
+  };
   user?: {
     id: number;
     name: string;
@@ -297,9 +307,19 @@ const FeedbackManagement: React.FC = () => {
                   </TableCell>
                   <TableCell>
                     <div className="max-w-xs">
-                      <p className="font-medium truncate">
-                        {feedback.title || 'Sem título'}
-                      </p>
+                      <div className="flex items-center gap-2">
+                        <p className="font-medium truncate">
+                          {feedback.title || 'Sem título'}
+                        </p>
+                        {feedback.attachments?.images && feedback.attachments.images.length > 0 && (
+                          <div className="flex items-center gap-1">
+                            <ImageIcon className="w-3 h-3 text-blue-500" />
+                            <span className="text-xs text-blue-500 font-medium">
+                              {feedback.attachments.images.length}
+                            </span>
+                          </div>
+                        )}
+                      </div>
                       <p className="text-sm text-gray-600 truncate">
                         {feedback.description}
                       </p>
@@ -371,6 +391,46 @@ const FeedbackManagement: React.FC = () => {
                             <Label className="text-sm font-medium">Data de Criação</Label>
                             <p className="mt-1">{format(new Date(feedback.createdAt), 'dd/MM/yyyy HH:mm')}</p>
                           </div>
+
+                          {/* Attachments Section */}
+                          {feedback.attachments?.images && feedback.attachments.images.length > 0 && (
+                            <div>
+                              <Label className="text-sm font-medium flex items-center gap-2">
+                                <ImageIcon className="w-4 h-4" />
+                                Imagens Anexadas ({feedback.attachments.images.length})
+                              </Label>
+                              <div className="mt-2 grid grid-cols-2 sm:grid-cols-3 gap-3">
+                                {feedback.attachments.images.map((image, index) => (
+                                  <div key={image.id} className="relative group">
+                                    <img
+                                      src={image.fileUrl}
+                                      alt={image.fileName}
+                                      className="w-full h-24 object-cover rounded-lg border shadow-sm cursor-pointer hover:shadow-md transition-shadow"
+                                      onClick={() => window.open(image.fileUrl, '_blank')}
+                                    />
+                                    <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 rounded-lg transition-all flex items-center justify-center">
+                                      <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <Eye className="w-5 h-5 text-white" />
+                                      </div>
+                                    </div>
+                                    <div className="absolute -top-2 -right-2">
+                                      {image.isScreenshot && (
+                                        <div className="bg-blue-500 text-white rounded-full p-1" title="Screenshot">
+                                          <Camera className="w-3 h-3" />
+                                        </div>
+                                      )}
+                                    </div>
+                                    <div className="mt-1 text-xs text-gray-600 truncate">
+                                      {image.fileName}
+                                    </div>
+                                    <div className="text-xs text-gray-500">
+                                      {(image.fileSize / 1024 / 1024).toFixed(2)} MB
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
 
                           <div>
                             <Label htmlFor="status">Status</Label>
