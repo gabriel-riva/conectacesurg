@@ -1,9 +1,41 @@
 import express from 'express';
+import multer from 'multer';
+import path from 'path';
+import fs from 'fs';
 import { storage } from './storage';
 import { insertFeedbackSchema, updateFeedbackSchema } from '@shared/schema';
 import { ZodError } from 'zod';
 
 const router = express.Router();
+
+// Ensure uploads directory exists
+const uploadsDir = path.join(process.cwd(), 'uploads', 'feedback');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
+
+// Configure multer for file uploads
+const upload = multer({
+  storage: multer.diskStorage({
+    destination: (req, file, cb) => {
+      cb(null, uploadsDir);
+    },
+    filename: (req, file, cb) => {
+      const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+      cb(null, `${uniqueSuffix}${path.extname(file.originalname)}`);
+    }
+  }),
+  limits: {
+    fileSize: 5 * 1024 * 1024, // 5MB limit
+  },
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only image files are allowed'));
+    }
+  }
+});
 
 // Middleware para verificar se o usuário está logado
 const requireAuth = (req: express.Request, res: express.Response, next: express.NextFunction) => {
@@ -20,6 +52,27 @@ const requireAdmin = (req: express.Request, res: express.Response, next: express
   }
   next();
 };
+
+// POST /api/feedback/upload - Upload de imagens
+router.post('/upload', upload.single('file'), (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: 'No file uploaded' });
+    }
+
+    const fileUrl = `/uploads/feedback/${req.file.filename}`;
+    
+    res.json({
+      url: fileUrl,
+      fileName: req.file.originalname,
+      fileSize: req.file.size,
+      mimeType: req.file.mimetype
+    });
+  } catch (error) {
+    console.error('Error uploading file:', error);
+    res.status(500).json({ message: 'Failed to upload file' });
+  }
+});
 
 // GET /api/feedback - Listar todos os feedbacks (admin apenas)
 router.get('/', requireAdmin, async (req, res) => {

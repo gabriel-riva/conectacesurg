@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { ChevronLeft, MessageCircle, Bug, Lightbulb, Heart, X } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { ChevronLeft, MessageCircle, Bug, Lightbulb, Heart, X, Camera, Upload, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
@@ -9,6 +9,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
 import { motion, AnimatePresence } from 'framer-motion';
+import html2canvas from 'html2canvas';
 
 interface FeedbackPanelProps {
   isOpen: boolean;
@@ -17,6 +18,16 @@ interface FeedbackPanelProps {
 }
 
 type FeedbackType = 'bug' | 'improvement' | 'general';
+
+interface AttachmentImage {
+  id: string;
+  fileName: string;
+  fileUrl: string;
+  fileSize: number;
+  mimeType: string;
+  isScreenshot: boolean;
+  preview?: string;
+}
 
 const feedbackTypes = [
   {
@@ -49,6 +60,9 @@ export default function FeedbackPanel({ isOpen, onClose, user }: FeedbackPanelPr
   const [content, setContent] = useState('');
   const [isAnonymous, setIsAnonymous] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [attachments, setAttachments] = useState<AttachmentImage[]>([]);
+  const [isCapturingScreenshot, setIsCapturingScreenshot] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
   const handleTypeSelect = (type: FeedbackType) => {
@@ -59,6 +73,158 @@ export default function FeedbackPanel({ isOpen, onClose, user }: FeedbackPanelPr
   const handleBack = () => {
     setStep('select');
     setSelectedType(null);
+  };
+
+  const handleScreenshot = async () => {
+    setIsCapturingScreenshot(true);
+    try {
+      // Capture screenshot directly from the current state
+      const canvas = await html2canvas(document.body, {
+        height: window.innerHeight,
+        width: window.innerWidth,
+        scrollX: 0,
+        scrollY: 0,
+        useCORS: true,
+        allowTaint: true,
+      });
+      
+      // Convert to blob
+      canvas.toBlob((blob) => {
+        if (blob) {
+          const fileName = `screenshot-${Date.now()}.png`;
+          const previewUrl = URL.createObjectURL(blob);
+          
+          const newAttachment: AttachmentImage = {
+            id: Date.now().toString(),
+            fileName,
+            fileUrl: '', // Will be set after upload
+            fileSize: blob.size,
+            mimeType: 'image/png',
+            isScreenshot: true,
+            preview: previewUrl,
+          };
+          
+          setAttachments(prev => [...prev, newAttachment]);
+          
+          toast({
+            title: "Screenshot capturada!",
+            description: "A captura de tela foi adicionada ao seu feedback.",
+            variant: "default"
+          });
+        }
+        setIsCapturingScreenshot(false);
+      }, 'image/png');
+      
+    } catch (error) {
+      console.error('Erro ao capturar screenshot:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível capturar a tela. Tente novamente.",
+        variant: "destructive"
+      });
+      setIsCapturingScreenshot(false);
+    }
+  };
+
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (!files) return;
+
+    Array.from(files).forEach((file) => {
+      if (!file.type.startsWith('image/')) {
+        toast({
+          title: "Arquivo inválido",
+          description: "Por favor, selecione apenas arquivos de imagem.",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      if (file.size > 5 * 1024 * 1024) { // 5MB limit
+        toast({
+          title: "Arquivo muito grande",
+          description: "Por favor, selecione uma imagem menor que 5MB.",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      const previewUrl = URL.createObjectURL(file);
+      
+      const newAttachment: AttachmentImage = {
+        id: Date.now().toString() + Math.random().toString(),
+        fileName: file.name,
+        fileUrl: '', // Will be set after upload
+        fileSize: file.size,
+        mimeType: file.type,
+        isScreenshot: false,
+        preview: previewUrl,
+      };
+      
+      setAttachments(prev => [...prev, newAttachment]);
+    });
+
+    // Reset input
+    event.target.value = '';
+  };
+
+  const removeAttachment = (id: string) => {
+    setAttachments(prev => {
+      const attachment = prev.find(a => a.id === id);
+      if (attachment?.preview) {
+        URL.revokeObjectURL(attachment.preview);
+      }
+      return prev.filter(a => a.id !== id);
+    });
+  };
+
+  const uploadAttachments = async (): Promise<AttachmentImage[]> => {
+    const uploadPromises = attachments.map(async (attachment) => {
+      if (attachment.fileUrl) return attachment; // Already uploaded
+
+      try {
+        // Convert preview URL to blob if it's a screenshot
+        let blob: Blob;
+        if (attachment.preview) {
+          const response = await fetch(attachment.preview);
+          blob = await response.blob();
+        } else {
+          throw new Error('No preview available');
+        }
+
+        // Create form data for upload
+        const formData = new FormData();
+        formData.append('file', blob, attachment.fileName);
+
+        // Upload to server
+        const uploadResponse = await fetch('/api/feedback/upload', {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (!uploadResponse.ok) {
+          throw new Error('Upload failed');
+        }
+
+        const uploadResult = await uploadResponse.json();
+        
+        return {
+          ...attachment,
+          fileUrl: uploadResult.url,
+        };
+      } catch (error) {
+        console.error('Error uploading attachment:', error);
+        toast({
+          title: "Erro no upload",
+          description: `Não foi possível enviar a imagem ${attachment.fileName}`,
+          variant: "destructive"
+        });
+        return null;
+      }
+    });
+
+    const results = await Promise.all(uploadPromises);
+    return results.filter(Boolean) as AttachmentImage[];
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -76,6 +242,12 @@ export default function FeedbackPanel({ isOpen, onClose, user }: FeedbackPanelPr
     setIsSubmitting(true);
 
     try {
+      // Upload attachments first if any exist
+      let uploadedAttachments: AttachmentImage[] = [];
+      if (attachments.length > 0) {
+        uploadedAttachments = await uploadAttachments();
+      }
+
       // Gerar título automaticamente se não fornecido
       const finalTitle = title.trim() || currentType?.label || selectedType;
       
@@ -85,7 +257,17 @@ export default function FeedbackPanel({ isOpen, onClose, user }: FeedbackPanelPr
           type: selectedType,
           title: finalTitle,
           description: content.trim(),
-          isAnonymous: isAnonymous
+          isAnonymous: isAnonymous,
+          attachments: {
+            images: uploadedAttachments.map(att => ({
+              id: att.id,
+              fileName: att.fileName,
+              fileUrl: att.fileUrl,
+              fileSize: att.fileSize,
+              mimeType: att.mimeType,
+              isScreenshot: att.isScreenshot,
+            }))
+          }
         }),
         headers: {
           'Content-Type': 'application/json'
@@ -98,10 +280,18 @@ export default function FeedbackPanel({ isOpen, onClose, user }: FeedbackPanelPr
         variant: "default"
       });
 
+      // Clean up previews
+      attachments.forEach(attachment => {
+        if (attachment.preview) {
+          URL.revokeObjectURL(attachment.preview);
+        }
+      });
+
       // Reset form
       setTitle('');
       setContent('');
       setIsAnonymous(false);
+      setAttachments([]);
       setStep('select');
       setSelectedType(null);
       onClose();
@@ -218,6 +408,87 @@ export default function FeedbackPanel({ isOpen, onClose, user }: FeedbackPanelPr
                       className="min-h-[120px]"
                       required
                     />
+                  </div>
+
+                  {/* Attachments Section */}
+                  <div className="space-y-2">
+                    <Label>Anexos (opcional)</Label>
+                    <div className="flex space-x-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={handleScreenshot}
+                        disabled={isCapturingScreenshot}
+                        className="flex items-center space-x-1"
+                      >
+                        <Camera className="h-4 w-4" />
+                        <span>{isCapturingScreenshot ? 'Capturando...' : 'Screenshot'}</span>
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => fileInputRef.current?.click()}
+                        className="flex items-center space-x-1"
+                      >
+                        <Upload className="h-4 w-4" />
+                        <span>Enviar Imagem</span>
+                      </Button>
+                    </div>
+                    
+                    {/* File input hidden */}
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      multiple
+                      accept="image/*"
+                      onChange={handleFileUpload}
+                      className="hidden"
+                    />
+
+                    {/* Attachments Preview */}
+                    {attachments.length > 0 && (
+                      <div className="space-y-2">
+                        <Label className="text-sm text-gray-600">Imagens anexadas:</Label>
+                        <div className="space-y-2 max-h-32 overflow-y-auto">
+                          {attachments.map((attachment) => (
+                            <div
+                              key={attachment.id}
+                              className="flex items-center justify-between p-2 bg-gray-50 rounded-lg"
+                            >
+                              <div className="flex items-center space-x-2">
+                                {attachment.preview && (
+                                  <img
+                                    src={attachment.preview}
+                                    alt="Preview"
+                                    className="h-8 w-8 object-cover rounded"
+                                  />
+                                )}
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-sm font-medium text-gray-900 truncate">
+                                    {attachment.fileName}
+                                  </p>
+                                  <p className="text-xs text-gray-500">
+                                    {(attachment.fileSize / 1024 / 1024).toFixed(2)} MB
+                                    {attachment.isScreenshot && ' • Screenshot'}
+                                  </p>
+                                </div>
+                              </div>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => removeAttachment(attachment.id)}
+                                className="p-1"
+                              >
+                                <Trash2 className="h-4 w-4 text-red-500" />
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   {user && (
