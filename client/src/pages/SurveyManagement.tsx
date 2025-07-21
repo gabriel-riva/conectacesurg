@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Plus, Edit, Trash2, BarChart3, Users, Settings, Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -22,7 +22,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Header } from "@/components/Header";
 import { AdminSidebar } from "@/components/AdminSidebar";
-import SurveyQuestionEditor, { SurveyQuestion } from '@/components/SurveyQuestionEditor';
+import { SurveyQuestion } from '@/components/SurveyQuestionEditor';
 
 // Componente para exibir detalhes da pesquisa
 function SurveyDetailsDialog({ survey }: { survey: Survey }) {
@@ -169,6 +169,317 @@ interface UserCategory {
   name: string;
   description?: string;
   color?: string;
+}
+
+// Componente para gerenciar lista de perguntas com dialogs separados
+function QuestionListManager({ questions, onChange }: { questions: SurveyQuestion[]; onChange: (questions: SurveyQuestion[]) => void }) {
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [editingQuestion, setEditingQuestion] = useState<{ question: SurveyQuestion; index: number } | null>(null);
+
+  const addQuestion = () => {
+    setIsAddDialogOpen(true);
+  };
+
+  const handleQuestionSave = (questionData: Omit<SurveyQuestion, 'order'>) => {
+    const newQuestion: SurveyQuestion = {
+      ...questionData,
+      order: questions.length
+    };
+    onChange([...questions, newQuestion]);
+    setIsAddDialogOpen(false);
+  };
+
+  const handleQuestionEdit = (questionData: Omit<SurveyQuestion, 'order'>, index: number) => {
+    const updated = [...questions];
+    updated[index] = { ...questionData, order: index };
+    onChange(updated);
+    setEditingQuestion(null);
+  };
+
+  const removeQuestion = (index: number) => {
+    const updated = questions.filter((_, i) => i !== index);
+    // Reorder remaining questions
+    updated.forEach((q, i) => q.order = i);
+    onChange(updated);
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <Label className="text-base font-medium">Perguntas da Pesquisa</Label>
+        <Button type="button" onClick={addQuestion} size="sm">
+          <Plus className="w-4 h-4 mr-2" />
+          Adicionar Pergunta
+        </Button>
+      </div>
+
+      {questions.length === 0 ? (
+        <Card>
+          <CardContent className="p-6 text-center">
+            <p className="text-gray-500">Nenhuma pergunta adicionada ainda.</p>
+            <p className="text-sm text-gray-400 mt-1">Clique em "Adicionar Pergunta" para começar.</p>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="space-y-3">
+          {questions.map((question, index) => (
+            <Card key={index}>
+              <CardContent className="p-4">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center space-x-2 mb-2">
+                      <Badge variant="outline">Pergunta {index + 1}</Badge>
+                      <Badge variant={question.isRequired ? "default" : "secondary"}>
+                        {question.isRequired ? 'Obrigatória' : 'Opcional'}
+                      </Badge>
+                    </div>
+                    <p className="font-medium mb-1">{question.question}</p>
+                    <p className="text-sm text-gray-500">Tipo: {getQuestionTypeLabel(question.type)}</p>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setEditingQuestion({ question, index })}
+                    >
+                      <Edit className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => removeQuestion(index)}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {/* Dialog para adicionar pergunta */}
+      <QuestionDialog
+        isOpen={isAddDialogOpen}
+        onClose={() => setIsAddDialogOpen(false)}
+        onSave={handleQuestionSave}
+        title="Adicionar Nova Pergunta"
+      />
+
+      {/* Dialog para editar pergunta */}
+      {editingQuestion && (
+        <QuestionDialog
+          isOpen={true}
+          onClose={() => setEditingQuestion(null)}
+          onSave={(data) => handleQuestionEdit(data, editingQuestion.index)}
+          question={editingQuestion.question}
+          title="Editar Pergunta"
+        />
+      )}
+    </div>
+  );
+}
+
+// Dialog para criar/editar uma pergunta individual
+function QuestionDialog({
+  isOpen,
+  onClose,
+  onSave,
+  question,
+  title
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  onSave: (question: Omit<SurveyQuestion, 'order'>) => void;
+  question?: SurveyQuestion;
+  title: string;
+}) {
+  const [formData, setFormData] = useState({
+    question: question?.question || '',
+    type: question?.type || 'multiple_choice' as const,
+    isRequired: question?.isRequired || true,
+    options: question?.options || { choices: [''] }
+  });
+
+  const questionTypes = [
+    { value: 'multiple_choice', label: 'Múltipla Escolha' },
+    { value: 'likert_scale', label: 'Escala Likert' },
+    { value: 'text_free', label: 'Texto Livre' },
+    { value: 'yes_no', label: 'Sim/Não' },
+    { value: 'rating', label: 'Avaliação (Estrelas)' },
+    { value: 'date', label: 'Data' },
+    { value: 'email', label: 'Email' }
+  ] as const;
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData.question.trim()) return;
+    
+    onSave({
+      question: formData.question,
+      type: formData.type,
+      isRequired: formData.isRequired,
+      options: formData.options
+    });
+    
+    // Reset form
+    setFormData({
+      question: '',
+      type: 'multiple_choice',
+      isRequired: true,
+      options: { choices: [''] }
+    });
+  };
+
+  const updateChoice = (index: number, value: string) => {
+    if (formData.options.choices) {
+      const choices = [...formData.options.choices];
+      choices[index] = value;
+      setFormData(prev => ({
+        ...prev,
+        options: { ...prev.options, choices }
+      }));
+    }
+  };
+
+  const addChoice = () => {
+    if (formData.options.choices) {
+      setFormData(prev => ({
+        ...prev,
+        options: { ...prev.options, choices: [...(prev.options.choices || []), ''] }
+      }));
+    }
+  };
+
+  const removeChoice = (index: number) => {
+    if (formData.options.choices && formData.options.choices.length > 1) {
+      const choices = formData.options.choices.filter((_, i) => i !== index);
+      setFormData(prev => ({
+        ...prev,
+        options: { ...prev.options, choices }
+      }));
+    }
+  };
+
+  const handleTypeChange = (newType: any) => {
+    let newOptions: any = {};
+    if (newType === 'multiple_choice') {
+      newOptions = { choices: [''] };
+    } else if (newType === 'likert_scale' || newType === 'rating') {
+      newOptions = { scale: { min: 1, max: 5, minLabel: '', maxLabel: '' } };
+    } else if (newType === 'text_free') {
+      newOptions = { textConfig: { placeholder: '', multiline: false } };
+    }
+    
+    setFormData(prev => ({
+      ...prev,
+      type: newType,
+      options: newOptions
+    }));
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>{title}</DialogTitle>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div>
+            <Label htmlFor="question">Pergunta</Label>
+            <Textarea
+              id="question"
+              value={formData.question}
+              onChange={(e) => setFormData(prev => ({ ...prev, question: e.target.value }))}
+              placeholder="Digite sua pergunta aqui..."
+              required
+            />
+          </div>
+
+          <div>
+            <Label>Tipo de pergunta</Label>
+            <Select value={formData.type} onValueChange={handleTypeChange}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {questionTypes.map((type) => (
+                  <SelectItem key={type.value} value={type.value}>
+                    {type.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Opções específicas por tipo */}
+          {formData.type === 'multiple_choice' && (
+            <div className="space-y-2">
+              <Label>Opções de resposta</Label>
+              {(formData.options.choices || []).map((choice, index) => (
+                <div key={index} className="flex items-center space-x-2">
+                  <Input
+                    placeholder={`Opção ${index + 1}`}
+                    value={choice}
+                    onChange={(e) => updateChoice(index, e.target.value)}
+                  />
+                  {formData.options.choices && formData.options.choices.length > 1 && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => removeChoice(index)}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  )}
+                </div>
+              ))}
+              <Button type="button" variant="outline" onClick={addChoice}>
+                <Plus className="w-4 h-4 mr-2" />
+                Adicionar Opção
+              </Button>
+            </div>
+          )}
+
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="required"
+              checked={formData.isRequired}
+              onCheckedChange={(checked) => setFormData(prev => ({ ...prev, isRequired: !!checked }))}
+            />
+            <Label htmlFor="required">Pergunta obrigatória</Label>
+          </div>
+
+          <div className="flex justify-end space-x-2">
+            <Button type="button" variant="outline" onClick={onClose}>
+              Cancelar
+            </Button>
+            <Button type="submit">
+              {question ? 'Salvar Alterações' : 'Adicionar Pergunta'}
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// Função helper para exibir o tipo da pergunta
+function getQuestionTypeLabel(type: string): string {
+  const types: Record<string, string> = {
+    'multiple_choice': 'Múltipla Escolha',
+    'likert_scale': 'Escala Likert',
+    'text_free': 'Texto Livre',
+    'yes_no': 'Sim/Não',
+    'rating': 'Avaliação (Estrelas)',
+    'date': 'Data',
+    'email': 'Email'
+  };
+  return types[type] || type;
 }
 
 export default function SurveyManagement() {
@@ -346,25 +657,54 @@ export default function SurveyManagement() {
     }
   };
 
+  // Estados separados para manter dados do formulário
+  const [currentFormData, setCurrentFormData] = useState({
+    title: '',
+    description: '',
+    instructions: '',
+    isActive: false,
+    allowMultipleResponses: false,
+    allowAnonymousResponses: true
+  });
+
+  // Atualizar dados quando editando uma pesquisa
+  useEffect(() => {
+    if (editingSurvey) {
+      setCurrentFormData({
+        title: editingSurvey.survey.title || '',
+        description: editingSurvey.survey.description || '',
+        instructions: editingSurvey.survey.instructions || '',
+        isActive: editingSurvey.survey.isActive || false,
+        allowMultipleResponses: editingSurvey.survey.allowMultipleResponses || false,
+        allowAnonymousResponses: editingSurvey.survey.allowAnonymousResponses ?? true
+      });
+      // setSurveyQuestions será carregado via API quando necessário
+      setSelectedCategories(editingSurvey.survey.targetUserCategories || []);
+    } else {
+      setCurrentFormData({
+        title: '',
+        description: '',
+        instructions: '',
+        isActive: false,
+        allowMultipleResponses: false,
+        allowAnonymousResponses: true
+      });
+      setSurveyQuestions([]);
+      setSelectedCategories([]);
+    }
+  }, [editingSurvey]);
+
   const SurveyForm = ({ survey, onSubmit }: { survey?: Survey; onSubmit: (formData: FormData) => Promise<void> }) => {
-    const [formData, setFormData] = useState({
-      title: survey?.survey.title || '',
-      description: survey?.survey.description || '',
-      instructions: survey?.survey.instructions || '',
-      isActive: survey?.survey.isActive || false,
-      allowMultipleResponses: survey?.survey.allowMultipleResponses || false,
-      allowAnonymousResponses: survey?.survey.allowAnonymousResponses ?? true
-    });
 
     const handleSubmit = async (e: React.FormEvent) => {
       e.preventDefault();
       const form = new FormData();
-      form.append('title', formData.title);
-      form.append('description', formData.description);
-      form.append('instructions', formData.instructions);
-      if (formData.isActive) form.append('isActive', 'on');
-      if (formData.allowMultipleResponses) form.append('allowMultipleResponses', 'on');
-      if (formData.allowAnonymousResponses) form.append('allowAnonymousResponses', 'on');
+      form.append('title', currentFormData.title);
+      form.append('description', currentFormData.description);
+      form.append('instructions', currentFormData.instructions);
+      if (currentFormData.isActive) form.append('isActive', 'on');
+      if (currentFormData.allowMultipleResponses) form.append('allowMultipleResponses', 'on');
+      if (currentFormData.allowAnonymousResponses) form.append('allowAnonymousResponses', 'on');
       
       try {
         await onSubmit(form);
@@ -381,8 +721,8 @@ export default function SurveyManagement() {
             <Input 
               id="title" 
               name="title" 
-              value={formData.title}
-              onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+              value={currentFormData.title}
+              onChange={(e) => setCurrentFormData(prev => ({ ...prev, title: e.target.value }))}
               required 
             />
           </div>
@@ -392,8 +732,8 @@ export default function SurveyManagement() {
             <Textarea 
               id="description" 
               name="description" 
-              value={formData.description}
-              onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+              value={currentFormData.description}
+              onChange={(e) => setCurrentFormData(prev => ({ ...prev, description: e.target.value }))}
               rows={3}
             />
           </div>
@@ -403,8 +743,8 @@ export default function SurveyManagement() {
             <Textarea 
               id="instructions" 
               name="instructions" 
-              value={formData.instructions}
-              onChange={(e) => setFormData(prev => ({ ...prev, instructions: e.target.value }))}
+              value={currentFormData.instructions}
+              onChange={(e) => setCurrentFormData(prev => ({ ...prev, instructions: e.target.value }))}
               rows={2}
               placeholder="Instruções opcionais para os usuários"
             />
@@ -414,8 +754,8 @@ export default function SurveyManagement() {
             <Checkbox 
               id="isActive" 
               name="isActive" 
-              checked={formData.isActive}
-              onCheckedChange={(checked) => setFormData(prev => ({ ...prev, isActive: !!checked }))}
+              checked={currentFormData.isActive}
+              onCheckedChange={(checked) => setCurrentFormData(prev => ({ ...prev, isActive: !!checked }))}
             />
             <Label htmlFor="isActive">Pesquisa ativa</Label>
           </div>
@@ -424,8 +764,8 @@ export default function SurveyManagement() {
             <Checkbox 
               id="allowMultipleResponses" 
               name="allowMultipleResponses" 
-              checked={formData.allowMultipleResponses}
-              onCheckedChange={(checked) => setFormData(prev => ({ ...prev, allowMultipleResponses: !!checked }))}
+              checked={currentFormData.allowMultipleResponses}
+              onCheckedChange={(checked) => setCurrentFormData(prev => ({ ...prev, allowMultipleResponses: !!checked }))}
             />
             <Label htmlFor="allowMultipleResponses">Permitir múltiplas respostas</Label>
           </div>
@@ -434,8 +774,8 @@ export default function SurveyManagement() {
             <Checkbox 
               id="allowAnonymousResponses" 
               name="allowAnonymousResponses" 
-              checked={formData.allowAnonymousResponses}
-              onCheckedChange={(checked) => setFormData(prev => ({ ...prev, allowAnonymousResponses: !!checked }))}
+              checked={currentFormData.allowAnonymousResponses}
+              onCheckedChange={(checked) => setCurrentFormData(prev => ({ ...prev, allowAnonymousResponses: !!checked }))}
             />
             <Label htmlFor="allowAnonymousResponses">Permitir respostas anônimas</Label>
           </div>
@@ -511,7 +851,7 @@ export default function SurveyManagement() {
           </div>
         </div>
 
-        <SurveyQuestionEditor 
+        <QuestionListManager 
           questions={surveyQuestions}
           onChange={setSurveyQuestions}
         />
