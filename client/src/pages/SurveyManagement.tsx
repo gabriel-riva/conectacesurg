@@ -657,54 +657,25 @@ export default function SurveyManagement() {
     }
   };
 
-  // Estados separados para manter dados do formulário
-  const [currentFormData, setCurrentFormData] = useState({
-    title: '',
-    description: '',
-    instructions: '',
-    isActive: false,
-    allowMultipleResponses: false,
-    allowAnonymousResponses: true
-  });
-
-  // Atualizar dados quando editando uma pesquisa
-  useEffect(() => {
-    if (editingSurvey) {
-      setCurrentFormData({
-        title: editingSurvey.survey.title || '',
-        description: editingSurvey.survey.description || '',
-        instructions: editingSurvey.survey.instructions || '',
-        isActive: editingSurvey.survey.isActive || false,
-        allowMultipleResponses: editingSurvey.survey.allowMultipleResponses || false,
-        allowAnonymousResponses: editingSurvey.survey.allowAnonymousResponses ?? true
-      });
-      // setSurveyQuestions será carregado via API quando necessário
-      setSelectedCategories(editingSurvey.survey.targetUserCategories || []);
-    } else {
-      setCurrentFormData({
-        title: '',
-        description: '',
-        instructions: '',
-        isActive: false,
-        allowMultipleResponses: false,
-        allowAnonymousResponses: true
-      });
-      setSurveyQuestions([]);
-      setSelectedCategories([]);
-    }
-  }, [editingSurvey]);
-
   const SurveyForm = ({ survey, onSubmit }: { survey?: Survey; onSubmit: (formData: FormData) => Promise<void> }) => {
+    const [formData, setFormData] = useState({
+      title: survey?.survey.title || '',
+      description: survey?.survey.description || '',
+      instructions: survey?.survey.instructions || '',
+      isActive: survey?.survey.isActive || false,
+      allowMultipleResponses: survey?.survey.allowMultipleResponses || false,
+      allowAnonymousResponses: survey?.survey.allowAnonymousResponses ?? true
+    });
 
     const handleSubmit = async (e: React.FormEvent) => {
       e.preventDefault();
       const form = new FormData();
-      form.append('title', currentFormData.title);
-      form.append('description', currentFormData.description);
-      form.append('instructions', currentFormData.instructions);
-      if (currentFormData.isActive) form.append('isActive', 'on');
-      if (currentFormData.allowMultipleResponses) form.append('allowMultipleResponses', 'on');
-      if (currentFormData.allowAnonymousResponses) form.append('allowAnonymousResponses', 'on');
+      form.append('title', formData.title);
+      form.append('description', formData.description);
+      form.append('instructions', formData.instructions);
+      if (formData.isActive) form.append('isActive', 'on');
+      if (formData.allowMultipleResponses) form.append('allowMultipleResponses', 'on');
+      if (formData.allowAnonymousResponses) form.append('allowAnonymousResponses', 'on');
       
       try {
         await onSubmit(form);
@@ -721,8 +692,8 @@ export default function SurveyManagement() {
             <Input 
               id="title" 
               name="title" 
-              value={currentFormData.title}
-              onChange={(e) => setCurrentFormData(prev => ({ ...prev, title: e.target.value }))}
+              value={formData.title}
+              onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
               required 
             />
           </div>
@@ -732,8 +703,8 @@ export default function SurveyManagement() {
             <Textarea 
               id="description" 
               name="description" 
-              value={currentFormData.description}
-              onChange={(e) => setCurrentFormData(prev => ({ ...prev, description: e.target.value }))}
+              value={formData.description}
+              onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
               rows={3}
             />
           </div>
@@ -743,8 +714,8 @@ export default function SurveyManagement() {
             <Textarea 
               id="instructions" 
               name="instructions" 
-              value={currentFormData.instructions}
-              onChange={(e) => setCurrentFormData(prev => ({ ...prev, instructions: e.target.value }))}
+              value={formData.instructions}
+              onChange={(e) => setFormData(prev => ({ ...prev, instructions: e.target.value }))}
               rows={2}
               placeholder="Instruções opcionais para os usuários"
             />
@@ -754,8 +725,8 @@ export default function SurveyManagement() {
             <Checkbox 
               id="isActive" 
               name="isActive" 
-              checked={currentFormData.isActive}
-              onCheckedChange={(checked) => setCurrentFormData(prev => ({ ...prev, isActive: !!checked }))}
+              checked={formData.isActive}
+              onCheckedChange={(checked) => setFormData(prev => ({ ...prev, isActive: !!checked }))}
             />
             <Label htmlFor="isActive">Pesquisa ativa</Label>
           </div>
@@ -764,8 +735,8 @@ export default function SurveyManagement() {
             <Checkbox 
               id="allowMultipleResponses" 
               name="allowMultipleResponses" 
-              checked={currentFormData.allowMultipleResponses}
-              onCheckedChange={(checked) => setCurrentFormData(prev => ({ ...prev, allowMultipleResponses: !!checked }))}
+              checked={formData.allowMultipleResponses}
+              onCheckedChange={(checked) => setFormData(prev => ({ ...prev, allowMultipleResponses: !!checked }))}
             />
             <Label htmlFor="allowMultipleResponses">Permitir múltiplas respostas</Label>
           </div>
@@ -774,8 +745,8 @@ export default function SurveyManagement() {
             <Checkbox 
               id="allowAnonymousResponses" 
               name="allowAnonymousResponses" 
-              checked={currentFormData.allowAnonymousResponses}
-              onCheckedChange={(checked) => setCurrentFormData(prev => ({ ...prev, allowAnonymousResponses: !!checked }))}
+              checked={formData.allowAnonymousResponses}
+              onCheckedChange={(checked) => setFormData(prev => ({ ...prev, allowAnonymousResponses: !!checked }))}
             />
             <Label htmlFor="allowAnonymousResponses">Permitir respostas anônimas</Label>
           </div>
