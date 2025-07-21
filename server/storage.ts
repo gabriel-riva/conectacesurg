@@ -2430,6 +2430,8 @@ export class DatabaseStorage implements IStorage {
 
       return results.map(result => ({
         ...result.feedback,
+        // Parse attachments JSON if it exists
+        attachments: result.feedback.attachments ? JSON.parse(result.feedback.attachments as string) : null,
         user: result.user || undefined,
       }));
     } catch (error) {
@@ -2453,6 +2455,8 @@ export class DatabaseStorage implements IStorage {
 
       return {
         ...result.feedback,
+        // Parse attachments JSON if it exists
+        attachments: result.feedback.attachments ? JSON.parse(result.feedback.attachments as string) : null,
         user: result.user || undefined,
       };
     } catch (error) {

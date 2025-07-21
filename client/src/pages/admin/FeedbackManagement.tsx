@@ -51,11 +51,6 @@ const FeedbackManagement: React.FC = () => {
   const [adminNotes, setAdminNotes] = useState('');
   const [status, setStatus] = useState<string>('');
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
-  
-  // Debug: Log when selectedImage changes
-  useEffect(() => {
-    console.log('selectedImage state changed:', selectedImage);
-  }, [selectedImage]);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -414,7 +409,6 @@ const FeedbackManagement: React.FC = () => {
                                       className="w-full h-24 object-cover rounded-lg border shadow-sm cursor-pointer hover:shadow-md transition-shadow"
                                       onClick={(e) => {
                                         e.stopPropagation();
-                                        console.log('Image clicked:', image.fileUrl);
                                         setSelectedImage(image.fileUrl);
                                       }}
                                     />
@@ -509,10 +503,7 @@ const FeedbackManagement: React.FC = () => {
       </div>
       
       {/* Image Viewer Dialog */}
-      <Dialog open={!!selectedImage} onOpenChange={() => {
-        console.log('Dialog closing, selectedImage was:', selectedImage);
-        setSelectedImage(null);
-      }}>
+      <Dialog open={!!selectedImage} onOpenChange={() => setSelectedImage(null)}>
         <DialogContent className="max-w-4xl max-h-[90vh] p-0">
           <DialogHeader className="p-6 pb-0">
             <DialogTitle>Visualizar Imagem</DialogTitle>
@@ -532,10 +523,7 @@ const FeedbackManagement: React.FC = () => {
                   <Download className="w-4 h-4 mr-2" />
                   Abrir em nova aba
                 </Button>
-                <Button onClick={() => {
-                  console.log('Close button clicked');
-                  setSelectedImage(null);
-                }}>
+                <Button onClick={() => setSelectedImage(null)}>
                   Fechar
                 </Button>
               </div>
