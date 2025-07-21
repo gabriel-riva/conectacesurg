@@ -2428,12 +2428,25 @@ export class DatabaseStorage implements IStorage {
         .leftJoin(users, eq(feedbacks.userId, users.id))
         .orderBy(desc(feedbacks.createdAt));
 
-      return results.map(result => ({
-        ...result.feedback,
-        // Parse attachments JSON if it exists
-        attachments: result.feedback.attachments ? JSON.parse(result.feedback.attachments as string) : null,
-        user: result.user || undefined,
-      }));
+      return results.map(result => {
+        let attachments = null;
+        try {
+          if (result.feedback.attachments && typeof result.feedback.attachments === 'string') {
+            attachments = JSON.parse(result.feedback.attachments);
+          } else if (result.feedback.attachments && typeof result.feedback.attachments === 'object') {
+            attachments = result.feedback.attachments;
+          }
+        } catch (error) {
+          console.error('Error parsing feedback attachments:', error);
+          attachments = null;
+        }
+        
+        return {
+          ...result.feedback,
+          attachments,
+          user: result.user || undefined,
+        };
+      });
     } catch (error) {
       console.error("Error getting all feedbacks:", error);
       return [];
@@ -2453,10 +2466,21 @@ export class DatabaseStorage implements IStorage {
 
       if (!result) return undefined;
 
+      let attachments = null;
+      try {
+        if (result.feedback.attachments && typeof result.feedback.attachments === 'string') {
+          attachments = JSON.parse(result.feedback.attachments);
+        } else if (result.feedback.attachments && typeof result.feedback.attachments === 'object') {
+          attachments = result.feedback.attachments;
+        }
+      } catch (error) {
+        console.error('Error parsing feedback attachments:', error);
+        attachments = null;
+      }
+
       return {
         ...result.feedback,
-        // Parse attachments JSON if it exists
-        attachments: result.feedback.attachments ? JSON.parse(result.feedback.attachments as string) : null,
+        attachments,
         user: result.user || undefined,
       };
     } catch (error) {
