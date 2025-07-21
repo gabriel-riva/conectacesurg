@@ -31,6 +31,7 @@ export const users = pgTable("users", {
   zipCode: text("zip_code"),
   phoneNumbers: text("phone_numbers").array(),
   secondaryEmail: text("secondary_email"),
+  biografia: text("biografia"), // Campo de biografia/descrição pessoal
   emergencyContact: jsonb("emergency_contact").$type<{name: string, phone: string, relationship: string}>(),
   documents: jsonb("documents").$type<{name: string, url: string, type: string, description: string}[]>().default([]),
   createdAt: timestamp("created_at").defaultNow(),
@@ -977,6 +978,7 @@ export const updateProfileSchema = createInsertSchema(users).omit({
     phone: z.string(),
     relationship: z.string()
   }).optional(),
+  biografia: z.string().optional(),
 });
 
 export const insertGoogleUserSchema = createInsertSchema(users).pick({

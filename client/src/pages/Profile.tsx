@@ -71,6 +71,7 @@ export default function Profile() {
       zipCode: profile?.zipCode || "",
       phoneNumbers: profile?.phoneNumbers?.length ? profile.phoneNumbers : [""],
       secondaryEmail: profile?.secondaryEmail || "",
+      biografia: profile?.biografia || "",
       emergencyContact: profile?.emergencyContact || {
         name: "",
         phone: "",
@@ -86,6 +87,7 @@ export default function Profile() {
       zipCode: profile?.zipCode || "",
       phoneNumbers: profile?.phoneNumbers?.length ? profile.phoneNumbers : [""],
       secondaryEmail: profile?.secondaryEmail || "",
+      biografia: profile?.biografia || "",
       emergencyContact: profile?.emergencyContact || {
         name: "",
         phone: "",
@@ -405,6 +407,28 @@ export default function Profile() {
                         )}
                       />
 
+                      <FormField
+                        control={form.control}
+                        name="biografia"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Biografia</FormLabel>
+                            <FormControl>
+                              <Textarea 
+                                placeholder="Conte um pouco sobre você, suas experiências, interesses e objetivos..."
+                                className="min-h-[100px]"
+                                {...field} 
+                                value={field.value || ""}
+                              />
+                            </FormControl>
+                            <FormDescription>
+                              Descrição pessoal que será exibida em seu perfil
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <FormField
                           control={form.control}
@@ -416,6 +440,7 @@ export default function Profile() {
                                 <Input 
                                   placeholder="Digite seu endereço" 
                                   {...field} 
+                                  value={field.value || ""}
                                   startContent={<MapPin className="w-4 h-4 text-gray-500" />}
                                 />
                               </FormControl>
@@ -431,7 +456,7 @@ export default function Profile() {
                             <FormItem>
                               <FormLabel>Cidade</FormLabel>
                               <FormControl>
-                                <Input placeholder="Digite sua cidade" {...field} />
+                                <Input placeholder="Digite sua cidade" {...field} value={field.value || ""} />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
@@ -447,7 +472,7 @@ export default function Profile() {
                             <FormItem>
                               <FormLabel>Estado</FormLabel>
                               <FormControl>
-                                <Input placeholder="Digite seu estado" {...field} />
+                                <Input placeholder="Digite seu estado" {...field} value={field.value || ""} />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
@@ -461,7 +486,7 @@ export default function Profile() {
                             <FormItem>
                               <FormLabel>CEP</FormLabel>
                               <FormControl>
-                                <Input placeholder="Digite seu CEP" {...field} />
+                                <Input placeholder="Digite seu CEP" {...field} value={field.value || ""} />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
@@ -679,7 +704,7 @@ export default function Profile() {
                     <h3 className="text-lg font-semibold mb-4">Documentos Enviados</h3>
                     {profile?.documents && profile.documents.length > 0 ? (
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {profile.documents.map((doc, index) => (
+                        {profile.documents.map((doc: any, index: number) => (
                           <div key={index} className="border rounded-md p-4">
                             <div className="flex justify-between items-start mb-2">
                               <div>
