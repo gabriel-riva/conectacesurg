@@ -78,7 +78,7 @@ export default function FeedbackPanel({ isOpen, onClose, user }: FeedbackPanelPr
   const handleScreenshot = async () => {
     setIsCapturingScreenshot(true);
     try {
-      // Capture screenshot directly from the current state
+      // Capture screenshot using ignoreElements to skip feedback panel
       const canvas = await html2canvas(document.body, {
         height: window.innerHeight,
         width: window.innerWidth,
@@ -86,6 +86,14 @@ export default function FeedbackPanel({ isOpen, onClose, user }: FeedbackPanelPr
         scrollY: 0,
         useCORS: true,
         allowTaint: true,
+        ignoreElements: (element) => {
+          // Ignore feedback panel and any feedback-related elements
+          return element.id === 'feedback-panel' || 
+                 element.className?.includes?.('feedback') || 
+                 element.getAttribute?.('data-feedback') === 'true' ||
+                 element.closest?.('#feedback-panel') !== null ||
+                 element.closest?.('[data-feedback="true"]') !== null;
+        }
       });
       
       // Convert to blob
@@ -319,6 +327,8 @@ export default function FeedbackPanel({ isOpen, onClose, user }: FeedbackPanelPr
           exit={{ opacity: 0, x: '100%' }}
           transition={{ type: 'spring', stiffness: 300, damping: 30 }}
           className="fixed top-0 right-0 h-full w-full sm:w-96 bg-white shadow-2xl border-l border-gray-200 z-50"
+          id="feedback-panel"
+          data-feedback="true"
         >
           <div className="flex flex-col h-full">
             {/* Header */}
