@@ -39,12 +39,12 @@ router.get("/", async (req, res) => {
         questionCount: sql<number>`CAST((
           SELECT COUNT(*) 
           FROM ${surveyQuestions} 
-          WHERE ${surveyQuestions.survey_id} = ${surveys.id}
+          WHERE ${surveyQuestions.surveyId} = ${surveys.id}
         ) AS INTEGER)`,
         responseCount: sql<number>`CAST((
           SELECT COUNT(*) 
           FROM ${surveyResponses} 
-          WHERE ${surveyResponses.survey_id} = ${surveys.id}
+          WHERE ${surveyResponses.surveyId} = ${surveys.id}
         ) AS INTEGER)`,
         questions: sql<any[]>`
           COALESCE(
@@ -283,7 +283,10 @@ router.put("/:surveyId/questions/:questionId", async (req, res) => {
       return res.status(400).json({ error: "ID da pergunta inválido" });
     }
 
-    const validatedData = insertSurveyQuestionSchema.parse(req.body);
+    const validatedData = insertSurveyQuestionSchema.parse({
+      ...req.body,
+      surveyId: parseInt(req.params.surveyId)
+    });
 
     const [updatedQuestion] = await db
       .update(surveyQuestions)
@@ -580,7 +583,7 @@ router.post("/public/:surveyId/respond", async (req, res) => {
 
     const [newResponse] = await db
       .insert(surveyResponses)
-      .values(validatedData)
+      .values([validatedData])
       .returning();
 
     res.status(201).json({ message: "Resposta enviada com sucesso", responseId: newResponse.id });
