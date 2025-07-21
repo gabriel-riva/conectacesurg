@@ -73,6 +73,7 @@ When creating new admin functionality, remember to:
 
 ### Authentication System
 - **OAuth Integration**: Google OAuth 2.0 restricted to @cesurg.com domain with multi-domain support
+- **Development Environment**: Enhanced user selection with role-based sorting (superadmin → admin → users alphabetically)
 - **Session Management**: Secure session handling with PostgreSQL persistence
 - **Role-Based Access**: Three-tier access control (user, admin, superadmin)
 - **Protected Routes**: Authentication middleware for API endpoints
