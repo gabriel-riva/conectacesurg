@@ -324,7 +324,7 @@ function QuestionDialog({
   const [formData, setFormData] = useState({
     question: question?.question || '',
     type: question?.type || 'multiple_choice' as const,
-    isRequired: question?.isRequired || true,
+    isRequired: question?.isRequired ?? true,
     options: question?.options || { choices: [''] }
   });
 
@@ -689,22 +689,25 @@ export default function SurveyManagement() {
   };
 
   const SurveyForm = ({ survey, onSubmit }: { survey?: Survey; onSubmit: (formData: FormData) => Promise<void> }) => {
-    const [formData, setFormData] = useState({
-      title: survey?.survey.title || persistentFormData.title,
-      description: survey?.survey.description || persistentFormData.description,
-      instructions: survey?.survey.instructions || persistentFormData.instructions,
-      isActive: survey?.survey.isActive || persistentFormData.isActive,
-      allowMultipleResponses: survey?.survey.allowMultipleResponses || persistentFormData.allowMultipleResponses,
-      allowAnonymousResponses: survey?.survey.allowAnonymousResponses ?? persistentFormData.allowAnonymousResponses,
-      startDate: survey?.survey.startDate ? new Date(survey.survey.startDate).toISOString().slice(0, 16) : persistentFormData.startDate,
-      endDate: survey?.survey.endDate ? new Date(survey.survey.endDate).toISOString().slice(0, 16) : persistentFormData.endDate
-    });
+    // Simplificar o estado inicial
+    const initialFormData = {
+      title: survey?.survey.title || '',
+      description: survey?.survey.description || '',
+      instructions: survey?.survey.instructions || '',
+      isActive: survey?.survey.isActive || false,
+      allowMultipleResponses: survey?.survey.allowMultipleResponses || false,
+      allowAnonymousResponses: survey?.survey.allowAnonymousResponses ?? true,
+      startDate: survey?.survey.startDate ? new Date(survey.survey.startDate).toISOString().slice(0, 16) : '',
+      endDate: survey?.survey.endDate ? new Date(survey.survey.endDate).toISOString().slice(0, 16) : ''
+    };
     
-    // Use useEffect para carregar perguntas quando editar
+    const [formData, setFormData] = useState(initialFormData);
+    
+    // Atualizar quando survey muda (para edição)
     useEffect(() => {
       if (survey) {
+        console.log('Carregando dados da pesquisa para edição:', survey);
         setSurveyQuestions(survey.questions || []);
-        // Se está editando, não usar o persistentFormData
         setFormData({
           title: survey.survey.title || '',
           description: survey.survey.description || '',
@@ -715,27 +718,8 @@ export default function SurveyManagement() {
           startDate: survey.survey.startDate ? new Date(survey.survey.startDate).toISOString().slice(0, 16) : '',
           endDate: survey.survey.endDate ? new Date(survey.survey.endDate).toISOString().slice(0, 16) : ''
         });
-      } else {
-        // Se está criando nova, usar o persistentFormData
-        setFormData(persistentFormData);
       }
-    }, [survey, persistentFormData]);
-    
-    // Atualizar o estado persistente quando os dados do formulário mudarem (apenas para criação)
-    useEffect(() => {
-      if (!survey) {
-        setPersistentFormData({
-          title: formData.title,
-          description: formData.description,
-          instructions: formData.instructions,
-          isActive: formData.isActive,
-          allowMultipleResponses: formData.allowMultipleResponses,
-          allowAnonymousResponses: formData.allowAnonymousResponses,
-          startDate: formData.startDate || '',
-          endDate: formData.endDate || ''
-        });
-      }
-    }, [formData, survey]);
+    }, [survey]);
 
     const handleSubmit = async (e: React.FormEvent) => {
       e.preventDefault();
@@ -765,7 +749,12 @@ export default function SurveyManagement() {
               id="title" 
               name="title" 
               value={formData.title}
-              onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+              onChange={(e) => {
+                console.log('Input onChange disparado para título:', e.target.value);
+                setFormData(prev => ({ ...prev, title: e.target.value }));
+              }}
+              onFocus={() => console.log('Input título focado')}
+              onClick={() => console.log('Input título clicado')}
               required 
             />
           </div>
@@ -1006,14 +995,16 @@ export default function SurveyManagement() {
                 Nova Pesquisa
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-5xl max-h-[95vh] overflow-y-auto">
+            <DialogContent className="max-w-5xl max-h-[95vh] overflow-y-auto pointer-events-auto">
               <DialogHeader>
                 <DialogTitle>Criar Nova Pesquisa</DialogTitle>
                 <DialogDescription>
                   Crie uma nova pesquisa de opinião para os usuários
                 </DialogDescription>
               </DialogHeader>
-              <SurveyForm onSubmit={handleCreateSurvey} />
+              <div className="pointer-events-auto">
+                <SurveyForm onSubmit={handleCreateSurvey} />
+              </div>
             </DialogContent>
           </Dialog>
             </div>
