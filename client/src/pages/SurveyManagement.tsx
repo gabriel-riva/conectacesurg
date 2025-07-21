@@ -222,28 +222,45 @@ interface UserCategory {
 }
 
 // Componente para gerenciar lista de perguntas com dialogs separados
-function QuestionListManager({ questions, onChange }: { questions: SurveyQuestion[]; onChange: (questions: SurveyQuestion[]) => void }) {
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [editingQuestion, setEditingQuestion] = useState<{ question: SurveyQuestion; index: number } | null>(null);
+function QuestionListManager({ 
+  questions, 
+  onChange, 
+  onAddQuestion, 
+  onEditQuestion 
+}: { 
+  questions: SurveyQuestion[]; 
+  onChange: (questions: SurveyQuestion[]) => void;
+  onAddQuestion: () => void;
+  onEditQuestion: (question: SurveyQuestion, index: number) => void;
+}) {
 
   const addQuestion = () => {
-    setIsAddDialogOpen(true);
+    onAddQuestion();
   };
 
   const handleQuestionSave = (questionData: Omit<SurveyQuestion, 'order'>) => {
+    console.log('Salvando nova pergunta:', questionData);
     const newQuestion: SurveyQuestion = {
       ...questionData,
       order: questions.length
     };
-    onChange([...questions, newQuestion]);
+    console.log('Pergunta formatada:', newQuestion);
+    console.log('Lista atual de perguntas:', questions);
+    const updatedQuestions = [...questions, newQuestion];
+    console.log('Nova lista de perguntas:', updatedQuestions);
+    onChange(updatedQuestions);
     setIsAddDialogOpen(false);
+    console.log('Dialog fechado e pergunta adicionada');
   };
 
   const handleQuestionEdit = (questionData: Omit<SurveyQuestion, 'order'>, index: number) => {
+    console.log('Editando pergunta no índice:', index, 'com dados:', questionData);
     const updated = [...questions];
     updated[index] = { ...questionData, order: index };
+    console.log('Lista atualizada:', updated);
     onChange(updated);
     setEditingQuestion(null);
+    console.log('Edição concluída');
   };
 
   const removeQuestion = (index: number) => {
@@ -291,7 +308,7 @@ function QuestionListManager({ questions, onChange }: { questions: SurveyQuestio
                       type="button"
                       variant="outline"
                       size="sm"
-                      onClick={() => setEditingQuestion({ question, index })}
+                      onClick={() => onEditQuestion(question, index)}
                     >
                       <Edit className="w-4 h-4" />
                     </Button>
@@ -311,24 +328,7 @@ function QuestionListManager({ questions, onChange }: { questions: SurveyQuestio
         </div>
       )}
 
-      {/* Dialog para adicionar pergunta */}
-      <QuestionDialog
-        isOpen={isAddDialogOpen}
-        onClose={() => setIsAddDialogOpen(false)}
-        onSave={handleQuestionSave}
-        title="Adicionar Nova Pergunta"
-      />
-
-      {/* Dialog para editar pergunta */}
-      {editingQuestion && (
-        <QuestionDialog
-          isOpen={true}
-          onClose={() => setEditingQuestion(null)}
-          onSave={(data) => handleQuestionEdit(data, editingQuestion.index)}
-          question={editingQuestion.question}
-          title="Editar Pergunta"
-        />
-      )}
+      {/* Os dialogs agora são renderizados no componente principal */}
     </div>
   );
 }
@@ -366,8 +366,10 @@ function QuestionDialog({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    e.stopPropagation(); // Impede que o evento bubble para o form pai
     if (!formData.question.trim()) return;
     
+    console.log('Salvando pergunta:', formData);
     onSave({
       question: formData.question,
       type: formData.type,
@@ -536,6 +538,8 @@ export default function SurveyManagement() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isSettingsDialogOpen, setIsSettingsDialogOpen] = useState(false);
   const [isCategoryDialogOpen, setIsCategoryDialogOpen] = useState(false);
+  const [isQuestionDialogOpen, setIsQuestionDialogOpen] = useState(false);
+  const [editingQuestion, setEditingQuestion] = useState<{ question: SurveyQuestion; index: number } | null>(null);
   const [editingSurvey, setEditingSurvey] = useState<Survey | null>(null);
   const [surveyQuestions, setSurveyQuestions] = useState<SurveyQuestion[]>([]);
   const [selectedCategories, setSelectedCategories] = useState<number[]>([]);
@@ -877,6 +881,8 @@ export default function SurveyManagement() {
         <QuestionListManager 
           questions={surveyQuestions}
           onChange={setSurveyQuestions}
+          onAddQuestion={() => setIsQuestionDialogOpen(true)}
+          onEditQuestion={(question, index) => setEditingQuestion({ question, index })}
         />
 
         <div className="flex justify-end space-x-2 pt-4">
@@ -1104,6 +1110,49 @@ export default function SurveyManagement() {
       </Dialog>
         </div>
       </div>
+
+      {/* Dialogs de pergunta movidos para fora dos forms */}
+      <QuestionDialog
+        isOpen={isQuestionDialogOpen}
+        onClose={() => setIsQuestionDialogOpen(false)}
+        onSave={(questionData) => {
+          console.log('Dialog de adicionar pergunta salvou:', questionData);
+          setSurveyQuestions(prev => {
+            const newQuestion: SurveyQuestion = {
+              ...questionData,
+              order: prev.length
+            };
+            const updated = [...prev, newQuestion];
+            console.log('Estado de perguntas atualizado:', updated);
+            return updated;
+          });
+          setIsQuestionDialogOpen(false);
+        }}
+        title="Adicionar Nova Pergunta"
+      />
+
+      {/* Dialog para editar pergunta */}
+      {editingQuestion && (
+        <QuestionDialog
+          isOpen={true}
+          onClose={() => setEditingQuestion(null)}
+          onSave={(questionData) => {
+            console.log('Editando pergunta:', questionData);
+            setSurveyQuestions(prev => {
+              const updated = [...prev];
+              updated[editingQuestion.index] = { 
+                ...questionData, 
+                order: editingQuestion.index 
+              };
+              console.log('Lista de perguntas após edição:', updated);
+              return updated;
+            });
+            setEditingQuestion(null);
+          }}
+          question={editingQuestion.question}
+          title="Editar Pergunta"
+        />
+      )}
     </div>
   );
 }
