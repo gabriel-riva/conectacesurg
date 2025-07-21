@@ -512,7 +512,6 @@ function getQuestionTypeLabel(type: string): string {
 
 export default function SurveyManagement() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-  const [isSettingsDialogOpen, setIsSettingsDialogOpen] = useState(false);
   const [isCategoryDialogOpen, setIsCategoryDialogOpen] = useState(false);
   const [isQuestionDialogOpen, setIsQuestionDialogOpen] = useState(false);
   const [editingQuestion, setEditingQuestion] = useState<{ question: SurveyQuestion; index: number } | null>(null);
@@ -544,12 +543,6 @@ export default function SurveyManagement() {
   // Buscar categorias de usuário
   const { data: userCategories } = useQuery({
     queryKey: ['/api/user-categories'],
-    enabled: true
-  });
-
-  // Buscar configurações do widget
-  const { data: widgetSettings } = useQuery({
-    queryKey: ['/api/surveys/widget/settings'],
     enabled: true
   });
 
@@ -603,23 +596,6 @@ export default function SurveyManagement() {
     },
     onError: () => {
       toast({ title: "Erro ao deletar pesquisa", variant: "destructive" });
-    }
-  });
-
-  // Mutation para atualizar configurações do widget
-  const updateWidgetSettingsMutation = useMutation({
-    mutationFn: async (data: any) => {
-      return apiRequest('/api/surveys/widget/settings', {
-        method: 'PUT',
-        body: data
-      });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/surveys/widget/settings'] });
-      toast({ title: "Configurações atualizadas com sucesso!" });
-    },
-    onError: () => {
-      toast({ title: "Erro ao atualizar configurações", variant: "destructive" });
     }
   });
 
@@ -1008,24 +984,6 @@ export default function SurveyManagement() {
               <p className="text-gray-600">Crie e gerencie pesquisas de opinião para os usuários</p>
             </div>
             <div className="flex space-x-2">
-          <Dialog open={isSettingsDialogOpen} onOpenChange={setIsSettingsDialogOpen}>
-            <DialogTrigger asChild>
-              <Button variant="outline">
-                <Settings className="w-4 h-4 mr-2" />
-                Configurações do Widget
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Configurações do Widget</DialogTitle>
-                <DialogDescription>
-                  Configure como o widget de pesquisas será exibido
-                </DialogDescription>
-              </DialogHeader>
-              {/* Widget settings form would go here */}
-            </DialogContent>
-          </Dialog>
-
           <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
             <DialogTrigger asChild>
               <Button>
