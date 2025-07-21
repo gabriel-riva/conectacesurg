@@ -443,8 +443,10 @@ router.put("/widget/settings", async (req, res) => {
 router.get("/public/active", async (req, res) => {
   try {
     const user = req.user;
+    
+    // Se não há usuário autenticado, retorna array vazio
     if (!user) {
-      return res.status(401).json({ error: "Usuário não autenticado" });
+      return res.json([]);
     }
 
     // Buscar pesquisas ativas que:
@@ -510,9 +512,6 @@ router.get("/public/active", async (req, res) => {
 router.post("/public/:surveyId/respond", async (req, res) => {
   try {
     const user = req.user;
-    if (!user) {
-      return res.status(401).json({ error: "Usuário não autenticado" });
-    }
 
     const surveyId = parseInt(req.params.surveyId);
     if (isNaN(surveyId)) {
@@ -556,8 +555,8 @@ router.post("/public/:surveyId/respond", async (req, res) => {
 
     const validatedData = insertSurveyResponseSchema.parse({
       surveyId,
-      userId: isAnonymous ? null : user.id,
-      isAnonymous: !!isAnonymous,
+      userId: (isAnonymous || !user) ? null : user.id,
+      isAnonymous: !!(isAnonymous || !user),
       responseData: responses,
       ipAddress: req.ip,
       userAgent: req.headers['user-agent']
@@ -578,7 +577,7 @@ router.post("/public/:surveyId/respond", async (req, res) => {
   }
 });
 
-// Buscar configurações do widget para usuários
+// Buscar configurações do widget para usuários (sem autenticação)
 router.get("/public/widget/settings", async (req, res) => {
   try {
     const [settings] = await db
@@ -587,6 +586,7 @@ router.get("/public/widget/settings", async (req, res) => {
       .limit(1);
 
     res.json(settings || {
+      id: 1,
       isEnabled: true,
       displayStyle: 'floating',
       position: 'bottom-right',

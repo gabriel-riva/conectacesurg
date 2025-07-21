@@ -67,6 +67,8 @@ export default function SurveyWidget() {
     queryKey: ['/api/surveys/public/active'],
     enabled: true
   });
+  
+  console.log('Pesquisas carregadas:', surveys);
 
   // Mostrar automaticamente o widget após carregar (apenas ícone)
   useEffect(() => {
@@ -104,6 +106,10 @@ export default function SurveyWidget() {
           setResponses({});
         }
       }, 3000);
+    },
+    onError: (error: any) => {
+      console.error('Erro ao enviar resposta:', error);
+      alert('Erro ao enviar resposta. Tente novamente.');
     }
   });
 
@@ -135,7 +141,7 @@ export default function SurveyWidget() {
       await submitResponseMutation.mutateAsync({
         surveyId: currentSurvey.survey.id,
         responses: responses,
-        isAnonymous: false
+        isAnonymous: true // Permitir respostas anônimas
       });
     } catch (error) {
       console.error('Erro ao enviar resposta:', error);
@@ -147,9 +153,15 @@ export default function SurveyWidget() {
 
   const renderQuestion = (question: SurveyQuestion) => {
     const questionValue = responses[question.id] || '';
+    
+    console.log('Renderizando pergunta:', question.type, 'Opções:', question.options);
 
     switch (question.type) {
       case 'multiple_choice':
+        if (!question.options.choices || question.options.choices.length === 0) {
+          console.log('ERRO: Nenhuma escolha encontrada para pergunta múltipla escolha:', question);
+          return <div className="text-red-500">Erro: Nenhuma opção disponível</div>;
+        }
         return (
           <div className="space-y-2">
             {question.options.choices?.map((choice, index) => (
@@ -170,12 +182,17 @@ export default function SurveyWidget() {
 
       case 'likert_scale':
         const scale = question.options.scale;
-        if (!scale) return null;
+        if (!scale) {
+          console.log('ERRO: Nenhuma escala encontrada para pergunta Likert:', question);
+          return <div className="text-red-500">Erro: Configuração de escala não encontrada</div>;
+        }
         
         const scaleValues = [];
         for (let i = scale.min; i <= scale.max; i += (scale.step || 1)) {
           scaleValues.push(i);
         }
+        
+        console.log('Escala Likert gerada:', scaleValues);
 
         return (
           <div className="space-y-3">

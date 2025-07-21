@@ -570,8 +570,9 @@ export default function SurveyManagement() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/surveys'] });
-      setIsCreateDialogOpen(false);
-      toast({ title: "Pesquisa criada com sucesso!" });
+      // NÃO fecha o dialog aqui - será fechado após criar todas as perguntas
+      // setIsCreateDialogOpen(false);
+      // toast({ title: "Pesquisa criada com sucesso!" });
     },
     onError: () => {
       toast({ title: "Erro ao criar pesquisa", variant: "destructive" });
@@ -674,6 +675,7 @@ export default function SurveyManagement() {
       // Reset questions after successful creation
       setSurveyQuestions([]);
       setSelectedCategories([]);
+      setIsCreateDialogOpen(false); // Fechar dialog apenas após tudo estar completo
       
       toast({ title: "Pesquisa criada com sucesso com todas as perguntas!" });
     } catch (error) {
