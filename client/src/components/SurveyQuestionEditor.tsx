@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback, memo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -38,7 +38,7 @@ interface SurveyQuestionEditorProps {
   onChange: (questions: SurveyQuestion[]) => void;
 }
 
-export default function SurveyQuestionEditor({ questions, onChange }: SurveyQuestionEditorProps) {
+const SurveyQuestionEditor = memo(function SurveyQuestionEditor({ questions, onChange }: SurveyQuestionEditorProps) {
   const [draggedItem, setDraggedItem] = useState<number | null>(null);
 
   const questionTypes = [
@@ -62,17 +62,17 @@ export default function SurveyQuestionEditor({ questions, onChange }: SurveyQues
     onChange([...questions, newQuestion]);
   };
 
-  const updateQuestion = (index: number, field: keyof SurveyQuestion, value: any) => {
+  const updateQuestion = useCallback((index: number, field: keyof SurveyQuestion, value: any) => {
     const updated = [...questions];
     (updated[index] as any)[field] = value;
     onChange(updated);
-  };
+  }, [questions, onChange]);
 
-  const updateQuestionOptions = (index: number, options: QuestionOption) => {
+  const updateQuestionOptions = useCallback((index: number, options: QuestionOption) => {
     const updated = [...questions];
     updated[index].options = options;
     onChange(updated);
-  };
+  }, [questions, onChange]);
 
   const removeQuestion = (index: number) => {
     const updated = questions.filter((_, i) => i !== index);
@@ -90,7 +90,7 @@ export default function SurveyQuestionEditor({ questions, onChange }: SurveyQues
     });
   };
 
-  const updateChoice = (questionIndex: number, choiceIndex: number, value: string) => {
+  const updateChoice = useCallback((questionIndex: number, choiceIndex: number, value: string) => {
     const question = questions[questionIndex];
     const choices = [...(question.options.choices || [])];
     choices[choiceIndex] = value;
@@ -98,7 +98,7 @@ export default function SurveyQuestionEditor({ questions, onChange }: SurveyQues
       ...question.options,
       choices
     });
-  };
+  }, [questions, updateQuestionOptions]);
 
   const removeChoice = (questionIndex: number, choiceIndex: number) => {
     const question = questions[questionIndex];
@@ -401,4 +401,6 @@ export default function SurveyQuestionEditor({ questions, onChange }: SurveyQues
       )}
     </div>
   );
-}
+});
+
+export default SurveyQuestionEditor;

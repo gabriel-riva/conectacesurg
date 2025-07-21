@@ -284,27 +284,41 @@ export default function SurveyManagement() {
       endDate: endDate && endDate.trim() !== '' ? endDate : null
     };
 
-    // Create survey first
-    const createdSurvey = await createSurveyMutation.mutateAsync(data);
-    
-    // Then create questions if any
-    if (surveyQuestions.length > 0) {
-      for (const question of surveyQuestions) {
-        await apiRequest(`/api/surveys/${(createdSurvey as any).id}/questions`, {
-          method: 'POST',
-          body: {
-            question: question.question,
-            type: question.type,
-            order: question.order,
-            isRequired: question.isRequired,
-            options: question.options
-          }
-        });
+    try {
+      // Create survey first
+      const createdSurvey = await createSurveyMutation.mutateAsync(data);
+      
+      // Then create questions if any
+      if (surveyQuestions.length > 0) {
+        console.log('Criando perguntas:', surveyQuestions.length, 'perguntas');
+        for (let i = 0; i < surveyQuestions.length; i++) {
+          const question = surveyQuestions[i];
+          console.log('Criando pergunta:', question);
+          
+          const questionResponse = await apiRequest(`/api/surveys/${(createdSurvey as any).id}/questions`, {
+            method: 'POST',
+            body: {
+              question: question.question,
+              type: question.type,
+              order: i + 1,
+              isRequired: question.isRequired,
+              options: question.options
+            }
+          });
+          
+          console.log('Pergunta criada:', questionResponse);
+        }
       }
+      
+      // Reset questions after successful creation
+      setSurveyQuestions([]);
+      setSelectedCategories([]);
+      
+      toast({ title: "Pesquisa criada com sucesso com todas as perguntas!" });
+    } catch (error) {
+      console.error('Erro completo ao criar pesquisa:', error);
+      toast({ title: "Erro ao criar pesquisa completa", variant: "destructive" });
     }
-    
-    // Reset questions after successful creation
-    setSurveyQuestions([]);
   };
 
   const handleUpdateSurvey = async (formData: FormData) => {
@@ -352,7 +366,11 @@ export default function SurveyManagement() {
       if (formData.allowMultipleResponses) form.append('allowMultipleResponses', 'on');
       if (formData.allowAnonymousResponses) form.append('allowAnonymousResponses', 'on');
       
-      await onSubmit(form);
+      try {
+        await onSubmit(form);
+      } catch (error) {
+        console.error('Erro ao salvar pesquisa:', error);
+      }
     };
 
     return (
