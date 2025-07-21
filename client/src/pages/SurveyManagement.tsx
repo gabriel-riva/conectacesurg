@@ -689,26 +689,10 @@ export default function SurveyManagement() {
   };
 
   const SurveyForm = ({ survey, onSubmit }: { survey?: Survey; onSubmit: (formData: FormData) => Promise<void> }) => {
-    // Simplificar o estado inicial
-    const initialFormData = {
-      title: survey?.survey.title || '',
-      description: survey?.survey.description || '',
-      instructions: survey?.survey.instructions || '',
-      isActive: survey?.survey.isActive || false,
-      allowMultipleResponses: survey?.survey.allowMultipleResponses || false,
-      allowAnonymousResponses: survey?.survey.allowAnonymousResponses ?? true,
-      startDate: survey?.survey.startDate ? new Date(survey.survey.startDate).toISOString().slice(0, 16) : '',
-      endDate: survey?.survey.endDate ? new Date(survey.survey.endDate).toISOString().slice(0, 16) : ''
-    };
-    
-    const [formData, setFormData] = useState(initialFormData);
-    
-    // Atualizar quando survey muda (para edição)
-    useEffect(() => {
+    // Para edição, usar dados da pesquisa. Para criação, usar estado persistente
+    const [formData, setFormData] = useState(() => {
       if (survey) {
-        console.log('Carregando dados da pesquisa para edição:', survey);
-        setSurveyQuestions(survey.questions || []);
-        setFormData({
+        return {
           title: survey.survey.title || '',
           description: survey.survey.description || '',
           instructions: survey.survey.instructions || '',
@@ -717,7 +701,23 @@ export default function SurveyManagement() {
           allowAnonymousResponses: survey.survey.allowAnonymousResponses ?? true,
           startDate: survey.survey.startDate ? new Date(survey.survey.startDate).toISOString().slice(0, 16) : '',
           endDate: survey.survey.endDate ? new Date(survey.survey.endDate).toISOString().slice(0, 16) : ''
-        });
+        };
+      } else {
+        return persistentFormData;
+      }
+    });
+    
+    // Atualizar o estado persistente quando os dados mudarem (apenas para criação)
+    useEffect(() => {
+      if (!survey) {
+        setPersistentFormData(formData);
+      }
+    }, [formData, survey]);
+    
+    // Carregar perguntas quando estiver editando
+    useEffect(() => {
+      if (survey) {
+        setSurveyQuestions(survey.questions || []);
       }
     }, [survey]);
 
@@ -749,12 +749,7 @@ export default function SurveyManagement() {
               id="title" 
               name="title" 
               value={formData.title}
-              onChange={(e) => {
-                console.log('Input onChange disparado para título:', e.target.value);
-                setFormData(prev => ({ ...prev, title: e.target.value }));
-              }}
-              onFocus={() => console.log('Input título focado')}
-              onClick={() => console.log('Input título clicado')}
+              onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
               required 
             />
           </div>
@@ -898,17 +893,19 @@ export default function SurveyManagement() {
             setEditingSurvey(null);
             setSurveyQuestions([]);
             setSelectedCategories([]);
-            // Limpar dados persistentes ao cancelar
-            setPersistentFormData({
-              title: '',
-              description: '',
-              instructions: '',
-              isActive: false,
-              allowMultipleResponses: false,
-              allowAnonymousResponses: true,
-              startDate: '',
-              endDate: ''
-            });
+            // Limpar dados persistentes ao cancelar apenas se não estiver editando
+            if (!survey) {
+              setPersistentFormData({
+                title: '',
+                description: '',
+                instructions: '',
+                isActive: false,
+                allowMultipleResponses: false,
+                allowAnonymousResponses: true,
+                startDate: '',
+                endDate: ''
+              });
+            }
           }}>
             Cancelar
           </Button>
