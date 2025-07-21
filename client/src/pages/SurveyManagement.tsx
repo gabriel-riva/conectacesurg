@@ -741,18 +741,19 @@ export default function SurveyManagement() {
     };
 
     return (
-      <form onSubmit={handleSubmit}>
-        <div className="space-y-6">
-          <div>
-            <Label htmlFor="title">Título</Label>
-            <Input 
-              id="title" 
-              name="title" 
-              value={formData.title}
-              onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-              required 
-            />
-          </div>
+      <div className="flex flex-col min-h-0">
+        <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
+          <div className="flex-1 space-y-6 overflow-y-auto pr-2">
+            <div>
+              <Label htmlFor="title">Título</Label>
+              <Input 
+                id="title" 
+                name="title" 
+                value={formData.title}
+                onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+                required 
+              />
+            </div>
 
           <div>
             <Label htmlFor="description">Descrição</Label>
@@ -887,34 +888,38 @@ export default function SurveyManagement() {
           onEditQuestion={(question, index) => setEditingQuestion({ question, index })}
         />
 
-        <div className="flex justify-end space-x-2 pt-4">
-          <Button type="button" variant="outline" onClick={() => {
-            setIsCreateDialogOpen(false);
-            setEditingSurvey(null);
-            setSurveyQuestions([]);
-            setSelectedCategories([]);
-            // Limpar dados persistentes ao cancelar apenas se não estiver editando
-            if (!survey) {
-              setPersistentFormData({
-                title: '',
-                description: '',
-                instructions: '',
-                isActive: false,
-                allowMultipleResponses: false,
-                allowAnonymousResponses: true,
-                startDate: '',
-                endDate: ''
-              });
-            }
-          }}>
-            Cancelar
-          </Button>
-          <Button type="submit">
-            {survey ? 'Atualizar' : 'Criar'} Pesquisa
-          </Button>
-        </div>
-        </div>
-      </form>
+          </div>
+          
+          <div className="flex-shrink-0 border-t pt-4 mt-4">
+            <div className="flex justify-end space-x-2">
+              <Button type="button" variant="outline" onClick={() => {
+                setIsCreateDialogOpen(false);
+                setEditingSurvey(null);
+                setSurveyQuestions([]);
+                setSelectedCategories([]);
+                // Limpar dados persistentes ao cancelar apenas se não estiver editando
+                if (!survey) {
+                  setPersistentFormData({
+                    title: '',
+                    description: '',
+                    instructions: '',
+                    isActive: false,
+                    allowMultipleResponses: false,
+                    allowAnonymousResponses: true,
+                    startDate: '',
+                    endDate: ''
+                  });
+                }
+              }}>
+                Cancelar
+              </Button>
+              <Button type="submit">
+                {survey ? 'Atualizar' : 'Criar'} Pesquisa
+              </Button>
+            </div>
+          </div>
+        </form>
+      </div>
     );
   };
 
@@ -992,14 +997,14 @@ export default function SurveyManagement() {
                 Nova Pesquisa
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-5xl max-h-[95vh] overflow-y-auto pointer-events-auto">
-              <DialogHeader>
+            <DialogContent className="max-w-4xl max-h-[85vh] overflow-hidden flex flex-col">
+              <DialogHeader className="flex-shrink-0">
                 <DialogTitle>Criar Nova Pesquisa</DialogTitle>
                 <DialogDescription>
                   Crie uma nova pesquisa de opinião para os usuários
                 </DialogDescription>
               </DialogHeader>
-              <div className="pointer-events-auto">
+              <div className="flex-1 overflow-y-auto pr-2">
                 <SurveyForm onSubmit={handleCreateSurvey} />
               </div>
             </DialogContent>
@@ -1095,16 +1100,18 @@ export default function SurveyManagement() {
 
           {/* Edit Survey Dialog */}
       <Dialog open={!!editingSurvey} onOpenChange={() => setEditingSurvey(null)}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
+        <DialogContent className="max-w-4xl max-h-[85vh] overflow-hidden flex flex-col">
+          <DialogHeader className="flex-shrink-0">
             <DialogTitle>Editar Pesquisa</DialogTitle>
             <DialogDescription>
               Atualize as informações da pesquisa
             </DialogDescription>
           </DialogHeader>
-          {editingSurvey && (
-            <SurveyForm survey={editingSurvey} onSubmit={handleUpdateSurvey} />
-          )}
+          <div className="flex-1 overflow-y-auto pr-2">
+            {editingSurvey && (
+              <SurveyForm survey={editingSurvey} onSubmit={handleUpdateSurvey} />
+            )}
+          </div>
         </DialogContent>
       </Dialog>
         </div>
