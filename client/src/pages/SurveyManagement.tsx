@@ -1,6 +1,6 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Plus, Edit, Trash2, BarChart3, Users, Settings, Eye, EyeOff } from "lucide-react";
+import { Plus, Edit, Trash2, BarChart3, X, Save, Calendar, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -10,33 +10,80 @@ import {
   DialogContent, 
   DialogDescription, 
   DialogHeader, 
-  DialogTitle, 
-  DialogTrigger 
+  DialogTitle,
+  DialogFooter,
+  DialogTrigger
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Header } from "@/components/Header";
 import { AdminSidebar } from "@/components/AdminSidebar";
-import { SurveyQuestion } from '@/components/SurveyQuestionEditor';
+
+// Interfaces
+interface SurveyQuestion {
+  question: string;
+  type: 'multiple_choice' | 'likert_scale' | 'text_free' | 'yes_no' | 'rating' | 'date' | 'email';
+  isRequired: boolean;
+  options: any;
+  order: number;
+}
+
+interface Survey {
+  survey: {
+    id: number;
+    title: string;
+    description: string;
+    instructions?: string;
+    isActive: boolean;
+    allowMultipleResponses: boolean;
+    allowAnonymousResponses?: boolean;
+    targetUserCategories: number[];
+    startDate?: string;
+    endDate?: string;
+    createdAt: string;
+  };
+  questionCount: number;
+  responseCount: number;
+}
+
+interface UserCategory {
+  id: number;
+  name: string;
+  description?: string;
+  color?: string;
+}
 
 // Componente para exibir detalhes da pesquisa
 function SurveyDetailsDialog({ survey }: { survey: Survey }) {
   const [isOpen, setIsOpen] = useState(false);
   
-  const { data: questions, isLoading: questionsLoading } = useQuery({
-    queryKey: ['/api/surveys', survey.survey.id, 'questions'],
+  const { data: questions = [], isLoading: questionsLoading } = useQuery({
+    queryKey: [`/api/surveys/${survey.survey.id}/questions`],
     enabled: isOpen
   });
   
-  const { data: responses, isLoading: responsesLoading } = useQuery({
-    queryKey: ['/api/surveys', survey.survey.id, 'responses'],
+  const { data: responses = [], isLoading: responsesLoading } = useQuery({
+    queryKey: [`/api/surveys/${survey.survey.id}/responses`],
     enabled: isOpen
   });
+
+  const getQuestionTypeLabel = (type: string): string => {
+    const types: Record<string, string> = {
+      'multiple_choice': 'Múltipla Escolha',
+      'likert_scale': 'Escala Likert',
+      'text_free': 'Texto Livre',
+      'yes_no': 'Sim/Não',
+      'rating': 'Avaliação (Estrelas)',
+      'date': 'Data',
+      'email': 'Email'
+    };
+    return types[type] || type;
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -57,24 +104,26 @@ function SurveyDetailsDialog({ survey }: { survey: Survey }) {
         <div className="space-y-6">
           {/* Perguntas */}
           <div>
-            <h3 className="text-lg font-semibold mb-4">Perguntas ({survey.questionCount})</h3>
+            <h3 className="text-lg font-semibold mb-4">Perguntas ({questions.length || 0})</h3>
             {questionsLoading ? (
               <div className="space-y-2">
                 {[1, 2, 3].map(i => (
                   <div key={i} className="h-20 bg-gray-100 rounded animate-pulse" />
                 ))}
               </div>
+            ) : questions.length === 0 ? (
+              <p className="text-gray-500 text-center py-4">Nenhuma pergunta adicionada</p>
             ) : (
               <div className="space-y-4">
-                {(questions as any[])?.map((question: any, index: number) => (
-                  <Card key={question.id}>
+                {(questions as any[]).map((question: any, index: number) => (
+                  <Card key={question.id || index}>
                     <CardHeader className="pb-2">
                       <CardTitle className="text-base">
                         {index + 1}. {question.question}
                       </CardTitle>
                       <div className="flex items-center space-x-2">
                         <Badge variant="outline" className="text-xs">
-                          {question.type}
+                          {getQuestionTypeLabel(question.type)}
                         </Badge>
                         {question.isRequired && (
                           <Badge variant="destructive" className="text-xs">
@@ -98,16 +147,18 @@ function SurveyDetailsDialog({ survey }: { survey: Survey }) {
 
           {/* Respostas */}
           <div>
-            <h3 className="text-lg font-semibold mb-4">Respostas ({survey.responseCount})</h3>
+            <h3 className="text-lg font-semibold mb-4">Respostas ({responses.length || 0})</h3>
             {responsesLoading ? (
               <div className="space-y-2">
                 {[1, 2, 3].map(i => (
                   <div key={i} className="h-24 bg-gray-100 rounded animate-pulse" />
                 ))}
               </div>
+            ) : responses.length === 0 ? (
+              <p className="text-gray-500 text-center py-8">Nenhuma resposta ainda</p>
             ) : (
               <div className="space-y-4">
-                {(responses as any[])?.map((response: any) => (
+                {(responses as any[]).map((response: any) => (
                   <Card key={response.id}>
                     <CardHeader className="pb-2">
                       <div className="flex justify-between items-center">
@@ -122,21 +173,20 @@ function SurveyDetailsDialog({ survey }: { survey: Survey }) {
                     <CardContent className="pt-0">
                       <div className="space-y-2">
                         {Object.entries(response.responseData || {}).map(([questionId, answer]: [string, any]) => {
-                          const question = (questions as any[])?.find(q => q.id === parseInt(questionId));
-                          return (
+                          const question = (questions as any[]).find(q => q.id === parseInt(questionId));
+                          return question ? (
                             <div key={questionId} className="text-sm">
-                              <span className="font-medium">{question?.question}:</span>
-                              <span className="ml-2 text-gray-600">{String(answer)}</span>
+                              <span className="font-medium">{question.question}:</span>
+                              <span className="ml-2 text-gray-600">
+                                {typeof answer === 'object' ? JSON.stringify(answer) : String(answer)}
+                              </span>
                             </div>
-                          );
+                          ) : null;
                         })}
                       </div>
                     </CardContent>
                   </Card>
                 ))}
-                {!(responses as any[])?.length && (
-                  <p className="text-gray-500 text-center py-8">Nenhuma resposta ainda</p>
-                )}
               </div>
             )}
           </div>
@@ -489,8 +539,8 @@ export default function SurveyManagement() {
   const [editingSurvey, setEditingSurvey] = useState<Survey | null>(null);
   const [surveyQuestions, setSurveyQuestions] = useState<SurveyQuestion[]>([]);
   const [selectedCategories, setSelectedCategories] = useState<number[]>([]);
-  const queryClient = useQueryClient();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   // Buscar pesquisas
   const { data: surveys, isLoading } = useQuery({
