@@ -254,7 +254,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       next();
     },
     (req, res, next) => {
-      passport.authenticate('google', (err, user, info) => {
+      passport.authenticate('google', (err: any, user: any, info: any) => {
         // Get the original domain from session for error redirects
         const originalDomain = (req.session as any)?.originalDomain;
         const host = req.get('host');
@@ -295,12 +295,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.log("✅ Autenticação bem-sucedida, redirecionando para dashboard");
           console.log(`👤 Usuário: ${user?.name || 'Desconhecido'}`);
           
-          // Get the original domain from session, fallback to current domain
-          const originalDomain = (req.session as any)?.originalDomain;
-          const host = req.get('host');
-          const protocol = req.get('x-forwarded-proto') || (req.secure ? 'https' : 'http');
-          const currentDomain = `${protocol}://${host}`;
-          const redirectDomain = originalDomain || currentDomain;
+          // Use the already declared redirectDomain variable from above
           
           console.log(`🔄 Redirecionando para: ${redirectDomain}/dashboard`);
           
