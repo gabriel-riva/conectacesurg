@@ -52,15 +52,6 @@ const FeedbackManagement: React.FC = () => {
   const [status, setStatus] = useState<string>('');
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
-  // Debug: Add temporary logging
-  useEffect(() => {
-    console.log('FeedbackManagement mounted, selectedImage:', selectedImage);
-  }, []);
-
-  useEffect(() => {
-    console.log('selectedImage changed:', selectedImage);
-  }, [selectedImage]);
-
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -68,16 +59,6 @@ const FeedbackManagement: React.FC = () => {
     queryKey: ['/api/feedback'],
     queryFn: () => apiRequest('/api/feedback'),
   });
-
-  useEffect(() => {
-    if (feedbacks && feedbacks.length > 0) {
-      console.log('Feedbacks data:', feedbacks[0]);
-      console.log('Feedback attachments structure:', feedbacks[0]?.attachments);
-      if (feedbacks[0]?.attachments?.images) {
-        console.log('First image structure:', feedbacks[0].attachments.images[0]);
-      }
-    }
-  }, [feedbacks]);
 
   const { data: users } = useQuery<Array<{id: number, name: string, email: string}>>({
     queryKey: ['/api/users'],
@@ -429,12 +410,10 @@ const FeedbackManagement: React.FC = () => {
                                       className="w-full h-24 object-cover rounded-lg border shadow-sm cursor-pointer hover:shadow-md transition-shadow"
                                       onClick={(e) => {
                                         e.stopPropagation();
-                                        console.log('Image clicked:', image.fileName);
-                                        console.log('Full path:', image.fileUrl);
                                         setSelectedImage(image.fileUrl);
                                       }}
                                     />
-                                    <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 rounded-lg transition-all flex items-center justify-center">
+                                    <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 rounded-lg transition-all flex items-center justify-center pointer-events-none">
                                       <div className="opacity-0 group-hover:opacity-100 transition-opacity">
                                         <Eye className="w-5 h-5 text-white" />
                                       </div>
