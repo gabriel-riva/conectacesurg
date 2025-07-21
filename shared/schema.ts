@@ -1176,6 +1176,15 @@ export const feedbacks = pgTable("feedbacks", {
   type: text("type").notNull(), // 'bug', 'improvement', 'general'
   isAnonymous: boolean("isAnonymous").notNull().default(false),
   userId: integer("userId").references(() => users.id),
+  attachments: jsonb("attachments").$type<{
+    images: {
+      fileName: string;
+      fileUrl: string;
+      fileSize: number;
+      mimeType: string;
+      isScreenshot: boolean;
+    }[];
+  }>().default({ images: [] }),
   createdAt: timestamp("createdAt").defaultNow(),
   updatedAt: timestamp("updatedAt").defaultNow(),
   status: text("status").notNull().default("pending"), // 'pending', 'read', 'resolved'
@@ -1199,6 +1208,8 @@ export const insertFeedbackSchema = createInsertSchema(feedbacks).omit({
   updatedAt: true,
   status: true,
   adminNotes: true,
+  resolvedAt: true,
+  resolvedBy: true,
 });
 
 // Schema para atualizar feedback (admin)

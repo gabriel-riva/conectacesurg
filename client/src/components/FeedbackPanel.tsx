@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { ChevronLeft, MessageCircle, Bug, Lightbulb, Heart, X } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { ChevronLeft, MessageCircle, Bug, Lightbulb, Heart, X, Upload, Camera, Image as ImageIcon, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
@@ -42,6 +42,15 @@ const feedbackTypes = [
   }
 ];
 
+interface AttachedImage {
+  fileName: string;
+  fileUrl: string;
+  fileSize: number;
+  mimeType: string;
+  isScreenshot: boolean;
+  previewUrl?: string;
+}
+
 export default function FeedbackPanel({ isOpen, onClose, user }: FeedbackPanelProps) {
   const [step, setStep] = useState<'select' | 'form'>('select');
   const [selectedType, setSelectedType] = useState<FeedbackType | null>(null);
@@ -49,6 +58,9 @@ export default function FeedbackPanel({ isOpen, onClose, user }: FeedbackPanelPr
   const [content, setContent] = useState('');
   const [isAnonymous, setIsAnonymous] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [attachedImages, setAttachedImages] = useState<AttachedImage[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
   const handleTypeSelect = (type: FeedbackType) => {
@@ -59,6 +71,133 @@ export default function FeedbackPanel({ isOpen, onClose, user }: FeedbackPanelPr
   const handleBack = () => {
     setStep('select');
     setSelectedType(null);
+  };
+
+  // Function to handle file uploads
+  const handleFileUpload = async (files: FileList | null, isScreenshot: boolean = false) => {
+    if (!files || files.length === 0) return;
+
+    // Check if we've reached the maximum number of images
+    if (attachedImages.length + files.length > 5) {
+      toast({
+        title: "Limite de imagens",
+        description: "Você pode anexar no máximo 5 imagens por feedback.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsUploading(true);
+
+    try {
+      const formData = new FormData();
+      Array.from(files).forEach((file) => {
+        formData.append('images', file);
+      });
+      formData.append('isScreenshot', isScreenshot.toString());
+
+      const response = await apiRequest('/api/upload/feedback-images', {
+        method: 'POST',
+        body: formData
+      }) as { success: boolean; images: AttachedImage[] };
+
+      if (response.success) {
+        // Add preview URLs for the uploaded images
+        const newImages = response.images.map((img: AttachedImage, index: number) => ({
+          ...img,
+          previewUrl: URL.createObjectURL(Array.from(files)[index] || files[0])
+        }));
+
+        setAttachedImages(prev => [...prev, ...newImages]);
+        
+        toast({
+          title: "Imagens carregadas",
+          description: `${files.length} imagem(ns) anexada(s) com sucesso.`,
+          variant: "default"
+        });
+      }
+    } catch (error) {
+      console.error('Error uploading images:', error);
+      toast({
+        title: "Erro no upload",
+        description: "Não foi possível carregar as imagens. Tente novamente.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  // Function to handle screenshot capture
+  const handleScreenshot = async () => {
+    try {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
+        toast({
+          title: "Não suportado",
+          description: "Captura de tela não é suportada neste navegador.",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      const stream = await navigator.mediaDevices.getDisplayMedia({
+        video: true
+      });
+
+      const video = document.createElement('video');
+      video.srcObject = stream;
+      video.play();
+
+      video.onloadedmetadata = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        const ctx = canvas.getContext('2d');
+        ctx?.drawImage(video, 0, 0);
+
+        // Stop the screen capture
+        stream.getTracks().forEach(track => track.stop());
+
+        // Convert to blob and upload
+        canvas.toBlob(async (blob) => {
+          if (!blob) return;
+
+          const file = new File([blob], `screenshot-${Date.now()}.png`, {
+            type: 'image/png'
+          });
+
+          const dt = new DataTransfer();
+          dt.items.add(file);
+
+          await handleFileUpload(dt.files, true);
+        }, 'image/png');
+      };
+    } catch (error) {
+      console.error('Error capturing screenshot:', error);
+      toast({
+        title: "Erro na captura",
+        description: "Não foi possível capturar a tela. Verifique as permissões.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  // Function to remove attached image
+  const removeImage = (index: number) => {
+    setAttachedImages(prev => {
+      const updated = [...prev];
+      // Revoke the preview URL to free memory
+      if (updated[index].previewUrl) {
+        URL.revokeObjectURL(updated[index].previewUrl!);
+      }
+      updated.splice(index, 1);
+      return updated;
+    });
+  };
+
+  // Function to trigger file input
+  const triggerFileInput = () => {
+    fileInputRef.current?.click();
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -85,7 +224,10 @@ export default function FeedbackPanel({ isOpen, onClose, user }: FeedbackPanelPr
           type: selectedType,
           title: finalTitle,
           description: content.trim(),
-          isAnonymous: isAnonymous
+          isAnonymous: isAnonymous,
+          attachments: {
+            images: attachedImages
+          }
         }),
         headers: {
           'Content-Type': 'application/json'
@@ -102,6 +244,13 @@ export default function FeedbackPanel({ isOpen, onClose, user }: FeedbackPanelPr
       setTitle('');
       setContent('');
       setIsAnonymous(false);
+      // Clean up attached images
+      attachedImages.forEach(img => {
+        if (img.previewUrl) {
+          URL.revokeObjectURL(img.previewUrl);
+        }
+      });
+      setAttachedImages([]);
       setStep('select');
       setSelectedType(null);
       onClose();
@@ -217,6 +366,90 @@ export default function FeedbackPanel({ isOpen, onClose, user }: FeedbackPanelPr
                       placeholder="Conte-nos mais detalhes sobre seu feedback..."
                       className="min-h-[120px]"
                       required
+                    />
+                  </div>
+
+                  {/* Image Upload Section */}
+                  <div className="space-y-3">
+                    <Label>Anexos (opcional)</Label>
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={triggerFileInput}
+                        disabled={isUploading || attachedImages.length >= 5}
+                        className="flex items-center space-x-1"
+                      >
+                        <Upload className="h-4 w-4" />
+                        <span>Carregar Imagem</span>
+                      </Button>
+                      
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={handleScreenshot}
+                        disabled={isUploading || attachedImages.length >= 5}
+                        className="flex items-center space-x-1"
+                      >
+                        <Camera className="h-4 w-4" />
+                        <span>Capturar Tela</span>
+                      </Button>
+                    </div>
+                    
+                    {isUploading && (
+                      <div className="text-sm text-gray-500">
+                        Carregando imagem...
+                      </div>
+                    )}
+
+                    {attachedImages.length > 0 && (
+                      <div className="space-y-2">
+                        <div className="text-sm text-gray-600">
+                          Imagens anexadas ({attachedImages.length}/5):
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          {attachedImages.map((image, index) => (
+                            <div key={index} className="relative group">
+                              <div className="border rounded-lg p-2 bg-gray-50">
+                                {image.previewUrl ? (
+                                  <img
+                                    src={image.previewUrl}
+                                    alt={`Anexo ${index + 1}`}
+                                    className="w-full h-20 object-cover rounded"
+                                  />
+                                ) : (
+                                  <div className="w-full h-20 bg-gray-200 rounded flex items-center justify-center">
+                                    <ImageIcon className="h-6 w-6 text-gray-400" />
+                                  </div>
+                                )}
+                                <div className="text-xs text-gray-500 mt-1 truncate">
+                                  {image.isScreenshot ? '📷 Screenshot' : image.fileName}
+                                </div>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => removeImage(index)}
+                                  className="absolute -top-1 -right-1 h-6 w-6 rounded-full bg-red-500 hover:bg-red-600 text-white p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                                >
+                                  <X className="h-3 w-3" />
+                                </Button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    <input
+                      type="file"
+                      ref={fileInputRef}
+                      onChange={(e) => handleFileUpload(e.target.files)}
+                      accept="image/*"
+                      multiple
+                      className="hidden"
                     />
                   </div>
 
