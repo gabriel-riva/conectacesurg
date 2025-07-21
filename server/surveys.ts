@@ -163,7 +163,10 @@ router.put("/:id", async (req, res) => {
       return res.status(400).json({ error: "ID inválido" });
     }
 
-    const validatedData = insertSurveySchema.parse(req.body);
+    const validatedData = insertSurveySchema.parse({
+      ...req.body,
+      creatorId: user.id
+    });
 
     const [updatedSurvey] = await db
       .update(surveys)

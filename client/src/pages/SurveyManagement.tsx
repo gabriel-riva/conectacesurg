@@ -332,66 +332,95 @@ export default function SurveyManagement() {
     }
   };
 
-  const SurveyForm = ({ survey, onSubmit }: { survey?: Survey; onSubmit: (formData: FormData) => Promise<void> }) => (
-    <form>
-      <div className="space-y-6">
-        <div>
-          <Label htmlFor="title">Título</Label>
-          <Input 
-            id="title" 
-            name="title" 
-            defaultValue={survey?.survey.title}
-            required 
-          />
-        </div>
+  const SurveyForm = ({ survey, onSubmit }: { survey?: Survey; onSubmit: (formData: FormData) => Promise<void> }) => {
+    const [formData, setFormData] = useState({
+      title: survey?.survey.title || '',
+      description: survey?.survey.description || '',
+      instructions: survey?.survey.instructions || '',
+      isActive: survey?.survey.isActive || false,
+      allowMultipleResponses: survey?.survey.allowMultipleResponses || false,
+      allowAnonymousResponses: survey?.survey.allowAnonymousResponses ?? true
+    });
 
-        <div>
-          <Label htmlFor="description">Descrição</Label>
-          <Textarea 
-            id="description" 
-            name="description" 
-            defaultValue={survey?.survey.description}
-            rows={3}
-          />
-        </div>
+    const handleSubmit = async (e: React.FormEvent) => {
+      e.preventDefault();
+      const form = new FormData();
+      form.append('title', formData.title);
+      form.append('description', formData.description);
+      form.append('instructions', formData.instructions);
+      if (formData.isActive) form.append('isActive', 'on');
+      if (formData.allowMultipleResponses) form.append('allowMultipleResponses', 'on');
+      if (formData.allowAnonymousResponses) form.append('allowAnonymousResponses', 'on');
+      
+      await onSubmit(form);
+    };
 
-        <div>
-          <Label htmlFor="instructions">Instruções</Label>
-          <Textarea 
-            id="instructions" 
-            name="instructions" 
-            defaultValue={survey?.survey.instructions}
-            rows={2}
-            placeholder="Instruções opcionais para os usuários"
-          />
-        </div>
+    return (
+      <form onSubmit={handleSubmit}>
+        <div className="space-y-6">
+          <div>
+            <Label htmlFor="title">Título</Label>
+            <Input 
+              id="title" 
+              name="title" 
+              value={formData.title}
+              onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+              required 
+            />
+          </div>
 
-        <div className="flex items-center space-x-2">
-          <Checkbox 
-            id="isActive" 
-            name="isActive" 
-            defaultChecked={survey?.survey.isActive}
-          />
-          <Label htmlFor="isActive">Pesquisa ativa</Label>
-        </div>
+          <div>
+            <Label htmlFor="description">Descrição</Label>
+            <Textarea 
+              id="description" 
+              name="description" 
+              value={formData.description}
+              onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+              rows={3}
+            />
+          </div>
 
-        <div className="flex items-center space-x-2">
-          <Checkbox 
-            id="allowMultipleResponses" 
-            name="allowMultipleResponses" 
-            defaultChecked={survey?.survey.allowMultipleResponses}
-          />
-          <Label htmlFor="allowMultipleResponses">Permitir múltiplas respostas</Label>
-        </div>
+          <div>
+            <Label htmlFor="instructions">Instruções</Label>
+            <Textarea 
+              id="instructions" 
+              name="instructions" 
+              value={formData.instructions}
+              onChange={(e) => setFormData(prev => ({ ...prev, instructions: e.target.value }))}
+              rows={2}
+              placeholder="Instruções opcionais para os usuários"
+            />
+          </div>
 
-        <div className="flex items-center space-x-2">
-          <Checkbox 
-            id="allowAnonymousResponses" 
-            name="allowAnonymousResponses" 
-            defaultChecked={survey?.survey.allowAnonymousResponses ?? true}
-          />
-          <Label htmlFor="allowAnonymousResponses">Permitir respostas anônimas</Label>
-        </div>
+          <div className="flex items-center space-x-2">
+            <Checkbox 
+              id="isActive" 
+              name="isActive" 
+              checked={formData.isActive}
+              onCheckedChange={(checked) => setFormData(prev => ({ ...prev, isActive: !!checked }))}
+            />
+            <Label htmlFor="isActive">Pesquisa ativa</Label>
+          </div>
+
+          <div className="flex items-center space-x-2">
+            <Checkbox 
+              id="allowMultipleResponses" 
+              name="allowMultipleResponses" 
+              checked={formData.allowMultipleResponses}
+              onCheckedChange={(checked) => setFormData(prev => ({ ...prev, allowMultipleResponses: !!checked }))}
+            />
+            <Label htmlFor="allowMultipleResponses">Permitir múltiplas respostas</Label>
+          </div>
+
+          <div className="flex items-center space-x-2">
+            <Checkbox 
+              id="allowAnonymousResponses" 
+              name="allowAnonymousResponses" 
+              checked={formData.allowAnonymousResponses}
+              onCheckedChange={(checked) => setFormData(prev => ({ ...prev, allowAnonymousResponses: !!checked }))}
+            />
+            <Label htmlFor="allowAnonymousResponses">Permitir respostas anônimas</Label>
+          </div>
 
         <div>
           <Label>Público-alvo (categorias)</Label>
@@ -478,20 +507,14 @@ export default function SurveyManagement() {
           }}>
             Cancelar
           </Button>
-          <Button 
-            type="button"
-            onClick={async (e) => {
-              const form = (e.target as HTMLElement).closest('form') as HTMLFormElement;
-              const formData = new FormData(form);
-              await onSubmit(formData);
-            }}
-          >
+          <Button type="submit">
             {survey ? 'Atualizar' : 'Criar'} Pesquisa
           </Button>
         </div>
-      </div>
-    </form>
-  );
+        </div>
+      </form>
+    );
+  };
 
   const CategorySelectionDialog = () => (
     <Dialog open={isCategoryDialogOpen} onOpenChange={setIsCategoryDialogOpen}>
