@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -51,6 +51,11 @@ const FeedbackManagement: React.FC = () => {
   const [adminNotes, setAdminNotes] = useState('');
   const [status, setStatus] = useState<string>('');
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  
+  // Debug: Log when selectedImage changes
+  useEffect(() => {
+    console.log('selectedImage state changed:', selectedImage);
+  }, [selectedImage]);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -407,7 +412,11 @@ const FeedbackManagement: React.FC = () => {
                                       src={image.fileUrl}
                                       alt={image.fileName}
                                       className="w-full h-24 object-cover rounded-lg border shadow-sm cursor-pointer hover:shadow-md transition-shadow"
-                                      onClick={() => setSelectedImage(image.fileUrl)}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        console.log('Image clicked:', image.fileUrl);
+                                        setSelectedImage(image.fileUrl);
+                                      }}
                                     />
                                     <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 rounded-lg transition-all flex items-center justify-center">
                                       <div className="opacity-0 group-hover:opacity-100 transition-opacity">
@@ -500,7 +509,10 @@ const FeedbackManagement: React.FC = () => {
       </div>
       
       {/* Image Viewer Dialog */}
-      <Dialog open={!!selectedImage} onOpenChange={() => setSelectedImage(null)}>
+      <Dialog open={!!selectedImage} onOpenChange={() => {
+        console.log('Dialog closing, selectedImage was:', selectedImage);
+        setSelectedImage(null);
+      }}>
         <DialogContent className="max-w-4xl max-h-[90vh] p-0">
           <DialogHeader className="p-6 pb-0">
             <DialogTitle>Visualizar Imagem</DialogTitle>
@@ -520,7 +532,10 @@ const FeedbackManagement: React.FC = () => {
                   <Download className="w-4 h-4 mr-2" />
                   Abrir em nova aba
                 </Button>
-                <Button onClick={() => setSelectedImage(null)}>
+                <Button onClick={() => {
+                  console.log('Close button clicked');
+                  setSelectedImage(null);
+                }}>
                   Fechar
                 </Button>
               </div>
