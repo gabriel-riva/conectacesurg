@@ -39,18 +39,18 @@ router.get("/", async (req, res) => {
         questionCount: sql<number>`CAST((
           SELECT COUNT(*) 
           FROM ${surveyQuestions} 
-          WHERE ${surveyQuestions.surveyId} = ${surveys.id}
+          WHERE ${surveyQuestions.survey_id} = ${surveys.id}
         ) AS INTEGER)`,
         responseCount: sql<number>`CAST((
           SELECT COUNT(*) 
           FROM ${surveyResponses} 
-          WHERE ${surveyResponses.surveyId} = ${surveys.id}
+          WHERE ${surveyResponses.survey_id} = ${surveys.id}
         ) AS INTEGER)`,
         questions: sql<any[]>`
           COALESCE(
             (SELECT json_agg(row_to_json(sq.*) ORDER BY sq."order")
              FROM ${surveyQuestions} sq
-             WHERE sq."surveyId" = ${surveys.id}),
+             WHERE sq."survey_id" = ${surveys.id}),
             '[]'::json
           )`
       })
