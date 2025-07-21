@@ -357,11 +357,11 @@ const FeedbackManagement: React.FC = () => {
                             Gerenciar
                           </Button>
                         </DialogTrigger>
-                      <DialogContent className="max-w-2xl">
+                      <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
                         <DialogHeader>
                           <DialogTitle>Gerenciar Feedback #{feedback.id}</DialogTitle>
                         </DialogHeader>
-                        <div className="space-y-4">
+                        <div className="space-y-4 pr-2">
                           <div className="flex items-center gap-4">
                             <div className="flex items-center gap-2">
                               {getTypeIcon(feedback.type)}
@@ -399,7 +399,7 @@ const FeedbackManagement: React.FC = () => {
                                 <ImageIcon className="w-4 h-4" />
                                 Imagens Anexadas ({feedback.attachments.images.length})
                               </Label>
-                              <div className="mt-2 grid grid-cols-2 sm:grid-cols-3 gap-3">
+                              <div className="mt-2 grid grid-cols-2 gap-3 max-h-48 overflow-y-auto">
                                 {feedback.attachments.images.map((image, index) => (
                                   <div key={image.id} className="relative group">
                                     <img
@@ -458,10 +458,11 @@ const FeedbackManagement: React.FC = () => {
                             />
                           </div>
 
-                          <div className="flex justify-end gap-2">
+                          <div className="flex justify-end gap-2 pt-4 border-t">
                             <Button
                               onClick={handleUpdateFeedback}
                               disabled={updateFeedbackMutation.isPending}
+                              size="sm"
                             >
                               {updateFeedbackMutation.isPending ? 'Salvando...' : 'Salvar'}
                             </Button>
