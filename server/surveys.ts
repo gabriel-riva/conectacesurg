@@ -36,16 +36,16 @@ router.get("/", async (req, res) => {
     const surveysWithStats = await db
       .select({
         survey: surveys,
-        questionCount: sql<number>`(
+        questionCount: sql<number>`CAST((
           SELECT COUNT(*) 
           FROM ${surveyQuestions} 
           WHERE ${surveyQuestions.surveyId} = ${surveys.id}
-        )`,
-        responseCount: sql<number>`(
+        ) AS INTEGER)`,
+        responseCount: sql<number>`CAST((
           SELECT COUNT(*) 
           FROM ${surveyResponses} 
           WHERE ${surveyResponses.surveyId} = ${surveys.id}
-        )`
+        ) AS INTEGER)`
       })
       .from(surveys)
       .orderBy(desc(surveys.createdAt));
@@ -482,13 +482,16 @@ router.get("/public/active", async (req, res) => {
     const surveysToShow = [];
     for (const surveyData of activeSurveys) {
       if (!surveyData.survey.allowMultipleResponses) {
+        // Verificar se existe resposta para este usuário ou IP (para respostas anônimas)
         const existingResponse = await db
           .select()
           .from(surveyResponses)
           .where(
             and(
               eq(surveyResponses.surveyId, surveyData.survey.id),
-              eq(surveyResponses.userId, user.id)
+              user.id ? 
+                eq(surveyResponses.userId, user.id) : 
+                eq(surveyResponses.ipAddress, req.ip || req.connection?.remoteAddress || 'unknown')
             )
           )
           .limit(1);
