@@ -1,6 +1,7 @@
 import { Link } from "wouter";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Header } from "@/components/Header";
 import { 
   UsersIcon, 
   CalendarIcon, 
@@ -102,7 +103,9 @@ export default function FerramentasPage() {
   const categories = Object.keys(categoryLabels) as Array<keyof typeof categoryLabels>;
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="min-h-screen bg-gray-50">
+      <Header />
+      <div className="container mx-auto px-4 py-8">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">Ferramentas</h1>
         <p className="text-gray-600">
@@ -178,6 +181,7 @@ export default function FerramentasPage() {
             Enviar Sugestão
           </Button>
         </Link>
+      </div>
       </div>
     </div>
   );

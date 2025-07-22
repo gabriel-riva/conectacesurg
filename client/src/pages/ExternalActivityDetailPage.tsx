@@ -12,6 +12,7 @@ import { ToolProjectForm } from "@/components/ToolProjectForm";
 import { ToolProjectReportForm } from "@/components/ToolProjectReportForm";
 import { ArrowLeftIcon, EditIcon, PlusIcon, FileTextIcon, CalendarIcon, UserIcon, MapPinIcon, TargetIcon, PackageIcon, StickyNoteIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { Header } from "@/components/Header";
 import type { ToolProject, ToolProjectWithCreator } from "./ExternalActivitiesPage";
 
 interface ToolProjectReport {
@@ -114,12 +115,15 @@ export default function ExternalActivityDetailPage() {
 
   if (isLoadingProject) {
     return (
-      <div className="container mx-auto px-4 py-8">
+      <div className="min-h-screen bg-gray-50">
+        <Header />
+        <div className="container mx-auto px-4 py-8">
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-conecta-blue mx-auto mb-4"></div>
             <p className="text-gray-600">Carregando atividade...</p>
           </div>
+        </div>
         </div>
       </div>
     );
@@ -127,7 +131,9 @@ export default function ExternalActivityDetailPage() {
 
   if (!projectData) {
     return (
-      <div className="container mx-auto px-4 py-8">
+      <div className="min-h-screen bg-gray-50">
+        <Header />
+        <div className="container mx-auto px-4 py-8">
         <div className="text-center py-12">
           <h2 className="text-2xl font-bold text-gray-900 mb-4">Atividade não encontrada</h2>
           <p className="text-gray-600 mb-6">A atividade que você está procurando não existe ou foi removida.</p>
@@ -138,6 +144,7 @@ export default function ExternalActivityDetailPage() {
             </Button>
           </Link>
         </div>
+        </div>
       </div>
     );
   }
@@ -146,7 +153,9 @@ export default function ExternalActivityDetailPage() {
   const canEdit = isAdmin || project.creatorId === user?.id;
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="min-h-screen bg-gray-50">
+      <Header />
+      <div className="container mx-auto px-4 py-8">
       {/* Cabeçalho */}
       <div className="flex items-center gap-4 mb-6">
         <Link href="/ferramentas/atividades-externas">
@@ -456,6 +465,7 @@ export default function ExternalActivityDetailPage() {
             </CardContent>
           </Card>
         </div>
+      </div>
       </div>
     </div>
   );
