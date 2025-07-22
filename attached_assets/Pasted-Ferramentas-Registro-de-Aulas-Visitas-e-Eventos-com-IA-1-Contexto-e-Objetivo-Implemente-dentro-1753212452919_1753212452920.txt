@@ -1,0 +1,119 @@
+Ferramentas – Registro de Aulas, Visitas e Eventos com IA
+
+1. Contexto e Objetivo
+Implemente, dentro do Portal Conecta, um módulo de registro e acompanhamento de aulas com convidados, visitas técnicas e eventos.
+A coleta de dados será feita por um assistente IA via OpenAI Responses API, com saída estruturada (JSON) baseada nos schemas abaixo.
+A funcionalidade será a primeira do novo menu Ferramentas, que será expansível para outras utilidades de apoio ao professor.
+
+2. Localização e Navegação
+Novo item no Header: “Ferramentas”.
+
+Página Ferramentas: lista as funcionalidades disponíveis, começando por “Registro de Aulas, Visitas e Eventos”.
+
+Gestão dos projetos/eventos: página dedicada, acessível pelo menu ou pelo dashboard, mostra a lista dos registros do usuário e visualização Kanban dos projetos/eventos (status: Rascunho, Pendente, Aprovado, Rejeitado, Realizado, Relatório Pendente, Finalizado).
+
+3. Fluxo do Usuário
+3.1 Criação
+
+Professor seleciona “Registro de Aulas, Visitas e Eventos”.
+
+Abre um chat (wizard) com IA (OpenAI Responses API) em português do Brasil.
+
+A IA guia o professor, perguntando somente o necessário para preencher o modelo, com possibilidade de responder por texto ou voz (Whisper opcional).
+
+Após coletar tudo, apresenta prévia editável no site.
+
+Após revisão e envio, o registro entra com status “Pendente”.
+
+3.2 Aprovação e acompanhamento
+
+Coordenador (e, quando necessário, Marketing/Logística) visualizam os projetos/eventos via Kanban na página de gestão, podendo aprovar, rejeitar ou pedir ajustes.
+
+Notificações são disparadas para os envolvidos conforme regras de negócio (ex: lembrete de relatório após a realização).
+
+3.3 Relatório
+
+Após a realização, IA conduz o professor a preencher o relatório via chat.
+
+Relatório passa pela mesma lógica de aprovação.
+
+4. Estrutura dos Dados (Schema)
+Utilize os campos a seguir como referência para o output estruturado da OpenAI Responses API.
+
+PROJETO – Campos Estruturados
+markdown
+Copiar
+Editar
+# Projeto de Aula, Visita Técnica ou Evento
+
+- tipo_atividade: "aula_convidado" | "visita_tecnica" | "outro_evento"
+- data_realizacao: string (data)
+- local: string
+- nome_profissionais: string
+- quantidade_encontros: number (opcional, só para aula_convidado)
+- transporte_necessario: boolean
+- demandas_marketing: string[] (opções: "data_show", "microfone", "card_divulgacao", "arte_apresentacao", "televisao", "outro_material_grafico", "cobertura_fotografica")
+- publico_exclusivo: boolean (só para aula_convidado)
+- turmas_env: string (se publico_exclusivo for true)
+- horario_saida: string (só para visita_tecnica)
+- horario_retorno: string (só para visita_tecnica)
+- cidade: string (só para visita_tecnica)
+- empresas_visitadas: string (só para visita_tecnica)
+- logistica_visita: string (só para visita_tecnica)
+- tipo_veiculo: "van" | "micro" | "onibus" (só para visita_tecnica)
+- custo_aluno: number (só para visita_tecnica)
+- descricao_evento: string (só para outro_evento)
+- observacoes: string (opcional)
+RELATÓRIO – Campos Estruturados
+markdown
+Copiar
+Editar
+# Relatório de Aula, Visita Técnica ou Evento
+
+- projeto_id: string (referência ao projeto)
+- data_realizacao: string (data)
+- resumo_atividade: string
+- resultados_alcancados: string
+- pontos_positivos: string
+- desafios_dificuldades: string
+- sugestoes_melhoria: string
+- fotos_anexadas: string[] (URLs ou identificadores dos arquivos anexados)
+- observacoes_finais: string (opcional)
+5. Integração OpenAI Responses API
+O agente da OpenAI deve usar os campos acima como referência de saída estruturada (JSON), conduzindo o professor até que todos estejam preenchidos.
+
+Validar formatos e solicitar esclarecimentos se necessário.
+
+Perguntas e respostas sempre em português do Brasil, com linguagem clara e acessível.
+
+Permitir uso de voz como input opcional via Whisper.
+
+No final do processo, devolver o JSON completo para uso no sistema, geração de documentos e workflow.
+
+6. Interface & UX
+Ferramentas centralizadas no menu Header “Ferramentas”.
+
+Gestão dos registros de projetos/eventos com visualização Kanban de status.
+
+Permitir edição online dos dados antes do envio.
+
+Notificações para os envolvidos conforme eventos do workflow (criação, aprovação, lembrete de relatório, etc).
+
+Layout limpo e preparado para expansão de novas ferramentas.
+
+7. Permissões
+Professor: criar, editar, visualizar projetos/eventos próprios, preencher relatórios.
+
+Coordenador/Admin: visualizar todos, aprovar/rejeitar, editar, finalizar projetos/relatórios.
+
+Marketing/Logística: leitura + confirmação de demandas específicas.
+
+8. Observações
+Não haverá anexos/documentos enviados para referência: utilize apenas as estruturas acima.
+
+Produza o sistema seguindo o padrão visual e fluxo do Portal Conecta.
+
+Deixe a base preparada para adição de novas ferramentas no menu Ferramentas.
+
+Não é necessário escrever código aqui; produza o sistema completo conforme esta descrição, orientando as integrações de IA para gerar saídas estruturadas nos formatos acima.
+
