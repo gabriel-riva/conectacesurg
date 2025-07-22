@@ -51,6 +51,7 @@ const FeedbackManagement: React.FC = () => {
   const [adminNotes, setAdminNotes] = useState('');
   const [status, setStatus] = useState<string>('');
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [statusFilter, setStatusFilter] = useState<string>('all');
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -102,6 +103,11 @@ const FeedbackManagement: React.FC = () => {
     const user = users?.find((u: any) => u.id === userId);
     return user ? user.name : `Usuário ${userId}`;
   };
+
+  const filteredFeedbacks = feedbacks?.filter(feedback => {
+    if (statusFilter === 'all') return true;
+    return feedback.status === statusFilter;
+  }) || [];
 
   const updateFeedbackMutation = useMutation({
     mutationFn: ({ id, data }: { id: number; data: any }) =>
@@ -269,6 +275,21 @@ const FeedbackManagement: React.FC = () => {
               <h1 className="text-2xl font-bold text-primary">Gerenciamento de Feedbacks</h1>
               <div className="flex items-center gap-6">
                 <div className="flex items-center gap-2 text-sm">
+                  <Label className="text-xs text-gray-600">Filtrar por Status:</Label>
+                  <Select value={statusFilter} onValueChange={setStatusFilter}>
+                    <SelectTrigger className="w-40">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todos</SelectItem>
+                      <SelectItem value="open">Abertos</SelectItem>
+                      <SelectItem value="in_progress">Em Andamento</SelectItem>
+                      <SelectItem value="resolved">Resolvidos</SelectItem>
+                      <SelectItem value="closed">Fechados</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex items-center gap-2 text-sm">
                   <Label className="text-xs text-gray-600">Widget:</Label>
                   <Switch
                     checked={feedbackWidgetSettings?.isEnabled || false}
@@ -281,7 +302,7 @@ const FeedbackManagement: React.FC = () => {
                   </span>
                 </div>
                 <div className="text-sm text-gray-600">
-                  Total: {feedbacks?.length || 0} feedbacks
+                  Exibindo: {filteredFeedbacks.length} de {feedbacks?.length || 0} feedbacks
                 </div>
               </div>
             </div>
@@ -289,8 +310,13 @@ const FeedbackManagement: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         {['open', 'in_progress', 'resolved', 'closed'].map((statusType) => {
           const count = feedbacks?.filter(f => f.status === statusType).length || 0;
+          const isActive = statusFilter === statusType || statusFilter === 'all';
           return (
-            <Card key={statusType}>
+            <Card 
+              key={statusType} 
+              className={`cursor-pointer transition-all ${isActive ? 'ring-2 ring-primary' : 'opacity-60 hover:opacity-80'}`}
+              onClick={() => setStatusFilter(statusFilter === statusType ? 'all' : statusType)}
+            >
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
@@ -326,7 +352,7 @@ const FeedbackManagement: React.FC = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {feedbacks?.map((feedback) => (
+              {filteredFeedbacks.map((feedback) => (
                 <TableRow key={feedback.id}>
                   <TableCell>
                     <div className="flex items-center gap-2">
@@ -530,9 +556,14 @@ const FeedbackManagement: React.FC = () => {
             </TableBody>
           </Table>
 
-          {(!feedbacks || feedbacks.length === 0) && (
+          {filteredFeedbacks.length === 0 && (
             <div className="text-center py-8 text-gray-500">
-              Nenhum feedback encontrado.
+              {feedbacks && feedbacks.length > 0 
+                ? `Nenhum feedback encontrado com status "${statusFilter === 'all' ? 'todos' : 
+                    statusFilter === 'open' ? 'aberto' : 
+                    statusFilter === 'in_progress' ? 'em andamento' : 
+                    statusFilter === 'resolved' ? 'resolvido' : 'fechado'}".`
+                : 'Nenhum feedback encontrado.'}
             </div>
           )}
         </CardContent>
