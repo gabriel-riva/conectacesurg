@@ -523,6 +523,62 @@ export const challengeSubmissions = pgTable("challenge_submissions", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Ferramentas - Tabelas para Registro de Aulas, Visitas e Eventos
+export const toolProjects = pgTable("tool_projects", {
+  id: serial("id").primaryKey(),
+  creatorId: integer("creator_id").notNull().references(() => users.id),
+  
+  // Campos estruturados baseados no schema da especificação
+  tipoAtividade: text("tipo_atividade").notNull(), // "aula_convidado" | "visita_tecnica" | "outro_evento"
+  dataRealizacao: date("data_realizacao").notNull(),
+  local: text("local").notNull(),
+  nomeProfissionais: text("nome_profissionais").notNull(),
+  quantidadeEncontros: integer("quantidade_encontros"), // opcional, só para aula_convidado
+  transporteNecessario: boolean("transporte_necessario").notNull().default(false),
+  demandasMarketing: text("demandas_marketing").array().default([]), // array de strings
+  publicoExclusivo: boolean("publico_exclusivo").notNull().default(false), // só para aula_convidado
+  turmasEnv: text("turmas_env"), // se publico_exclusivo for true
+  horarioSaida: text("horario_saida"), // só para visita_tecnica
+  horarioRetorno: text("horario_retorno"), // só para visita_tecnica
+  cidade: text("cidade"), // só para visita_tecnica
+  empresasVisitadas: text("empresas_visitadas"), // só para visita_tecnica
+  logisticaVisita: text("logistica_visita"), // só para visita_tecnica
+  tipoVeiculo: text("tipo_veiculo"), // "van" | "micro" | "onibus" (só para visita_tecnica)
+  custoAluno: integer("custo_aluno"), // só para visita_tecnica (em centavos)
+  descricaoEvento: text("descricao_evento"), // só para outro_evento
+  observacoes: text("observacoes"), // opcional
+  
+  // Campos de controle de workflow
+  status: text("status").notNull().default("rascunho"), // "rascunho", "pendente", "aprovado", "rejeitado", "realizado", "relatorio_pendente", "finalizado"
+  dadosIA: jsonb("dados_ia").$type<any>(), // Dados coletados pela IA
+  
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const toolProjectReports = pgTable("tool_project_reports", {
+  id: serial("id").primaryKey(),
+  projectId: integer("project_id").notNull().references(() => toolProjects.id, { onDelete: 'cascade' }),
+  creatorId: integer("creator_id").notNull().references(() => users.id),
+  
+  // Campos estruturados baseados no schema de relatório da especificação
+  dataRealizacao: date("data_realizacao").notNull(),
+  resumoAtividade: text("resumo_atividade").notNull(),
+  resultadosAlcancados: text("resultados_alcancados").notNull(),
+  pontosPositivos: text("pontos_positivos").notNull(),
+  desafiosDificuldades: text("desafios_dificuldades").notNull(),
+  sugestoesMelhoria: text("sugestoes_melhoria").notNull(),
+  fotosAnexadas: text("fotos_anexadas").array().default([]), // URLs ou identificadores dos arquivos
+  observacoesFinais: text("observacoes_finais"), // opcional
+  
+  // Campos de controle
+  status: text("status").notNull().default("pendente"), // "pendente", "aprovado", "rejeitado"
+  dadosIA: jsonb("dados_ia").$type<any>(), // Dados coletados pela IA
+  
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Tipos e esquemas para o UtilityLink estão definidos abaixo junto com os outros esquemas
 
 // Relations
@@ -935,6 +991,26 @@ export const challengeSubmissionsRelations = relations(challengeSubmissions, ({ 
     fields: [challengeSubmissions.reviewedBy],
     references: [users.id],
     relationName: "reviewer"
+  }),
+}));
+
+// Relações para Ferramentas
+export const toolProjectsRelations = relations(toolProjects, ({ one, many }) => ({
+  creator: one(users, {
+    fields: [toolProjects.creatorId],
+    references: [users.id],
+  }),
+  reports: many(toolProjectReports),
+}));
+
+export const toolProjectReportsRelations = relations(toolProjectReports, ({ one }) => ({
+  project: one(toolProjects, {
+    fields: [toolProjectReports.projectId],
+    references: [toolProjects.id],
+  }),
+  creator: one(users, {
+    fields: [toolProjectReports.creatorId],
+    references: [users.id],
   }),
 }));
 
@@ -1562,6 +1638,18 @@ export const insertSurveyResponseSchema = createInsertSchema(surveyResponses).om
   createdAt: true,
 });
 
+export const insertToolProjectSchema = createInsertSchema(toolProjects).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertToolProjectReportSchema = createInsertSchema(toolProjectReports).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 export const insertSurveyWidgetSettingsSchema = createInsertSchema(surveyWidgetSettings).omit({
   id: true,
   updatedAt: true,
@@ -1572,9 +1660,13 @@ export type InsertSurvey = z.infer<typeof insertSurveySchema>;
 export type InsertSurveyQuestion = z.infer<typeof insertSurveyQuestionSchema>;
 export type InsertSurveyResponse = z.infer<typeof insertSurveyResponseSchema>;
 export type InsertSurveyWidgetSettings = z.infer<typeof insertSurveyWidgetSettingsSchema>;
+export type InsertToolProject = z.infer<typeof insertToolProjectSchema>;
+export type InsertToolProjectReport = z.infer<typeof insertToolProjectReportSchema>;
 
 // Tipos para seleção
 export type Survey = typeof surveys.$inferSelect;
 export type SurveyQuestion = typeof surveyQuestions.$inferSelect;
 export type SurveyResponse = typeof surveyResponses.$inferSelect;
 export type SurveyWidgetSettings = typeof surveyWidgetSettings.$inferSelect;
+export type ToolProject = typeof toolProjects.$inferSelect;
+export type ToolProjectReport = typeof toolProjectReports.$inferSelect;

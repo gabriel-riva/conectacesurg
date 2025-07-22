@@ -32,6 +32,8 @@ import AdminTrailContentsPage from "@/pages/AdminTrailContentsPage";
 import AdminGamificationPage from "@/pages/AdminGamificationPage";
 import FeedbackManagement from "@/pages/admin/FeedbackManagement";
 import SurveyManagement from "@/pages/SurveyManagement";
+import ToolProjectsPage from "@/pages/ToolProjectsPage";
+import ToolProjectDetailPage from "@/pages/ToolProjectDetailPage";
 import { AuthProvider } from "./providers/AuthProvider";
 import { useAuth } from "./lib/auth";
 import FeedbackWrapper from "./components/FeedbackWrapper";
@@ -81,6 +83,12 @@ function Router() {
       </Route>
       <Route path="/gamificacao">
         {() => <ProtectedRoute component={NewGamificationPage} />}
+      </Route>
+      <Route path="/ferramentas">
+        {() => <ProtectedRoute component={ToolProjectsPage} />}
+      </Route>
+      <Route path="/ferramentas/:id">
+        {() => <ProtectedRoute component={ToolProjectDetailPage} />}
       </Route>
 
       <Route path="/admin">
