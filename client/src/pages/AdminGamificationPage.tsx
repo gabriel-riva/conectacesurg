@@ -839,7 +839,7 @@ export default function AdminGamificationPage() {
                             <TableHead>Título</TableHead>
                             <TableHead>Tipo</TableHead>
                             <TableHead>Pontos</TableHead>
-                            <TableHead>Período</TableHead>
+                            <TableHead>Ciclo</TableHead>
                             <TableHead>Status</TableHead>
                             <TableHead className="text-right">Ações</TableHead>
                           </TableRow>
@@ -855,7 +855,7 @@ export default function AdminGamificationPage() {
                               </TableCell>
                               <TableCell>
                                 <Badge variant={challenge.type === 'periodic' ? 'default' : 'secondary'}>
-                                  {challenge.type === 'periodic' ? 'Período' : 'Anual'}
+                                  {challenge.type === 'periodic' ? 'Ciclo' : 'Anual'}
                                 </Badge>
                               </TableCell>
                               <TableCell>
@@ -936,7 +936,7 @@ export default function AdminGamificationPage() {
                                     </SelectTrigger>
                                   </FormControl>
                                   <SelectContent>
-                                    <SelectItem value="periodic">Período</SelectItem>
+                                    <SelectItem value="periodic">Ciclo</SelectItem>
                                     <SelectItem value="annual">Anual</SelectItem>
                                   </SelectContent>
                                 </Select>

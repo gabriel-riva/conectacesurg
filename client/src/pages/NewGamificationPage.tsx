@@ -90,7 +90,7 @@ function NewGamificationPageContent() {
 
         {/* Layout principal */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          {/* Coluna esquerda - Período atual e pontos */}
+          {/* Coluna esquerda - Ciclo atual e pontos */}
           <div className="lg:col-span-3 flex flex-col gap-6">
             <GamificationPeriodCard settings={settings} />
             <GamificationPointsHistoryCard pointsExtract={pointsExtract} />
@@ -105,13 +105,13 @@ function NewGamificationPageContent() {
               />
             ) : (
               <>
-                {/* Desafios do período */}
+                {/* Desafios do ciclo */}
                 <Card className="shadow-md hover:shadow-lg transition-shadow duration-300 border-none">
                   <CardHeader className="pb-4 bg-gradient-to-r from-primary/5 to-transparent">
                     <CardTitle className="text-primary/90 flex items-center">
                       <span className="inline-block w-1 h-5 bg-primary rounded mr-2"></span>
                       <Target className="h-5 w-5 mr-2" />
-                      Desafios do Período
+                      Desafios do Ciclo
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="p-6">

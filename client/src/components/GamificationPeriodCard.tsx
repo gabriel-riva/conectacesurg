@@ -18,14 +18,14 @@ export function GamificationPeriodCard({ settings }: GamificationPeriodCardProps
           <CardTitle className="text-primary/90 flex items-center">
             <span className="inline-block w-1 h-5 bg-primary rounded mr-2"></span>
             <Calendar className="h-5 w-5 mr-2" />
-            Período Atual
+            Ciclo Atual
           </CardTitle>
         </CardHeader>
         <CardContent className="p-4">
           <div className="text-center py-8 text-gray-500">
             <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
             <p className="text-sm">Configurações não encontradas</p>
-            <p className="text-xs">Configure os períodos na área administrativa</p>
+            <p className="text-xs">Configure os ciclos na área administrativa</p>
           </div>
         </CardContent>
       </Card>
@@ -36,7 +36,7 @@ export function GamificationPeriodCard({ settings }: GamificationPeriodCardProps
   const cycleEnd = settings.cycleEndDate ? new Date(settings.cycleEndDate) : null;
   const now = new Date();
 
-  // Calcular progresso do período
+  // Calcular progresso do ciclo
   let progressPercentage = 0;
   let daysRemaining = 0;
   let totalDays = 0;
@@ -54,17 +54,17 @@ export function GamificationPeriodCard({ settings }: GamificationPeriodCardProps
         <CardTitle className="text-primary/90 flex items-center">
           <span className="inline-block w-1 h-5 bg-primary rounded mr-2"></span>
           <Calendar className="h-5 w-5 mr-2" />
-          Período Atual
+          Ciclo Atual
         </CardTitle>
       </CardHeader>
       
       <CardContent className="p-4 space-y-4 flex-grow flex flex-col justify-between">
-        {/* Informações do período */}
+        {/* Informações do ciclo */}
         <div className="space-y-2">
           {cycleStart && cycleEnd && (
             <>
               <div className="flex justify-between items-center text-sm">
-                <span className="text-gray-600">Período:</span>
+                <span className="text-gray-600">Ciclo:</span>
                 <span className="font-medium">
                   {format(cycleStart, "dd/MM/yyyy", { locale: ptBR })} - {format(cycleEnd, "dd/MM/yyyy", { locale: ptBR })}
                 </span>
@@ -84,7 +84,7 @@ export function GamificationPeriodCard({ settings }: GamificationPeriodCardProps
         {cycleStart && cycleEnd && (
           <div className="space-y-2">
             <div className="flex justify-between items-center">
-              <span className="text-sm text-gray-600">Progresso do período</span>
+              <span className="text-sm text-gray-600">Progresso do ciclo</span>
               <span className="text-sm font-medium">{Math.round(progressPercentage)}%</span>
             </div>
             <Progress value={progressPercentage} className="h-2" />
@@ -106,7 +106,7 @@ export function GamificationPeriodCard({ settings }: GamificationPeriodCardProps
               onClick={() => window.open('#', '_blank')}
             >
               <FileText className="h-3 w-3 mr-2" />
-              Regulamento do Período
+              Regulamento do Ciclo
               <ExternalLink className="h-3 w-3 ml-auto" />
             </Button>
             <Button 
