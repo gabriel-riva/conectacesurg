@@ -65,7 +65,7 @@ export function ToolProjectForm({ onSuccess, initialData, isEditing = false, pro
   });
 
   const createMutation = useMutation({
-    mutationFn: (data: FormData) => apiRequest('/api/tool-projects', {
+    mutationFn: (data: any) => apiRequest('/api/tool-projects', {
       method: 'POST',
       body: JSON.stringify(data),
     }),
@@ -76,7 +76,7 @@ export function ToolProjectForm({ onSuccess, initialData, isEditing = false, pro
   });
 
   const updateMutation = useMutation({
-    mutationFn: (data: FormData) => apiRequest(`/api/tool-projects/${projectId}`, {
+    mutationFn: (data: any) => apiRequest(`/api/tool-projects/${projectId}`, {
       method: 'PUT',
       body: JSON.stringify(data),
     }),
@@ -86,8 +86,31 @@ export function ToolProjectForm({ onSuccess, initialData, isEditing = false, pro
   });
 
   const onSubmit = (data: FormData) => {
+    // Mapear os campos do formulário para o formato esperado pelo backend
+    const backendData = {
+      tipoAtividade: data.type === 'aula' ? 'aula_convidado' : data.type === 'visita_tecnica' ? 'visita_tecnica' : 'outro_evento',
+      dataRealizacao: data.startDate,
+      local: data.location || '',
+      nomeProfissionais: data.participants || '',
+      quantidadeEncontros: data.type === 'aula' ? 1 : undefined,
+      transporteNecessario: data.type === 'visita_tecnica',
+      demandasMarketing: [],
+      publicoExclusivo: false,
+      turmasEnv: undefined,
+      horarioSaida: undefined,
+      horarioRetorno: undefined,
+      cidade: undefined,
+      empresasVisitadas: undefined,
+      logisticaVisita: undefined,
+      tipoVeiculo: undefined,
+      custoAluno: undefined,
+      descricaoEvento: data.description,
+      observacoes: data.observations || '',
+      status: 'rascunho'
+    };
+    
     const mutation = isEditing ? updateMutation : createMutation;
-    mutation.mutate(data);
+    mutation.mutate(backendData as any);
   };
 
   const isPending = createMutation.isPending || updateMutation.isPending;

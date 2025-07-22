@@ -42,7 +42,7 @@ async function getToolProjects(req: Request, res: Response) {
     const isAdmin = isUserAdmin(req);
     
     // Admin pode ver todos os projetos, usuário comum só os próprios
-    const projects = await db.select({
+    const projectsRaw = await db.select({
       project: toolProjects,
       creator: {
         id: users.id,
@@ -54,6 +54,29 @@ async function getToolProjects(req: Request, res: Response) {
     .leftJoin(users, eq(toolProjects.creatorId, users.id))
     .where(isAdmin ? undefined : eq(toolProjects.creatorId, userId))
     .orderBy(desc(toolProjects.createdAt));
+
+    // Mapear dados do backend para o formato esperado pelo frontend
+    const projects = projectsRaw.map(({ project, creator }) => ({
+      project: {
+        id: project.id,
+        title: project.descricaoEvento || 'Sem título',
+        description: project.descricaoEvento || '',
+        type: project.tipoAtividade === 'aula_convidado' ? 'aula' : 
+              project.tipoAtividade === 'visita_tecnica' ? 'visita_tecnica' : 'evento',
+        status: project.status === 'rascunho' ? 'planejado' : project.status,
+        startDate: project.dataRealizacao,
+        endDate: project.dataRealizacao,
+        location: project.local,
+        participants: project.nomeProfissionais,
+        objectives: '',
+        resources: '',
+        observations: project.observacoes,
+        creatorId: project.creatorId,
+        createdAt: project.createdAt?.toISOString() || '',
+        updatedAt: project.updatedAt?.toISOString() || ''
+      },
+      creator
+    }));
 
     res.json(projects);
   } catch (error) {
@@ -73,7 +96,7 @@ async function getToolProject(req: Request, res: Response) {
 
     const isAdmin = isUserAdmin(req);
     
-    const [project] = await db.select({
+    const [projectRaw] = await db.select({
       project: toolProjects,
       creator: {
         id: users.id,
@@ -89,9 +112,32 @@ async function getToolProject(req: Request, res: Response) {
         : and(eq(toolProjects.id, projectId), eq(toolProjects.creatorId, userId))
     );
 
-    if (!project) {
+    if (!projectRaw) {
       return res.status(404).json({ error: 'Projeto não encontrado' });
     }
+
+    // Mapear dados do backend para o formato esperado pelo frontend
+    const project = {
+      project: {
+        id: projectRaw.project.id,
+        title: projectRaw.project.descricaoEvento || 'Sem título',
+        description: projectRaw.project.descricaoEvento || '',
+        type: projectRaw.project.tipoAtividade === 'aula_convidado' ? 'aula' : 
+              projectRaw.project.tipoAtividade === 'visita_tecnica' ? 'visita_tecnica' : 'evento',
+        status: projectRaw.project.status === 'rascunho' ? 'planejado' : projectRaw.project.status,
+        startDate: projectRaw.project.dataRealizacao,
+        endDate: projectRaw.project.dataRealizacao,
+        location: projectRaw.project.local,
+        participants: projectRaw.project.nomeProfissionais,
+        objectives: '',
+        resources: '',
+        observations: projectRaw.project.observacoes,
+        creatorId: projectRaw.project.creatorId,
+        createdAt: projectRaw.project.createdAt?.toISOString() || '',
+        updatedAt: projectRaw.project.updatedAt?.toISOString() || ''
+      },
+      creator: projectRaw.creator
+    };
 
     res.json(project);
   } catch (error) {
