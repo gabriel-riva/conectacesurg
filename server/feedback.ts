@@ -131,8 +131,8 @@ router.post('/', requireAuth, async (req, res) => {
   }
 });
 
-// PATCH /api/feedback/:id - Atualizar feedback (admin apenas)
-router.patch('/:id', requireAdmin, async (req, res) => {
+// Função comum para atualizar feedback
+const updateFeedbackHandler = async (req: express.Request, res: express.Response) => {
   try {
     const id = parseInt(req.params.id);
     
@@ -159,7 +159,13 @@ router.patch('/:id', requireAdmin, async (req, res) => {
     console.error('Error updating feedback:', error);
     res.status(500).json({ message: 'Failed to update feedback' });
   }
-});
+};
+
+// PATCH /api/feedback/:id - Atualizar feedback (admin apenas)
+router.patch('/:id', requireAdmin, updateFeedbackHandler);
+
+// PUT /api/feedback/:id - Atualizar feedback (admin apenas) - compatibilidade com frontend
+router.put('/:id', requireAdmin, updateFeedbackHandler);
 
 // DELETE /api/feedback/:id/image/:imageId - Deletar uma imagem específica (admin apenas)
 router.delete('/:id/image/:imageId', requireAdmin, async (req, res) => {
