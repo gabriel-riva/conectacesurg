@@ -32,8 +32,9 @@ import AdminTrailContentsPage from "@/pages/AdminTrailContentsPage";
 import AdminGamificationPage from "@/pages/AdminGamificationPage";
 import FeedbackManagement from "@/pages/admin/FeedbackManagement";
 import SurveyManagement from "@/pages/SurveyManagement";
-import ToolProjectsPage from "@/pages/ToolProjectsPage";
-import ToolProjectDetailPage from "@/pages/ToolProjectDetailPage";
+import FerramentasPage from "@/pages/FerramentasPage";
+import ExternalActivitiesPage from "@/pages/ExternalActivitiesPage";
+import ExternalActivityDetailPage from "@/pages/ExternalActivityDetailPage";
 import { AuthProvider } from "./providers/AuthProvider";
 import { useAuth } from "./lib/auth";
 import FeedbackWrapper from "./components/FeedbackWrapper";
@@ -85,10 +86,13 @@ function Router() {
         {() => <ProtectedRoute component={NewGamificationPage} />}
       </Route>
       <Route path="/ferramentas">
-        {() => <ProtectedRoute component={ToolProjectsPage} />}
+        {() => <ProtectedRoute component={FerramentasPage} />}
       </Route>
-      <Route path="/ferramentas/:id">
-        {() => <ProtectedRoute component={ToolProjectDetailPage} />}
+      <Route path="/ferramentas/atividades-externas">
+        {() => <ProtectedRoute component={ExternalActivitiesPage} />}
+      </Route>
+      <Route path="/ferramentas/atividades-externas/:id">
+        {() => <ProtectedRoute component={ExternalActivityDetailPage} />}
       </Route>
 
       <Route path="/admin">
