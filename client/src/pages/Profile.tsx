@@ -412,7 +412,7 @@ export default function Profile() {
                         name="biografia"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Biografia</FormLabel>
+                            <FormLabel>Biografia/Resumo Profissional</FormLabel>
                             <FormControl>
                               <Textarea 
                                 placeholder="Conte um pouco sobre você, suas experiências, interesses e objetivos..."
