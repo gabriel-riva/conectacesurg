@@ -1190,7 +1190,7 @@ export const feedbacks = pgTable("feedbacks", {
   }>().default({ images: [] }),
   createdAt: timestamp("createdAt").defaultNow(),
   updatedAt: timestamp("updatedAt").defaultNow(),
-  status: text("status").notNull().default("pending"), // 'pending', 'read', 'resolved'
+  status: text("status").notNull().default("open"), // 'open', 'in_progress', 'resolved', 'closed'
   adminNotes: text("adminNotes"),
   resolvedAt: timestamp("resolvedAt"),
   resolvedBy: integer("resolvedBy").references(() => users.id),

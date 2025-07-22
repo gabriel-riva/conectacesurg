@@ -397,7 +397,14 @@ const FeedbackManagement: React.FC = () => {
                   </TableCell>
                   <TableCell>
                     <div className="flex gap-2">
-                      <Dialog>
+                      <Dialog 
+                        open={selectedFeedback?.id === feedback.id} 
+                        onOpenChange={(open) => {
+                          if (!open) {
+                            setSelectedFeedback(null);
+                          }
+                        }}
+                      >
                         <DialogTrigger asChild>
                           <Button
                             variant="outline"
