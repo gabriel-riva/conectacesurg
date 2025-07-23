@@ -48,6 +48,41 @@ When creating new admin functionality, remember to:
 1. Add the route to `client/src/App.tsx` with `adminOnly={true}`
 2. Add the navigation link to `client/src/components/AdminSidebar.tsx` in the `menuItems` array
 
+### Feature Management System (CRITICAL)
+**ALL features must be integrated with the feature management system:**
+
+1. **Add to Feature Settings Component** (`client/src/components/AdminFeatureSettings.tsx`):
+   - Add feature name to `featureLabels` object
+   - Add description to `featureDescriptions` object
+
+2. **Add to FeatureDisabledPage** (`client/src/components/FeatureDisabledPage.tsx`):
+   - Add feature name to `featureLabels` object
+
+3. **Create Database Entry**:
+   ```sql
+   INSERT INTO feature_settings (feature_name, is_enabled, show_in_header, disabled_message, last_updated_by, updated_at) 
+   VALUES ('feature_name', true, true, 'Feature description message', 1, NOW());
+   ```
+
+4. **Wrap Page Component with FeatureGuard**:
+   ```tsx
+   import { FeatureGuard } from "@/components/FeatureGuard";
+   
+   export default function FeaturePage() {
+     return (
+       <FeatureGuard featureName="feature_name">
+         <FeaturePageContent />
+       </FeatureGuard>
+     );
+   }
+   ```
+
+**Key Features:**
+- Administrators can enable/disable features from `/admin/feature-settings`
+- Features can be hidden from header independently of being enabled/disabled
+- When disabled, features show construction page but maintain header visibility
+- System supports custom disabled messages per feature
+
 ## System Architecture
 
 ### Frontend Architecture
