@@ -467,225 +467,233 @@ export default function AdminPage({ activeTab: initialActiveTab }: { activeTab?:
                       <p>Carregando usuários...</p>
                     </div>
                   ) : (
-                    <div className="overflow-x-auto">
-                      <table className="min-w-full divide-y divide-gray-200">
-                        <thead className="bg-gray-50">
-                          <tr>
-                            <th 
-                              scope="col" 
-                              className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                              onClick={() => handleSortClick('name')}
-                            >
-                              <div className="flex items-center">
-                                Nome
-                                {sortColumn === 'name' && (
-                                  <span className="ml-1">
-                                    {sortDirection === 'asc' ? '↑' : '↓'}
-                                  </span>
-                                )}
-                              </div>
-                            </th>
-                            <th 
-                              scope="col" 
-                              className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                              onClick={() => handleSortClick('email')}
-                            >
-                              <div className="flex items-center">
-                                Email
-                                {sortColumn === 'email' && (
-                                  <span className="ml-1">
-                                    {sortDirection === 'asc' ? '↑' : '↓'}
-                                  </span>
-                                )}
-                              </div>
-                            </th>
-                            <th 
-                              scope="col" 
-                              className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                              onClick={() => handleSortClick('role')}
-                            >
-                              <div className="flex items-center">
-                                Função
-                                {sortColumn === 'role' && (
-                                  <span className="ml-1">
-                                    {sortDirection === 'asc' ? '↑' : '↓'}
-                                  </span>
-                                )}
-                              </div>
-                            </th>
-                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-48">Categorias</th>
-                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>
-                          </tr>
-                        </thead>
-                        <tbody className="bg-white divide-y divide-gray-200">
-                          {sortedUsers.length === 0 ? (
+                    <div className="border border-gray-200 rounded-lg overflow-hidden">
+                      {/* Cabeçalho fixo da tabela */}
+                      <div className="overflow-x-auto bg-gray-50 border-b border-gray-200">
+                        <table className="min-w-full">
+                          <thead>
                             <tr>
-                              <td colSpan={6} className="px-6 py-4 text-center text-sm text-gray-500">
-                                Nenhum usuário encontrado
-                              </td>
-                            </tr>
-                          ) : (
-                            sortedUsers.map((user) => (
-                              <tr key={user.id}>
-                                <td className="px-6 py-4 whitespace-nowrap">
-                                  <div className="flex items-center">
-                                    <div className="flex-shrink-0 h-10 w-10 bg-secondary rounded-full flex items-center justify-center text-white">
-                                      {user.name.charAt(0)}
-                                    </div>
-                                    <div className="ml-4">
-                                      <div className="text-sm font-medium text-gray-900">{user.name}</div>
-                                    </div>
-                                  </div>
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap">
-                                  <div className="text-sm text-gray-900">{user.email}</div>
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap">
-                                  <div className="text-sm text-gray-900">
-                                    {user.role === "superadmin" ? "Superadmin" : 
-                                     user.role === "admin" ? "Administrador" : "Usuário"}
-                                  </div>
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap">
-                                  {user.isActive === false ? (
-                                    <Badge variant="outline" className="bg-red-100 text-red-800 border-0">
-                                      Inativo
-                                    </Badge>
-                                  ) : (
-                                    <Badge variant="outline" className="bg-green-100 text-green-800 border-0">
-                                      Ativo
-                                    </Badge>
+                              <th 
+                                scope="col" 
+                                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                                onClick={() => handleSortClick('name')}
+                              >
+                                <div className="flex items-center">
+                                  Nome
+                                  {sortColumn === 'name' && (
+                                    <span className="ml-1">
+                                      {sortDirection === 'asc' ? '↑' : '↓'}
+                                    </span>
                                   )}
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap">
-                                  <div className="flex items-center space-x-1 max-w-48">
-                                    {isLoadingUserCategories ? (
-                                      <span className="text-xs text-gray-500">Carregando...</span>
-                                    ) : userCategoriesMapping[user.id]?.length > 0 ? (
-                                      <>
-                                        {userCategoriesMapping[user.id].length <= 2 ? (
-                                          [...userCategoriesMapping[user.id]]
-                                            .sort((a, b) => a.name.localeCompare(b.name))
-                                            .map(category => (
-                                              <Badge 
-                                                key={category.id} 
-                                                variant="secondary"
-                                                className="text-white border-0 text-xs px-2 py-1 shrink-0"
-                                                style={{ backgroundColor: category.color }}
-                                                title={category.description || category.name}
-                                              >
-                                                {category.name}
-                                              </Badge>
-                                            ))
-                                        ) : (
-                                          <>
-                                            <Badge 
-                                              variant="secondary"
-                                              className="text-white border-0 text-xs px-2 py-1 shrink-0"
-                                              style={{ backgroundColor: userCategoriesMapping[user.id][0].color }}
-                                              title={userCategoriesMapping[user.id][0].description || userCategoriesMapping[user.id][0].name}
-                                            >
-                                              {userCategoriesMapping[user.id][0].name}
-                                            </Badge>
-                                            <Badge 
-                                              variant="outline" 
-                                              className="text-xs px-2 py-1 bg-gray-100 text-gray-600 border-gray-300 shrink-0 cursor-help"
-                                              title={`Total: ${userCategoriesMapping[user.id].length} categorias
-${userCategoriesMapping[user.id].map(c => `• ${c.name}`).join('\n')}`}
-                                            >
-                                              +{userCategoriesMapping[user.id].length - 1}
-                                            </Badge>
-                                          </>
-                                        )}
-                                      </>
-                                    ) : (
-                                      <span className="text-xs text-gray-500">Nenhuma categoria</span>
-                                    )}
-                                  </div>
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                  <div className="flex space-x-2">
-                                    {user.role !== "superadmin" && (
-                                      <>
-                                        {/* Botão para ativar/desativar usuário */}
-                                        <Button 
-                                          variant="ghost" 
-                                          size="icon" 
-                                          className={`h-8 w-8 ${user.isActive ? 'text-orange-600 hover:text-orange-900 hover:bg-orange-50' : 'text-teal-600 hover:text-teal-900 hover:bg-teal-50'}`} 
-                                          title={user.isActive ? "Desativar Usuário" : "Ativar Usuário"}
-                                          onClick={() => toggleUserStatus(user)}
-                                          disabled={toggleUserStatusMutation.isPending}
-                                        >
-                                          {user.isActive ? (
-                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
-                                            </svg>
-                                          ) : (
-                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                            </svg>
-                                          )}
-                                        </Button>
-
-
-                                        <Button 
-                                          variant="ghost" 
-                                          size="icon" 
-                                          className="h-8 w-8 text-green-600 hover:text-green-900 hover:bg-green-50" 
-                                          title="Ver Perfil"
-                                          onClick={() => handleUserProfile(user.id, user.name)}
-                                        >
-                                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                                          </svg>
-                                        </Button>
-                                        <Button 
-                                          variant="ghost" 
-                                          size="icon" 
-                                          className="h-8 w-8 text-amber-600 hover:text-amber-900 hover:bg-amber-50" 
-                                          title="Gerenciar Categorias"
-                                          onClick={() => {
-                                            setUserForCategoryAssignment({ id: user.id, name: user.name });
-                                            setIsUserCategoryAssignmentModalOpen(true);
-                                          }}
-                                        >
-                                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
-                                          </svg>
-                                        </Button>
-                                        <Button 
-                                          variant="ghost" 
-                                          size="icon" 
-                                          className="h-8 w-8 text-blue-600 hover:text-blue-900 hover:bg-blue-50" 
-                                          title="Editar"
-                                          onClick={() => handleEditUser(user.id)}
-                                        >
-                                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                          </svg>
-                                        </Button>
-                                        <Button 
-                                          variant="ghost" 
-                                          size="icon" 
-                                          className="h-8 w-8 text-red-600 hover:text-red-900 hover:bg-red-50" 
-                                          title="Remover"
-                                          onClick={() => handleDeleteUser(user.id)}
-                                          disabled={deleteUserMutation.isPending}
-                                        >
-                                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                          </svg>
-                                        </Button>
-                                      </>
-                                    )}
-                                  </div>
+                                </div>
+                              </th>
+                              <th 
+                                scope="col" 
+                                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                                onClick={() => handleSortClick('email')}
+                              >
+                                <div className="flex items-center">
+                                  Email
+                                  {sortColumn === 'email' && (
+                                    <span className="ml-1">
+                                      {sortDirection === 'asc' ? '↑' : '↓'}
+                                    </span>
+                                  )}
+                                </div>
+                              </th>
+                              <th 
+                                scope="col" 
+                                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                                onClick={() => handleSortClick('role')}
+                              >
+                                <div className="flex items-center">
+                                  Função
+                                  {sortColumn === 'role' && (
+                                    <span className="ml-1">
+                                      {sortDirection === 'asc' ? '↑' : '↓'}
+                                    </span>
+                                  )}
+                                </div>
+                              </th>
+                              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-48">Categorias</th>
+                              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>
+                            </tr>
+                          </thead>
+                        </table>
+                      </div>
+                      
+                      {/* Corpo da tabela com scroll vertical */}
+                      <div className="overflow-x-auto overflow-y-auto max-h-[500px] bg-white">
+                        <table className="min-w-full">
+                          <tbody className="bg-white divide-y divide-gray-200">
+                            {sortedUsers.length === 0 ? (
+                              <tr>
+                                <td colSpan={6} className="px-6 py-4 text-center text-sm text-gray-500">
+                                  Nenhum usuário encontrado
                                 </td>
                               </tr>
-                            ))
-                          )}
-                        </tbody>
-                      </table>
+                            ) : (
+                              sortedUsers.map((user) => (
+                                <tr key={user.id}>
+                                  <td className="px-6 py-4 whitespace-nowrap">
+                                    <div className="flex items-center">
+                                      <div className="flex-shrink-0 h-10 w-10 bg-secondary rounded-full flex items-center justify-center text-white">
+                                        {user.name.charAt(0)}
+                                      </div>
+                                      <div className="ml-4">
+                                        <div className="text-sm font-medium text-gray-900">{user.name}</div>
+                                      </div>
+                                    </div>
+                                  </td>
+                                  <td className="px-6 py-4 whitespace-nowrap">
+                                    <div className="text-sm text-gray-900">{user.email}</div>
+                                  </td>
+                                  <td className="px-6 py-4 whitespace-nowrap">
+                                    <div className="text-sm text-gray-900">
+                                      {user.role === "superadmin" ? "Superadmin" : 
+                                       user.role === "admin" ? "Administrador" : "Usuário"}
+                                    </div>
+                                  </td>
+                                  <td className="px-6 py-4 whitespace-nowrap">
+                                    {user.isActive === false ? (
+                                      <Badge variant="outline" className="bg-red-100 text-red-800 border-0">
+                                        Inativo
+                                      </Badge>
+                                    ) : (
+                                      <Badge variant="outline" className="bg-green-100 text-green-800 border-0">
+                                        Ativo
+                                      </Badge>
+                                    )}
+                                  </td>
+                                  <td className="px-6 py-4 whitespace-nowrap">
+                                    <div className="flex items-center space-x-1 max-w-48">
+                                      {isLoadingUserCategories ? (
+                                        <span className="text-xs text-gray-500">Carregando...</span>
+                                      ) : userCategoriesMapping[user.id]?.length > 0 ? (
+                                        <>
+                                          {userCategoriesMapping[user.id].length <= 2 ? (
+                                            [...userCategoriesMapping[user.id]]
+                                              .sort((a, b) => a.name.localeCompare(b.name))
+                                              .map(category => (
+                                                <Badge 
+                                                  key={category.id} 
+                                                  variant="secondary"
+                                                  className="text-white border-0 text-xs px-2 py-1 shrink-0"
+                                                  style={{ backgroundColor: category.color }}
+                                                  title={category.description || category.name}
+                                                >
+                                                  {category.name}
+                                                </Badge>
+                                              ))
+                                          ) : (
+                                            <>
+                                              <Badge 
+                                                variant="secondary"
+                                                className="text-white border-0 text-xs px-2 py-1 shrink-0"
+                                                style={{ backgroundColor: userCategoriesMapping[user.id][0].color }}
+                                                title={userCategoriesMapping[user.id][0].description || userCategoriesMapping[user.id][0].name}
+                                              >
+                                                {userCategoriesMapping[user.id][0].name}
+                                              </Badge>
+                                              <Badge 
+                                                variant="outline" 
+                                                className="text-xs px-2 py-1 bg-gray-100 text-gray-600 border-gray-300 shrink-0 cursor-help"
+                                                title={`Total: ${userCategoriesMapping[user.id].length} categorias
+${userCategoriesMapping[user.id].map(c => `• ${c.name}`).join('\n')}`}
+                                              >
+                                                +{userCategoriesMapping[user.id].length - 1}
+                                              </Badge>
+                                            </>
+                                          )}
+                                        </>
+                                      ) : (
+                                        <span className="text-xs text-gray-500">Nenhuma categoria</span>
+                                      )}
+                                    </div>
+                                  </td>
+                                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    <div className="flex space-x-2">
+                                      {user.role !== "superadmin" && (
+                                        <>
+                                          {/* Botão para ativar/desativar usuário */}
+                                          <Button 
+                                            variant="ghost" 
+                                            size="icon" 
+                                            className={`h-8 w-8 ${user.isActive ? 'text-orange-600 hover:text-orange-900 hover:bg-orange-50' : 'text-teal-600 hover:text-teal-900 hover:bg-teal-50'}`} 
+                                            title={user.isActive ? "Desativar Usuário" : "Ativar Usuário"}
+                                            onClick={() => toggleUserStatus(user)}
+                                            disabled={toggleUserStatusMutation.isPending}
+                                          >
+                                            {user.isActive ? (
+                                              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+                                              </svg>
+                                            ) : (
+                                              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                              </svg>
+                                            )}
+                                          </Button>
+
+                                          <Button 
+                                            variant="ghost" 
+                                            size="icon" 
+                                            className="h-8 w-8 text-green-600 hover:text-green-900 hover:bg-green-50" 
+                                            title="Ver Perfil"
+                                            onClick={() => handleUserProfile(user.id, user.name)}
+                                          >
+                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                            </svg>
+                                          </Button>
+                                          <Button 
+                                            variant="ghost" 
+                                            size="icon" 
+                                            className="h-8 w-8 text-amber-600 hover:text-amber-900 hover:bg-amber-50" 
+                                            title="Gerenciar Categorias"
+                                            onClick={() => {
+                                              setUserForCategoryAssignment({ id: user.id, name: user.name });
+                                              setIsUserCategoryAssignmentModalOpen(true);
+                                            }}
+                                          >
+                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                                            </svg>
+                                          </Button>
+                                          <Button 
+                                            variant="ghost" 
+                                            size="icon" 
+                                            className="h-8 w-8 text-blue-600 hover:text-blue-900 hover:bg-blue-50" 
+                                            title="Editar"
+                                            onClick={() => handleEditUser(user.id)}
+                                          >
+                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                            </svg>
+                                          </Button>
+                                          <Button 
+                                            variant="ghost" 
+                                            size="icon" 
+                                            className="h-8 w-8 text-red-600 hover:text-red-900 hover:bg-red-50" 
+                                            title="Remover"
+                                            onClick={() => handleDeleteUser(user.id)}
+                                            disabled={deleteUserMutation.isPending}
+                                          >
+                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                            </svg>
+                                          </Button>
+                                        </>
+                                      )}
+                                    </div>
+                                  </td>
+                                </tr>
+                              ))
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
                     </div>
                   )}
                 </CardContent>
