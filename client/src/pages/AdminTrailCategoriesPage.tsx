@@ -3,6 +3,7 @@ import { AdminSidebar } from "@/components/AdminSidebar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
@@ -360,11 +361,14 @@ export default function AdminTrailCategoriesPage() {
             </div>
 
             {/* Lista de Categorias */}
-            <div className="grid gap-4">
-              {categories.length === 0 ? (
-                <Card>
-                  <CardContent className="flex flex-col items-center justify-center py-12">
-                    <Tag className="h-12 w-12 text-muted-foreground mb-4" />
+            <Card>
+              <CardHeader>
+                <CardTitle>Categorias Cadastradas</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {categories.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-8">
+                    <Tag className="h-8 w-8 text-muted-foreground mb-3" />
                     <h3 className="text-lg font-semibold mb-2">Nenhuma categoria encontrada</h3>
                     <p className="text-muted-foreground text-center mb-4">
                       Comece criando a primeira categoria de trilhas.
@@ -373,51 +377,64 @@ export default function AdminTrailCategoriesPage() {
                       <Plus className="h-4 w-4 mr-2" />
                       Criar Primeira Categoria
                     </Button>
-                  </CardContent>
-                </Card>
-              ) : (
-                categories.map((category) => (
-                  <Card key={category.id}>
-                    <CardHeader>
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <div 
-                            className="w-4 h-4 rounded-full"
-                            style={{ backgroundColor: category.color }}
-                          />
-                          <div>
-                            <CardTitle className="text-lg">{category.name}</CardTitle>
-                            {category.description && (
-                              <p className="text-sm text-muted-foreground mt-1">
-                                {category.description}
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          {getStatusBadge(category.isActive)}
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleEdit(category)}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleDelete(category.id)}
-                            disabled={deleteCategoryMutation.isPending}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    </CardHeader>
-                  </Card>
-                ))
-              )}
-            </div>
+                  </div>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Categoria</TableHead>
+                        <TableHead>Descrição</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead className="text-right">Ações</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {categories.map((category) => (
+                        <TableRow key={category.id}>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              <div 
+                                className="w-3 h-3 rounded-full"
+                                style={{ backgroundColor: category.color }}
+                              />
+                              <span className="font-medium">{category.name}</span>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <span className="text-muted-foreground">
+                              {category.description || "—"}
+                            </span>
+                          </TableCell>
+                          <TableCell>
+                            {getStatusBadge(category.isActive)}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex items-center justify-end gap-2">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleEdit(category)}
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleDelete(category.id)}
+                                disabled={deleteCategoryMutation.isPending}
+                                className="text-destructive hover:text-destructive"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
+              </CardContent>
+            </Card>
           </div>
         </main>
       </div>
