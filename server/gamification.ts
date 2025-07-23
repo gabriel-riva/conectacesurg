@@ -381,6 +381,7 @@ router.get("/challenges", isAuthenticated, async (req: Request, res: Response) =
   try {
     const { type = "all" } = req.query;
     const userId = req.user.id;
+    const userRole = req.user.role;
     
     // Buscar todas as categorias do usuário
     const userCategories = await db
@@ -422,6 +423,11 @@ router.get("/challenges", isAuthenticated, async (req: Request, res: Response) =
     
     // Filtrar desafios baseado nas categorias do usuário
     const filteredChallenges = allChallenges.filter(challenge => {
+      // Administradores e superadministradores veem todos os desafios
+      if (userRole === 'admin' || userRole === 'superadmin') {
+        return true;
+      }
+      
       // Se o desafio não tem categorias específicas (array vazio ou null), é visível para todos
       if (!challenge.targetUserCategories || challenge.targetUserCategories.length === 0) {
         return true;
@@ -450,6 +456,7 @@ router.get("/challenges/:id", isAuthenticated, async (req: Request, res: Respons
   try {
     const { id } = req.params;
     const userId = req.user.id;
+    const userRole = req.user.role;
     
     // Buscar as categorias do usuário
     const userCategories = await db
@@ -493,19 +500,22 @@ router.get("/challenges/:id", isAuthenticated, async (req: Request, res: Respons
     const challengeData = challenge[0];
     
     // Verificar se o usuário tem permissão para ver este desafio
-    if (challengeData.targetUserCategories && challengeData.targetUserCategories.length > 0) {
-      // Se o usuário não tem categorias, não pode ver desafios com categorias específicas
-      if (userCategoryIds.length === 0) {
-        return res.status(404).json({ error: "Challenge not found" });
-      }
-      
-      // Verificar se o usuário possui alguma das categorias alvo do desafio
-      const hasMatchingCategory = challengeData.targetUserCategories.some(categoryId => 
-        userCategoryIds.includes(categoryId)
-      );
-      
-      if (!hasMatchingCategory) {
-        return res.status(404).json({ error: "Challenge not found" });
+    // Administradores e superadministradores sempre podem ver todos os desafios
+    if (userRole !== 'admin' && userRole !== 'superadmin') {
+      if (challengeData.targetUserCategories && challengeData.targetUserCategories.length > 0) {
+        // Se o usuário não tem categorias, não pode ver desafios com categorias específicas
+        if (userCategoryIds.length === 0) {
+          return res.status(404).json({ error: "Challenge not found" });
+        }
+        
+        // Verificar se o usuário possui alguma das categorias alvo do desafio
+        const hasMatchingCategory = challengeData.targetUserCategories.some(categoryId => 
+          userCategoryIds.includes(categoryId)
+        );
+        
+        if (!hasMatchingCategory) {
+          return res.status(404).json({ error: "Challenge not found" });
+        }
       }
     }
     
