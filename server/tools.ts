@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { db } from './db';
-import { tools, toolCategories, toolProjects, userCategories } from '../shared/schema';
+import { tools, toolCategories, toolProjects, userCategories, users } from '../shared/schema';
 import { insertToolSchema, insertToolCategorySchema } from '../shared/schema';
 import { eq, desc, and, inArray } from 'drizzle-orm';
 
@@ -8,7 +8,7 @@ const router = Router();
 
 // Helper function to check if user is admin
 function requireAdmin(req: Request, res: Response, next: any) {
-  if (!req.user || !['admin', 'superadmin'].includes(req.user.role)) {
+  if (!req.user || !['admin', 'superadmin'].includes((req.user as any).role)) {
     return res.status(403).json({ error: 'Admin access required' });
   }
   next();
@@ -215,8 +215,14 @@ router.get('/admin/tools/:id/projects', requireAdmin, async (req: Request, res: 
         observacoes: toolProjects.observacoes,
         createdAt: toolProjects.createdAt,
         updatedAt: toolProjects.updatedAt,
+        creator: {
+          id: users.id,
+          name: users.name,
+          email: users.email
+        }
       })
       .from(toolProjects)
+      .leftJoin(users, eq(toolProjects.creatorId, users.id))
       .where(eq(toolProjects.toolId, toolId))
       .orderBy(desc(toolProjects.id));
 
