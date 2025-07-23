@@ -80,8 +80,9 @@ When creating new admin functionality, remember to:
 **Key Features:**
 - Administrators can enable/disable features from `/admin/feature-settings`
 - Features can be hidden from header independently of being enabled/disabled
-- When disabled, features show construction page but maintain header visibility
+- When disabled, features show construction page WITH header maintained (fixed issue)
 - System supports custom disabled messages per feature
+- FeatureDisabledPage component now includes Header for consistent navigation
 
 ## System Architecture
 
