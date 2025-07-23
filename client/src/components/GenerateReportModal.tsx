@@ -103,6 +103,38 @@ export function GenerateReportModal({ isOpen, onClose }: GenerateReportModalProp
         return currentY;
       };
 
+      // Função auxiliar para carregar imagem
+      const loadUserImage = async (photoUrl: string): Promise<string | null> => {
+        return new Promise((resolve) => {
+          const img = new Image();
+          img.crossOrigin = 'anonymous';
+          
+          img.onload = () => {
+            try {
+              const canvas = document.createElement('canvas');
+              const ctx = canvas.getContext('2d');
+              
+              canvas.width = 120; // 40 * 3 para melhor qualidade
+              canvas.height = 150; // 50 * 3 para melhor qualidade
+              
+              ctx?.drawImage(img, 0, 0, canvas.width, canvas.height);
+              const imgData = canvas.toDataURL('image/jpeg', 0.8);
+              resolve(imgData);
+            } catch (error) {
+              console.error('Erro ao processar imagem:', error);
+              resolve(null);
+            }
+          };
+          
+          img.onerror = () => {
+            console.error('Erro ao carregar imagem:', photoUrl);
+            resolve(null);
+          };
+          
+          img.src = photoUrl;
+        });
+      };
+
       for (let i = 0; i < userDetails.length; i++) {
         const user = userDetails[i];
         let yPosition = margin;
@@ -140,22 +172,56 @@ export function GenerateReportModal({ isOpen, onClose }: GenerateReportModalProp
         pdf.text('FOTO DO USUÁRIO', margin, yPosition);
         yPosition += 10;
 
-        // Desenhar retângulo para a área da foto
+        // Área da foto
         const photoWidth = 40;
         const photoHeight = 50;
-        pdf.setDrawColor(200, 200, 200);
-        pdf.setLineWidth(1);
-        pdf.rect(margin, yPosition, photoWidth, photoHeight);
+        const photoX = margin;
+        const photoY = yPosition;
         
         if (user.photoUrl) {
-          pdf.setFontSize(8);
-          pdf.setTextColor(100, 100, 100);
-          pdf.text('Foto disponível no sistema', margin, yPosition + photoHeight + 5);
+          try {
+            // Carregar imagem do usuário
+            const imageData = await loadUserImage(user.photoUrl);
+            
+            if (imageData) {
+              // Adicionar imagem ao PDF
+              pdf.addImage(imageData, 'JPEG', photoX, photoY, photoWidth, photoHeight);
+              
+              pdf.setFontSize(8);
+              pdf.setTextColor(100, 100, 100);
+              pdf.text('Foto do usuário', margin, yPosition + photoHeight + 5);
+            } else {
+              // Se não conseguiu carregar, desenhar retângulo vazio
+              pdf.setDrawColor(200, 200, 200);
+              pdf.setLineWidth(1);
+              pdf.rect(photoX, photoY, photoWidth, photoHeight);
+              
+              pdf.setFontSize(8);
+              pdf.setTextColor(100, 100, 100);
+              pdf.text('Erro ao carregar foto', margin, yPosition + photoHeight + 5);
+            }
+          } catch (error) {
+            console.error('Erro ao incluir foto no PDF:', error);
+            // Se houver erro, desenhar retângulo vazio
+            pdf.setDrawColor(200, 200, 200);
+            pdf.setLineWidth(1);
+            pdf.rect(photoX, photoY, photoWidth, photoHeight);
+            
+            pdf.setFontSize(8);
+            pdf.setTextColor(100, 100, 100);
+            pdf.text('Erro ao carregar foto', margin, yPosition + photoHeight + 5);
+          }
         } else {
+          // Desenhar retângulo vazio
+          pdf.setDrawColor(200, 200, 200);
+          pdf.setLineWidth(1);
+          pdf.rect(photoX, photoY, photoWidth, photoHeight);
+          
           pdf.setFontSize(8);
           pdf.setTextColor(100, 100, 100);
           pdf.text('Nenhuma foto cadastrada', margin, yPosition + photoHeight + 5);
         }
+        
         yPosition += photoHeight + 15;
 
         // Informações básicas do usuário
