@@ -41,6 +41,7 @@ const formSchema = z.object({
     message: "O email deve pertencer ao domínio @cesurg.com",
   }),
   role: z.string(),
+  joinDate: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -62,6 +63,7 @@ export function EditUserModal({ userId, onClose, onUserUpdated }: EditUserModalP
     email: string;
     role: string;
     photoUrl: string | null;
+    joinDate?: string;
   }>({
     queryKey: [`/api/users/${userId}`],
     enabled: !!userId,
@@ -73,6 +75,7 @@ export function EditUserModal({ userId, onClose, onUserUpdated }: EditUserModalP
       name: "",
       email: "",
       role: "user",
+      joinDate: "",
     }
   });
 
@@ -83,6 +86,7 @@ export function EditUserModal({ userId, onClose, onUserUpdated }: EditUserModalP
         name: user.name,
         email: user.email,
         role: user.role,
+        joinDate: user.joinDate ? new Date(user.joinDate).toISOString().split('T')[0] : "",
       });
     }
   }, [user, isLoadingUser, form]);
@@ -174,6 +178,24 @@ export function EditUserModal({ userId, onClose, onUserUpdated }: EditUserModalP
                         <SelectItem value="admin">Administrador</SelectItem>
                       </SelectContent>
                     </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="joinDate"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Data de Ingresso na CESURG</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="date" 
+                        placeholder="Selecione a data de ingresso" 
+                        {...field} 
+                      />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}

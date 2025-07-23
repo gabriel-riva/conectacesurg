@@ -451,11 +451,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "User not found" });
       }
       
-      // Permitir apenas atualização de nome, email e role
+      // Permitir apenas atualização de nome, email, role e joinDate
       const sanitizedData = {
         name: userData.name || existingUser.name,
         email: userData.email || existingUser.email,
-        role: userData.role || existingUser.role
+        role: userData.role || existingUser.role,
+        joinDate: userData.joinDate !== undefined ? userData.joinDate : existingUser.joinDate
       };
       
       // Validar o papel do usuário

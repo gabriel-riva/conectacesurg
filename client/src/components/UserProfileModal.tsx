@@ -55,6 +55,7 @@ interface UserProfile {
     type: string;
     description: string;
   }[];
+  joinDate?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -162,7 +163,10 @@ export function UserProfileModal({ isOpen, onClose, userId, userName }: UserProf
                       <Separator className="my-4" />
                       
                       <div className="text-sm text-gray-500">
-                        <p>Data de Ingresso: {new Date(profile.createdAt).toLocaleDateString('pt-BR')}</p>
+                        {profile.joinDate && (
+                          <p>Data de Ingresso na CESURG: {new Date(profile.joinDate).toLocaleDateString('pt-BR')}</p>
+                        )}
+                        <p>Cadastrado no portal: {new Date(profile.createdAt).toLocaleDateString('pt-BR')}</p>
                         <p>Atualizado em: {new Date(profile.updatedAt).toLocaleDateString('pt-BR')}</p>
                       </div>
                     </div>

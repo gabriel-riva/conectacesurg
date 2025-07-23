@@ -32,6 +32,7 @@ export const users = pgTable("users", {
   phoneNumbers: text("phone_numbers").array(),
   secondaryEmail: text("secondary_email"),
   biografia: text("biografia"), // Campo de biografia/descrição pessoal
+  joinDate: date("join_date"), // Data de ingresso na instituição (editável apenas por admins)
   emergencyContact: jsonb("emergency_contact").$type<{name: string, phone: string, relationship: string}>(),
   documents: jsonb("documents").$type<{name: string, url: string, type: string, description: string}[]>().default([]),
   createdAt: timestamp("created_at").defaultNow(),
@@ -1087,6 +1088,7 @@ export const updateProfileSchema = createInsertSchema(users).omit({
   password: true,
   googleId: true,
   isActive: true,
+  joinDate: true, // Data de ingresso não pode ser editada pelo usuário
   createdAt: true,
   updatedAt: true,
 }).extend({
@@ -1098,6 +1100,25 @@ export const updateProfileSchema = createInsertSchema(users).omit({
     relationship: z.string()
   }).optional(),
   biografia: z.string().optional(),
+});
+
+// Schema específico para admins editarem perfis de usuários (inclui joinDate)
+export const adminUpdateUserSchema = createInsertSchema(users).omit({
+  id: true,
+  password: true,
+  googleId: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  secondaryEmail: z.string().email().optional(),
+  phoneNumbers: z.array(z.string()).optional(),
+  emergencyContact: z.object({
+    name: z.string(),
+    phone: z.string(),
+    relationship: z.string()
+  }).optional(),
+  biografia: z.string().optional(),
+  joinDate: z.string().optional().transform((str) => str ? new Date(str) : null),
 });
 
 export const insertGoogleUserSchema = createInsertSchema(users).pick({
@@ -1345,6 +1366,7 @@ export const updateFeedbackSchema = createInsertSchema(feedbacks).pick({
 export type InsertUserCategory = z.infer<typeof insertUserCategorySchema>;
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type UpdateProfile = z.infer<typeof updateProfileSchema>;
+export type AdminUpdateUser = z.infer<typeof adminUpdateUserSchema>;
 export type InsertGoogleUser = z.infer<typeof insertGoogleUserSchema>;
 export type InsertUtilityLink = z.infer<typeof insertUtilityLinkSchema>;
 export type InsertCalendarEvent = z.infer<typeof insertCalendarEventSchema>;
