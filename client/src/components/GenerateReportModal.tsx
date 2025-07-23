@@ -61,26 +61,25 @@ export function GenerateReportModal({ isOpen, onClose }: GenerateReportModalProp
       // Buscar detalhes de cada usuário
       const userDetails = await Promise.all(
         users.map(async (user) => {
-          const [categories, groups, documents] = await Promise.all([
+          const [categories, documentsResponse] = await Promise.all([
             apiRequest(`/api/user-category-assignments/user/${user.id}`).catch(() => []),
-            apiRequest(`/api/users/${user.id}/groups`).catch(() => []),
-            apiRequest(`/api/users/${user.id}/documents`).catch(() => [])
+            apiRequest(`/api/users/${user.id}/documents`).catch(() => ({ documents: [] }))
           ]);
           
           return {
             ...user,
             categories,
-            groups,
-            documents
+            documents: documentsResponse.documents || []
           };
         })
       );
 
-      // Preparar dados para Excel
+      // Preparar dados para Excel (apenas campos que existem no perfil)
       const excelData = userDetails.map(user => ({
         'Nome': user.name || '',
         'Email': user.email || '',
-        'Telefone': user.phoneNumbers && Array.isArray(user.phoneNumbers) ? user.phoneNumbers.join('; ') : '',
+        'Email Secundário': user.secondaryEmail || '',
+        'Telefones': user.phoneNumbers && Array.isArray(user.phoneNumbers) ? user.phoneNumbers.join('; ') : '',
         'Endereço': user.address || '',
         'Cidade': user.city || '',
         'Estado': user.state || '',
@@ -89,21 +88,14 @@ export function GenerateReportModal({ isOpen, onClose }: GenerateReportModalProp
         'Data de Ingresso na CESURG': user.joinDate ? new Date(user.joinDate).toLocaleDateString('pt-BR') : '',
         'Cadastrado no Portal em': user.createdAt ? new Date(user.createdAt).toLocaleDateString('pt-BR') : '',
         'Categorias': Array.isArray(user.categories) ? user.categories.map((cat: any) => cat.name).join('; ') : '',
-        'Grupos': Array.isArray(user.groups) ? user.groups.map((group: any) => group.name).join('; ') : '',
-        'Nome do Pai': user.fatherName || '',
-        'Nome da Mãe': user.motherName || '',
         'Contato de Emergência': user.emergencyContact?.name || '',
         'Telefone de Emergência': user.emergencyContact?.phone || '',
         'Parentesco': user.emergencyContact?.relationship || '',
-        'Profissão': user.profession || '',
-        'Local de Trabalho': user.workplace || '',
-        'Estado Civil': user.maritalStatus || '',
         'Biografia': user.biografia || '',
-        'Observações': user.observations || '',
         'Tem Foto': user.photoUrl ? 'Sim' : 'Não',
         'Documentos': Array.isArray(user.documents) && user.documents.length > 0 ? user.documents.map((doc: any) => {
-          const name = doc.originalName || doc.name || 'Documento sem nome';
-          const url = doc.filePath ? `${window.location.origin}${doc.filePath}` : '';
+          const name = doc.name || 'Documento sem nome';
+          const url = doc.url ? `${window.location.origin}${doc.url}` : '';
           return url ? `${name} (${url})` : name;
         }).join('; ') : 'Nenhum documento'
       }));
@@ -124,12 +116,12 @@ export function GenerateReportModal({ isOpen, onClose }: GenerateReportModalProp
             
             // Criar links clicáveis para cada documento
             const docLinks = user.documents.map((doc: any) => {
-              const name = doc.originalName || doc.name || 'Documento sem nome';
-              const url = doc.filePath ? `${window.location.origin}${doc.filePath}` : '';
+              const name = doc.name || 'Documento sem nome';
+              const url = doc.url ? `${window.location.origin}${doc.url}` : '';
               return url ? `=HYPERLINK("${url}","${name}")` : name;
             }).join(' | ');
             
-            if (user.documents.some((doc: any) => doc.filePath)) {
+            if (user.documents.some((doc: any) => doc.url)) {
               ws[cellAddress] = { t: 'str', v: docLinks, f: docLinks };
             }
           }
@@ -140,7 +132,8 @@ export function GenerateReportModal({ isOpen, onClose }: GenerateReportModalProp
       const colWidths = [
         { wch: 20 }, // Nome
         { wch: 25 }, // Email
-        { wch: 18 }, // Telefone  
+        { wch: 25 }, // Email Secundário
+        { wch: 18 }, // Telefones
         { wch: 30 }, // Endereço
         { wch: 15 }, // Cidade
         { wch: 12 }, // Estado
@@ -149,19 +142,12 @@ export function GenerateReportModal({ isOpen, onClose }: GenerateReportModalProp
         { wch: 20 }, // Data Ingresso
         { wch: 20 }, // Cadastrado em
         { wch: 25 }, // Categorias
-        { wch: 25 }, // Grupos
-        { wch: 20 }, // Nome do Pai
-        { wch: 20 }, // Nome da Mãe
         { wch: 20 }, // Contato Emergência
         { wch: 18 }, // Tel Emergência
         { wch: 15 }, // Parentesco
-        { wch: 20 }, // Profissão
-        { wch: 25 }, // Local Trabalho
-        { wch: 15 }, // Estado Civil
         { wch: 30 }, // Biografia
-        { wch: 30 }, // Observações
         { wch: 10 }, // Tem Foto
-        { wch: 30 }  // Documentos
+        { wch: 40 }  // Documentos
       ];
       
       ws['!cols'] = colWidths;
@@ -537,12 +523,12 @@ export function GenerateReportModal({ isOpen, onClose }: GenerateReportModalProp
 
         if (user.documents && user.documents.length > 0) {
           user.documents.forEach((document: any) => {
-            const docName = document.originalName || document.name || 'Documento sem nome';
+            const docName = document.name || 'Documento sem nome';
             pdf.text(`• ${docName}`, margin + 5, yPosition);
             
             // Se houver URL do documento, adicionar como link clicável
-            if (document.filePath) {
-              const docUrl = `${window.location.origin}${document.filePath}`;
+            if (document.url) {
+              const docUrl = `${window.location.origin}${document.url}`;
               pdf.setTextColor(0, 0, 255); // Cor azul para link
               pdf.textWithLink(`  🔗 Abrir documento`, margin + 10, yPosition + 5, { url: docUrl });
               pdf.setTextColor(0, 0, 0); // Voltar para cor preta
