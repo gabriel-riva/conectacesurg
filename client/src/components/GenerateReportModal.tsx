@@ -6,7 +6,10 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { apiRequest } from "@/lib/queryClient";
 import { User, UserCategory } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
+import { FileText, FileSpreadsheet, Loader2 } from "lucide-react";
 import jsPDF from 'jspdf';
+import * as XLSX from 'xlsx';
+import { saveAs } from 'file-saver';
 
 interface GenerateReportModalProps {
   isOpen: boolean;
@@ -31,6 +34,142 @@ export function GenerateReportModal({ isOpen, onClose }: GenerateReportModalProp
         ? prev.filter(id => id !== categoryId)
         : [...prev, categoryId]
     );
+  };
+
+  const generateExcel = async () => {
+    setIsGenerating(true);
+    
+    try {
+      let users: User[] = [];
+      
+      if (reportType === 'all') {
+        users = await apiRequest('/api/users');
+      } else {
+        if (selectedCategories.length === 0) {
+          toast({
+            title: "Erro",
+            description: "Selecione pelo menos uma categoria.",
+            variant: "destructive",
+          });
+          setIsGenerating(false);
+          return;
+        }
+        
+        users = await apiRequest(`/api/users/by-categories?categories=${selectedCategories.join(',')}`);
+      }
+
+      // Buscar detalhes de cada usuário
+      const userDetails = await Promise.all(
+        users.map(async (user) => {
+          const [categories, groups, documents] = await Promise.all([
+            apiRequest(`/api/user-category-assignments/user/${user.id}`).catch(() => []),
+            apiRequest(`/api/users/${user.id}/groups`).catch(() => []),
+            apiRequest(`/api/users/${user.id}/documents`).catch(() => [])
+          ]);
+          
+          return {
+            ...user,
+            categories,
+            groups,
+            documents
+          };
+        })
+      );
+
+      // Preparar dados para Excel
+      const excelData = userDetails.map(user => ({
+        'Nome': user.name || '',
+        'Email': user.email || '',
+        'Telefone': user.phoneNumbers && Array.isArray(user.phoneNumbers) ? user.phoneNumbers.join('; ') : '',
+        'Endereço': user.address || '',
+        'Cidade': user.city || '',
+        'Estado': user.state || '',
+        'CEP': user.zipCode || '',
+        'Data de Nascimento': user.birthDate ? new Date(user.birthDate).toLocaleDateString('pt-BR') : '',
+        'Data de Ingresso na CESURG': user.joinDate ? new Date(user.joinDate).toLocaleDateString('pt-BR') : '',
+        'Cadastrado no Portal em': user.createdAt ? new Date(user.createdAt).toLocaleDateString('pt-BR') : '',
+        'Categorias': Array.isArray(user.categories) ? user.categories.map((cat: any) => cat.name).join('; ') : '',
+        'Grupos': Array.isArray(user.groups) ? user.groups.map((group: any) => group.name).join('; ') : '',
+        'Nome do Pai': user.fatherName || '',
+        'Nome da Mãe': user.motherName || '',
+        'Contato de Emergência': user.emergencyContact?.name || '',
+        'Telefone de Emergência': user.emergencyContact?.phone || '',
+        'Parentesco': user.emergencyContact?.relationship || '',
+        'Profissão': user.profession || '',
+        'Local de Trabalho': user.workplace || '',
+        'Estado Civil': user.maritalStatus || '',
+        'Biografia': user.biografia || '',
+        'Observações': user.observations || '',
+        'Tem Foto': user.photoUrl ? 'Sim' : 'Não',
+        'Documentos': Array.isArray(user.documents) ? user.documents.map((doc: any) => doc.originalName).join('; ') : ''
+      }));
+
+      // Criar workbook e worksheet
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.json_to_sheet(excelData);
+      
+      // Definir larguras das colunas
+      const colWidths = [
+        { wch: 20 }, // Nome
+        { wch: 25 }, // Email
+        { wch: 18 }, // Telefone  
+        { wch: 30 }, // Endereço
+        { wch: 15 }, // Cidade
+        { wch: 12 }, // Estado
+        { wch: 12 }, // CEP
+        { wch: 15 }, // Data Nascimento
+        { wch: 20 }, // Data Ingresso
+        { wch: 20 }, // Cadastrado em
+        { wch: 25 }, // Categorias
+        { wch: 25 }, // Grupos
+        { wch: 20 }, // Nome do Pai
+        { wch: 20 }, // Nome da Mãe
+        { wch: 20 }, // Contato Emergência
+        { wch: 18 }, // Tel Emergência
+        { wch: 15 }, // Parentesco
+        { wch: 20 }, // Profissão
+        { wch: 25 }, // Local Trabalho
+        { wch: 15 }, // Estado Civil
+        { wch: 30 }, // Biografia
+        { wch: 30 }, // Observações
+        { wch: 10 }, // Tem Foto
+        { wch: 30 }  // Documentos
+      ];
+      
+      ws['!cols'] = colWidths;
+      
+      // Adicionar worksheet ao workbook
+      XLSX.utils.book_append_sheet(wb, ws, "Usuários");
+      
+      // Gerar arquivo Excel
+      const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+      const data = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      
+      // Nome do arquivo
+      const filename = reportType === 'all' 
+        ? `relatorio_usuarios_${new Date().toISOString().split('T')[0]}.xlsx`
+        : `relatorio_usuarios_categorias_${new Date().toISOString().split('T')[0]}.xlsx`;
+      
+      // Salvar arquivo
+      saveAs(data, filename);
+      
+      toast({
+        title: "Sucesso",
+        description: `Relatório Excel gerado com ${userDetails.length} usuários.`,
+      });
+      
+      onClose();
+      
+    } catch (error) {
+      console.error('Erro ao gerar relatório Excel:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao gerar relatório Excel. Tente novamente.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   const generatePDF = async () => {
@@ -492,7 +631,7 @@ export function GenerateReportModal({ isOpen, onClose }: GenerateReportModalProp
           )}
         </div>
 
-        <DialogFooter>
+        <DialogFooter className="space-x-2">
           <Button
             variant="outline"
             onClick={handleClose}
@@ -503,22 +642,34 @@ export function GenerateReportModal({ isOpen, onClose }: GenerateReportModalProp
           <Button
             onClick={generatePDF}
             disabled={isGenerating || (reportType === 'categories' && selectedCategories.length === 0)}
-            className="btn-primary"
+            variant="outline"
           >
             {isGenerating ? (
               <>
-                <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Gerando...
               </>
             ) : (
               <>
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-                Gerar Relatório
+                <FileText className="mr-2 h-4 w-4" />
+                Gerar PDF
+              </>
+            )}
+          </Button>
+          <Button
+            onClick={generateExcel}
+            disabled={isGenerating || (reportType === 'categories' && selectedCategories.length === 0)}
+            className="btn-primary"
+          >
+            {isGenerating ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Gerando...
+              </>
+            ) : (
+              <>
+                <FileSpreadsheet className="mr-2 h-4 w-4" />
+                Exportar Excel
               </>
             )}
           </Button>
