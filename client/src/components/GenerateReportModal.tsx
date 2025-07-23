@@ -114,10 +114,20 @@ export function GenerateReportModal({ isOpen, onClose }: GenerateReportModalProp
         }
 
         // Cabeçalho do relatório
-        pdf.setFontSize(16);
+        pdf.setFontSize(14);
         pdf.setTextColor(0, 0, 0);
-        pdf.text('RELATÓRIO DE USUÁRIO - CESURG', margin, yPosition);
-        yPosition += 20;
+        pdf.text('Relatório Dados de Usuário Conecta -', margin, yPosition);
+        
+        // Nome do usuário em destaque
+        pdf.setFontSize(16);
+        pdf.setFont('helvetica', 'bold');
+        pdf.setTextColor(0, 0, 0);
+        const userName = user.name || 'Nome não informado';
+        pdf.text(userName.toUpperCase(), margin, yPosition + 15);
+        
+        // Restaurar fonte normal
+        pdf.setFont('helvetica', 'normal');
+        yPosition += 35;
 
         // Linha separadora
         pdf.setLineWidth(0.5);
