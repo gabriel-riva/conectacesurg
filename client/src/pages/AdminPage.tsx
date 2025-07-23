@@ -19,6 +19,7 @@ import { AdminIdeas } from "@/components/AdminIdeas";
 import { UserCategoryModal } from "@/components/UserCategoryModal";
 import { EditUserCategoryModal } from "@/components/EditUserCategoryModal";
 import { UserCategoryAssignmentModal } from "@/components/UserCategoryAssignmentModal";
+import { GenerateReportModal } from "@/components/GenerateReportModal";
 import { 
   AlertDialog,
   AlertDialogAction,
@@ -59,6 +60,7 @@ export default function AdminPage({ activeTab: initialActiveTab }: { activeTab?:
   const [isUserCategoryEditModalOpen, setIsUserCategoryEditModalOpen] = useState(false);
   const [isUserCategoryAssignmentModalOpen, setIsUserCategoryAssignmentModalOpen] = useState(false);
   const [userForCategoryAssignment, setUserForCategoryAssignment] = useState<{ id: number; name: string } | null>(null);
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const { toast } = useToast();
 
   // Fetch users - Usar endpoint filter quando uma categoria está selecionada
@@ -362,14 +364,25 @@ export default function AdminPage({ activeTab: initialActiveTab }: { activeTab?:
           <div className="flex justify-between items-center mb-6">
             <h1 className="text-2xl font-bold text-primary">Gestão de Usuários</h1>
             {activeTab === "usuarios" ? (
-              <Button 
-                onClick={() => setIsUserModalOpen(true)}
-                className="btn-primary flex items-center">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                </svg>
-                Adicionar Usuário
-              </Button>
+              <div className="flex gap-2">
+                <Button 
+                  onClick={() => setIsUserModalOpen(true)}
+                  className="btn-primary flex items-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                  </svg>
+                  Adicionar Usuário
+                </Button>
+                <Button 
+                  onClick={() => setIsReportModalOpen(true)}
+                  variant="outline"
+                  className="flex items-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  Gerar Relatório
+                </Button>
+              </div>
             ) : activeTab === "categorias" ? (
               <Button 
                 onClick={() => setIsUserCategoryModalOpen(true)}
@@ -1000,6 +1013,11 @@ ${userCategoriesMapping[user.id].map(c => `• ${c.name}`).join('\n')}`}
           }}
         />
       )}
+
+      <GenerateReportModal
+        isOpen={isReportModalOpen}
+        onClose={() => setIsReportModalOpen(false)}
+      />
 
       {/* Diálogo de confirmação de exclusão */}
       <AlertDialog 
