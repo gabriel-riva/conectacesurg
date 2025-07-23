@@ -460,7 +460,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       };
       
       // Validar o papel do usuário
-      if (sanitizedData.role !== "user" && sanitizedData.role !== "admin") {
+      if (sanitizedData.role !== "user" && sanitizedData.role !== "admin" && sanitizedData.role !== "superadmin") {
         return res.status(400).json({ message: "Invalid role value" });
       }
       
