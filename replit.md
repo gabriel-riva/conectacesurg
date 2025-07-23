@@ -250,3 +250,11 @@ When creating new admin functionality, remember to:
 - **Request Logging**: Express middleware for API request tracking
 - **Error Handling**: Comprehensive error handling throughout application
 - **Development Tools**: Hot reload and development server integration
+- **CONCLUÍDO**: Campo "Data de Ingresso na CESURG" implementado com sucesso
+  - Adicionado campo `joinDate` no schema da tabela users
+  - Interface de administração permite editar a data de ingresso via modal EditUserModal
+  - Perfil do usuário exibe a data de ingresso quando cadastrada
+  - Separação clara entre "Data de Ingresso na CESURG" e "Cadastrado no portal"
+  - Backend validado e funcionando corretamente
+  - Testado com usuário Gabriel Riva (data: 10/02/2019) - campo visível
+  - Usuários sem data cadastrada não exibem o campo (comportamento esperado)
