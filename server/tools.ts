@@ -1,8 +1,8 @@
 import { Router, Request, Response } from 'express';
 import { db } from './db';
-import { tools, toolCategories, toolProjects, userCategories, users } from '../shared/schema';
+import { tools, toolCategories, toolProjects, userCategories, users, userCategoryAssignments } from '../shared/schema';
 import { insertToolSchema, insertToolCategorySchema } from '../shared/schema';
-import { eq, desc, and, inArray } from 'drizzle-orm';
+import { eq, desc, and, inArray, or, sql } from 'drizzle-orm';
 
 const router = Router();
 
@@ -10,6 +10,14 @@ const router = Router();
 function requireAdmin(req: Request, res: Response, next: any) {
   if (!req.user || !['admin', 'superadmin'].includes((req.user as any).role)) {
     return res.status(403).json({ error: 'Admin access required' });
+  }
+  next();
+}
+
+// Helper function to check if user is authenticated
+function requireAuth(req: Request, res: Response, next: any) {
+  if (!req.user) {
+    return res.status(401).json({ error: 'Authentication required' });
   }
   next();
 }
@@ -266,6 +274,77 @@ router.put('/admin/tools/:toolId/projects/:projectId', requireAdmin, async (req:
     res.json(updatedProject);
   } catch (error) {
     console.error('Erro ao atualizar projeto:', error);
+    res.status(500).json({ error: 'Erro interno do servidor' });
+  }
+});
+
+// GET /api/tools/user/accessible - Listar ferramentas acessíveis ao usuário atual
+router.get('/user/accessible', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ error: 'Usuário não autenticado' });
+    }
+
+    // Buscar categorias do usuário
+    const userCategories = await db
+      .select({ categoryId: userCategoryAssignments.categoryId })
+      .from(userCategoryAssignments)
+      .where(eq(userCategoryAssignments.userId, userId));
+
+    const userCategoryIds = userCategories.map(uc => uc.categoryId);
+
+    // Buscar ferramentas ativas que o usuário pode acessar
+    const accessibleTools = await db
+      .select({
+        id: tools.id,
+        name: tools.name,
+        description: tools.description,
+        isActive: tools.isActive,
+        categoryId: tools.categoryId,
+        allowedUserCategories: tools.allowedUserCategories,
+        settings: tools.settings,
+        createdAt: tools.createdAt,
+        updatedAt: tools.updatedAt,
+        category: {
+          id: toolCategories.id,
+          name: toolCategories.name,
+          description: toolCategories.description,
+          icon: toolCategories.icon,
+        }
+      })
+      .from(tools)
+      .leftJoin(toolCategories, eq(tools.categoryId, toolCategories.id))
+      .where(
+        and(
+          eq(tools.isActive, true),
+          or(
+            // Ferramenta não tem restrições (allowedUserCategories vazio)
+            sql`array_length(${tools.allowedUserCategories}, 1) IS NULL`,
+            // OU o usuário pertence a uma das categorias permitidas
+            sql`${tools.allowedUserCategories} && ${userCategoryIds}`
+          )
+        )
+      );
+
+    res.json(accessibleTools);
+  } catch (error) {
+    console.error('Erro ao buscar ferramentas acessíveis:', error);
+    res.status(500).json({ error: 'Erro interno do servidor' });
+  }
+});
+
+// GET /api/tools/categories - Listar categorias de ferramentas
+router.get('/categories', async (req: Request, res: Response) => {
+  try {
+    const categories = await db
+      .select()
+      .from(toolCategories)
+      .orderBy(toolCategories.name);
+
+    res.json(categories);
+  } catch (error) {
+    console.error('Erro ao buscar categorias de ferramentas:', error);
     res.status(500).json({ error: 'Erro interno do servidor' });
   }
 });
