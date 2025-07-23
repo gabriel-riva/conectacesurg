@@ -66,15 +66,11 @@ export function GenerateReportModal({ isOpen, onClose }: GenerateReportModalProp
       // Buscar detalhes completos de cada usuário
       for (const user of users) {
         try {
-          // Buscar grupos do usuário
-          const userGroups = await apiRequest('GET', `/api/users/${user.id}/groups`);
-          
           // Buscar categorias do usuário
           const userCategoriesData = await apiRequest('GET', `/api/user-category-assignments/user/${user.id}`);
           
           userDetails.push({
             ...user,
-            groups: userGroups,
             categories: userCategoriesData
           });
         } catch (error) {
@@ -82,7 +78,6 @@ export function GenerateReportModal({ isOpen, onClose }: GenerateReportModalProp
           // Adicionar usuário mesmo sem todos os detalhes
           userDetails.push({
             ...user,
-            groups: [],
             categories: []
           });
         }
@@ -94,9 +89,19 @@ export function GenerateReportModal({ isOpen, onClose }: GenerateReportModalProp
       const pageWidth = pdf.internal.pageSize.width;
       const margin = 20;
       const maxWidth = pageWidth - 2 * margin;
+      const bottomMargin = 30; // Espaço para o rodapé
 
       // Configurar fonte
       pdf.setFont('helvetica');
+
+      // Função para verificar se precisa de nova página
+      const checkPageBreak = (currentY: number, neededSpace: number = 20) => {
+        if (currentY + neededSpace > pageHeight - bottomMargin) {
+          pdf.addPage();
+          return margin;
+        }
+        return currentY;
+      };
 
       for (let i = 0; i < userDetails.length; i++) {
         const user = userDetails[i];
@@ -119,6 +124,30 @@ export function GenerateReportModal({ isOpen, onClose }: GenerateReportModalProp
         pdf.line(margin, yPosition, pageWidth - margin, yPosition);
         yPosition += 15;
 
+        // Espaço reservado para foto do usuário
+        pdf.setFontSize(14);
+        pdf.setTextColor(51, 51, 51);
+        pdf.text('FOTO DO USUÁRIO', margin, yPosition);
+        yPosition += 10;
+
+        // Desenhar retângulo para a área da foto
+        const photoWidth = 40;
+        const photoHeight = 50;
+        pdf.setDrawColor(200, 200, 200);
+        pdf.setLineWidth(1);
+        pdf.rect(margin, yPosition, photoWidth, photoHeight);
+        
+        if (user.photoUrl) {
+          pdf.setFontSize(8);
+          pdf.setTextColor(100, 100, 100);
+          pdf.text('Foto disponível no sistema', margin, yPosition + photoHeight + 5);
+        } else {
+          pdf.setFontSize(8);
+          pdf.setTextColor(100, 100, 100);
+          pdf.text('Nenhuma foto cadastrada', margin, yPosition + photoHeight + 5);
+        }
+        yPosition += photoHeight + 15;
+
         // Informações básicas do usuário
         pdf.setFontSize(14);
         pdf.setTextColor(51, 51, 51);
@@ -129,11 +158,13 @@ export function GenerateReportModal({ isOpen, onClose }: GenerateReportModalProp
         pdf.setTextColor(0, 0, 0);
         
         const personalInfo = [
-          `Nome: ${user.name || 'N/A'}`,
-          `Email: ${user.email || 'N/A'}`,
-          `Função: ${user.role === 'admin' ? 'Administrador' : user.role === 'superadmin' ? 'Super Administrador' : 'Usuário'}`,
+          `Nome Completo: ${user.name || 'Não informado'}`,
+          `Email Principal: ${user.email || 'Não informado'}`,
+          `Email Secundário: ${user.secondaryEmail || 'Não informado'}`,
+          `Função/Cargo: ${user.role === 'admin' ? 'Administrador' : user.role === 'superadmin' ? 'Super Administrador' : 'Usuário'}`,
           `Status: ${user.isActive ? 'Ativo' : 'Inativo'}`,
-          `Data de Criação: ${user.createdAt ? new Date(user.createdAt).toLocaleDateString('pt-BR') : 'N/A'}`,
+          `Data de Ingresso: ${user.joinDate ? new Date(user.joinDate).toLocaleDateString('pt-BR') : 'Não informado'}`,
+          `Data de Criação no Sistema: ${user.createdAt ? new Date(user.createdAt).toLocaleDateString('pt-BR') : 'N/A'}`,
           `Última Atualização: ${user.updatedAt ? new Date(user.updatedAt).toLocaleDateString('pt-BR') : 'N/A'}`
         ];
 
@@ -144,10 +175,93 @@ export function GenerateReportModal({ isOpen, onClose }: GenerateReportModalProp
 
         yPosition += 10;
 
+        // Verificar se precisa de nova página
+        yPosition = checkPageBreak(yPosition, 80);
+
+        // Informações de contato e endereço
+        pdf.setFontSize(14);
+        pdf.setTextColor(51, 51, 51);
+        pdf.text('CONTATOS E ENDEREÇO', margin, yPosition);
+        yPosition += 10;
+
+        pdf.setFontSize(10);
+        pdf.setTextColor(0, 0, 0);
+        
+        const contactInfo = [
+          `Telefones: ${user.phoneNumbers && user.phoneNumbers.length > 0 ? user.phoneNumbers.join(', ') : 'Não informado'}`,
+          `Endereço: ${user.address || 'Não informado'}`,
+          `Cidade: ${user.city || 'Não informado'}`,
+          `Estado: ${user.state || 'Não informado'}`,
+          `CEP: ${user.zipCode || 'Não informado'}`
+        ];
+
+        contactInfo.forEach(info => {
+          pdf.text(info, margin, yPosition);
+          yPosition += 7;
+        });
+
+        yPosition += 10;
+
+        // Verificar se precisa de nova página
+        yPosition = checkPageBreak(yPosition, 60);
+
+        // Contato de emergência
+        pdf.setFontSize(14);
+        pdf.setTextColor(51, 51, 51);
+        pdf.text('CONTATO DE EMERGÊNCIA', margin, yPosition);
+        yPosition += 10;
+
+        pdf.setFontSize(10);
+        pdf.setTextColor(0, 0, 0);
+
+        if (user.emergencyContact) {
+          const emergencyInfo = [
+            `Nome: ${user.emergencyContact.name || 'Não informado'}`,
+            `Telefone: ${user.emergencyContact.phone || 'Não informado'}`,
+            `Parentesco: ${user.emergencyContact.relationship || 'Não informado'}`
+          ];
+          
+          emergencyInfo.forEach(info => {
+            pdf.text(info, margin, yPosition);
+            yPosition += 7;
+          });
+        } else {
+          pdf.text('Não informado', margin, yPosition);
+          yPosition += 7;
+        }
+
+        yPosition += 10;
+
+        // Verificar se precisa de nova página
+        yPosition = checkPageBreak(yPosition, 50);
+
+        // Biografia
+        pdf.setFontSize(14);
+        pdf.setTextColor(51, 51, 51);
+        pdf.text('BIOGRAFIA', margin, yPosition);
+        yPosition += 10;
+
+        pdf.setFontSize(10);
+        pdf.setTextColor(0, 0, 0);
+
+        if (user.biografia) {
+          const bioLines = pdf.splitTextToSize(user.biografia, maxWidth);
+          pdf.text(bioLines, margin, yPosition);
+          yPosition += bioLines.length * 5 + 5;
+        } else {
+          pdf.text('Não informado', margin, yPosition);
+          yPosition += 7;
+        }
+
+        yPosition += 10;
+
+        // Verificar se precisa de nova página
+        yPosition = checkPageBreak(yPosition, 40);
+
         // Categorias do usuário
         pdf.setFontSize(14);
         pdf.setTextColor(51, 51, 51);
-        pdf.text('CATEGORIAS', margin, yPosition);
+        pdf.text('CATEGORIAS DE USUÁRIO', margin, yPosition);
         yPosition += 10;
 
         pdf.setFontSize(10);
@@ -155,7 +269,8 @@ export function GenerateReportModal({ isOpen, onClose }: GenerateReportModalProp
 
         if (user.categories && user.categories.length > 0) {
           user.categories.forEach((categoryAssignment: any) => {
-            pdf.text(`• ${categoryAssignment.category?.name || 'Categoria sem nome'}`, margin + 5, yPosition);
+            const categoryName = categoryAssignment.category?.name || categoryAssignment.name || 'Categoria sem nome';
+            pdf.text(`• ${categoryName}`, margin + 5, yPosition);
             yPosition += 7;
           });
         } else {
@@ -165,60 +280,32 @@ export function GenerateReportModal({ isOpen, onClose }: GenerateReportModalProp
 
         yPosition += 10;
 
-        // Grupos do usuário
+        // Verificar se precisa de nova página
+        yPosition = checkPageBreak(yPosition, 60);
+
+        // Documentos
         pdf.setFontSize(14);
         pdf.setTextColor(51, 51, 51);
-        pdf.text('GRUPOS DA COMUNIDADE', margin, yPosition);
+        pdf.text('DOCUMENTOS', margin, yPosition);
         yPosition += 10;
 
         pdf.setFontSize(10);
         pdf.setTextColor(0, 0, 0);
 
-        if (user.groups && user.groups.length > 0) {
-          user.groups.forEach((group: any) => {
-            pdf.text(`• ${group.name || 'Grupo sem nome'}`, margin + 5, yPosition);
-            if (group.description) {
+        if (user.documents && user.documents.length > 0) {
+          user.documents.forEach((document: any) => {
+            pdf.text(`• ${document.name || 'Documento sem nome'}`, margin + 5, yPosition);
+            yPosition += 5;
+            if (document.description) {
+              pdf.text(`  Descrição: ${document.description}`, margin + 10, yPosition);
               yPosition += 5;
-              const description = pdf.splitTextToSize(group.description, maxWidth - 10);
-              pdf.text(description, margin + 10, yPosition);
-              yPosition += description.length * 5;
             }
+            pdf.text(`  Tipo: ${document.type || 'Não especificado'}`, margin + 10, yPosition);
             yPosition += 7;
           });
         } else {
-          pdf.text('Não participa de nenhum grupo', margin + 5, yPosition);
+          pdf.text('Nenhum documento cadastrado', margin + 5, yPosition);
           yPosition += 7;
-        }
-
-        // Informações adicionais do perfil se existirem
-        if (user.bio || user.interests || user.skills) {
-          yPosition += 10;
-          
-          pdf.setFontSize(14);
-          pdf.setTextColor(51, 51, 51);
-          pdf.text('INFORMAÇÕES DO PERFIL', margin, yPosition);
-          yPosition += 10;
-
-          pdf.setFontSize(10);
-          pdf.setTextColor(0, 0, 0);
-
-          if (user.bio) {
-            pdf.text('Biografia:', margin, yPosition);
-            yPosition += 5;
-            const bioLines = pdf.splitTextToSize(user.bio, maxWidth - 10);
-            pdf.text(bioLines, margin + 5, yPosition);
-            yPosition += bioLines.length * 5 + 5;
-          }
-
-          if (user.interests) {
-            pdf.text(`Interesses: ${user.interests}`, margin, yPosition);
-            yPosition += 7;
-          }
-
-          if (user.skills) {
-            pdf.text(`Habilidades: ${user.skills}`, margin, yPosition);
-            yPosition += 7;
-          }
         }
 
         // Rodapé da página
