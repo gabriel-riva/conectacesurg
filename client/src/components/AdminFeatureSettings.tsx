@@ -33,6 +33,7 @@ const featureLabels: Record<string, string> = {
   gamificacao: "Gamificação",
   trilhas: "Trilhas",
   materiais: "Materiais",
+  ferramentas: "Ferramentas",
 };
 
 const featureDescriptions: Record<string, string> = {
@@ -41,6 +42,7 @@ const featureDescriptions: Record<string, string> = {
   gamificacao: "Sistema de pontuação, desafios e ranking",
   trilhas: "Sistema de trilhas de aprendizado e desenvolvimento",
   materiais: "Sistema de materiais educativos e recursos",
+  ferramentas: "Sistema de ferramentas organizadas por categorias para usuários",
 };
 
 export function AdminFeatureSettings() {
