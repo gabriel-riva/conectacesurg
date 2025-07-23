@@ -494,7 +494,8 @@ router.delete('/admin/content/:id', isAdmin, async (req: Request, res: Response)
 // Gerenciar categorias - Admin apenas
 router.get('/admin/categories', isAdmin, async (req: Request, res: Response) => {
   try {
-    const categories = await storage.getAllTrailCategories();
+    // Para admin, mostrar todas as categorias incluindo inativas
+    const categories = await db.select().from(trailCategories).orderBy(trailCategories.name);
     res.json(categories);
   } catch (error) {
     console.error('Erro ao obter categorias:', error);
@@ -556,8 +557,11 @@ router.delete('/admin/categories/:id', isAdmin, async (req: Request, res: Respon
     }
     
     res.json({ message: 'Categoria deletada com sucesso' });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Erro ao deletar categoria:', error);
+    if (error.message && error.message.includes('sendo usada por trilhas')) {
+      return res.status(400).json({ error: error.message });
+    }
     res.status(500).json({ error: 'Erro interno do servidor' });
   }
 });

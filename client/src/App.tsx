@@ -29,6 +29,7 @@ import TrilhasPage from "@/pages/TrilhasPage";
 import TrailDetailsPage from "@/pages/TrailDetailsPage";
 import AdminTrilhasPage from "@/pages/AdminTrilhasPage";
 import AdminTrailContentsPage from "@/pages/AdminTrailContentsPage";
+import AdminTrailCategoriesPage from "@/pages/AdminTrailCategoriesPage";
 import AdminGamificationPage from "@/pages/AdminGamificationPage";
 import FeedbackManagement from "@/pages/admin/FeedbackManagement";
 import SurveyManagement from "@/pages/SurveyManagement";
@@ -132,6 +133,9 @@ function Router() {
       </Route>
       <Route path="/admin/trilhas">
         {() => <ProtectedRoute component={AdminTrilhasPage} adminOnly={true} />}
+      </Route>
+      <Route path="/admin/trilhas/categorias">
+        {() => <ProtectedRoute component={AdminTrailCategoriesPage} adminOnly={true} />}
       </Route>
       <Route path="/admin/trilhas/:trailId/conteudos">
         {() => <ProtectedRoute component={AdminTrailContentsPage} adminOnly={true} />}

@@ -257,14 +257,21 @@ export default function AdminTrilhasPage() {
                   Administre as trilhas de aprendizado disponíveis na plataforma
                 </p>
               </div>
-              <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Nova Trilha
+              <div className="flex gap-3">
+                <Link href="/admin/trilhas/categorias">
+                  <Button variant="outline">
+                    <BookOpen className="h-4 w-4 mr-2" />
+                    Gerenciar Categorias
                   </Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-2xl">
+                </Link>
+                <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Nova Trilha
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-2xl">
                   <DialogHeader>
                     <DialogTitle>Criar Nova Trilha</DialogTitle>
                   </DialogHeader>
@@ -381,6 +388,7 @@ export default function AdminTrilhasPage() {
                   </Form>
                 </DialogContent>
               </Dialog>
+              </div>
             </div>
 
             {/* Stats Cards */}

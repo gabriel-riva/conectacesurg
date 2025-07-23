@@ -1949,11 +1949,22 @@ export class DatabaseStorage implements IStorage {
 
   async deleteTrailCategory(id: number): Promise<boolean> {
     try {
+      // Verificar se existem trilhas utilizando esta categoria
+      const trailsUsingCategory = await db
+        .select({ id: trails.id })
+        .from(trails)
+        .where(eq(trails.categoryId, id))
+        .limit(1);
+
+      if (trailsUsingCategory.length > 0) {
+        throw new Error("Não é possível excluir uma categoria que está sendo usada por trilhas.");
+      }
+
       const result = await db.delete(trailCategories).where(eq(trailCategories.id, id)).returning();
       return result.length > 0;
     } catch (error) {
       console.error("Error deleting trail category:", error);
-      return false;
+      throw error;
     }
   }
 
