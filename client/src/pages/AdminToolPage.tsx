@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Calendar, Users, Settings as SettingsIcon, FileText } from "lucide-react";
+import { ArrowLeft, Calendar, Users, Settings as SettingsIcon, FileText, MapPin } from "lucide-react";
 
 interface Tool {
   id: number;
@@ -94,12 +94,12 @@ export default function AdminToolPage() {
   const getStatusBadge = (status: string) => {
     const statusMap = {
       'rascunho': { label: 'Rascunho', variant: 'secondary' as const },
-      'enviado': { label: 'Enviado', variant: 'default' as const },
-      'em_analise': { label: 'Em Análise', variant: 'default' as const },
+      'pendente': { label: 'Pendente', variant: 'default' as const },
       'aprovado': { label: 'Aprovado', variant: 'default' as const },
       'rejeitado': { label: 'Rejeitado', variant: 'destructive' as const },
-      'em_execucao': { label: 'Em Execução', variant: 'default' as const },
-      'concluido': { label: 'Concluído', variant: 'default' as const },
+      'realizado': { label: 'Realizado', variant: 'default' as const },
+      'relatorio_pendente': { label: 'Relatório Pendente', variant: 'default' as const },
+      'finalizado': { label: 'Finalizado', variant: 'default' as const },
     };
     
     const statusConfig = statusMap[status as keyof typeof statusMap] || { label: status, variant: 'secondary' as const };
@@ -109,6 +109,38 @@ export default function AdminToolPage() {
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('pt-BR');
   };
+
+  // Componente ProjectCard compacto para o Kanban
+  const ProjectCard = ({ project }: { project: ToolProject }) => (
+    <Card className="cursor-pointer hover:shadow-md transition-shadow">
+      <CardContent className="p-3">
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-medium text-gray-500">#{project.id}</span>
+            {getStatusBadge(project.status)}
+          </div>
+          <h4 className="font-medium text-sm leading-tight">
+            {project.tipoAtividade.replace('_', ' ').charAt(0).toUpperCase() + 
+             project.tipoAtividade.replace('_', ' ').slice(1)}
+          </h4>
+          <div className="space-y-1 text-xs text-gray-600">
+            <div className="flex items-center gap-1">
+              <Calendar className="w-3 h-3" />
+              {formatDate(project.dataRealizacao)}
+            </div>
+            <div className="flex items-center gap-1">
+              <MapPin className="w-3 h-3" />
+              <span className="truncate">{project.local}</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <Users className="w-3 h-3" />
+              <span className="truncate">{project.nomeProfissionais}</span>
+            </div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -156,14 +188,10 @@ export default function AdminToolPage() {
 
             {/* Tabs */}
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid w-full grid-cols-3">
+              <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="projects" className="flex items-center gap-2">
                   <FileText className="w-4 h-4" />
                   Projetos
-                </TabsTrigger>
-                <TabsTrigger value="users" className="flex items-center gap-2">
-                  <Users className="w-4 h-4" />
-                  Usuários
                 </TabsTrigger>
                 <TabsTrigger value="settings" className="flex items-center gap-2">
                   <SettingsIcon className="w-4 h-4" />
@@ -171,7 +199,7 @@ export default function AdminToolPage() {
                 </TabsTrigger>
               </TabsList>
 
-              {/* Tab: Projetos */}
+              {/* Tab: Projetos - Layout Kanban */}
               <TabsContent value="projects" className="mt-6">
                 <div className="space-y-4">
                   <div className="flex justify-between items-center">
@@ -196,93 +224,92 @@ export default function AdminToolPage() {
                       </CardContent>
                     </Card>
                   ) : (
-                    <div className="grid gap-4">
-                      {projects.map((project) => (
-                        <Card key={project.id}>
-                          <CardHeader>
-                            <div className="flex justify-between items-start">
-                              <div>
-                                <CardTitle className="text-lg mb-1">
-                                  Projeto #{project.id}
-                                </CardTitle>
-                                <CardDescription>
-                                  {project.tipoAtividade.replace('_', ' ').charAt(0).toUpperCase() + 
-                                   project.tipoAtividade.replace('_', ' ').slice(1)}
-                                </CardDescription>
-                              </div>
-                              {getStatusBadge(project.status)}
-                            </div>
-                          </CardHeader>
-                          <CardContent>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                              <div>
-                                <p className="text-sm font-medium text-gray-700">Data de Realização</p>
-                                <p className="text-sm text-gray-600">{formatDate(project.dataRealizacao)}</p>
-                              </div>
-                              <div>
-                                <p className="text-sm font-medium text-gray-700">Local</p>
-                                <p className="text-sm text-gray-600">{project.local}</p>
-                              </div>
-                              <div className="md:col-span-2">
-                                <p className="text-sm font-medium text-gray-700">Profissionais</p>
-                                <p className="text-sm text-gray-600">{project.nomeProfissionais}</p>
-                              </div>
-                              {project.observacoes && (
-                                <div className="md:col-span-2">
-                                  <p className="text-sm font-medium text-gray-700">Observações</p>
-                                  <p className="text-sm text-gray-600">{project.observacoes}</p>
-                                </div>
-                              )}
-                              <div>
-                                <p className="text-sm font-medium text-gray-700">Criado em</p>
-                                <p className="text-sm text-gray-600">{formatDate(project.createdAt)}</p>
-                              </div>
-                              <div>
-                                <p className="text-sm font-medium text-gray-700">Atualizado em</p>
-                                <p className="text-sm text-gray-600">{formatDate(project.updatedAt)}</p>
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      ))}
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 min-h-[600px]">
+                      {/* Coluna: Planejado */}
+                      <div className="space-y-3">
+                        <div className="bg-blue-100 p-3 rounded-lg">
+                          <h3 className="font-medium text-blue-900 flex items-center gap-2">
+                            <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                            Planejado
+                            <Badge variant="secondary" className="ml-auto">
+                              {projects.filter(p => ['planejado', 'rascunho', 'pendente'].includes(p.status)).length}
+                            </Badge>
+                          </h3>
+                        </div>
+                        <div className="space-y-3 max-h-96 overflow-y-auto">
+                          {projects
+                            .filter(p => ['planejado', 'rascunho', 'pendente'].includes(p.status))
+                            .map((project) => (
+                              <ProjectCard key={project.id} project={project} />
+                            ))}
+                        </div>
+                      </div>
+
+                      {/* Coluna: Aprovado */}
+                      <div className="space-y-3">
+                        <div className="bg-green-100 p-3 rounded-lg">
+                          <h3 className="font-medium text-green-900 flex items-center gap-2">
+                            <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                            Aprovado
+                            <Badge variant="secondary" className="ml-auto">
+                              {projects.filter(p => p.status === 'aprovado').length}
+                            </Badge>
+                          </h3>
+                        </div>
+                        <div className="space-y-3 max-h-96 overflow-y-auto">
+                          {projects
+                            .filter(p => p.status === 'aprovado')
+                            .map((project) => (
+                              <ProjectCard key={project.id} project={project} />
+                            ))}
+                        </div>
+                      </div>
+
+                      {/* Coluna: Realizado */}
+                      <div className="space-y-3">
+                        <div className="bg-yellow-100 p-3 rounded-lg">
+                          <h3 className="font-medium text-yellow-900 flex items-center gap-2">
+                            <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
+                            Realizado
+                            <Badge variant="secondary" className="ml-auto">
+                              {projects.filter(p => ['realizado', 'relatorio_pendente'].includes(p.status)).length}
+                            </Badge>
+                          </h3>
+                        </div>
+                        <div className="space-y-3 max-h-96 overflow-y-auto">
+                          {projects
+                            .filter(p => ['realizado', 'relatorio_pendente'].includes(p.status))
+                            .map((project) => (
+                              <ProjectCard key={project.id} project={project} />
+                            ))}
+                        </div>
+                      </div>
+
+                      {/* Coluna: Finalizado */}
+                      <div className="space-y-3">
+                        <div className="bg-purple-100 p-3 rounded-lg">
+                          <h3 className="font-medium text-purple-900 flex items-center gap-2">
+                            <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
+                            Finalizado
+                            <Badge variant="secondary" className="ml-auto">
+                              {projects.filter(p => p.status === 'finalizado').length}
+                            </Badge>
+                          </h3>
+                        </div>
+                        <div className="space-y-3 max-h-96 overflow-y-auto">
+                          {projects
+                            .filter(p => p.status === 'finalizado')
+                            .map((project) => (
+                              <ProjectCard key={project.id} project={project} />
+                            ))}
+                        </div>
+                      </div>
                     </div>
                   )}
                 </div>
               </TabsContent>
 
-              {/* Tab: Usuários com Acesso */}
-              <TabsContent value="users" className="mt-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Controle de Acesso</CardTitle>
-                    <CardDescription>
-                      Gerencie quais categorias de usuários podem acessar esta ferramenta
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    {!tool.allowedUserCategories || tool.allowedUserCategories.length === 0 ? (
-                      <div className="text-center py-8">
-                        <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                        <h3 className="text-lg font-medium text-gray-900 mb-2">Acesso Liberado</h3>
-                        <p className="text-gray-600">
-                          Esta ferramenta está disponível para todos os usuários do sistema.
-                        </p>
-                      </div>
-                    ) : (
-                      <div>
-                        <h4 className="font-medium mb-4">Categorias com Acesso:</h4>
-                        <div className="flex flex-wrap gap-2">
-                          {tool.allowedUserCategories?.map((categoryId) => (
-                            <Badge key={categoryId} variant="outline">
-                              Categoria ID: {categoryId}
-                            </Badge>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              </TabsContent>
+
 
               {/* Tab: Configurações */}
               <TabsContent value="settings" className="mt-6">

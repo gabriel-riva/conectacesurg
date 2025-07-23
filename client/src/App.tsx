@@ -157,7 +157,7 @@ function Router() {
       <Route path="/admin/ferramentas">
         {() => <ProtectedRoute component={AdminFerramentasPage} adminOnly={true} />}
       </Route>
-      <Route path="/admin/ferramentas/tool/:id">
+      <Route path="/admin/ferramentas/:id">
         {(params) => <ProtectedRoute component={AdminToolPage} adminOnly={true} />}
       </Route>
       <Route path="/materiais">
