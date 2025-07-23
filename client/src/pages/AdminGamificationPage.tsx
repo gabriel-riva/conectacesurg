@@ -52,6 +52,7 @@ const challengeSchema = z.object({
   endDate: z.string().min(1, "Data de fim é obrigatória"),
   type: z.enum(["periodic", "annual"]),
   isActive: z.boolean().default(true),
+  targetUserCategories: z.array(z.string()).default([]),
 });
 
 type AddPointsForm = z.infer<typeof addPointsSchema>;
@@ -76,6 +77,10 @@ export default function AdminGamificationPage() {
 
   const { data: categories, isLoading: categoriesLoading } = useQuery({
     queryKey: ["/api/gamification/categories"],
+  });
+
+  const { data: allUserCategories, isLoading: allCategoriesLoading } = useQuery({
+    queryKey: ["/api/user-categories"],
   });
 
   const { data: users, isLoading: usersLoading } = useQuery({
@@ -207,6 +212,7 @@ export default function AdminGamificationPage() {
           ...data,
           startDate: new Date(data.startDate),
           endDate: new Date(data.endDate),
+          targetUserCategories: data.targetUserCategories.map(id => parseInt(id)),
           evaluationType,
           evaluationConfig,
         }),
@@ -246,6 +252,7 @@ export default function AdminGamificationPage() {
           ...data,
           startDate: new Date(data.startDate),
           endDate: new Date(data.endDate),
+          targetUserCategories: data.targetUserCategories.map(id => parseInt(id)),
           evaluationType,
           evaluationConfig,
         }),
@@ -328,10 +335,10 @@ export default function AdminGamificationPage() {
 
   // Update form when settings are loaded
   useEffect(() => {
-    if (settings) {
+    if (settings && typeof settings === 'object') {
       settingsForm.reset({
         generalCategoryId: settings.generalCategoryId?.toString() || "",
-        enabledCategoryIds: settings.enabledCategoryIds?.map((id: number) => id.toString()) || [],
+        enabledCategoryIds: Array.isArray(settings.enabledCategoryIds) ? settings.enabledCategoryIds.map((id: number) => id.toString()) : [],
         cycleStartDate: settings.cycleStartDate || "",
         cycleEndDate: settings.cycleEndDate || "",
         annualStartDate: settings.annualStartDate || "",
@@ -352,6 +359,7 @@ export default function AdminGamificationPage() {
       endDate: "",
       type: "periodic",
       isActive: true,
+      targetUserCategories: [],
     },
   });
 
@@ -397,6 +405,7 @@ export default function AdminGamificationPage() {
       endDate: challenge.endDate ? new Date(challenge.endDate).toISOString().split('T')[0] : "",
       type: challenge.type,
       isActive: challenge.isActive,
+      targetUserCategories: challenge.targetUserCategories?.map((id: number) => id.toString()) || [],
     });
     setIsChallengeDialogOpen(true);
   };
@@ -473,7 +482,7 @@ export default function AdminGamificationPage() {
                                   </SelectTrigger>
                                 </FormControl>
                                 <SelectContent>
-                                  {categories?.map((category: any) => (
+                                  {Array.isArray(categories) && categories.map((category: any) => (
                                     <SelectItem key={category.id} value={category.id.toString()}>
                                       {category.name}
                                     </SelectItem>
@@ -495,7 +504,7 @@ export default function AdminGamificationPage() {
                             <FormItem>
                               <FormLabel>Categorias Habilitadas para Filtros</FormLabel>
                               <div className="grid grid-cols-2 gap-4">
-                                {categories?.map((category: any) => (
+                                {Array.isArray(categories) && categories.map((category: any) => (
                                   <div key={category.id} className="flex items-center space-x-2">
                                     <Checkbox
                                       id={category.id.toString()}
@@ -621,7 +630,7 @@ export default function AdminGamificationPage() {
                                   </SelectTrigger>
                                 </FormControl>
                                 <SelectContent>
-                                  {users?.map((user: any) => (
+                                  {Array.isArray(users) && users.map((user: any) => (
                                     <SelectItem key={user.id} value={user.id.toString()}>
                                       {user.name} ({user.email})
                                     </SelectItem>
@@ -723,7 +732,7 @@ export default function AdminGamificationPage() {
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {ranking?.map((user: any) => (
+                          {Array.isArray(ranking) && ranking.map((user: any) => (
                             <TableRow key={user.userId}>
                               <TableCell>
                                 <Badge variant={user.position <= 3 ? "default" : "secondary"}>
@@ -781,7 +790,7 @@ export default function AdminGamificationPage() {
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {pointsHistory?.map((point: any) => (
+                          {Array.isArray(pointsHistory) && pointsHistory.map((point: any) => (
                             <TableRow key={point.id}>
                               <TableCell>
                                 {format(new Date(point.createdAt), "dd/MM/yyyy HH:mm", { locale: ptBR })}
@@ -845,7 +854,7 @@ export default function AdminGamificationPage() {
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {challenges?.map((challenge: any) => (
+                          {Array.isArray(challenges) && challenges.map((challenge: any) => (
                             <TableRow key={challenge.id}>
                               <TableCell>
                                 <div>
@@ -977,7 +986,46 @@ export default function AdminGamificationPage() {
                               </FormItem>
                             )}
                           />
+                        </div>
 
+                        <FormField
+                          control={challengeForm.control}
+                          name="targetUserCategories"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Categorias de Usuários</FormLabel>
+                              <FormDescription>
+                                Selecione as categorias de usuários que poderão ver este desafio. Se nenhuma categoria for selecionada, o desafio será visível para todos os usuários.
+                              </FormDescription>
+                              <div className="grid grid-cols-2 md:grid-cols-3 gap-2 p-4 border rounded-lg bg-gray-50">
+                                {Array.isArray(allUserCategories) && allUserCategories.map((category: any) => (
+                                  <div key={category.id} className="flex items-center space-x-2">
+                                    <Checkbox
+                                      id={`category-${category.id}`}
+                                      checked={field.value.includes(category.id.toString())}
+                                      onCheckedChange={(checked) => {
+                                        if (checked) {
+                                          field.onChange([...field.value, category.id.toString()]);
+                                        } else {
+                                          field.onChange(field.value.filter((id: string) => id !== category.id.toString()));
+                                        }
+                                      }}
+                                    />
+                                    <Label 
+                                      htmlFor={`category-${category.id}`}
+                                      className="text-sm font-normal cursor-pointer"
+                                    >
+                                      {category.name}
+                                    </Label>
+                                  </div>
+                                ))}
+                              </div>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                           <FormField
                             control={challengeForm.control}
                             name="startDate"
@@ -1102,7 +1150,7 @@ export default function AdminGamificationPage() {
                   <CardContent>
                     {challengesLoading ? (
                       <div className="text-center py-8">Carregando desafios...</div>
-                    ) : challenges && challenges.length > 0 ? (
+                    ) : Array.isArray(challenges) && challenges.length > 0 ? (
                       <div className="space-y-6">
                         {challenges.filter((challenge: any) => challenge.evaluationType !== 'none').map((challenge: any) => (
                           <div key={challenge.id}>

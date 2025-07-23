@@ -380,6 +380,15 @@ router.get("/categories", isAuthenticated, async (req: Request, res: Response) =
 router.get("/challenges", isAuthenticated, async (req: Request, res: Response) => {
   try {
     const { type = "all" } = req.query;
+    const userId = req.user.id;
+    
+    // Buscar todas as categorias do usuário
+    const userCategories = await db
+      .select({ categoryId: userCategoryAssignments.categoryId })
+      .from(userCategoryAssignments)
+      .where(eq(userCategoryAssignments.userId, userId));
+    
+    const userCategoryIds = userCategories.map(uc => uc.categoryId);
     
     let query = db
       .select({
@@ -395,6 +404,7 @@ router.get("/challenges", isAuthenticated, async (req: Request, res: Response) =
         isActive: gamificationChallenges.isActive,
         evaluationType: gamificationChallenges.evaluationType,
         evaluationConfig: gamificationChallenges.evaluationConfig,
+        targetUserCategories: gamificationChallenges.targetUserCategories,
         createdAt: gamificationChallenges.createdAt,
         createdBy: gamificationChallenges.createdBy,
         creatorName: users.name,
@@ -408,9 +418,27 @@ router.get("/challenges", isAuthenticated, async (req: Request, res: Response) =
       query = query.where(eq(gamificationChallenges.type, type as string));
     }
     
-    const challenges = await query;
+    const allChallenges = await query;
     
-    res.json(challenges);
+    // Filtrar desafios baseado nas categorias do usuário
+    const filteredChallenges = allChallenges.filter(challenge => {
+      // Se o desafio não tem categorias específicas (array vazio ou null), é visível para todos
+      if (!challenge.targetUserCategories || challenge.targetUserCategories.length === 0) {
+        return true;
+      }
+      
+      // Se o usuário não tem categorias, só pode ver desafios sem categorias específicas
+      if (userCategoryIds.length === 0) {
+        return false;
+      }
+      
+      // Verificar se o usuário possui alguma das categorias alvo do desafio
+      return challenge.targetUserCategories.some(categoryId => 
+        userCategoryIds.includes(categoryId)
+      );
+    });
+    
+    res.json(filteredChallenges);
   } catch (error) {
     console.error("Error fetching challenges:", error);
     res.status(500).json({ error: "Internal server error" });

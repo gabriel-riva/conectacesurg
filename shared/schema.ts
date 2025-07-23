@@ -414,6 +414,7 @@ export const gamificationChallenges = pgTable("gamification_challenges", {
   endDate: timestamp("end_date").notNull(),
   type: text("type").notNull().default("periodic"), // 'periodic', 'annual'
   isActive: boolean("is_active").notNull().default(true),
+  targetUserCategories: integer("target_user_categories").array().default([]), // IDs das categorias de usuário alvo
   // Novos campos para tipos de avaliação
   evaluationType: text("evaluation_type").notNull().default("none"), // 'none', 'quiz', 'text', 'file', 'qrcode'
   evaluationConfig: jsonb("evaluation_config").$type<{
@@ -1715,7 +1716,7 @@ export const insertToolProjectSchema = createInsertSchema(toolProjects, {
   logisticaVisita: z.string().optional(),
   tipoVeiculo: z.enum(['van', 'micro', 'onibus']).optional(),
   custoAluno: z.number().min(0).optional(),
-  detalhesAdicionais: z.string().optional(),
+  descricaoEvento: z.string().optional(),
   observacoes: z.string().optional(),
 }).omit({ id: true, createdAt: true, updatedAt: true });
 
