@@ -162,7 +162,7 @@ export function UserProfileModal({ isOpen, onClose, userId, userName }: UserProf
                       <Separator className="my-4" />
                       
                       <div className="text-sm text-gray-500">
-                        <p>Cadastrado em: {new Date(profile.createdAt).toLocaleDateString('pt-BR')}</p>
+                        <p>Data de Ingresso: {new Date(profile.createdAt).toLocaleDateString('pt-BR')}</p>
                         <p>Atualizado em: {new Date(profile.updatedAt).toLocaleDateString('pt-BR')}</p>
                       </div>
                     </div>

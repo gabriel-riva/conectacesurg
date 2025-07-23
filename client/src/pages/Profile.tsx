@@ -374,6 +374,15 @@ export default function Profile() {
                     <h3 className="text-lg font-semibold">{profile?.name || user?.name}</h3>
                     <p className="text-gray-500 text-sm">{profile?.email || user?.email}</p>
                     <Badge variant="outline" className="mt-2">{profile?.role || user?.role}</Badge>
+                    
+                    <Separator className="my-4" />
+                    
+                    <div className="text-sm text-gray-500">
+                      <p>Data de Ingresso: {new Date(profile?.createdAt || user?.createdAt).toLocaleDateString('pt-BR')}</p>
+                      {profile?.updatedAt && (
+                        <p>Atualizado em: {new Date(profile.updatedAt).toLocaleDateString('pt-BR')}</p>
+                      )}
+                    </div>
                   </div>
                 </CardContent>
               </Card>
