@@ -62,6 +62,17 @@ const getIconByName = (iconName: string) => {
   return iconMap[iconName] || iconMap['default'];
 };
 
+// Função para mapear URL da ferramenta
+const getToolUrl = (tool: Tool) => {
+  // Mapear ferramentas específicas para suas rotas
+  switch (tool.id) {
+    case 1: // Aulas com Extensão
+      return "/ferramentas/atividades-externas";
+    default:
+      return `/ferramentas/${tool.id}`;
+  }
+};
+
 export default function FerramentasPage() {
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
 
@@ -183,7 +194,7 @@ export default function FerramentasPage() {
                     </CardDescription>
                     <div className="flex justify-end">
                       {tool.isActive ? (
-                        <Link href={`/ferramentas/${tool.id}`}>
+                        <Link href={getToolUrl(tool)}>
                           <Button>
                             Acessar Ferramenta
                           </Button>
@@ -242,7 +253,7 @@ export default function FerramentasPage() {
                     </CardDescription>
                     <div className="flex justify-end">
                       {tool.isActive ? (
-                        <Link href={`/ferramentas/${tool.id}`}>
+                        <Link href={getToolUrl(tool)}>
                           <Button>
                             Acessar Ferramenta
                           </Button>
