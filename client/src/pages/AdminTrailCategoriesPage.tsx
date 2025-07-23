@@ -45,7 +45,7 @@ export default function AdminTrailCategoriesPage() {
   const queryClient = useQueryClient();
 
   const { data: categories = [], isLoading: isLoadingCategories } = useQuery<TrailCategory[]>({
-    queryKey: ['/api/trails/admin/categories'],
+    queryKey: ['/api/trails/categories/list'],
   });
 
   const createCategoryMutation = useMutation({
@@ -56,7 +56,6 @@ export default function AdminTrailCategoriesPage() {
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/trails/admin/categories'] });
       queryClient.invalidateQueries({ queryKey: ['/api/trails/categories/list'] });
       setIsCreateDialogOpen(false);
       createForm.reset();
@@ -82,7 +81,6 @@ export default function AdminTrailCategoriesPage() {
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/trails/admin/categories'] });
       queryClient.invalidateQueries({ queryKey: ['/api/trails/categories/list'] });
       setIsEditDialogOpen(false);
       setSelectedCategory(null);
@@ -108,7 +106,6 @@ export default function AdminTrailCategoriesPage() {
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/trails/admin/categories'] });
       queryClient.invalidateQueries({ queryKey: ['/api/trails/categories/list'] });
       toast({
         title: "Sucesso",

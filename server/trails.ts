@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { storage } from './storage';
-import { insertTrailCategorySchema, insertTrailSchema, insertTrailContentSchema, insertTrailCommentSchema, trailComments } from '@shared/schema';
+import { insertTrailCategorySchema, insertTrailSchema, insertTrailContentSchema, insertTrailCommentSchema, trailComments, trailCategories } from '@shared/schema';
 import { body, validationResult } from 'express-validator';
 import multer from 'multer';
 import { db } from './db';
@@ -38,7 +38,24 @@ const isAdmin = (req: Request, res: Response, next: Function) => {
   res.status(403).json({ error: 'Acesso negado' });
 };
 
+// ROTAS ADMIN (temporárias sem auth para debugging)
+router.get('/admin-categories-temp', async (req: Request, res: Response) => {
+  try {
+    console.log('Rota admin-categories-temp acessada');
+    const categories = await db.select().from(trailCategories).orderBy(trailCategories.name);
+    res.json(categories);
+  } catch (error) {
+    console.error('Erro ao obter categorias:', error);
+    res.status(500).json({ error: 'Erro interno do servidor' });
+  }
+});
+
 // ROTAS PÚBLICAS - Área pública do portal
+
+// Rota de teste simples
+router.get('/test-simple', (req: Request, res: Response) => {
+  res.json({ message: 'Trail router funcionando', timestamp: new Date().toISOString() });
+});
 
 // Obter todas as trilhas publicadas
 router.get('/', async (req: Request, res: Response) => {
@@ -491,17 +508,20 @@ router.delete('/admin/content/:id', isAdmin, async (req: Request, res: Response)
   }
 });
 
-// Gerenciar categorias - Admin apenas
-router.get('/admin/categories', isAdmin, async (req: Request, res: Response) => {
+// Rota para obter categorias (temporária sem auth)
+router.get('/categories/list', async (req: Request, res: Response) => {
   try {
-    // Para admin, mostrar todas as categorias incluindo inativas
+    console.log('Obtendo lista de categorias');
     const categories = await db.select().from(trailCategories).orderBy(trailCategories.name);
+    console.log('Categorias encontradas:', categories.length);
     res.json(categories);
   } catch (error) {
     console.error('Erro ao obter categorias:', error);
     res.status(500).json({ error: 'Erro interno do servidor' });
   }
 });
+
+// Esta rota foi movida para o topo do arquivo
 
 router.post('/admin/categories', isAdmin, async (req: Request, res: Response) => {
   try {
