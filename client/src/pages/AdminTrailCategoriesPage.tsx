@@ -8,7 +8,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { Plus, Edit, Trash2, Tag, Palette } from "lucide-react";
+import { Plus, Edit, Trash2, Tag, Palette, ArrowLeft } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -16,6 +16,7 @@ import { z } from "zod";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import { Link } from "wouter";
 
 interface TrailCategory {
   id: number;
@@ -207,11 +208,19 @@ export default function AdminTrailCategoriesPage() {
           <div className="space-y-6">
             {/* Cabeçalho */}
             <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-2xl font-bold text-primary">Categorias de Trilhas</h1>
-                <p className="text-muted-foreground">
-                  Gerencie as categorias das trilhas de conhecimento
-                </p>
+              <div className="flex items-center gap-4">
+                <Link href="/admin/trilhas">
+                  <Button variant="outline" size="sm">
+                    <ArrowLeft className="h-4 w-4 mr-2" />
+                    Voltar para Trilhas
+                  </Button>
+                </Link>
+                <div>
+                  <h1 className="text-2xl font-bold text-primary">Categorias de Trilhas</h1>
+                  <p className="text-muted-foreground">
+                    Gerencie as categorias das trilhas de conhecimento
+                  </p>
+                </div>
               </div>
               <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
                 <DialogTrigger asChild>
