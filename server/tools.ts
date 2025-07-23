@@ -233,6 +233,43 @@ router.get('/admin/tools/:id/projects', requireAdmin, async (req: Request, res: 
   }
 });
 
+// PUT /api/admin/tools/:toolId/projects/:projectId - Atualizar projeto específico
+router.put('/admin/tools/:toolId/projects/:projectId', requireAdmin, async (req: Request, res: Response) => {
+  try {
+    const projectId = parseInt(req.params.projectId);
+    const toolId = parseInt(req.params.toolId);
+    
+    if (isNaN(projectId) || isNaN(toolId)) {
+      return res.status(400).json({ error: 'IDs inválidos' });
+    }
+
+    // Verificar se o projeto existe e pertence à ferramenta
+    const [existingProject] = await db
+      .select()
+      .from(toolProjects)
+      .where(and(eq(toolProjects.id, projectId), eq(toolProjects.toolId, toolId)));
+
+    if (!existingProject) {
+      return res.status(404).json({ error: 'Projeto não encontrado' });
+    }
+
+    // Atualizar o projeto
+    const [updatedProject] = await db
+      .update(toolProjects)
+      .set({
+        ...req.body,
+        updatedAt: new Date(),
+      })
+      .where(eq(toolProjects.id, projectId))
+      .returning();
+
+    res.json(updatedProject);
+  } catch (error) {
+    console.error('Erro ao atualizar projeto:', error);
+    res.status(500).json({ error: 'Erro interno do servidor' });
+  }
+});
+
 // GET /api/user-categories - Listar categorias de usuários para permissões
 router.get('/user-categories', async (req: Request, res: Response) => {
   try {

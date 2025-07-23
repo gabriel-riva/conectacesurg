@@ -10,6 +10,15 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft, Calendar, Users, Settings as SettingsIcon, FileText, MapPin, Filter, User } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { useToast } from "@/hooks/use-toast";
+import { queryClient } from "@/lib/queryClient";
 
 interface Tool {
   id: number;
@@ -36,6 +45,19 @@ interface ToolProject {
   nomeProfissionais: string;
   status: string;
   observacoes?: string;
+  quantidadeEncontros?: number;
+  transporteNecessario: boolean;
+  demandasMarketing?: string[];
+  publicoExclusivo: boolean;
+  turmasEnv?: string;
+  horarioSaida?: string;
+  horarioRetorno?: string;
+  cidade?: string;
+  empresasVisitadas?: string;
+  logisticaVisita?: string;
+  tipoVeiculo?: string;
+  custoAluno?: number;
+  detalhesAdicionais?: string;
   createdAt: string;
   updatedAt: string;
   creator?: {
@@ -52,8 +74,57 @@ export default function AdminToolPage() {
   const [activeTab, setActiveTab] = useState("projects");
   const [selectedProject, setSelectedProject] = useState<ToolProject | null>(null);
   const [projectDialogOpen, setProjectDialogOpen] = useState(false);
+  const [editingProject, setEditingProject] = useState(false);
   const [statusFilter, setStatusFilter] = useState("all");
   const [typeFilter, setTypeFilter] = useState("all");
+  const { toast } = useToast();
+
+  // Schema de validação para projeto
+  const projectSchema = z.object({
+    tipoAtividade: z.enum(['aula_convidado', 'visita_tecnica', 'outro_evento']),
+    dataRealizacao: z.string().min(1, "Data é obrigatória"),
+    local: z.string().min(1, "Local é obrigatório"),
+    nomeProfissionais: z.string().min(1, "Nome dos profissionais é obrigatório"),
+    status: z.string(),
+    observacoes: z.string().optional(),
+    quantidadeEncontros: z.number().optional(),
+    transporteNecessario: z.boolean(),
+    publicoExclusivo: z.boolean(),
+    turmasEnv: z.string().optional(),
+    horarioSaida: z.string().optional(),
+    horarioRetorno: z.string().optional(),
+    cidade: z.string().optional(),
+    empresasVisitadas: z.string().optional(),
+    logisticaVisita: z.string().optional(),
+    tipoVeiculo: z.enum(['van', 'micro', 'onibus']).optional(),
+    custoAluno: z.number().optional(),
+    detalhesAdicionais: z.string().optional(),
+  });
+
+  type ProjectFormData = z.infer<typeof projectSchema>;
+
+  // Form para edição de projeto
+  const projectForm = useForm<ProjectFormData>({
+    resolver: zodResolver(projectSchema),
+    defaultValues: {
+      tipoAtividade: 'aula_convidado',
+      dataRealizacao: '',
+      local: '',
+      nomeProfissionais: '',
+      status: 'rascunho',
+      observacoes: '',
+      transporteNecessario: false,
+      publicoExclusivo: false,
+      turmasEnv: '',
+      horarioSaida: '',
+      horarioRetorno: '',
+      cidade: '',
+      empresasVisitadas: '',
+      logisticaVisita: '',
+      custoAluno: 0,
+      detalhesAdicionais: '',
+    },
+  });
 
   // Queries
   const { data: tool, isLoading: toolLoading } = useQuery<Tool>({
@@ -124,7 +195,74 @@ export default function AdminToolPage() {
   // Handlers
   const handleProjectClick = (project: ToolProject) => {
     setSelectedProject(project);
+    setEditingProject(false);
     setProjectDialogOpen(true);
+    
+    // Reset form with project data
+    projectForm.reset({
+      tipoAtividade: project.tipoAtividade as any,
+      dataRealizacao: project.dataRealizacao,
+      local: project.local,
+      nomeProfissionais: project.nomeProfissionais,
+      status: project.status,
+      observacoes: project.observacoes || '',
+      quantidadeEncontros: project.quantidadeEncontros,
+      transporteNecessario: project.transporteNecessario,
+      publicoExclusivo: project.publicoExclusivo,
+      turmasEnv: project.turmasEnv || '',
+      horarioSaida: project.horarioSaida || '',
+      horarioRetorno: project.horarioRetorno || '',
+      cidade: project.cidade || '',
+      empresasVisitadas: project.empresasVisitadas || '',
+      logisticaVisita: project.logisticaVisita || '',
+      tipoVeiculo: project.tipoVeiculo as any,
+      custoAluno: project.custoAluno,
+      detalhesAdicionais: project.detalhesAdicionais || '',
+    });
+  };
+
+  const handleEditProject = () => {
+    setEditingProject(true);
+  };
+
+  const handleSaveProject = async (data: ProjectFormData) => {
+    if (!selectedProject) return;
+
+    try {
+      const response = await fetch(`/api/admin/tools/${toolId}/projects/${selectedProject.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          ...data,
+          dataRealizacao: new Date(data.dataRealizacao).toISOString(),
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Erro ao atualizar projeto');
+      }
+
+      const updatedProject = await response.json();
+      
+      toast({
+        title: "Projeto atualizado",
+        description: "As informações do projeto foram atualizadas com sucesso.",
+      });
+
+      // Invalidate and refetch
+      queryClient.invalidateQueries({ queryKey: [`/api/admin/tools/${toolId}/projects`] });
+      
+      setEditingProject(false);
+      setProjectDialogOpen(false);
+    } catch (error) {
+      toast({
+        title: "Erro ao atualizar",
+        description: "Não foi possível atualizar o projeto. Tente novamente.",
+        variant: "destructive",
+      });
+    }
   };
 
   // Filtros
@@ -450,17 +588,24 @@ export default function AdminToolPage() {
               </TabsContent>
             </Tabs>
 
-            {/* Dialog de Detalhes do Projeto */}
-            <Dialog open={projectDialogOpen} onOpenChange={setProjectDialogOpen}>
-              <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            {/* Dialog de Detalhes/Edição do Projeto */}
+            <Dialog open={projectDialogOpen} onOpenChange={(open) => {
+              setProjectDialogOpen(open);
+              if (!open) {
+                setEditingProject(false);
+              }
+            }}>
+              <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
-                  <DialogTitle>Detalhes do Projeto #{selectedProject?.id}</DialogTitle>
+                  <DialogTitle>
+                    {editingProject ? `Editando Projeto #${selectedProject?.id}` : `Detalhes do Projeto #${selectedProject?.id}`}
+                  </DialogTitle>
                   <DialogDescription>
-                    Visualize e gerencie os detalhes do projeto
+                    {editingProject ? "Edite as informações do projeto" : "Visualize e gerencie os detalhes do projeto"}
                   </DialogDescription>
                 </DialogHeader>
                 
-                {selectedProject && (
+                {selectedProject && !editingProject && (
                   <div className="space-y-6">
                     {/* Header do Projeto */}
                     <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
@@ -489,6 +634,68 @@ export default function AdminToolPage() {
                         <label className="text-sm font-medium text-gray-700">Profissionais Envolvidos</label>
                         <p className="text-sm text-gray-900 mt-1">{selectedProject.nomeProfissionais}</p>
                       </div>
+                      {selectedProject.quantidadeEncontros && (
+                        <div>
+                          <label className="text-sm font-medium text-gray-700">Quantidade de Encontros</label>
+                          <p className="text-sm text-gray-900 mt-1">{selectedProject.quantidadeEncontros}</p>
+                        </div>
+                      )}
+                      <div>
+                        <label className="text-sm font-medium text-gray-700">Transporte Necessário</label>
+                        <p className="text-sm text-gray-900 mt-1">{selectedProject.transporteNecessario ? 'Sim' : 'Não'}</p>
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium text-gray-700">Público Exclusivo</label>
+                        <p className="text-sm text-gray-900 mt-1">{selectedProject.publicoExclusivo ? 'Sim' : 'Não'}</p>
+                      </div>
+                      {selectedProject.turmasEnv && (
+                        <div className="md:col-span-2">
+                          <label className="text-sm font-medium text-gray-700">Turmas Envolvidas</label>
+                          <p className="text-sm text-gray-900 mt-1">{selectedProject.turmasEnv}</p>
+                        </div>
+                      )}
+                      {selectedProject.horarioSaida && (
+                        <div>
+                          <label className="text-sm font-medium text-gray-700">Horário de Saída</label>
+                          <p className="text-sm text-gray-900 mt-1">{selectedProject.horarioSaida}</p>
+                        </div>
+                      )}
+                      {selectedProject.horarioRetorno && (
+                        <div>
+                          <label className="text-sm font-medium text-gray-700">Horário de Retorno</label>
+                          <p className="text-sm text-gray-900 mt-1">{selectedProject.horarioRetorno}</p>
+                        </div>
+                      )}
+                      {selectedProject.cidade && (
+                        <div>
+                          <label className="text-sm font-medium text-gray-700">Cidade</label>
+                          <p className="text-sm text-gray-900 mt-1">{selectedProject.cidade}</p>
+                        </div>
+                      )}
+                      {selectedProject.empresasVisitadas && (
+                        <div className="md:col-span-2">
+                          <label className="text-sm font-medium text-gray-700">Empresas Visitadas</label>
+                          <p className="text-sm text-gray-900 mt-1">{selectedProject.empresasVisitadas}</p>
+                        </div>
+                      )}
+                      {selectedProject.logisticaVisita && (
+                        <div className="md:col-span-2">
+                          <label className="text-sm font-medium text-gray-700">Logística da Visita</label>
+                          <p className="text-sm text-gray-900 mt-1 p-3 bg-gray-50 rounded-lg">{selectedProject.logisticaVisita}</p>
+                        </div>
+                      )}
+                      {selectedProject.tipoVeiculo && (
+                        <div>
+                          <label className="text-sm font-medium text-gray-700">Tipo de Veículo</label>
+                          <p className="text-sm text-gray-900 mt-1 capitalize">{selectedProject.tipoVeiculo}</p>
+                        </div>
+                      )}
+                      {selectedProject.custoAluno && (
+                        <div>
+                          <label className="text-sm font-medium text-gray-700">Custo por Aluno</label>
+                          <p className="text-sm text-gray-900 mt-1">R$ {selectedProject.custoAluno}</p>
+                        </div>
+                      )}
                       {selectedProject.creator && (
                         <div className="md:col-span-2">
                           <label className="text-sm font-medium text-gray-700">Criado por</label>
@@ -503,6 +710,12 @@ export default function AdminToolPage() {
                         <div className="md:col-span-2">
                           <label className="text-sm font-medium text-gray-700">Observações</label>
                           <p className="text-sm text-gray-900 mt-1 p-3 bg-gray-50 rounded-lg">{selectedProject.observacoes}</p>
+                        </div>
+                      )}
+                      {selectedProject.detalhesAdicionais && (
+                        <div className="md:col-span-2">
+                          <label className="text-sm font-medium text-gray-700">Detalhes Adicionais</label>
+                          <p className="text-sm text-gray-900 mt-1 p-3 bg-gray-50 rounded-lg">{selectedProject.detalhesAdicionais}</p>
                         </div>
                       )}
                     </div>
@@ -538,11 +751,349 @@ export default function AdminToolPage() {
                       >
                         Fechar
                       </Button>
-                      <Button>
+                      <Button onClick={handleEditProject}>
                         Editar Projeto
                       </Button>
                     </div>
                   </div>
+                )}
+
+                {/* Formulário de Edição */}
+                {selectedProject && editingProject && (
+                  <Form {...projectForm}>
+                    <form onSubmit={projectForm.handleSubmit(handleSaveProject)} className="space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {/* Tipo de Atividade */}
+                        <FormField
+                          control={projectForm.control}
+                          name="tipoAtividade"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Tipo de Atividade</FormLabel>
+                              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  <SelectItem value="aula_convidado">Aula com Convidados</SelectItem>
+                                  <SelectItem value="visita_tecnica">Visita Técnica</SelectItem>
+                                  <SelectItem value="outro_evento">Outro Evento</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        {/* Status */}
+                        <FormField
+                          control={projectForm.control}
+                          name="status"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Status</FormLabel>
+                              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  {Object.entries(statusLabels).map(([value, label]) => (
+                                    <SelectItem key={value} value={value}>{label}</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        {/* Data de Realização */}
+                        <FormField
+                          control={projectForm.control}
+                          name="dataRealizacao"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Data de Realização</FormLabel>
+                              <FormControl>
+                                <Input type="date" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        {/* Local */}
+                        <FormField
+                          control={projectForm.control}
+                          name="local"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Local</FormLabel>
+                              <FormControl>
+                                <Input {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        {/* Profissionais */}
+                        <FormField
+                          control={projectForm.control}
+                          name="nomeProfissionais"
+                          render={({ field }) => (
+                            <FormItem className="md:col-span-2">
+                              <FormLabel>Profissionais Envolvidos</FormLabel>
+                              <FormControl>
+                                <Textarea {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        {/* Quantidade de Encontros (apenas para aula_convidado) */}
+                        <FormField
+                          control={projectForm.control}
+                          name="quantidadeEncontros"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Quantidade de Encontros</FormLabel>
+                              <FormControl>
+                                <Input 
+                                  type="number" 
+                                  {...field} 
+                                  onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value) : undefined)}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        {/* Custo por Aluno */}
+                        <FormField
+                          control={projectForm.control}
+                          name="custoAluno"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Custo por Aluno (R$)</FormLabel>
+                              <FormControl>
+                                <Input 
+                                  type="number" 
+                                  step="0.01"
+                                  {...field} 
+                                  onChange={(e) => field.onChange(e.target.value ? parseFloat(e.target.value) : undefined)}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        {/* Checkboxes */}
+                        <div className="md:col-span-2 flex gap-6">
+                          <FormField
+                            control={projectForm.control}
+                            name="transporteNecessario"
+                            render={({ field }) => (
+                              <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                                <FormControl>
+                                  <Checkbox
+                                    checked={field.value}
+                                    onCheckedChange={field.onChange}
+                                  />
+                                </FormControl>
+                                <div className="space-y-1 leading-none">
+                                  <FormLabel>Transporte Necessário</FormLabel>
+                                </div>
+                              </FormItem>
+                            )}
+                          />
+
+                          <FormField
+                            control={projectForm.control}
+                            name="publicoExclusivo"
+                            render={({ field }) => (
+                              <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                                <FormControl>
+                                  <Checkbox
+                                    checked={field.value}
+                                    onCheckedChange={field.onChange}
+                                  />
+                                </FormControl>
+                                <div className="space-y-1 leading-none">
+                                  <FormLabel>Público Exclusivo</FormLabel>
+                                </div>
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+
+                        {/* Campos condicionais baseados no tipo */}
+                        {projectForm.watch('publicoExclusivo') && (
+                          <FormField
+                            control={projectForm.control}
+                            name="turmasEnv"
+                            render={({ field }) => (
+                              <FormItem className="md:col-span-2">
+                                <FormLabel>Turmas Envolvidas</FormLabel>
+                                <FormControl>
+                                  <Input {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        )}
+
+                        {projectForm.watch('tipoAtividade') === 'visita_tecnica' && (
+                          <>
+                            <FormField
+                              control={projectForm.control}
+                              name="horarioSaida"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Horário de Saída</FormLabel>
+                                  <FormControl>
+                                    <Input type="time" {...field} />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+
+                            <FormField
+                              control={projectForm.control}
+                              name="horarioRetorno"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Horário de Retorno</FormLabel>
+                                  <FormControl>
+                                    <Input type="time" {...field} />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+
+                            <FormField
+                              control={projectForm.control}
+                              name="cidade"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Cidade</FormLabel>
+                                  <FormControl>
+                                    <Input {...field} />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+
+                            <FormField
+                              control={projectForm.control}
+                              name="tipoVeiculo"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Tipo de Veículo</FormLabel>
+                                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                    <FormControl>
+                                      <SelectTrigger>
+                                        <SelectValue />
+                                      </SelectTrigger>
+                                    </FormControl>
+                                    <SelectContent>
+                                      <SelectItem value="van">Van</SelectItem>
+                                      <SelectItem value="micro">Micro-ônibus</SelectItem>
+                                      <SelectItem value="onibus">Ônibus</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+
+                            <FormField
+                              control={projectForm.control}
+                              name="empresasVisitadas"
+                              render={({ field }) => (
+                                <FormItem className="md:col-span-2">
+                                  <FormLabel>Empresas Visitadas</FormLabel>
+                                  <FormControl>
+                                    <Textarea {...field} />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+
+                            <FormField
+                              control={projectForm.control}
+                              name="logisticaVisita"
+                              render={({ field }) => (
+                                <FormItem className="md:col-span-2">
+                                  <FormLabel>Logística da Visita</FormLabel>
+                                  <FormControl>
+                                    <Textarea {...field} />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                          </>
+                        )}
+
+                        {/* Observações */}
+                        <FormField
+                          control={projectForm.control}
+                          name="observacoes"
+                          render={({ field }) => (
+                            <FormItem className="md:col-span-2">
+                              <FormLabel>Observações</FormLabel>
+                              <FormControl>
+                                <Textarea {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        {/* Detalhes Adicionais */}
+                        <FormField
+                          control={projectForm.control}
+                          name="detalhesAdicionais"
+                          render={({ field }) => (
+                            <FormItem className="md:col-span-2">
+                              <FormLabel>Detalhes Adicionais</FormLabel>
+                              <FormControl>
+                                <Textarea {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+
+                      {/* Ações do Formulário */}
+                      <div className="flex justify-end gap-2 pt-4 border-t">
+                        <Button 
+                          type="button"
+                          variant="outline"
+                          onClick={() => setEditingProject(false)}
+                        >
+                          Cancelar
+                        </Button>
+                        <Button type="submit">
+                          Salvar Alterações
+                        </Button>
+                      </div>
+                    </form>
+                  </Form>
                 )}
               </DialogContent>
             </Dialog>
