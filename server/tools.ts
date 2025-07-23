@@ -286,6 +286,8 @@ router.get('/user/accessible', requireAuth, async (req: Request, res: Response) 
       return res.status(401).json({ error: 'Usuário não autenticado' });
     }
 
+    console.log('🔧 Buscando ferramentas acessíveis para usuário:', userId);
+
     // Buscar categorias do usuário
     const userCategories = await db
       .select({ categoryId: userCategoryAssignments.categoryId })
@@ -293,40 +295,71 @@ router.get('/user/accessible', requireAuth, async (req: Request, res: Response) 
       .where(eq(userCategoryAssignments.userId, userId));
 
     const userCategoryIds = userCategories.map(uc => uc.categoryId);
+    console.log('📂 Categorias do usuário:', userCategoryIds);
 
-    // Buscar ferramentas ativas que o usuário pode acessar
-    const accessibleTools = await db
-      .select({
-        id: tools.id,
-        name: tools.name,
-        description: tools.description,
-        isActive: tools.isActive,
-        categoryId: tools.categoryId,
-        allowedUserCategories: tools.allowedUserCategories,
-        settings: tools.settings,
-        createdAt: tools.createdAt,
-        updatedAt: tools.updatedAt,
-        category: {
-          id: toolCategories.id,
-          name: toolCategories.name,
-          description: toolCategories.description,
-          icon: toolCategories.icon,
-        }
-      })
-      .from(tools)
-      .leftJoin(toolCategories, eq(tools.categoryId, toolCategories.id))
-      .where(
-        and(
-          eq(tools.isActive, true),
-          or(
-            // Ferramenta não tem restrições (allowedUserCategories vazio)
-            sql`array_length(${tools.allowedUserCategories}, 1) IS NULL`,
-            // OU o usuário pertence a uma das categorias permitidas
-            sql`${tools.allowedUserCategories} && ${userCategoryIds}`
+    // Se o usuário é admin/superadmin, pode acessar todas as ferramentas ativas
+    const userRole = (req.user as any)?.role;
+    let accessibleTools;
+
+    if (['admin', 'superadmin'].includes(userRole)) {
+      console.log('👑 Usuário é admin, buscando todas as ferramentas ativas');
+      accessibleTools = await db
+        .select({
+          id: tools.id,
+          name: tools.name,
+          description: tools.description,
+          isActive: tools.isActive,
+          categoryId: tools.categoryId,
+          allowedUserCategories: tools.allowedUserCategories,
+          settings: tools.settings,
+          createdAt: tools.createdAt,
+          updatedAt: tools.updatedAt,
+          category: {
+            id: toolCategories.id,
+            name: toolCategories.name,
+            description: toolCategories.description,
+            icon: toolCategories.icon,
+          }
+        })
+        .from(tools)
+        .leftJoin(toolCategories, eq(tools.categoryId, toolCategories.id))
+        .where(eq(tools.isActive, true));
+    } else {
+      // Para usuários comuns, verificar permissões
+      accessibleTools = await db
+        .select({
+          id: tools.id,
+          name: tools.name,
+          description: tools.description,
+          isActive: tools.isActive,
+          categoryId: tools.categoryId,
+          allowedUserCategories: tools.allowedUserCategories,
+          settings: tools.settings,
+          createdAt: tools.createdAt,
+          updatedAt: tools.updatedAt,
+          category: {
+            id: toolCategories.id,
+            name: toolCategories.name,
+            description: toolCategories.description,
+            icon: toolCategories.icon,
+          }
+        })
+        .from(tools)
+        .leftJoin(toolCategories, eq(tools.categoryId, toolCategories.id))
+        .where(
+          and(
+            eq(tools.isActive, true),
+            or(
+              // Ferramenta não tem restrições (allowedUserCategories vazio)
+              sql`array_length(${tools.allowedUserCategories}, 1) IS NULL`,
+              // OU o usuário pertence a uma das categorias permitidas
+              userCategoryIds.length > 0 ? sql`${tools.allowedUserCategories} && ${userCategoryIds}` : sql`false`
+            )
           )
-        )
-      );
+        );
+    }
 
+    console.log('🛠️ Ferramentas encontradas:', accessibleTools.length);
     res.json(accessibleTools);
   } catch (error) {
     console.error('Erro ao buscar ferramentas acessíveis:', error);
@@ -337,11 +370,13 @@ router.get('/user/accessible', requireAuth, async (req: Request, res: Response) 
 // GET /api/tools/categories - Listar categorias de ferramentas
 router.get('/categories', async (req: Request, res: Response) => {
   try {
+    console.log('📂 Buscando categorias de ferramentas');
     const categories = await db
       .select()
       .from(toolCategories)
       .orderBy(toolCategories.name);
 
+    console.log('📂 Categorias encontradas:', categories.length);
     res.json(categories);
   } catch (error) {
     console.error('Erro ao buscar categorias de ferramentas:', error);

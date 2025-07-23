@@ -828,7 +828,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api/tool-projects', toolProjectsRouter);
   
   // Adicionar rotas de ferramentas (admin)
-  app.use('/api', toolsRouter);
+  app.use('/api/tools', toolsRouter);
   
   // Admin routes for tool projects
   app.get("/api/admin/tool-projects", getAllToolProjects);
