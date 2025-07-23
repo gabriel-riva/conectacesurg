@@ -16,6 +16,7 @@ const featureLabels: Record<string, string> = {
   gamificacao: "Gamificação",
   trilhas: "Trilhas",
   materiais: "Materiais",
+  ferramentas: "Ferramentas",
 };
 
 export function FeatureDisabledPage({ 

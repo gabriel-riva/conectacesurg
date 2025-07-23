@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Header } from "@/components/Header";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { FeatureGuard } from "@/components/FeatureGuard";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { 
@@ -73,7 +74,7 @@ const getToolUrl = (tool: Tool) => {
   }
 };
 
-export default function FerramentasPage() {
+function FerramentasPageContent() {
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
 
   // Buscar ferramentas ativas e categorias
@@ -298,5 +299,13 @@ export default function FerramentasPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function FerramentasPage() {
+  return (
+    <FeatureGuard featureName="ferramentas">
+      <FerramentasPageContent />
+    </FeatureGuard>
   );
 }
