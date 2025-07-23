@@ -449,6 +449,15 @@ router.get("/challenges", isAuthenticated, async (req: Request, res: Response) =
 router.get("/challenges/:id", isAuthenticated, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
+    const userId = req.user.id;
+    
+    // Buscar as categorias do usuário
+    const userCategories = await db
+      .select({ categoryId: userCategoryAssignments.categoryId })
+      .from(userCategoryAssignments)
+      .where(eq(userCategoryAssignments.userId, userId));
+    
+    const userCategoryIds = userCategories.map(uc => uc.categoryId);
     
     const challenge = await db
       .select({
@@ -462,20 +471,45 @@ router.get("/challenges/:id", isAuthenticated, async (req: Request, res: Respons
         endDate: sql<string>`DATE(${gamificationChallenges.endDate})`,
         type: gamificationChallenges.type,
         isActive: gamificationChallenges.isActive,
+        targetUserCategories: gamificationChallenges.targetUserCategories,
+        evaluationType: gamificationChallenges.evaluationType,
+        evaluationConfig: gamificationChallenges.evaluationConfig,
         createdAt: gamificationChallenges.createdAt,
         createdBy: gamificationChallenges.createdBy,
         creatorName: users.name,
       })
       .from(gamificationChallenges)
       .leftJoin(users, eq(gamificationChallenges.createdBy, users.id))
-      .where(eq(gamificationChallenges.id, parseInt(id)))
+      .where(and(
+        eq(gamificationChallenges.id, parseInt(id)),
+        eq(gamificationChallenges.isActive, true)
+      ))
       .limit(1);
     
     if (challenge.length === 0) {
       return res.status(404).json({ error: "Challenge not found" });
     }
     
-    res.json(challenge[0]);
+    const challengeData = challenge[0];
+    
+    // Verificar se o usuário tem permissão para ver este desafio
+    if (challengeData.targetUserCategories && challengeData.targetUserCategories.length > 0) {
+      // Se o usuário não tem categorias, não pode ver desafios com categorias específicas
+      if (userCategoryIds.length === 0) {
+        return res.status(404).json({ error: "Challenge not found" });
+      }
+      
+      // Verificar se o usuário possui alguma das categorias alvo do desafio
+      const hasMatchingCategory = challengeData.targetUserCategories.some(categoryId => 
+        userCategoryIds.includes(categoryId)
+      );
+      
+      if (!hasMatchingCategory) {
+        return res.status(404).json({ error: "Challenge not found" });
+      }
+    }
+    
+    res.json(challengeData);
   } catch (error) {
     console.error("Error fetching challenge:", error);
     res.status(500).json({ error: "Internal server error" });

@@ -459,7 +459,7 @@ export const ChallengeEvaluationForm: React.FC<ChallengeEvaluationFormProps> = (
 
       case 'file':
         const fileConfig = evaluationConfig.file;
-        if (!fileConfig) return null;
+        if (!fileConfig || !fileConfig.allowedTypes || !Array.isArray(fileConfig.allowedTypes)) return null;
 
         return (
           <div className="space-y-6">
