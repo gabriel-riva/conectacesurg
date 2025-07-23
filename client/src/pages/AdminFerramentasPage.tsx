@@ -246,7 +246,7 @@ export default function AdminFerramentasPage() {
   };
 
   const handleOpenTool = (toolId: number) => {
-    setLocation(`/admin/ferramentas/tool/${toolId}`);
+    setLocation(`/admin/ferramentas/${toolId}`);
   };
 
   return (
