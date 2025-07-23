@@ -260,7 +260,7 @@ export default function AdminToolPage() {
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    {tool.allowedUserCategories.length === 0 ? (
+                    {!tool.allowedUserCategories || tool.allowedUserCategories.length === 0 ? (
                       <div className="text-center py-8">
                         <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
                         <h3 className="text-lg font-medium text-gray-900 mb-2">Acesso Liberado</h3>
@@ -272,7 +272,7 @@ export default function AdminToolPage() {
                       <div>
                         <h4 className="font-medium mb-4">Categorias com Acesso:</h4>
                         <div className="flex flex-wrap gap-2">
-                          {tool.allowedUserCategories.map((categoryId) => (
+                          {tool.allowedUserCategories?.map((categoryId) => (
                             <Badge key={categoryId} variant="outline">
                               Categoria ID: {categoryId}
                             </Badge>

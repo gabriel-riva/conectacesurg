@@ -13,7 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Plus, Search, Filter, Settings, Calendar, Brain, Wrench } from "lucide-react";
+import { Plus, Search, Filter, Settings, Calendar, Brain, Wrench, Edit, Trash2 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
@@ -90,6 +90,8 @@ export default function AdminFerramentasPage() {
   const [categoryDialogOpen, setCategoryDialogOpen] = useState(false);
   const [toolDialogOpen, setToolDialogOpen] = useState(false);
   const [editingTool, setEditingTool] = useState<Tool | null>(null);
+  const [editingCategory, setEditingCategory] = useState<ToolCategory | null>(null);
+  const [categoryManagementOpen, setCategoryManagementOpen] = useState(false);
   const { toast } = useToast();
 
   // Queries
@@ -141,21 +143,63 @@ export default function AdminFerramentasPage() {
   // Handlers
   const handleCreateCategory = async (data: ToolCategoryFormData) => {
     try {
-      const response = await fetch('/api/admin/tools/categories', {
-        method: 'POST',
+      const url = editingCategory ? `/api/admin/tools/categories/${editingCategory.id}` : '/api/admin/tools/categories';
+      const method = editingCategory ? 'PUT' : 'POST';
+
+      const response = await fetch(url, {
+        method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
       });
 
       if (response.ok) {
-        toast({ title: "Categoria criada com sucesso!" });
+        toast({ 
+          title: editingCategory ? "Categoria atualizada com sucesso!" : "Categoria criada com sucesso!" 
+        });
         setCategoryDialogOpen(false);
+        setEditingCategory(null);
         categoryForm.reset();
         // Invalidar query para recarregar dados
         window.location.reload();
       }
     } catch (error) {
-      toast({ title: "Erro ao criar categoria", variant: "destructive" });
+      toast({ 
+        title: editingCategory ? "Erro ao atualizar categoria" : "Erro ao criar categoria", 
+        variant: "destructive" 
+      });
+    }
+  };
+
+  const handleEditCategory = (category: ToolCategory) => {
+    setEditingCategory(category);
+    categoryForm.reset({
+      name: category.name,
+      description: category.description || "",
+      color: category.color,
+      icon: category.icon,
+      isActive: category.isActive,
+    });
+    setCategoryDialogOpen(true);
+  };
+
+  const handleDeleteCategory = async (categoryId: number) => {
+    if (!confirm("Tem certeza que deseja excluir esta categoria? Esta ação não pode ser desfeita.")) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/admin/tools/categories/${categoryId}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        toast({ title: "Categoria excluída com sucesso!" });
+        window.location.reload();
+      } else {
+        toast({ title: "Erro ao excluir categoria", variant: "destructive" });
+      }
+    } catch (error) {
+      toast({ title: "Erro ao excluir categoria", variant: "destructive" });
     }
   };
 
@@ -219,6 +263,14 @@ export default function AdminFerramentasPage() {
                 <p className="text-gray-600">Gerencie ferramentas e categorias do sistema</p>
               </div>
               <div className="flex gap-2">
+                <Button 
+                  variant="outline"
+                  onClick={() => setCategoryManagementOpen(true)}
+                >
+                  <Settings className="w-4 h-4 mr-2" />
+                  Gerenciar Categorias
+                </Button>
+
                 <Dialog open={categoryDialogOpen} onOpenChange={setCategoryDialogOpen}>
                   <DialogTrigger asChild>
                     <Button variant="outline">
@@ -228,9 +280,11 @@ export default function AdminFerramentasPage() {
                   </DialogTrigger>
                   <DialogContent>
                     <DialogHeader>
-                      <DialogTitle>Nova Categoria de Ferramenta</DialogTitle>
+                      <DialogTitle>
+                        {editingCategory ? "Editar Categoria de Ferramenta" : "Nova Categoria de Ferramenta"}
+                      </DialogTitle>
                       <DialogDescription>
-                        Crie uma nova categoria para organizar as ferramentas
+                        {editingCategory ? "Edite os dados da categoria" : "Crie uma nova categoria para organizar as ferramentas"}
                       </DialogDescription>
                     </DialogHeader>
                     <Form {...categoryForm}>
@@ -299,24 +353,121 @@ export default function AdminFerramentasPage() {
                           />
                         </div>
                         <div className="flex justify-end gap-2">
-                          <Button type="button" variant="outline" onClick={() => setCategoryDialogOpen(false)}>
+                          <Button 
+                            type="button" 
+                            variant="outline" 
+                            onClick={() => {
+                              setCategoryDialogOpen(false);
+                              setEditingCategory(null);
+                              categoryForm.reset();
+                            }}
+                          >
                             Cancelar
                           </Button>
-                          <Button type="submit">Criar Categoria</Button>
+                          <Button type="submit">
+                            {editingCategory ? "Salvar Alterações" : "Criar Categoria"}
+                          </Button>
                         </div>
                       </form>
                     </Form>
                   </DialogContent>
                 </Dialog>
 
+                {/* Diálogo de Gerenciamento de Categorias */}
+                <Dialog open={categoryManagementOpen} onOpenChange={setCategoryManagementOpen}>
+                  <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                    <DialogHeader>
+                      <DialogTitle>Gerenciar Categorias de Ferramentas</DialogTitle>
+                      <DialogDescription>
+                        Visualize, edite ou exclua categorias existentes
+                      </DialogDescription>
+                    </DialogHeader>
+                    
+                    <div className="space-y-4">
+                      {categories.length === 0 ? (
+                        <div className="text-center py-8">
+                          <Settings className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                          <h3 className="text-lg font-medium text-gray-900 mb-2">Nenhuma categoria encontrada</h3>
+                          <p className="text-gray-600">Crie a primeira categoria de ferramenta.</p>
+                        </div>
+                      ) : (
+                        <div className="grid gap-4">
+                          {categories.map((category) => {
+                            const IconComponent = getIconComponent(category.icon);
+                            return (
+                              <Card key={category.id}>
+                                <CardContent className="p-4">
+                                  <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                      <div 
+                                        className="w-10 h-10 rounded-lg flex items-center justify-center"
+                                        style={{ backgroundColor: category.color }}
+                                      >
+                                        <IconComponent className="w-5 h-5 text-white" />
+                                      </div>
+                                      <div>
+                                        <h4 className="font-medium">{category.name}</h4>
+                                        <p className="text-sm text-gray-600">{category.description || "Sem descrição"}</p>
+                                        <div className="flex items-center gap-2 mt-1">
+                                          <Badge variant={category.isActive ? "default" : "secondary"} className="text-xs">
+                                            {category.isActive ? "Ativa" : "Inativa"}
+                                          </Badge>
+                                        </div>
+                                      </div>
+                                    </div>
+                                    <div className="flex gap-2">
+                                      <Button 
+                                        size="sm" 
+                                        variant="outline"
+                                        onClick={() => handleEditCategory(category)}
+                                      >
+                                        <Edit className="w-4 h-4" />
+                                      </Button>
+                                      <Button 
+                                        size="sm" 
+                                        variant="outline"
+                                        onClick={() => handleDeleteCategory(category.id)}
+                                      >
+                                        <Trash2 className="w-4 h-4" />
+                                      </Button>
+                                    </div>
+                                  </div>
+                                </CardContent>
+                              </Card>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                    
+                    <div className="flex justify-end gap-2">
+                      <Button 
+                        variant="outline"
+                        onClick={() => setCategoryManagementOpen(false)}
+                      >
+                        Fechar
+                      </Button>
+                      <Button
+                        onClick={() => {
+                          setCategoryManagementOpen(false);
+                          setCategoryDialogOpen(true);
+                        }}
+                      >
+                        <Plus className="w-4 h-4 mr-2" />
+                        Nova Categoria
+                      </Button>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+
                 <Dialog open={toolDialogOpen} onOpenChange={setToolDialogOpen}>
                   <DialogTrigger asChild>
-                    <Button>
+                    <Button style={{ display: 'none' }}>
                       <Plus className="w-4 h-4 mr-2" />
                       Nova Ferramenta
                     </Button>
                   </DialogTrigger>
-                  <DialogContent className="max-w-2xl">
+                  <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
                       <DialogTitle>
                         {editingTool ? "Editar Ferramenta" : "Nova Ferramenta"}
@@ -391,24 +542,26 @@ export default function AdminFerramentasPage() {
                                   <p className="text-sm text-gray-600">
                                     Deixe em branco para permitir todos os usuários
                                   </p>
-                                  {userCategories.map((category) => (
-                                    <div key={category.id} className="flex items-center space-x-2">
-                                      <Checkbox
-                                        id={`category-${category.id}`}
-                                        checked={field.value.includes(category.id)}
-                                        onCheckedChange={(checked) => {
-                                          if (checked) {
-                                            field.onChange([...field.value, category.id]);
-                                          } else {
-                                            field.onChange(field.value.filter((id) => id !== category.id));
-                                          }
-                                        }}
-                                      />
-                                      <label htmlFor={`category-${category.id}`} className="text-sm">
-                                        {category.name}
-                                      </label>
-                                    </div>
-                                  ))}
+                                  <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto">
+                                    {userCategories.map((category) => (
+                                      <div key={category.id} className="flex items-center space-x-2">
+                                        <Checkbox
+                                          id={`category-${category.id}`}
+                                          checked={field.value.includes(category.id)}
+                                          onCheckedChange={(checked) => {
+                                            if (checked) {
+                                              field.onChange([...field.value, category.id]);
+                                            } else {
+                                              field.onChange(field.value.filter((id) => id !== category.id));
+                                            }
+                                          }}
+                                        />
+                                        <label htmlFor={`category-${category.id}`} className="text-sm">
+                                          {category.name}
+                                        </label>
+                                      </div>
+                                    ))}
+                                  </div>
                                 </div>
                               </FormControl>
                               <FormMessage />
