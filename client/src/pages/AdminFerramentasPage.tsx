@@ -1,184 +1,209 @@
-import React, { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { apiRequest } from '@/lib/queryClient';
-import { Header } from '@/components/Header';
-import { AdminSidebar } from '@/components/AdminSidebar';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Search, Eye, CheckCircle, XCircle, Clock, FileText, Settings } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { Header } from "@/components/Header";
+import { AdminSidebar } from "@/components/AdminSidebar";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Textarea } from "@/components/ui/textarea";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { Plus, Search, Filter, Settings, Calendar, Brain, Wrench } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Switch } from "@/components/ui/switch";
+import { useToast } from "@/hooks/use-toast";
+import { useLocation } from "wouter";
 
-interface ToolProject {
+// Tipos
+interface ToolCategory {
   id: number;
-  creator_id: number;
-  creator_name: string;
-  tipo_atividade: string;
-  data_realizacao: string;
-  local: string;
-  nome_profissionais: string;
-  status: string;
-  created_at: string;
-  updated_at: string;
-  observacoes?: string;
-  dados_ia?: any;
+  name: string;
+  description?: string;
+  color: string;
+  icon: string;
+  isActive: boolean;
 }
 
-interface EmailSettings {
-  smtp_host: string;
-  smtp_port: number;
-  smtp_user: string;
-  smtp_password: string;
-  from_email: string;
-  from_name: string;
+interface Tool {
+  id: number;
+  name: string;
+  description?: string;
+  isActive: boolean;
+  allowedUserCategories: number[];
+  settings?: any;
+  category?: {
+    id: number;
+    name: string;
+    color: string;
+    icon: string;
+  };
 }
 
-const statusOptions = [
-  { value: 'rascunho', label: 'Rascunho', color: 'bg-gray-500' },
-  { value: 'enviado', label: 'Enviado', color: 'bg-blue-500' },
-  { value: 'em_analise', label: 'Em Análise', color: 'bg-yellow-500' },
-  { value: 'aprovado', label: 'Aprovado', color: 'bg-green-500' },
-  { value: 'rejeitado', label: 'Rejeitado', color: 'bg-red-500' },
-  { value: 'em_execucao', label: 'Em Execução', color: 'bg-purple-500' },
-  { value: 'concluido', label: 'Concluído', color: 'bg-emerald-500' },
-];
+interface UserCategory {
+  id: number;
+  name: string;
+  description?: string;
+  color: string;
+  isActive: boolean;
+}
 
-const typeLabels = {
-  'aula_convidado': 'Aula com Convidado',
-  'visita_tecnica': 'Visita Técnica',
-  'outro_evento': 'Outro Evento',
+// Schemas
+const toolCategorySchema = z.object({
+  name: z.string().min(1, "Nome é obrigatório"),
+  description: z.string().optional(),
+  color: z.string().default("#3B82F6"),
+  icon: z.string().default("settings"),
+  isActive: z.boolean().default(true),
+});
+
+const toolSchema = z.object({
+  name: z.string().min(1, "Nome é obrigatório"),
+  description: z.string().optional(),
+  categoryId: z.number().optional(),
+  allowedUserCategories: z.array(z.number()).default([]),
+  isActive: z.boolean().default(true),
+  settings: z.any().optional(),
+});
+
+type ToolCategoryFormData = z.infer<typeof toolCategorySchema>;
+type ToolFormData = z.infer<typeof toolSchema>;
+
+// Helper para ícones
+const getIconComponent = (iconName: string) => {
+  switch (iconName) {
+    case 'calendar': return Calendar;
+    case 'brain-circuit': return Brain;
+    case 'settings': return Settings;
+    default: return Wrench;
+  }
 };
 
 export default function AdminFerramentasPage() {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [selectedProject, setSelectedProject] = useState<ToolProject | null>(null);
-  const [newStatus, setNewStatus] = useState('');
-  const [statusComment, setStatusComment] = useState('');
-  const [emailSettings, setEmailSettings] = useState<EmailSettings>({
-    smtp_host: '',
-    smtp_port: 587,
-    smtp_user: '',
-    smtp_password: '',
-    from_email: '',
-    from_name: 'Portal Conecta CESURG',
-  });
-
+  const [location, setLocation] = useLocation();
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const [categoryDialogOpen, setCategoryDialogOpen] = useState(false);
+  const [toolDialogOpen, setToolDialogOpen] = useState(false);
+  const [editingTool, setEditingTool] = useState<Tool | null>(null);
   const { toast } = useToast();
-  const queryClient = useQueryClient();
 
-  // Buscar projetos
-  const { data: projects = [], isLoading } = useQuery({
-    queryKey: ['/api/admin/tool-projects'],
-    queryFn: async () => {
-      const response = await apiRequest('/api/admin/tool-projects');
-      return response;
+  // Queries
+  const { data: tools = [], isLoading: toolsLoading } = useQuery<Tool[]>({
+    queryKey: ['/api/admin/tools'],
+  });
+
+  const { data: categories = [] } = useQuery<ToolCategory[]>({
+    queryKey: ['/api/admin/tools/categories'],
+  });
+
+  const { data: userCategories = [] } = useQuery<UserCategory[]>({
+    queryKey: ['/api/user-categories'],
+  });
+
+  // Forms
+  const categoryForm = useForm<ToolCategoryFormData>({
+    resolver: zodResolver(toolCategorySchema),
+    defaultValues: {
+      name: "",
+      description: "",
+      color: "#3B82F6",
+      icon: "settings",
+      isActive: true,
     },
   });
 
-  // Buscar configurações de email
-  const { data: currentEmailSettings } = useQuery({
-    queryKey: ['/api/admin/email-settings'],
-    queryFn: async () => {
-      const response = await apiRequest('/api/admin/email-settings');
-      return response;
+  const toolForm = useForm<ToolFormData>({
+    resolver: zodResolver(toolSchema),
+    defaultValues: {
+      name: "",
+      description: "",
+      categoryId: undefined,
+      allowedUserCategories: [],
+      isActive: true,
+      settings: {},
     },
   });
 
-  // Update email settings when data is loaded
-  React.useEffect(() => {
-    if (currentEmailSettings) {
-      setEmailSettings(currentEmailSettings);
-    }
-  }, [currentEmailSettings]);
-
-  // Mutation para alterar status
-  const updateStatusMutation = useMutation({
-    mutationFn: async ({ projectId, status, comment }: { projectId: number; status: string; comment: string }) => {
-      return apiRequest(`/api/admin/tool-projects/${projectId}/status`, {
-        method: 'PATCH',
-        body: JSON.stringify({ status, comment }),
-      });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/admin/tool-projects'] });
-      setSelectedProject(null);
-      setNewStatus('');
-      setStatusComment('');
-      toast({
-        title: 'Status atualizado',
-        description: 'O status do projeto foi atualizado com sucesso.',
-      });
-    },
+  // Filtros
+  const filteredTools = tools.filter(tool => {
+    const matchesSearch = tool.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         tool.description?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesCategory = selectedCategory === "all" || 
+                           (tool.category?.id.toString() === selectedCategory);
+    return matchesSearch && matchesCategory;
   });
 
-  // Mutation para salvar configurações de email
-  const saveEmailSettingsMutation = useMutation({
-    mutationFn: async (settings: EmailSettings) => {
-      return apiRequest('/api/admin/email-settings', {
+  // Handlers
+  const handleCreateCategory = async (data: ToolCategoryFormData) => {
+    try {
+      const response = await fetch('/api/admin/tools/categories', {
         method: 'POST',
-        body: JSON.stringify(settings),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
       });
-    },
-    onSuccess: () => {
-      toast({
-        title: 'Configurações salvas',
-        description: 'As configurações de email foram salvas com sucesso.',
-      });
-    },
-  });
 
-  // Filtrar projetos
-  const filteredProjects = projects.filter((project: ToolProject) => {
-    const matchesSearch = project.nome_profissionais.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         project.creator_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         typeLabels[project.tipo_atividade as keyof typeof typeLabels]?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || project.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
-
-  const getStatusBadge = (status: string) => {
-    const statusInfo = statusOptions.find(s => s.value === status);
-    return (
-      <Badge className={`${statusInfo?.color || 'bg-gray-500'} text-white`}>
-        {statusInfo?.label || status}
-      </Badge>
-    );
+      if (response.ok) {
+        toast({ title: "Categoria criada com sucesso!" });
+        setCategoryDialogOpen(false);
+        categoryForm.reset();
+        // Invalidar query para recarregar dados
+        window.location.reload();
+      }
+    } catch (error) {
+      toast({ title: "Erro ao criar categoria", variant: "destructive" });
+    }
   };
 
-  const handleStatusUpdate = () => {
-    if (!selectedProject || !newStatus) return;
-    
-    updateStatusMutation.mutate({
-      projectId: selectedProject.id,
-      status: newStatus,
-      comment: statusComment,
+  const handleCreateTool = async (data: ToolFormData) => {
+    try {
+      const url = editingTool ? `/api/admin/tools/${editingTool.id}` : '/api/admin/tools';
+      const method = editingTool ? 'PUT' : 'POST';
+
+      const response = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+
+      if (response.ok) {
+        toast({ 
+          title: editingTool ? "Ferramenta atualizada com sucesso!" : "Ferramenta criada com sucesso!" 
+        });
+        setToolDialogOpen(false);
+        setEditingTool(null);
+        toolForm.reset();
+        // Invalidar query para recarregar dados
+        window.location.reload();
+      }
+    } catch (error) {
+      toast({ 
+        title: editingTool ? "Erro ao atualizar ferramenta" : "Erro ao criar ferramenta", 
+        variant: "destructive" 
+      });
+    }
+  };
+
+  const handleEditTool = (tool: Tool) => {
+    setEditingTool(tool);
+    toolForm.reset({
+      name: tool.name,
+      description: tool.description || "",
+      categoryId: tool.category?.id,
+      allowedUserCategories: tool.allowedUserCategories,
+      isActive: tool.isActive,
+      settings: tool.settings || {},
     });
+    setToolDialogOpen(true);
   };
 
-  const handleEmailSettingsSave = () => {
-    saveEmailSettingsMutation.mutate(emailSettings);
+  const handleOpenTool = (toolId: number) => {
+    setLocation(`/admin/ferramentas/tool/${toolId}`);
   };
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <Header />
-        <div className="flex">
-          <AdminSidebar />
-          <div className="flex-1 p-6">
-            <div className="text-center">Carregando...</div>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -186,290 +211,379 @@ export default function AdminFerramentasPage() {
       <div className="flex">
         <AdminSidebar />
         <div className="flex-1 p-6">
-          <Tabs defaultValue="projects" className="space-y-6">
-            <div className="flex items-center justify-between">
+          <div className="max-w-7xl mx-auto">
+            {/* Header */}
+            <div className="flex justify-between items-center mb-6">
               <div>
-                <h1 className="text-3xl font-bold text-gray-900">Administração - Ferramentas</h1>
-                <p className="text-gray-600 mt-2">Gerencie projetos de atividades externas e configurações</p>
+                <h1 className="text-3xl font-bold text-gray-900">Ferramentas</h1>
+                <p className="text-gray-600">Gerencie ferramentas e categorias do sistema</p>
               </div>
-              <TabsList>
-                <TabsTrigger value="projects">Projetos</TabsTrigger>
-                <TabsTrigger value="settings">Configurações</TabsTrigger>
-              </TabsList>
+              <div className="flex gap-2">
+                <Dialog open={categoryDialogOpen} onOpenChange={setCategoryDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button variant="outline">
+                      <Plus className="w-4 h-4 mr-2" />
+                      Nova Categoria
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Nova Categoria de Ferramenta</DialogTitle>
+                      <DialogDescription>
+                        Crie uma nova categoria para organizar as ferramentas
+                      </DialogDescription>
+                    </DialogHeader>
+                    <Form {...categoryForm}>
+                      <form onSubmit={categoryForm.handleSubmit(handleCreateCategory)} className="space-y-4">
+                        <FormField
+                          control={categoryForm.control}
+                          name="name"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Nome</FormLabel>
+                              <FormControl>
+                                <Input {...field} placeholder="Nome da categoria" />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={categoryForm.control}
+                          name="description"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Descrição</FormLabel>
+                              <FormControl>
+                                <Textarea {...field} placeholder="Descrição da categoria" />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <div className="grid grid-cols-2 gap-4">
+                          <FormField
+                            control={categoryForm.control}
+                            name="color"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Cor</FormLabel>
+                                <FormControl>
+                                  <Input {...field} type="color" />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={categoryForm.control}
+                            name="icon"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Ícone</FormLabel>
+                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                  <FormControl>
+                                    <SelectTrigger>
+                                      <SelectValue placeholder="Selecione o ícone" />
+                                    </SelectTrigger>
+                                  </FormControl>
+                                  <SelectContent>
+                                    <SelectItem value="calendar">Calendário</SelectItem>
+                                    <SelectItem value="brain-circuit">IA</SelectItem>
+                                    <SelectItem value="settings">Configurações</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+                        <div className="flex justify-end gap-2">
+                          <Button type="button" variant="outline" onClick={() => setCategoryDialogOpen(false)}>
+                            Cancelar
+                          </Button>
+                          <Button type="submit">Criar Categoria</Button>
+                        </div>
+                      </form>
+                    </Form>
+                  </DialogContent>
+                </Dialog>
+
+                <Dialog open={toolDialogOpen} onOpenChange={setToolDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button>
+                      <Plus className="w-4 h-4 mr-2" />
+                      Nova Ferramenta
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-2xl">
+                    <DialogHeader>
+                      <DialogTitle>
+                        {editingTool ? "Editar Ferramenta" : "Nova Ferramenta"}
+                      </DialogTitle>
+                      <DialogDescription>
+                        {editingTool ? "Edite os dados da ferramenta" : "Crie uma nova ferramenta no sistema"}
+                      </DialogDescription>
+                    </DialogHeader>
+                    <Form {...toolForm}>
+                      <form onSubmit={toolForm.handleSubmit(handleCreateTool)} className="space-y-4">
+                        <FormField
+                          control={toolForm.control}
+                          name="name"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Nome</FormLabel>
+                              <FormControl>
+                                <Input {...field} placeholder="Nome da ferramenta" />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={toolForm.control}
+                          name="description"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Descrição</FormLabel>
+                              <FormControl>
+                                <Textarea {...field} placeholder="Descrição da ferramenta" />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={toolForm.control}
+                          name="categoryId"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Categoria</FormLabel>
+                              <Select 
+                                onValueChange={(value) => field.onChange(value ? parseInt(value) : undefined)}
+                                defaultValue={field.value?.toString()}
+                              >
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Selecione a categoria" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  {categories.map((category) => (
+                                    <SelectItem key={category.id} value={category.id.toString()}>
+                                      {category.name}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={toolForm.control}
+                          name="allowedUserCategories"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Categorias de Usuários Permitidas</FormLabel>
+                              <FormControl>
+                                <div className="space-y-2">
+                                  <p className="text-sm text-gray-600">
+                                    Deixe em branco para permitir todos os usuários
+                                  </p>
+                                  {userCategories.map((category) => (
+                                    <div key={category.id} className="flex items-center space-x-2">
+                                      <Checkbox
+                                        id={`category-${category.id}`}
+                                        checked={field.value.includes(category.id)}
+                                        onCheckedChange={(checked) => {
+                                          if (checked) {
+                                            field.onChange([...field.value, category.id]);
+                                          } else {
+                                            field.onChange(field.value.filter((id) => id !== category.id));
+                                          }
+                                        }}
+                                      />
+                                      <label htmlFor={`category-${category.id}`} className="text-sm">
+                                        {category.name}
+                                      </label>
+                                    </div>
+                                  ))}
+                                </div>
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={toolForm.control}
+                          name="isActive"
+                          render={({ field }) => (
+                            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                              <div className="space-y-0.5">
+                                <FormLabel className="text-base">Ativa</FormLabel>
+                                <p className="text-sm text-gray-600">
+                                  Determina se a ferramenta está disponível para uso
+                                </p>
+                              </div>
+                              <FormControl>
+                                <Switch
+                                  checked={field.value}
+                                  onCheckedChange={field.onChange}
+                                />
+                              </FormControl>
+                            </FormItem>
+                          )}
+                        />
+                        <div className="flex justify-end gap-2">
+                          <Button 
+                            type="button" 
+                            variant="outline" 
+                            onClick={() => {
+                              setToolDialogOpen(false);
+                              setEditingTool(null);
+                              toolForm.reset();
+                            }}
+                          >
+                            Cancelar
+                          </Button>
+                          <Button type="submit">
+                            {editingTool ? "Salvar Alterações" : "Criar Ferramenta"}
+                          </Button>
+                        </div>
+                      </form>
+                    </Form>
+                  </DialogContent>
+                </Dialog>
+              </div>
             </div>
 
-            <TabsContent value="projects" className="space-y-6">
-              {/* Filtros */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Filtros</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex gap-4">
-                    <div className="flex-1">
-                      <Label htmlFor="search">Buscar</Label>
-                      <div className="relative">
-                        <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                        <Input
-                          id="search"
-                          placeholder="Buscar por nome, profissional ou tipo..."
-                          value={searchTerm}
-                          onChange={(e) => setSearchTerm(e.target.value)}
-                          className="pl-10"
-                        />
-                      </div>
-                    </div>
-                    <div>
-                      <Label htmlFor="status">Status</Label>
-                      <Select value={statusFilter} onValueChange={setStatusFilter}>
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">Todos os Status</SelectItem>
-                          {statusOptions.map((status) => (
-                            <SelectItem key={status.value} value={status.value}>
-                              {status.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+            {/* Filtros */}
+            <div className="flex gap-4 mb-6">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                <Input
+                  placeholder="Buscar ferramentas..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+              <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                <SelectTrigger className="w-48">
+                  <Filter className="w-4 h-4 mr-2" />
+                  <SelectValue placeholder="Filtrar por categoria" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todas as categorias</SelectItem>
+                  {categories.map((category) => (
+                    <SelectItem key={category.id} value={category.id.toString()}>
+                      {category.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
-              {/* Lista de Projetos */}
-              <div className="grid gap-4">
-                {filteredProjects.map((project: ToolProject) => (
-                  <Card key={project.id}>
-                    <CardContent className="p-6">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-3 mb-2">
-                            <h3 className="text-lg font-semibold">
-                              {typeLabels[project.tipo_atividade as keyof typeof typeLabels]}
-                            </h3>
-                            {getStatusBadge(project.status)}
+            {/* Grid de Ferramentas */}
+            {toolsLoading ? (
+              <div className="text-center py-8">
+                <p className="text-gray-600">Carregando ferramentas...</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {filteredTools.map((tool) => {
+                  const IconComponent = tool.category ? getIconComponent(tool.category.icon) : Wrench;
+                  
+                  return (
+                    <Card key={tool.id} className="cursor-pointer hover:shadow-lg transition-shadow">
+                      <CardHeader className="pb-3">
+                        <div className="flex items-start justify-between">
+                          <div className="flex items-center gap-3">
+                            <div 
+                              className="w-10 h-10 rounded-lg flex items-center justify-center"
+                              style={{ backgroundColor: tool.category?.color || '#6B7280' }}
+                            >
+                              <IconComponent className="w-5 h-5 text-white" />
+                            </div>
+                            <div>
+                              <CardTitle className="text-lg">{tool.name}</CardTitle>
+                              {tool.category && (
+                                <Badge variant="secondary" className="mt-1 text-xs">
+                                  {tool.category.name}
+                                </Badge>
+                              )}
+                            </div>
                           </div>
-                          
-                          <div className="space-y-1 text-sm text-gray-600">
-                            <p><strong>Profissional(s):</strong> {project.nome_profissionais}</p>
-                            <p><strong>Data:</strong> {new Date(project.data_realizacao).toLocaleDateString('pt-BR')}</p>
-                            <p><strong>Local:</strong> {project.local}</p>
-                            <p><strong>Criado por:</strong> {project.creator_name}</p>
-                            <p><strong>Criado em:</strong> {new Date(project.created_at).toLocaleDateString('pt-BR')}</p>
+                          <div className="flex flex-col gap-1">
+                            <Badge variant={tool.isActive ? "default" : "secondary"} className="text-xs">
+                              {tool.isActive ? "Ativa" : "Inativa"}
+                            </Badge>
                           </div>
                         </div>
+                      </CardHeader>
+                      <CardContent>
+                        <CardDescription className="mb-4 min-h-[40px]">
+                          {tool.description || "Sem descrição"}
+                        </CardDescription>
+                        
+                        {tool.allowedUserCategories.length > 0 && (
+                          <div className="mb-4">
+                            <p className="text-xs font-medium text-gray-700 mb-2">Acesso restrito a:</p>
+                            <div className="flex flex-wrap gap-1">
+                              {tool.allowedUserCategories.map((categoryId) => {
+                                const category = userCategories.find(c => c.id === categoryId);
+                                return category ? (
+                                  <Badge key={categoryId} variant="outline" className="text-xs">
+                                    {category.name}
+                                  </Badge>
+                                ) : null;
+                              })}
+                            </div>
+                          </div>
+                        )}
                         
                         <div className="flex gap-2">
-                          <Dialog>
-                            <DialogTrigger asChild>
-                              <Button variant="outline" size="sm">
-                                <Eye className="h-4 w-4 mr-1" />
-                                Ver Detalhes
-                              </Button>
-                            </DialogTrigger>
-                            <DialogContent className="max-w-2xl">
-                              <DialogHeader>
-                                <DialogTitle>Detalhes do Projeto</DialogTitle>
-                                <DialogDescription>
-                                  Informações completas do projeto
-                                </DialogDescription>
-                              </DialogHeader>
-                              <div className="space-y-4">
-                                <div className="grid grid-cols-2 gap-4">
-                                  <div>
-                                    <Label>Tipo</Label>
-                                    <p className="text-sm">{typeLabels[project.tipo_atividade as keyof typeof typeLabels]}</p>
-                                  </div>
-                                  <div>
-                                    <Label>Status</Label>
-                                    <div className="mt-1">{getStatusBadge(project.status)}</div>
-                                  </div>
-                                </div>
-                                <div>
-                                  <Label>Profissional(s)</Label>
-                                  <p className="text-sm">{project.nome_profissionais}</p>
-                                </div>
-                                <div className="grid grid-cols-2 gap-4">
-                                  <div>
-                                    <Label>Data</Label>
-                                    <p className="text-sm">{new Date(project.data_realizacao).toLocaleDateString('pt-BR')}</p>
-                                  </div>
-                                  <div>
-                                    <Label>Local</Label>
-                                    <p className="text-sm">{project.local}</p>
-                                  </div>
-                                </div>
-                                {project.observacoes && (
-                                  <div>
-                                    <Label>Observações</Label>
-                                    <p className="text-sm">{project.observacoes}</p>
-                                  </div>
-                                )}
-                              </div>
-                            </DialogContent>
-                          </Dialog>
-
-                          <Dialog>
-                            <DialogTrigger asChild>
-                              <Button 
-                                variant="outline" 
-                                size="sm"
-                                onClick={() => setSelectedProject(project)}
-                              >
-                                <Settings className="h-4 w-4 mr-1" />
-                                Alterar Status
-                              </Button>
-                            </DialogTrigger>
-                            <DialogContent>
-                              <DialogHeader>
-                                <DialogTitle>Alterar Status do Projeto</DialogTitle>
-                                <DialogDescription>
-                                  Altere o status e adicione comentários se necessário
-                                </DialogDescription>
-                              </DialogHeader>
-                              <div className="space-y-4">
-                                <div>
-                                  <Label>Novo Status</Label>
-                                  <Select value={newStatus} onValueChange={setNewStatus}>
-                                    <SelectTrigger>
-                                      <SelectValue placeholder="Selecione o novo status" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      {statusOptions.map((status) => (
-                                        <SelectItem key={status.value} value={status.value}>
-                                          {status.label}
-                                        </SelectItem>
-                                      ))}
-                                    </SelectContent>
-                                  </Select>
-                                </div>
-                                <div>
-                                  <Label>Comentário (opcional)</Label>
-                                  <Textarea
-                                    placeholder="Adicione um comentário sobre a mudança de status..."
-                                    value={statusComment}
-                                    onChange={(e) => setStatusComment(e.target.value)}
-                                  />
-                                </div>
-                                <div className="flex justify-end gap-2">
-                                  <DialogTrigger asChild>
-                                    <Button variant="outline">Cancelar</Button>
-                                  </DialogTrigger>
-                                  <Button 
-                                    onClick={handleStatusUpdate}
-                                    disabled={!newStatus || updateStatusMutation.isPending}
-                                  >
-                                    {updateStatusMutation.isPending ? 'Salvando...' : 'Salvar'}
-                                  </Button>
-                                </div>
-                              </div>
-                            </DialogContent>
-                          </Dialog>
+                          <Button 
+                            size="sm" 
+                            className="flex-1"
+                            onClick={() => handleOpenTool(tool.id)}
+                          >
+                            Abrir
+                          </Button>
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => handleEditTool(tool)}
+                          >
+                            <Settings className="w-4 h-4" />
+                          </Button>
                         </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            )}
 
-                {filteredProjects.length === 0 && (
-                  <Card>
-                    <CardContent className="p-6 text-center text-gray-500">
-                      Nenhum projeto encontrado com os filtros aplicados.
-                    </CardContent>
-                  </Card>
+            {filteredTools.length === 0 && !toolsLoading && (
+              <div className="text-center py-12">
+                <Wrench className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">Nenhuma ferramenta encontrada</h3>
+                <p className="text-gray-600 mb-4">
+                  {searchTerm || selectedCategory !== "all" 
+                    ? "Tente ajustar os filtros de busca" 
+                    : "Comece criando sua primeira ferramenta"}
+                </p>
+                {!searchTerm && selectedCategory === "all" && (
+                  <Button onClick={() => setToolDialogOpen(true)}>
+                    <Plus className="w-4 h-4 mr-2" />
+                    Criar primeira ferramenta
+                  </Button>
                 )}
               </div>
-            </TabsContent>
-
-            <TabsContent value="settings" className="space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Configurações de Email</CardTitle>
-                  <CardDescription>
-                    Configure o servidor SMTP para envio de notificações automáticas
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="smtp_host">Servidor SMTP</Label>
-                      <Input
-                        id="smtp_host"
-                        value={emailSettings.smtp_host}
-                        onChange={(e) => setEmailSettings({...emailSettings, smtp_host: e.target.value})}
-                        placeholder="smtp.gmail.com"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="smtp_port">Porta</Label>
-                      <Input
-                        id="smtp_port"
-                        type="number"
-                        value={emailSettings.smtp_port}
-                        onChange={(e) => setEmailSettings({...emailSettings, smtp_port: parseInt(e.target.value)})}
-                        placeholder="587"
-                      />
-                    </div>
-                  </div>
-                  
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="smtp_user">Usuário SMTP</Label>
-                      <Input
-                        id="smtp_user"
-                        value={emailSettings.smtp_user}
-                        onChange={(e) => setEmailSettings({...emailSettings, smtp_user: e.target.value})}
-                        placeholder="seu-email@gmail.com"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="smtp_password">Senha SMTP</Label>
-                      <Input
-                        id="smtp_password"
-                        type="password"
-                        value={emailSettings.smtp_password}
-                        onChange={(e) => setEmailSettings({...emailSettings, smtp_password: e.target.value})}
-                        placeholder="senha-do-app"
-                      />
-                    </div>
-                  </div>
-                  
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="from_email">Email Remetente</Label>
-                      <Input
-                        id="from_email"
-                        value={emailSettings.from_email}
-                        onChange={(e) => setEmailSettings({...emailSettings, from_email: e.target.value})}
-                        placeholder="noreply@cesurg.com"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="from_name">Nome Remetente</Label>
-                      <Input
-                        id="from_name"
-                        value={emailSettings.from_name}
-                        onChange={(e) => setEmailSettings({...emailSettings, from_name: e.target.value})}
-                        placeholder="Portal Conecta CESURG"
-                      />
-                    </div>
-                  </div>
-                  
-                  <div className="flex justify-end">
-                    <Button 
-                      onClick={handleEmailSettingsSave}
-                      disabled={saveEmailSettingsMutation.isPending}
-                    >
-                      {saveEmailSettingsMutation.isPending ? 'Salvando...' : 'Salvar Configurações'}
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-          </Tabs>
+            )}
+          </div>
         </div>
       </div>
     </div>

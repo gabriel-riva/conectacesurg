@@ -36,6 +36,7 @@ import FerramentasPage from "@/pages/FerramentasPage";
 import ExternalActivitiesPage from "@/pages/ExternalActivitiesPage";
 import ExternalActivityDetailPage from "@/pages/ExternalActivityDetailPage";
 import AdminFerramentasPage from "@/pages/AdminFerramentasPage";
+import AdminToolPage from "@/pages/AdminToolPage";
 import { AuthProvider } from "./providers/AuthProvider";
 import { useAuth } from "./lib/auth";
 import FeedbackWrapper from "./components/FeedbackWrapper";
@@ -155,6 +156,9 @@ function Router() {
       </Route>
       <Route path="/admin/ferramentas">
         {() => <ProtectedRoute component={AdminFerramentasPage} adminOnly={true} />}
+      </Route>
+      <Route path="/admin/ferramentas/tool/:id">
+        {(params) => <ProtectedRoute component={AdminToolPage} adminOnly={true} />}
       </Route>
       <Route path="/materiais">
         {() => <ProtectedRoute component={MaterialsPage} />}

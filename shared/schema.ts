@@ -523,9 +523,35 @@ export const challengeSubmissions = pgTable("challenge_submissions", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Tool Categories schema
+export const toolCategories = pgTable("tool_categories", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description"),
+  color: text("color").default("#3B82F6"), // Hex color for the category
+  icon: text("icon").default("settings"), // Icon name for the category
+  isActive: boolean("is_active").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Tools schema
+export const tools = pgTable("tools", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description"),
+  categoryId: integer("category_id").references(() => toolCategories.id),
+  allowedUserCategories: jsonb("allowed_user_categories").$type<number[]>().default([]), // Array of user category IDs
+  isActive: boolean("is_active").default(true).notNull(),
+  settings: jsonb("settings"), // Tool-specific settings
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 // Ferramentas - Tabelas para Registro de Aulas, Visitas e Eventos
 export const toolProjects = pgTable("tool_projects", {
   id: serial("id").primaryKey(),
+  toolId: integer("tool_id").references(() => tools.id).notNull(),
   creatorId: integer("creator_id").notNull().references(() => users.id),
   
   // Campos estruturados baseados no schema da especificação
@@ -995,7 +1021,23 @@ export const challengeSubmissionsRelations = relations(challengeSubmissions, ({ 
 }));
 
 // Relações para Ferramentas
+export const toolCategoriesRelations = relations(toolCategories, ({ many }) => ({
+  tools: many(tools),
+}));
+
+export const toolsRelations = relations(tools, ({ one, many }) => ({
+  category: one(toolCategories, {
+    fields: [tools.categoryId],
+    references: [toolCategories.id],
+  }),
+  projects: many(toolProjects),
+}));
+
 export const toolProjectsRelations = relations(toolProjects, ({ one, many }) => ({
+  tool: one(tools, {
+    fields: [toolProjects.toolId],
+    references: [tools.id],
+  }),
   creator: one(users, {
     fields: [toolProjects.creatorId],
     references: [users.id],
@@ -1638,11 +1680,44 @@ export const insertSurveyResponseSchema = createInsertSchema(surveyResponses).om
   createdAt: true,
 });
 
-export const insertToolProjectSchema = createInsertSchema(toolProjects).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
+export const insertToolCategorySchema = createInsertSchema(toolCategories, {
+  name: z.string().min(1, "Nome é obrigatório"),
+  description: z.string().optional(),
+  color: z.string().default("#3B82F6"),
+  icon: z.string().default("settings"),
+  isActive: z.boolean().default(true),
+}).omit({ id: true, createdAt: true, updatedAt: true });
+
+export const insertToolSchema = createInsertSchema(tools, {
+  name: z.string().min(1, "Nome é obrigatório"),
+  description: z.string().optional(),
+  categoryId: z.number().optional(),
+  allowedUserCategories: z.array(z.number()).default([]),
+  isActive: z.boolean().default(true),
+  settings: z.any().optional(),
+}).omit({ id: true, createdAt: true, updatedAt: true });
+
+export const insertToolProjectSchema = createInsertSchema(toolProjects, {
+  toolId: z.number().min(1, "ID da ferramenta é obrigatório"),
+  tipoAtividade: z.enum(['aula_convidado', 'visita_tecnica', 'outro_evento']),
+  dataRealizacao: z.string().transform((str) => new Date(str)),
+  local: z.string().min(1, "Local é obrigatório"),
+  nomeProfissionais: z.string().min(1, "Nome dos profissionais é obrigatório"),
+  quantidadeEncontros: z.number().min(1).optional(),
+  transporteNecessario: z.boolean(),
+  demandasMarketing: z.array(z.string()).default([]),
+  publicoExclusivo: z.boolean(),
+  turmasEnv: z.string().optional(),
+  horarioSaida: z.string().optional(),
+  horarioRetorno: z.string().optional(),
+  cidade: z.string().optional(),
+  empresasVisitadas: z.string().optional(),
+  logisticaVisita: z.string().optional(),
+  tipoVeiculo: z.enum(['van', 'micro', 'onibus']).optional(),
+  custoAluno: z.number().min(0).optional(),
+  detalhesAdicionais: z.string().optional(),
+  observacoes: z.string().optional(),
+}).omit({ id: true, createdAt: true, updatedAt: true });
 
 export const insertToolProjectReportSchema = createInsertSchema(toolProjectReports).omit({
   id: true,
@@ -1660,6 +1735,8 @@ export type InsertSurvey = z.infer<typeof insertSurveySchema>;
 export type InsertSurveyQuestion = z.infer<typeof insertSurveyQuestionSchema>;
 export type InsertSurveyResponse = z.infer<typeof insertSurveyResponseSchema>;
 export type InsertSurveyWidgetSettings = z.infer<typeof insertSurveyWidgetSettingsSchema>;
+export type InsertToolCategory = z.infer<typeof insertToolCategorySchema>;
+export type InsertTool = z.infer<typeof insertToolSchema>;
 export type InsertToolProject = z.infer<typeof insertToolProjectSchema>;
 export type InsertToolProjectReport = z.infer<typeof insertToolProjectReportSchema>;
 
@@ -1668,5 +1745,7 @@ export type Survey = typeof surveys.$inferSelect;
 export type SurveyQuestion = typeof surveyQuestions.$inferSelect;
 export type SurveyResponse = typeof surveyResponses.$inferSelect;
 export type SurveyWidgetSettings = typeof surveyWidgetSettings.$inferSelect;
+export type ToolCategory = typeof toolCategories.$inferSelect;
+export type Tool = typeof tools.$inferSelect;
 export type ToolProject = typeof toolProjects.$inferSelect;
 export type ToolProjectReport = typeof toolProjectReports.$inferSelect;

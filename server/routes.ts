@@ -27,6 +27,7 @@ import gamificationRouter from "./gamification";
 import feedbackRouter from "./feedback";
 import surveysRouter from "./surveys";
 import toolProjectsRouter from "./tool-projects";
+import toolsRouter from "./tools";
 import { getAllToolProjects, updateProjectStatus, getEmailSettings, saveEmailSettings } from './admin-tool-projects';
 
 // Create PostgreSQL session store for production or memory store for development
@@ -825,6 +826,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Adicionar rotas de ferramentas - projetos
   app.use('/api/tool-projects', toolProjectsRouter);
+  
+  // Adicionar rotas de ferramentas (admin)
+  app.use('/api', toolsRouter);
   
   // Admin routes for tool projects
   app.get("/api/admin/tool-projects", getAllToolProjects);
