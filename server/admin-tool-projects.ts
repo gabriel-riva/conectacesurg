@@ -3,43 +3,59 @@ import { db } from './db';
 import { toolProjects, users } from '../shared/schema';
 import { eq, desc } from 'drizzle-orm';
 // Authentication middleware
-function requireAuth(req: Request) {
+function requireAuth(req: Request, res: Response) {
   if (!req.isAuthenticated()) {
-    throw new Error('Authentication required');
+    res.status(401).json({ error: 'Authentication required' });
+    return false;
   }
+  return true;
 }
 
-function requireAdmin(req: Request) {
+function requireAdmin(req: Request, res: Response) {
   const user = req.user as any;
   if (!user || (user.role !== 'admin' && user.role !== 'superadmin')) {
-    throw new Error('Admin access required');
+    res.status(403).json({ error: 'Admin access required' });
+    return false;
   }
+  return true;
 }
 
 // Buscar todos os projetos (admin)
 export async function getAllToolProjects(req: Request, res: Response) {
   try {
-    requireAuth(req);
-    requireAdmin(req);
+    if (!requireAuth(req, res)) return;
+    if (!requireAdmin(req, res)) return;
 
-    const projects = await db
-      .select({
-        id: toolProjects.id,
-        creator_id: toolProjects.creatorId,
-        creator_name: users.name,
-        tipo_atividade: toolProjects.tipoAtividade,
-        data_realizacao: toolProjects.dataRealizacao,
-        local: toolProjects.local,
-        nome_profissionais: toolProjects.nomeProfissionais,
-        status: toolProjects.status,
-        created_at: toolProjects.createdAt,
-        updated_at: toolProjects.updatedAt,
-        observacoes: toolProjects.observacoes,
-        dados_ia: toolProjects.dadosIa,
-      })
+    // Buscar os projetos primeiro
+    const projectsRaw = await db
+      .select()
       .from(toolProjects)
-      .leftJoin(users, eq(toolProjects.creatorId, users.id))
       .orderBy(desc(toolProjects.createdAt));
+
+    // Depois buscar os dados dos usuários
+    const projects = [];
+    for (const project of projectsRaw) {
+      const user = await db
+        .select()
+        .from(users)
+        .where(eq(users.id, project.creatorId))
+        .limit(1);
+
+      projects.push({
+        id: project.id,
+        creator_id: project.creatorId,
+        creator_name: user[0]?.name || 'Usuário não encontrado',
+        tipo_atividade: project.tipoAtividade,
+        data_realizacao: project.dataRealizacao,
+        local: project.local,
+        nome_profissionais: project.nomeProfissionais,
+        status: project.status,
+        created_at: project.createdAt,
+        updated_at: project.updatedAt,
+        observacoes: project.observacoes,
+        dados_ia: project.dadosIa,
+      });
+    }
 
     res.json(projects);
   } catch (error) {
@@ -51,8 +67,8 @@ export async function getAllToolProjects(req: Request, res: Response) {
 // Alterar status de um projeto
 export async function updateProjectStatus(req: Request, res: Response) {
   try {
-    requireAuth(req);
-    requireAdmin(req);
+    if (!requireAuth(req, res)) return;
+    if (!requireAdmin(req, res)) return;
 
     const { id } = req.params;
     const { status, comment } = req.body;
@@ -100,8 +116,8 @@ export async function updateProjectStatus(req: Request, res: Response) {
 // Configurações de email
 export async function getEmailSettings(req: Request, res: Response) {
   try {
-    requireAuth(req);
-    requireAdmin(req);
+    if (!requireAuth(req, res)) return;
+    if (!requireAdmin(req, res)) return;
 
     // Por enquanto, retorna configurações mockadas
     // Em produção, você salvaria essas configurações no banco
@@ -123,8 +139,8 @@ export async function getEmailSettings(req: Request, res: Response) {
 
 export async function saveEmailSettings(req: Request, res: Response) {
   try {
-    requireAuth(req);
-    requireAdmin(req);
+    if (!requireAuth(req, res)) return;
+    if (!requireAdmin(req, res)) return;
 
     const { smtp_host, smtp_port, smtp_user, smtp_password, from_email, from_name } = req.body;
 
