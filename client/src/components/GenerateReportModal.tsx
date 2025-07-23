@@ -101,12 +101,40 @@ export function GenerateReportModal({ isOpen, onClose }: GenerateReportModalProp
         'Biografia': user.biografia || '',
         'Observações': user.observations || '',
         'Tem Foto': user.photoUrl ? 'Sim' : 'Não',
-        'Documentos': Array.isArray(user.documents) ? user.documents.map((doc: any) => doc.originalName).join('; ') : ''
+        'Documentos': Array.isArray(user.documents) && user.documents.length > 0 ? user.documents.map((doc: any) => {
+          const name = doc.originalName || doc.name || 'Documento sem nome';
+          const url = doc.filePath ? `${window.location.origin}${doc.filePath}` : '';
+          return url ? `${name} (${url})` : name;
+        }).join('; ') : 'Nenhum documento'
       }));
 
       // Criar workbook e worksheet
       const wb = XLSX.utils.book_new();
       const ws = XLSX.utils.json_to_sheet(excelData);
+      
+      // Adicionar hyperlinks para os documentos
+      const range = XLSX.utils.decode_range(ws['!ref'] || 'A1');
+      const documentColIndex = Object.keys(excelData[0] || {}).indexOf('Documentos');
+      
+      if (documentColIndex >= 0) {
+        for (let row = 1; row <= range.e.r; row++) {
+          const user = userDetails[row - 1];
+          if (user && Array.isArray(user.documents) && user.documents.length > 0) {
+            const cellAddress = XLSX.utils.encode_cell({ c: documentColIndex, r: row });
+            
+            // Criar links clicáveis para cada documento
+            const docLinks = user.documents.map((doc: any) => {
+              const name = doc.originalName || doc.name || 'Documento sem nome';
+              const url = doc.filePath ? `${window.location.origin}${doc.filePath}` : '';
+              return url ? `=HYPERLINK("${url}","${name}")` : name;
+            }).join(' | ');
+            
+            if (user.documents.some((doc: any) => doc.filePath)) {
+              ws[cellAddress] = { t: 'str', v: docLinks, f: docLinks };
+            }
+          }
+        }
+      }
       
       // Definir larguras das colunas
       const colWidths = [
@@ -509,7 +537,18 @@ export function GenerateReportModal({ isOpen, onClose }: GenerateReportModalProp
 
         if (user.documents && user.documents.length > 0) {
           user.documents.forEach((document: any) => {
-            pdf.text(`• ${document.name || 'Documento sem nome'}`, margin + 5, yPosition);
+            const docName = document.originalName || document.name || 'Documento sem nome';
+            pdf.text(`• ${docName}`, margin + 5, yPosition);
+            
+            // Se houver URL do documento, adicionar como link clicável
+            if (document.filePath) {
+              const docUrl = `${window.location.origin}${document.filePath}`;
+              pdf.setTextColor(0, 0, 255); // Cor azul para link
+              pdf.textWithLink(`  🔗 Abrir documento`, margin + 10, yPosition + 5, { url: docUrl });
+              pdf.setTextColor(0, 0, 0); // Voltar para cor preta
+              yPosition += 5;
+            }
+            
             yPosition += 5;
             if (document.description) {
               pdf.text(`  Descrição: ${document.description}`, margin + 10, yPosition);
