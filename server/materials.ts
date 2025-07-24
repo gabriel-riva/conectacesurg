@@ -2,7 +2,7 @@ import express, { type Request, type Response } from "express";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
-import { storage } from "./storage";
+import { storage as dbStorage } from "./storage";
 import { insertMaterialFolderSchema, insertMaterialFileSchema } from "@shared/schema";
 import { z } from "zod";
 
@@ -14,8 +14,21 @@ if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
 
+const multerStorage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, uploadDir);
+  },
+  filename: function (req, file, cb) {
+    // Gerar nome único baseado em hash para evitar conflitos
+    const crypto = require('crypto');
+    const hash = crypto.createHash('md5').update(file.originalname + Date.now() + Math.random()).digest('hex');
+    console.log(`📁 Upload de arquivo iniciado - Hash: ${hash}, Original: ${file.originalname}, User: ${req.user?.name} (${req.user?.role})`);
+    cb(null, hash);
+  }
+});
+
 const upload = multer({
-  dest: uploadDir,
+  storage: multerStorage,
   limits: {
     fileSize: 50 * 1024 * 1024, // 50MB limit
   },
@@ -47,14 +60,14 @@ const hasAccessToFolder = async (folderId: number, userId: number, userRole: str
     return true;
   }
 
-  const folder = await storage.getMaterialFolder(folderId);
+  const folder = await dbStorage.getMaterialFolder(folderId);
   if (!folder) return false;
 
   // Se a pasta é pública, todos têm acesso
   if (folder.isPublic) return true;
 
   // Se não é pública, verificar se o usuário está nos grupos permitidos
-  const userGroups = await storage.getUserGroups(userId);
+  const userGroups = await dbStorage.getUserGroups(userId);
   const userGroupIds = userGroups.map(g => g.id);
   
   return folder.groupIds.some(groupId => userGroupIds.includes(groupId));
@@ -68,7 +81,7 @@ router.get("/folders", isAuthenticated, async (req: Request, res: Response) => {
     const userId = req.user?.id;
     const userRole = req.user?.role;
     
-    const folders = await storage.getAllMaterialFolders(userId);
+    const folders = await dbStorage.getAllMaterialFolders(userId);
     
     // Filtrar pastas com base no acesso do usuário
     const accessibleFolders = [];
@@ -80,7 +93,7 @@ router.get("/folders", isAuthenticated, async (req: Request, res: Response) => {
         accessibleFolders.push(folder);
       } else {
         // Verificar se o usuário está nos grupos permitidos
-        const userGroups = await storage.getUserGroups(userId);
+        const userGroups = await dbStorage.getUserGroups(userId);
         const userGroupIds = userGroups.map(g => g.id);
         
         if (folder.groupIds.some(groupId => userGroupIds.includes(groupId))) {
@@ -103,7 +116,7 @@ router.get("/folders/:id", isAuthenticated, async (req: Request, res: Response) 
     const userId = req.user?.id;
     const userRole = req.user?.role;
     
-    const folder = await storage.getMaterialFolder(folderId);
+    const folder = await dbStorage.getMaterialFolder(folderId);
     
     if (!folder) {
       return res.status(404).json({ error: "Pasta não encontrada" });
@@ -155,7 +168,7 @@ router.post("/folders", isAdmin, upload.single("image"), async (req: Request, re
     // Validar dados
     const validatedData = insertMaterialFolderSchema.parse(folderData);
     
-    const folder = await storage.createMaterialFolder(validatedData);
+    const folder = await dbStorage.createMaterialFolder(validatedData);
     
     res.status(201).json(folder);
   } catch (error) {
@@ -200,7 +213,7 @@ router.put("/folders/:id", isAdmin, upload.single("image"), async (req: Request,
       folderData.imageUrl = `/uploads/materials/${req.file.filename}`;
     }
     
-    const folder = await storage.updateMaterialFolder(folderId, folderData);
+    const folder = await dbStorage.updateMaterialFolder(folderId, folderData);
     
     if (!folder) {
       return res.status(404).json({ error: "Pasta não encontrada" });
@@ -218,7 +231,7 @@ router.delete("/folders/:id", isAdmin, async (req: Request, res: Response) => {
   try {
     const folderId = parseInt(req.params.id);
     
-    const success = await storage.deleteMaterialFolder(folderId);
+    const success = await dbStorage.deleteMaterialFolder(folderId);
     
     if (!success) {
       return res.status(404).json({ error: "Pasta não encontrada" });
@@ -240,7 +253,7 @@ router.get("/files", isAuthenticated, async (req: Request, res: Response) => {
     const userId = req.user?.id;
     const userRole = req.user?.role;
     
-    const files = await storage.getAllMaterialFiles(folderId);
+    const files = await dbStorage.getAllMaterialFiles(folderId);
     
     // Filtrar arquivos com base no acesso do usuário
     const accessibleFiles = [];
@@ -271,7 +284,7 @@ router.get("/files/:id", isAuthenticated, async (req: Request, res: Response) =>
     const userId = req.user?.id;
     const userRole = req.user?.role;
     
-    const file = await storage.getMaterialFile(fileId);
+    const file = await dbStorage.getMaterialFile(fileId);
     
     if (!file) {
       return res.status(404).json({ error: "Arquivo não encontrado" });
@@ -324,7 +337,7 @@ router.post("/files", isAdmin, upload.single("file"), async (req: Request, res: 
       // Validar dados
       const validatedData = insertMaterialFileSchema.parse(fileData);
       
-      const file = await storage.createMaterialFile(validatedData);
+      const file = await dbStorage.createMaterialFile(validatedData);
       
       res.status(201).json(file);
     } else {
@@ -332,6 +345,8 @@ router.post("/files", isAdmin, upload.single("file"), async (req: Request, res: 
       if (!req.file) {
         return res.status(400).json({ error: "Nenhum arquivo enviado" });
       }
+      
+      console.log(`📤 Processando upload de arquivo - Original: ${req.file.originalname}, Hash: ${req.file.filename}, Size: ${req.file.size}, User: ${req.user?.name} (${req.user?.role})`);
       
       const fileData = {
         name: req.body.name || req.file.originalname,
@@ -349,7 +364,18 @@ router.post("/files", isAdmin, upload.single("file"), async (req: Request, res: 
       // Validar dados
       const validatedData = insertMaterialFileSchema.parse(fileData);
       
-      const file = await storage.createMaterialFile(validatedData);
+      const file = await dbStorage.createMaterialFile(validatedData);
+      
+      // Log para auditoria de sucesso
+      console.log(`✅ Arquivo salvo no banco - ID: ${file.id}, Nome: ${file.name}, Hash: ${req.file.filename}, User: ${req.user?.name} (${req.user?.role})`);
+      
+      // Verificar se o arquivo realmente existe após o upload
+      const filePath = path.join(process.cwd(), "public", file.fileUrl);
+      if (!fs.existsSync(filePath)) {
+        console.error(`❌ ERRO CRÍTICO: Arquivo não encontrado após upload - Path: ${filePath}`);
+      } else {
+        console.log(`✅ Arquivo físico confirmado - Path: ${filePath}, Size: ${fs.statSync(filePath).size} bytes`);
+      }
       
       res.status(201).json(file);
     }
@@ -369,7 +395,7 @@ router.get("/files/:id/download", isAuthenticated, async (req: Request, res: Res
     const userId = req.user?.id;
     const userRole = req.user?.role;
     
-    const file = await storage.getMaterialFile(fileId);
+    const file = await dbStorage.getMaterialFile(fileId);
     
     if (!file) {
       return res.status(404).json({ error: "Arquivo não encontrado" });
@@ -384,7 +410,7 @@ router.get("/files/:id/download", isAuthenticated, async (req: Request, res: Res
     }
     
     // Incrementar contador de downloads
-    await storage.incrementDownloadCount(fileId);
+    await dbStorage.incrementDownloadCount(fileId);
     
     // Servir arquivo
     const filePath = path.join(process.cwd(), "public", file.fileUrl);
@@ -407,7 +433,7 @@ router.get("/files/:id/view", isAuthenticated, async (req: Request, res: Respons
     const userId = req.user?.id;
     const userRole = req.user?.role;
     
-    const file = await storage.getMaterialFile(fileId);
+    const file = await dbStorage.getMaterialFile(fileId);
     
     if (!file) {
       return res.status(404).json({ error: "Arquivo não encontrado" });
@@ -458,7 +484,7 @@ router.put("/files/:id", isAdmin, async (req: Request, res: Response) => {
       folderId: req.body.folderId ? parseInt(req.body.folderId) : null,
     };
     
-    const file = await storage.updateMaterialFile(fileId, fileData);
+    const file = await dbStorage.updateMaterialFile(fileId, fileData);
     
     if (!file) {
       return res.status(404).json({ error: "Arquivo não encontrado" });
@@ -484,7 +510,7 @@ router.delete("/files/:id", isAdmin, async (req: Request, res: Response) => {
       return res.status(400).json({ error: "ID do arquivo inválido" });
     }
     
-    const file = await storage.getMaterialFile(fileId);
+    const file = await dbStorage.getMaterialFile(fileId);
     console.log("📄 Arquivo encontrado:", file);
     
     if (!file) {
@@ -512,7 +538,7 @@ router.delete("/files/:id", isAdmin, async (req: Request, res: Response) => {
       console.log("⚠️ Arquivo não tem URL física (provavelmente é um link do YouTube)");
     }
     
-    const success = await storage.deleteMaterialFile(fileId);
+    const success = await dbStorage.deleteMaterialFile(fileId);
     console.log("🗃️ Resultado da exclusão no banco:", success);
     
     if (!success) {
@@ -524,6 +550,87 @@ router.delete("/files/:id", isAdmin, async (req: Request, res: Response) => {
     res.json({ message: "Arquivo deletado com sucesso" });
   } catch (error) {
     console.error("❌ Erro ao deletar arquivo:", error);
+    res.status(500).json({ error: "Erro interno do servidor" });
+  }
+});
+
+// Utilitário para verificar integridade dos arquivos (admin apenas)
+router.get("/files/integrity-check", isAdmin, async (req: Request, res: Response) => {
+  try {
+    console.log("🔍 Iniciando verificação de integridade dos arquivos");
+    
+    const files = await dbStorage.getAllMaterialFiles();
+    const results = {
+      total: files.length,
+      existing: 0,
+      missing: 0,
+      missingFiles: []
+    };
+    
+    for (const file of files) {
+      if (file.fileUrl && file.contentType === "file") {
+        const filePath = path.join(process.cwd(), "public", file.fileUrl);
+        
+        if (fs.existsSync(filePath)) {
+          results.existing++;
+          console.log(`✅ Arquivo OK - ID: ${file.id}, Nome: ${file.name}`);
+        } else {
+          results.missing++;
+          results.missingFiles.push({
+            id: file.id,
+            name: file.name,
+            fileUrl: file.fileUrl,
+            uploader: file.uploader?.name,
+            uploaderRole: file.uploader?.role,
+            createdAt: file.createdAt
+          });
+          console.log(`❌ Arquivo AUSENTE - ID: ${file.id}, Nome: ${file.name}, Path: ${filePath}`);
+        }
+      }
+    }
+    
+    console.log(`🔍 Verificação concluída - Total: ${results.total}, Existentes: ${results.existing}, Ausentes: ${results.missing}`);
+    res.json(results);
+  } catch (error) {
+    console.error("Erro na verificação de integridade:", error);
+    res.status(500).json({ error: "Erro interno do servidor" });
+  }
+});
+
+// Utilitário para limpar entradas órfãs (admin apenas)
+router.delete("/files/cleanup-orphaned", isAdmin, async (req: Request, res: Response) => {
+  try {
+    console.log("🧹 Iniciando limpeza de entradas órfãs");
+    
+    const files = await dbStorage.getAllMaterialFiles();
+    const deletedFiles = [];
+    
+    for (const file of files) {
+      if (file.fileUrl && file.contentType === "file") {
+        const filePath = path.join(process.cwd(), "public", file.fileUrl);
+        
+        if (!fs.existsSync(filePath)) {
+          console.log(`🗑️ Removendo entrada órfã - ID: ${file.id}, Nome: ${file.name}`);
+          const success = await dbStorage.deleteMaterialFile(file.id);
+          
+          if (success) {
+            deletedFiles.push({
+              id: file.id,
+              name: file.name,
+              fileUrl: file.fileUrl
+            });
+          }
+        }
+      }
+    }
+    
+    console.log(`🧹 Limpeza concluída - ${deletedFiles.length} entradas removidas`);
+    res.json({
+      message: `${deletedFiles.length} entradas órfãs removidas com sucesso`,
+      deletedFiles
+    });
+  } catch (error) {
+    console.error("Erro na limpeza de entradas órfãs:", error);
     res.status(500).json({ error: "Erro interno do servidor" });
   }
 });
