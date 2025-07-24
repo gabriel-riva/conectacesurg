@@ -355,20 +355,24 @@ router.delete('/content/:id', isAdmin, async (req: Request, res: Response) => {
 });
 
 // Criar nova trilha - Admin apenas
-router.post('/admin/create', isAdmin, upload.single('image'), async (req: Request, res: Response) => {
+router.post('/admin/create', isAdmin, async (req: Request, res: Response) => {
   try {
+    console.log('Dados recebidos para criar trilha:', req.body);
+    
     const validationResult = insertTrailSchema.safeParse({
       title: req.body.title,
       description: req.body.description,
       categoryId: req.body.categoryId ? parseInt(req.body.categoryId) : null,
       creatorId: req.user!.id,
-      imageUrl: req.file ? `/uploads/${req.file.filename}` : null,
-      isPublished: req.body.isPublished === 'true',
+      imageUrl: req.body.imageUrl || null,
+      isPublished: req.body.isPublished === true || req.body.isPublished === 'true',
+      isActive: req.body.isActive === true || req.body.isActive === 'true',
       order: req.body.order ? parseInt(req.body.order) : 0,
-      targetUserCategories: req.body.targetUserCategories ? JSON.parse(req.body.targetUserCategories) : [],
+      targetUserCategories: req.body.targetUserCategories || [],
     });
     
     if (!validationResult.success) {
+      console.error('Erro de validação:', validationResult.error.errors);
       return res.status(400).json({ error: validationResult.error.errors });
     }
     
@@ -381,21 +385,23 @@ router.post('/admin/create', isAdmin, upload.single('image'), async (req: Reques
 });
 
 // Atualizar trilha - Admin apenas
-router.put('/admin/:id', isAdmin, upload.single('image'), async (req: Request, res: Response) => {
+router.put('/admin/:id', isAdmin, async (req: Request, res: Response) => {
   try {
     const id = parseInt(req.params.id);
+    console.log('Dados recebidos para atualizar trilha:', req.body);
     
     const updateData: any = {
       title: req.body.title,
       description: req.body.description,
       categoryId: req.body.categoryId ? parseInt(req.body.categoryId) : null,
-      isPublished: req.body.isPublished === 'true',
+      isPublished: req.body.isPublished === true || req.body.isPublished === 'true',
+      isActive: req.body.isActive === true || req.body.isActive === 'true',
       order: req.body.order ? parseInt(req.body.order) : 0,
-      targetUserCategories: req.body.targetUserCategories ? JSON.parse(req.body.targetUserCategories) : [],
+      targetUserCategories: req.body.targetUserCategories || [],
     };
     
-    if (req.file) {
-      updateData.imageUrl = `/uploads/${req.file.filename}`;
+    if (req.body.imageUrl) {
+      updateData.imageUrl = req.body.imageUrl;
     }
     
     const trail = await storage.updateTrail(id, updateData);
