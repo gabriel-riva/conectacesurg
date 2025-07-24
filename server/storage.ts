@@ -244,6 +244,8 @@ export interface IStorage {
   createOrUpdateTrailProgress(progress: InsertTrailProgress): Promise<TrailProgress>;
   getUserTrailProgresses(userId: number): Promise<(TrailProgress & { trail: Trail })[]>;
   markContentAsCompleted(userId: number, trailId: number, contentId: number): Promise<TrailProgress>;
+  unmarkContentAsCompleted(userId: number, trailId: number, contentId: number): Promise<TrailProgress>;
+  getTrailAverageRating(trailId: number): Promise<{ average: number; count: number }>;
 
   // Trail Content Rating methods
   getContentRating(contentId: number): Promise<{ average: number; count: number }>;
@@ -2514,6 +2516,76 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error("Error marking content as completed:", error);
       throw new Error("Failed to mark content as completed");
+    }
+  }
+
+  async unmarkContentAsCompleted(userId: number, trailId: number, contentId: number): Promise<TrailProgress> {
+    try {
+      // Get current progress
+      const currentProgress = await this.getUserTrailProgress(userId, trailId);
+      
+      if (!currentProgress) {
+        throw new Error('Progress not found');
+      }
+      
+      // Get all contents for this trail to calculate completion percentage
+      const allContents = await this.getTrailContents(trailId, false);
+      
+      // Remove content from completed list
+      let completedContents = currentProgress.completedContents || [];
+      completedContents = completedContents.filter(id => id !== contentId);
+      
+      // Calculate completion percentage
+      const completionPercentage = allContents.length > 0 
+        ? Math.round((completedContents.length / allContents.length) * 100)
+        : 0;
+      
+      // Update progress
+      const progressData: InsertTrailProgress = {
+        userId,
+        trailId,
+        completedContents,
+        completionPercentage,
+        lastAccessed: new Date(),
+      };
+      
+      return await this.createOrUpdateTrailProgress(progressData);
+    } catch (error) {
+      console.error("Error unmarking content as completed:", error);
+      throw new Error("Failed to unmark content as completed");
+    }
+  }
+
+  async getTrailAverageRating(trailId: number): Promise<{ average: number; count: number }> {
+    try {
+      // Get all contents for this trail
+      const trailContents = await this.getTrailContents(trailId, false);
+      const contentIds = trailContents.map(content => content.id);
+      
+      if (contentIds.length === 0) {
+        return { average: 0, count: 0 };
+      }
+      
+      // Get all ratings for the trail's contents
+      const result = await db
+        .select({
+          average: sql<number>`avg(${trailContentRatings.rating})`,
+          count: sql<number>`count(*)`,
+        })
+        .from(trailContentRatings)
+        .where(
+          inArray(trailContentRatings.contentId, contentIds)
+        );
+      
+      const { average, count } = result[0] || { average: 0, count: 0 };
+      
+      return {
+        average: Number(average) || 0,
+        count: Number(count) || 0,
+      };
+    } catch (error) {
+      console.error("Error getting trail average rating:", error);
+      return { average: 0, count: 0 };
     }
   }
 

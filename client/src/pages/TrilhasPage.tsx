@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Input } from "@/components/ui/input";
+import { StarRating } from "@/components/StarRating";
 import { BookOpen, Clock, Users, CheckCircle, PlayCircle, Lock, Search, Filter } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
@@ -34,6 +35,12 @@ interface Trail {
   isPublished: boolean;
   isActive: boolean;
   order: number;
+  averageRating?: number;
+  ratingCount?: number;
+  userProgress?: {
+    completionPercentage: number;
+    completedContents: number;
+  } | null;
 }
 
 export default function TrilhasPage() {
@@ -233,11 +240,47 @@ export default function TrilhasPage() {
                           Estimado
                         </div>
                       </div>
+
+                      {/* Average Rating */}
+                      {trail.averageRating !== undefined && trail.ratingCount !== undefined && (
+                        <div className="flex items-center gap-2 mb-3">
+                          <StarRating 
+                            rating={trail.averageRating} 
+                            readonly={true} 
+                            size="sm" 
+                          />
+                          <span className="text-xs text-muted-foreground">
+                            {trail.averageRating > 0 
+                              ? `${trail.averageRating.toFixed(1)} (${trail.ratingCount} ${trail.ratingCount === 1 ? 'avaliação' : 'avaliações'})`
+                              : 'Sem avaliações'
+                            }
+                          </span>
+                        </div>
+                      )}
+
+                      {/* Progress Bar */}
+                      {trail.userProgress && (
+                        <div className="mb-4">
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-xs font-medium">Seu Progresso</span>
+                            <span className="text-xs text-muted-foreground">
+                              {trail.userProgress.completionPercentage}%
+                            </span>
+                          </div>
+                          <Progress value={trail.userProgress.completionPercentage} className="h-1.5" />
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {trail.userProgress.completedContents} de {trail.contentCount} concluídos
+                          </p>
+                        </div>
+                      )}
                       
                       <Link href={`/trilhas/${trail.id}`}>
                         <Button className="w-full">
                           <PlayCircle className="w-4 h-4 mr-2" />
-                          Começar Trilha
+                          {trail.userProgress && trail.userProgress.completionPercentage > 0 
+                            ? 'Continuar Trilha' 
+                            : 'Começar Trilha'
+                          }
                         </Button>
                       </Link>
                     </CardContent>

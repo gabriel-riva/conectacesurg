@@ -50,11 +50,13 @@ export function ContentNavigationButtons({
   });
 
   // Mutations
-  const completeContentMutation = useMutation({
-    mutationFn: async () => {
+  const toggleCompletionMutation = useMutation({
+    mutationFn: async (unmark: boolean = false) => {
       if (!userId) throw new Error('User not authenticated');
       return apiRequest(`/api/trails/${trailId}/content/${currentContent.id}/complete`, {
-        method: 'POST'
+        method: 'POST',
+        body: JSON.stringify({ unmark }),
+        headers: { 'Content-Type': 'application/json' },
       });
     },
     onSuccess: () => {
@@ -81,7 +83,7 @@ export function ContentNavigationButtons({
     if (nextContent) {
       // Auto-mark current content as completed when advancing
       if (!isCompleted && userId) {
-        completeContentMutation.mutate();
+        toggleCompletionMutation.mutate(false);
       }
       onContentSelect(nextContent);
     }
@@ -93,9 +95,10 @@ export function ContentNavigationButtons({
     }
   };
 
-  const handleMarkCompleted = () => {
+  const handleToggleCompleted = () => {
     if (userId) {
-      completeContentMutation.mutate();
+      // Se já está marcado, desmarcar. Se não está marcado, marcar.
+      toggleCompletionMutation.mutate(isCompleted);
     }
   };
 
@@ -143,12 +146,12 @@ export function ContentNavigationButtons({
             <Button
               variant={isCompleted ? "secondary" : "outline"}
               size="sm"
-              onClick={handleMarkCompleted}
-              disabled={isCompleted || completeContentMutation.isPending}
+              onClick={handleToggleCompleted}
+              disabled={toggleCompletionMutation.isPending}
               className="flex items-center gap-2"
             >
               <CheckCircle className={`w-4 h-4 ${isCompleted ? 'text-green-600' : ''}`} />
-              {isCompleted ? 'Concluído' : 'Marcar como concluído'}
+              {isCompleted ? 'Desmarcar conclusão' : 'Marcar como concluído'}
             </Button>
           )}
         </div>

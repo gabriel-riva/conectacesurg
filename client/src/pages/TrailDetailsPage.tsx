@@ -250,8 +250,7 @@ export default function TrailDetailsPage() {
                             isCompleted={trailProgress?.completedContents?.includes(selectedContent.id) || false}
                             onContentSelect={setSelectedContent}
                             onMarkCompleted={() => {
-                              // Force refetch of progress
-                              window.location.reload();
+                              // This will be handled by the component's mutation
                             }}
                           />
                         )}

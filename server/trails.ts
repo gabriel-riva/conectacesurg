@@ -687,17 +687,24 @@ router.get('/:trailId/progress', isAuthenticated, async (req: Request, res: Resp
   }
 });
 
-// Marcar conteúdo como concluído
+// Marcar/desmarcar conteúdo como concluído
 router.post('/:trailId/content/:contentId/complete', isAuthenticated, async (req: Request, res: Response) => {
   try {
     const trailId = parseInt(req.params.trailId);
     const contentId = parseInt(req.params.contentId);
     const userId = req.user!.id;
+    const { unmark } = req.body; // Flag para desmarcar
     
-    const progress = await storage.markContentAsCompleted(userId, trailId, contentId);
+    let progress;
+    if (unmark) {
+      progress = await storage.unmarkContentAsCompleted(userId, trailId, contentId);
+    } else {
+      progress = await storage.markContentAsCompleted(userId, trailId, contentId);
+    }
+    
     res.json(progress);
   } catch (error) {
-    console.error('Erro ao marcar conteúdo como concluído:', error);
+    console.error('Erro ao marcar/desmarcar conteúdo:', error);
     res.status(500).json({ error: 'Erro interno do servidor' });
   }
 });
