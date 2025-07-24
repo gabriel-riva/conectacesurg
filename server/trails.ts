@@ -62,8 +62,31 @@ router.get('/', async (req: Request, res: Response) => {
   try {
     const category = req.query.category as string;
     const search = req.query.search as string;
+    const userId = req.isAuthenticated && req.isAuthenticated() ? req.user?.id : undefined;
     
     let trails = await storage.getAllTrails(false); // Apenas trilhas publicadas
+    
+    // Filtrar trilhas baseadas na categoria do usuário
+    if (userId) {
+      // Buscar categorias do usuário
+      const userCategories = await storage.getUserCategoryAssignments(userId);
+      const userCategoryIds = userCategories.map(assignment => assignment.categoryId);
+      
+      // Filtrar trilhas: mostrar apenas as que:
+      // 1. Não têm categorias específicas (visíveis para todos), ou
+      // 2. Têm categorias que incluem pelo menos uma categoria do usuário
+      trails = trails.filter(trail => {
+        if (!trail.targetUserCategories || trail.targetUserCategories.length === 0) {
+          return true; // Trilha visível para todos
+        }
+        return trail.targetUserCategories.some(categoryId => userCategoryIds.includes(categoryId));
+      });
+    } else {
+      // Usuário não autenticado: mostrar apenas trilhas sem categorias específicas
+      trails = trails.filter(trail => 
+        !trail.targetUserCategories || trail.targetUserCategories.length === 0
+      );
+    }
     
     // Filtrar por categoria se especificada
     if (category) {

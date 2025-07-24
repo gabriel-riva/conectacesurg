@@ -112,6 +112,7 @@ export interface IStorage {
   updateUserCategory(id: number, categoryData: Partial<InsertUserCategory>): Promise<UserCategory | undefined>;
   deleteUserCategory(id: number): Promise<boolean>;
   getCategoryUsers(categoryId: number): Promise<User[]>;
+  getUserCategoryAssignments(userId: number): Promise<{categoryId: number, userId: number}[]>;
   
   // AI Agent methods
   getAllAiAgents(): Promise<AiAgent[]>;
@@ -1894,6 +1895,23 @@ export class DatabaseStorage implements IStorage {
       return results;
     } catch (error) {
       console.error("Error getting category users:", error);
+      return [];
+    }
+  }
+
+  async getUserCategoryAssignments(userId: number): Promise<{categoryId: number, userId: number}[]> {
+    try {
+      const results = await db
+        .select({
+          categoryId: userCategoryAssignments.categoryId,
+          userId: userCategoryAssignments.userId
+        })
+        .from(userCategoryAssignments)
+        .where(eq(userCategoryAssignments.userId, userId));
+      
+      return results;
+    } catch (error) {
+      console.error("Error getting user category assignments:", error);
       return [];
     }
   }
