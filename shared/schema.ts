@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, primaryKey, jsonb, uniqueIndex, date } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, primaryKey, jsonb, uniqueIndex, date, unique } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { relations } from "drizzle-orm";
@@ -380,6 +380,19 @@ export const trailProgress = pgTable("trail_progress", {
 }, (table) => {
   return {
     pk: primaryKey({ columns: [table.userId, table.trailId] }),
+  };
+});
+
+export const trailContentRatings = pgTable("trail_content_ratings", {
+  id: serial("id").primaryKey(),
+  contentId: integer("content_id").notNull().references(() => trailContents.id, { onDelete: 'cascade' }),
+  userId: integer("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  rating: integer("rating").notNull(), // 1-5 stars
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => {
+  return {
+    uniqueUserContent: unique().on(table.userId, table.contentId),
   };
 });
 
@@ -1544,6 +1557,12 @@ export const insertTrailProgressSchema = createInsertSchema(trailProgress).omit(
   updatedAt: true,
 });
 
+export const insertTrailContentRatingSchema = createInsertSchema(trailContentRatings).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 // Tipos para inserção das trilhas
 export type InsertTrailCategory = z.infer<typeof insertTrailCategorySchema>;
 export type InsertTrail = z.infer<typeof insertTrailSchema>;
@@ -1551,6 +1570,7 @@ export type InsertTrailContent = z.infer<typeof insertTrailContentSchema>;
 export type InsertTrailComment = z.infer<typeof insertTrailCommentSchema>;
 export type InsertTrailCommentLike = z.infer<typeof insertTrailCommentLikeSchema>;
 export type InsertTrailProgress = z.infer<typeof insertTrailProgressSchema>;
+export type InsertTrailContentRating = z.infer<typeof insertTrailContentRatingSchema>;
 
 // Tipos para seleção das trilhas
 export type TrailCategory = typeof trailCategories.$inferSelect;
@@ -1559,6 +1579,7 @@ export type TrailContent = typeof trailContents.$inferSelect;
 export type TrailComment = typeof trailComments.$inferSelect;
 export type TrailCommentLike = typeof trailCommentLikes.$inferSelect;
 export type TrailProgress = typeof trailProgress.$inferSelect;
+export type TrailContentRating = typeof trailContentRatings.$inferSelect;
 
 // =====================================
 // SISTEMA DE PESQUISAS DE OPINIÃO

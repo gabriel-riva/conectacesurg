@@ -22,6 +22,7 @@ import {
   trailComments,
   trailCommentLikes,
   trailProgress,
+  trailContentRatings,
   feedbacks,
   challengeComments,
   challengeCommentLikes,
@@ -67,6 +68,8 @@ import {
   type InsertTrailComment,
   type InsertTrailCommentLike,
   type InsertTrailProgress,
+  type TrailContentRating,
+  type InsertTrailContentRating,
   type Feedback,
   type InsertFeedback,
   type UpdateFeedback,
@@ -240,6 +243,13 @@ export interface IStorage {
   getUserTrailProgress(userId: number, trailId: number): Promise<TrailProgress | undefined>;
   createOrUpdateTrailProgress(progress: InsertTrailProgress): Promise<TrailProgress>;
   getUserTrailProgresses(userId: number): Promise<(TrailProgress & { trail: Trail })[]>;
+  markContentAsCompleted(userId: number, trailId: number, contentId: number): Promise<TrailProgress>;
+
+  // Trail Content Rating methods
+  getContentRating(contentId: number): Promise<{ average: number; count: number }>;
+  getUserContentRating(userId: number, contentId: number): Promise<TrailContentRating | undefined>;
+  rateContent(rating: InsertTrailContentRating): Promise<TrailContentRating>;
+  updateContentRating(userId: number, contentId: number, rating: number): Promise<TrailContentRating>;
 
   // Feedback methods
   getAllFeedbacks(): Promise<(Feedback & { user?: User })[]>;
@@ -2465,6 +2475,129 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error("Error getting user trail progresses:", error);
       return [];
+    }
+  }
+
+  async markContentAsCompleted(userId: number, trailId: number, contentId: number): Promise<TrailProgress> {
+    try {
+      // Get current progress
+      const currentProgress = await this.getUserTrailProgress(userId, trailId);
+      
+      // Get all contents for this trail to calculate completion percentage
+      const allContents = await this.getTrailContents(trailId, false);
+      
+      let completedContents: number[] = [];
+      if (currentProgress?.completedContents) {
+        completedContents = [...currentProgress.completedContents];
+      }
+      
+      // Add content to completed list if not already there
+      if (!completedContents.includes(contentId)) {
+        completedContents.push(contentId);
+      }
+      
+      // Calculate completion percentage
+      const completionPercentage = allContents.length > 0 
+        ? Math.round((completedContents.length / allContents.length) * 100)
+        : 0;
+      
+      // Update progress
+      const progressData: InsertTrailProgress = {
+        userId,
+        trailId,
+        completedContents,
+        completionPercentage,
+        lastAccessed: new Date(),
+      };
+      
+      return await this.createOrUpdateTrailProgress(progressData);
+    } catch (error) {
+      console.error("Error marking content as completed:", error);
+      throw new Error("Failed to mark content as completed");
+    }
+  }
+
+  // Trail Content Rating methods
+  async getContentRating(contentId: number): Promise<{ average: number; count: number }> {
+    try {
+      const result = await db
+        .select({
+          average: sql<number>`avg(${trailContentRatings.rating})`,
+          count: sql<number>`count(*)`,
+        })
+        .from(trailContentRatings)
+        .where(eq(trailContentRatings.contentId, contentId));
+
+      const { average, count } = result[0] || { average: 0, count: 0 };
+      
+      return {
+        average: Number(average) || 0,
+        count: Number(count) || 0,
+      };
+    } catch (error) {
+      console.error("Error getting content rating:", error);
+      return { average: 0, count: 0 };
+    }
+  }
+
+  async getUserContentRating(userId: number, contentId: number): Promise<TrailContentRating | undefined> {
+    try {
+      const [rating] = await db
+        .select()
+        .from(trailContentRatings)
+        .where(
+          and(
+            eq(trailContentRatings.userId, userId),
+            eq(trailContentRatings.contentId, contentId)
+          )
+        );
+      
+      return rating;
+    } catch (error) {
+      console.error("Error getting user content rating:", error);
+      return undefined;
+    }
+  }
+
+  async rateContent(rating: InsertTrailContentRating): Promise<TrailContentRating> {
+    try {
+      const [newRating] = await db
+        .insert(trailContentRatings)
+        .values(rating)
+        .returning();
+      
+      return newRating;
+    } catch (error) {
+      console.error("Error rating content:", error);
+      throw new Error("Failed to rate content");
+    }
+  }
+
+  async updateContentRating(userId: number, contentId: number, rating: number): Promise<TrailContentRating> {
+    try {
+      const [updatedRating] = await db
+        .update(trailContentRatings)
+        .set({ 
+          rating,
+          updatedAt: new Date()
+        })
+        .where(
+          and(
+            eq(trailContentRatings.userId, userId),
+            eq(trailContentRatings.contentId, contentId)
+          )
+        )
+        .returning();
+      
+      if (!updatedRating) {
+        // If no existing rating, create a new one
+        return await this.rateContent({ userId, contentId, rating });
+      }
+      
+      return updatedRating;
+    } catch (error) {
+      console.error("Error updating content rating:", error);
+      throw new Error("Failed to update content rating");
     }
   }
 

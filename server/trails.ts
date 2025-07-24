@@ -665,4 +665,99 @@ router.post('/admin/comments/:id/reply', isAdmin, async (req: Request, res: Resp
   }
 });
 
+// ROTAS PARA PROGRESSO DE TRILHA
+
+// Obter progresso do usuário em uma trilha
+router.get('/:trailId/progress', isAuthenticated, async (req: Request, res: Response) => {
+  try {
+    const trailId = parseInt(req.params.trailId);
+    const userId = req.user!.id;
+    
+    const progress = await storage.getUserTrailProgress(userId, trailId);
+    res.json(progress || { 
+      userId, 
+      trailId, 
+      completedContents: [], 
+      completionPercentage: 0,
+      lastAccessed: new Date()
+    });
+  } catch (error) {
+    console.error('Erro ao obter progresso da trilha:', error);
+    res.status(500).json({ error: 'Erro interno do servidor' });
+  }
+});
+
+// Marcar conteúdo como concluído
+router.post('/:trailId/content/:contentId/complete', isAuthenticated, async (req: Request, res: Response) => {
+  try {
+    const trailId = parseInt(req.params.trailId);
+    const contentId = parseInt(req.params.contentId);
+    const userId = req.user!.id;
+    
+    const progress = await storage.markContentAsCompleted(userId, trailId, contentId);
+    res.json(progress);
+  } catch (error) {
+    console.error('Erro ao marcar conteúdo como concluído:', error);
+    res.status(500).json({ error: 'Erro interno do servidor' });
+  }
+});
+
+// ROTAS PARA AVALIAÇÃO DE CONTEÚDO
+
+// Obter avaliação de um conteúdo
+router.get('/content/:contentId/rating', async (req: Request, res: Response) => {
+  try {
+    const contentId = parseInt(req.params.contentId);
+    const rating = await storage.getContentRating(contentId);
+    res.json(rating);
+  } catch (error) {
+    console.error('Erro ao obter avaliação do conteúdo:', error);
+    res.status(500).json({ error: 'Erro interno do servidor' });
+  }
+});
+
+// Obter avaliação do usuário para um conteúdo
+router.get('/content/:contentId/rating/user', isAuthenticated, async (req: Request, res: Response) => {
+  try {
+    const contentId = parseInt(req.params.contentId);
+    const userId = req.user!.id;
+    
+    const userRating = await storage.getUserContentRating(userId, contentId);
+    res.json(userRating || null);
+  } catch (error) {
+    console.error('Erro ao obter avaliação do usuário:', error);
+    res.status(500).json({ error: 'Erro interno do servidor' });
+  }
+});
+
+// Avaliar conteúdo
+router.post('/content/:contentId/rating', isAuthenticated, async (req: Request, res: Response) => {
+  try {
+    const contentId = parseInt(req.params.contentId);
+    const userId = req.user!.id;
+    const rating = parseInt(req.body.rating);
+    
+    if (!rating || rating < 1 || rating > 5) {
+      return res.status(400).json({ error: 'Avaliação deve ser entre 1 e 5 estrelas' });
+    }
+    
+    // Verificar se o usuário já avaliou este conteúdo
+    const existingRating = await storage.getUserContentRating(userId, contentId);
+    
+    let result;
+    if (existingRating) {
+      // Atualizar avaliação existente
+      result = await storage.updateContentRating(userId, contentId, rating);
+    } else {
+      // Criar nova avaliação
+      result = await storage.rateContent({ userId, contentId, rating });
+    }
+    
+    res.json(result);
+  } catch (error) {
+    console.error('Erro ao avaliar conteúdo:', error);
+    res.status(500).json({ error: 'Erro interno do servidor' });
+  }
+});
+
 export default router;

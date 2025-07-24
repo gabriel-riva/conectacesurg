@@ -4,7 +4,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { Separator } from "@/components/ui/separator";
+import { CollapsibleTrailSidebar } from "@/components/CollapsibleTrailSidebar";
+import { ContentNavigationButtons } from "@/components/ContentNavigationButtons";
 import { BookOpen, Clock, Users, CheckCircle, PlayCircle, ArrowLeft, Eye, User } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
@@ -55,6 +56,17 @@ export default function TrailDetailsPage() {
 
   const { data: trail, isLoading: isLoadingTrail } = useQuery<Trail>({
     queryKey: [`/api/trails/${trailId}`],
+  });
+
+  // Get authenticated user status
+  const { data: authStatus } = useQuery({
+    queryKey: ['/api/auth/status'],
+  });
+
+  // Get user's trail progress
+  const { data: trailProgress } = useQuery({
+    queryKey: [`/api/trails/${trailId}/progress`],
+    enabled: !!authStatus?.authenticated && !!trailId,
   });
 
 
@@ -174,64 +186,36 @@ export default function TrailDetailsPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              {/* Lista de Conteúdos */}
+            {/* Progress Bar */}
+            {trailProgress && trail.contents && trail.contents.length > 0 && (
+              <div className="mb-6">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium">Progresso da Trilha</span>
+                  <span className="text-sm text-muted-foreground">
+                    {trailProgress.completionPercentage || 0}%
+                  </span>
+                </div>
+                <Progress value={trailProgress.completionPercentage || 0} className="h-2" />
+                <p className="text-xs text-muted-foreground mt-1">
+                  {trailProgress.completedContents?.length || 0} de {trail.contents.length} conteúdos concluídos
+                </p>
+              </div>
+            )}
+
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+              {/* Lista de Conteúdos - Sidebar Colapsável */}
               <div className="lg:col-span-1">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg">Conteúdos da Trilha</CardTitle>
-                    <CardDescription>
-                      {trail.contents?.length || 0} conteúdos disponíveis
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-2">
-                    {(!trail.contents || trail.contents.length === 0) ? (
-                      <p className="text-muted-foreground text-center py-4">
-                        Nenhum conteúdo disponível ainda.
-                      </p>
-                    ) : (
-                      trail.contents.map((content, index) => (
-                        <div key={content.id}>
-                          <Button
-                            variant={selectedContent?.id === content.id ? "default" : "ghost"}
-                            className="w-full justify-start text-left h-auto p-4"
-                            onClick={() => setSelectedContent(content)}
-                          >
-                            <div className="flex items-center gap-3 w-full">
-                              <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                                <span className="text-xs font-medium text-primary">
-                                  {index + 1}
-                                </span>
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <p className="font-medium line-clamp-2">{content.title}</p>
-                                <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
-                                  {content.estimatedMinutes > 0 && (
-                                    <div className="flex items-center gap-1">
-                                      <Clock className="w-3 h-3" />
-                                      {content.estimatedMinutes} min
-                                    </div>
-                                  )}
-                                  <div className="flex items-center gap-1">
-                                    <Eye className="w-3 h-3" />
-                                    {content.viewCount}
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          </Button>
-                          {index < trail.contents.length - 1 && (
-                            <Separator className="my-2" />
-                          )}
-                        </div>
-                      ))
-                    )}
-                  </CardContent>
-                </Card>
+                <CollapsibleTrailSidebar
+                  contents={trail.contents || []}
+                  selectedContent={selectedContent}
+                  onContentSelect={setSelectedContent}
+                  completedContents={trailProgress?.completedContents || []}
+                  totalContents={trail.contents?.length || 0}
+                />
               </div>
 
               {/* Área de Conteúdo */}
-              <div className="lg:col-span-2">
+              <div className="lg:col-span-3">
                 {selectedContent ? (
                   <div className="space-y-6">
                     <Card>
@@ -255,6 +239,22 @@ export default function TrailDetailsPage() {
                           className="prose prose-sm max-w-none text-foreground"
                           dangerouslySetInnerHTML={{ __html: selectedContent.content }}
                         />
+                        
+                        {/* Navigation and Rating Buttons */}
+                        {trail && trail.contents && (
+                          <ContentNavigationButtons
+                            currentContent={selectedContent}
+                            allContents={trail.contents}
+                            trailId={trail.id}
+                            userId={authStatus?.authenticated ? authStatus.user?.id : undefined}
+                            isCompleted={trailProgress?.completedContents?.includes(selectedContent.id) || false}
+                            onContentSelect={setSelectedContent}
+                            onMarkCompleted={() => {
+                              // Force refetch of progress
+                              window.location.reload();
+                            }}
+                          />
+                        )}
                       </CardContent>
                     </Card>
                     
