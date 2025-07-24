@@ -51,7 +51,7 @@ const FeedbackManagement: React.FC = () => {
   const [adminNotes, setAdminNotes] = useState('');
   const [status, setStatus] = useState<string>('');
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
-  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [statusFilter, setStatusFilter] = useState<string>('open');
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
