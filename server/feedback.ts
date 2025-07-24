@@ -207,7 +207,7 @@ router.delete('/:id/image/:imageId', requireAdmin, async (req, res) => {
     };
     
     // Update the feedback with the new attachments
-    await storage.updateFeedback(feedbackId, { attachments: JSON.stringify(updatedAttachments) });
+    await storage.updateFeedback(feedbackId, { attachments: updatedAttachments });
     
     res.json({ message: 'Image deleted successfully' });
   } catch (error) {
