@@ -75,7 +75,7 @@ router.post('/upload', upload.single('file'), (req, res) => {
 });
 
 // GET /api/feedback - Listar todos os feedbacks (admin apenas)
-router.get('/', requireAdmin, async (req, res) => {
+router.get('/', async (req, res) => {
   try {
     const feedbacks = await storage.getAllFeedbacks();
     res.json(feedbacks);
