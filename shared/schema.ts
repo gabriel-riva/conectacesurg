@@ -330,6 +330,7 @@ export const trails = pgTable("trails", {
   isActive: boolean("is_active").notNull().default(true),
   viewCount: integer("view_count").notNull().default(0),
   order: integer("order").default(0),
+  targetUserCategories: integer("target_user_categories").array().default([]), // IDs das categorias de usuário que podem ver a trilha
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

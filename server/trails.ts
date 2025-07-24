@@ -365,6 +365,7 @@ router.post('/admin/create', isAdmin, upload.single('image'), async (req: Reques
       imageUrl: req.file ? `/uploads/${req.file.filename}` : null,
       isPublished: req.body.isPublished === 'true',
       order: req.body.order ? parseInt(req.body.order) : 0,
+      targetUserCategories: req.body.targetUserCategories ? JSON.parse(req.body.targetUserCategories) : [],
     });
     
     if (!validationResult.success) {
@@ -390,6 +391,7 @@ router.put('/admin/:id', isAdmin, upload.single('image'), async (req: Request, r
       categoryId: req.body.categoryId ? parseInt(req.body.categoryId) : null,
       isPublished: req.body.isPublished === 'true',
       order: req.body.order ? parseInt(req.body.order) : 0,
+      targetUserCategories: req.body.targetUserCategories ? JSON.parse(req.body.targetUserCategories) : [],
     };
     
     if (req.file) {

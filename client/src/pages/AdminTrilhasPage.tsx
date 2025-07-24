@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { Checkbox } from "@/components/ui/checkbox";
 import { BookOpen, Users, Plus, Edit, Trash2, Eye, EyeOff, FileText, Clock } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
@@ -20,6 +21,14 @@ import { apiRequest } from "@/lib/queryClient";
 import { Link } from "wouter";
 
 interface TrailCategory {
+  id: number;
+  name: string;
+  description: string;
+  color: string;
+  isActive: boolean;
+}
+
+interface UserCategory {
   id: number;
   name: string;
   description: string;
@@ -43,6 +52,7 @@ interface Trail {
   isPublished: boolean;
   isActive: boolean;
   order: number;
+  targetUserCategories: number[];
   createdAt: string;
   updatedAt: string;
 }
@@ -55,6 +65,7 @@ const trailSchema = z.object({
   isPublished: z.boolean().default(false),
   isActive: z.boolean().default(true),
   order: z.number().default(0),
+  targetUserCategories: z.array(z.number()).default([]),
 });
 
 type TrailFormData = z.infer<typeof trailSchema>;
@@ -74,9 +85,13 @@ export default function AdminTrilhasPage() {
     queryKey: ['/api/trails/categories/list'],
   });
 
+  const { data: userCategories = [] } = useQuery<UserCategory[]>({
+    queryKey: ['/api/user-categories'],
+  });
+
   const createTrailMutation = useMutation({
     mutationFn: async (data: TrailFormData) => {
-      return await apiRequest('/api/trails', {
+      return await apiRequest('/api/trails/admin/create', {
         method: 'POST',
         body: JSON.stringify({
           ...data,
@@ -103,7 +118,7 @@ export default function AdminTrilhasPage() {
 
   const updateTrailMutation = useMutation({
     mutationFn: async (data: TrailFormData & { id: number }) => {
-      return await apiRequest(`/api/trails/${data.id}`, {
+      return await apiRequest(`/api/trails/admin/${data.id}`, {
         method: 'PUT',
         body: JSON.stringify({
           ...data,
@@ -131,7 +146,7 @@ export default function AdminTrilhasPage() {
 
   const deleteTrailMutation = useMutation({
     mutationFn: async (id: number) => {
-      return await apiRequest(`/api/trails/${id}`, {
+      return await apiRequest(`/api/trails/admin/${id}`, {
         method: 'DELETE',
       });
     },
@@ -161,6 +176,7 @@ export default function AdminTrilhasPage() {
       isPublished: false,
       isActive: true,
       order: 0,
+      targetUserCategories: [],
     },
   });
 
@@ -174,6 +190,7 @@ export default function AdminTrilhasPage() {
       isPublished: false,
       isActive: true,
       order: 0,
+      targetUserCategories: [],
     },
   });
 
@@ -187,6 +204,7 @@ export default function AdminTrilhasPage() {
       isPublished: trail.isPublished,
       isActive: trail.isActive,
       order: trail.order,
+      targetUserCategories: trail.targetUserCategories || [],
     });
     setIsEditDialogOpen(true);
   };
@@ -323,6 +341,46 @@ export default function AdminTrilhasPage() {
                                 ))}
                               </SelectContent>
                             </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={createForm.control}
+                        name="targetUserCategories"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Visibilidade por Categoria</FormLabel>
+                            <div className="text-sm text-muted-foreground mb-2">
+                              Se nenhuma categoria for selecionada, a trilha será visível para todos os usuários.
+                            </div>
+                            <div className="space-y-2 max-h-40 overflow-y-auto border rounded-md p-3">
+                              {userCategories.map((category) => (
+                                <div key={category.id} className="flex items-center space-x-2">
+                                  <Checkbox
+                                    id={`create-category-${category.id}`}
+                                    checked={field.value.includes(category.id)}
+                                    onCheckedChange={(checked) => {
+                                      if (checked) {
+                                        field.onChange([...field.value, category.id]);
+                                      } else {
+                                        field.onChange(field.value.filter((id: number) => id !== category.id));
+                                      }
+                                    }}
+                                  />
+                                  <label
+                                    htmlFor={`create-category-${category.id}`}
+                                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex items-center gap-2"
+                                  >
+                                    <div
+                                      className="w-3 h-3 rounded-full"
+                                      style={{ backgroundColor: category.color }}
+                                    />
+                                    {category.name}
+                                  </label>
+                                </div>
+                              ))}
+                            </div>
                             <FormMessage />
                           </FormItem>
                         )}
@@ -472,6 +530,33 @@ export default function AdminTrilhasPage() {
                             </Badge>
                           </div>
                           <p className="text-sm text-muted-foreground mb-2">{trail.description}</p>
+                          {trail.targetUserCategories && trail.targetUserCategories.length > 0 && (
+                            <div className="mb-2">
+                              <div className="text-xs text-muted-foreground mb-1">Visível para:</div>
+                              <div className="flex flex-wrap gap-1">
+                                {trail.targetUserCategories.map((categoryId) => {
+                                  const category = userCategories.find(c => c.id === categoryId);
+                                  return category ? (
+                                    <Badge 
+                                      key={categoryId} 
+                                      variant="secondary" 
+                                      className="text-xs"
+                                      style={{ backgroundColor: category.color + '20', color: category.color }}
+                                    >
+                                      {category.name}
+                                    </Badge>
+                                  ) : null;
+                                })}
+                              </div>
+                            </div>
+                          )}
+                          {(!trail.targetUserCategories || trail.targetUserCategories.length === 0) && (
+                            <div className="mb-2">
+                              <Badge variant="outline" className="text-xs">
+                                Visível para todos
+                              </Badge>
+                            </div>
+                          )}
                           <div className="flex items-center gap-4 text-sm text-muted-foreground">
                             <span className="flex items-center gap-1">
                               <FileText className="w-4 h-4" />
@@ -577,6 +662,46 @@ export default function AdminTrilhasPage() {
                         ))}
                       </SelectContent>
                     </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={editForm.control}
+                name="targetUserCategories"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Visibilidade por Categoria</FormLabel>
+                    <div className="text-sm text-muted-foreground mb-2">
+                      Se nenhuma categoria for selecionada, a trilha será visível para todos os usuários.
+                    </div>
+                    <div className="space-y-2 max-h-40 overflow-y-auto border rounded-md p-3">
+                      {userCategories.map((category) => (
+                        <div key={category.id} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`edit-category-${category.id}`}
+                            checked={field.value.includes(category.id)}
+                            onCheckedChange={(checked) => {
+                              if (checked) {
+                                field.onChange([...field.value, category.id]);
+                              } else {
+                                field.onChange(field.value.filter((id: number) => id !== category.id));
+                              }
+                            }}
+                          />
+                          <label
+                            htmlFor={`edit-category-${category.id}`}
+                            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex items-center gap-2"
+                          >
+                            <div
+                              className="w-3 h-3 rounded-full"
+                              style={{ backgroundColor: category.color }}
+                            />
+                            {category.name}
+                          </label>
+                        </div>
+                      ))}
+                    </div>
                     <FormMessage />
                   </FormItem>
                 )}
