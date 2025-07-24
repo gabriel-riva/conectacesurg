@@ -63,11 +63,12 @@ router.get('/', async (req: Request, res: Response) => {
     const category = req.query.category as string;
     const search = req.query.search as string;
     const userId = req.isAuthenticated && req.isAuthenticated() ? req.user?.id : undefined;
+    const userRole = req.user?.role;
     
     let trails = await storage.getAllTrails(false); // Apenas trilhas publicadas
     
-    // Filtrar trilhas baseadas na categoria do usuário
-    if (userId) {
+    // Filtrar trilhas baseadas na categoria do usuário (apenas para usuários comuns)
+    if (userId && userRole !== 'admin' && userRole !== 'superadmin') {
       // Buscar categorias do usuário
       const userCategories = await storage.getUserCategoryAssignments(userId);
       const userCategoryIds = userCategories.map(assignment => assignment.categoryId);
@@ -81,12 +82,13 @@ router.get('/', async (req: Request, res: Response) => {
         }
         return trail.targetUserCategories.some(categoryId => userCategoryIds.includes(categoryId));
       });
-    } else {
+    } else if (!userId) {
       // Usuário não autenticado: mostrar apenas trilhas sem categorias específicas
       trails = trails.filter(trail => 
         !trail.targetUserCategories || trail.targetUserCategories.length === 0
       );
     }
+    // Admins e superadmins veem todas as trilhas (não há filtro adicional)
     
     // Filtrar por categoria se especificada
     if (category) {
