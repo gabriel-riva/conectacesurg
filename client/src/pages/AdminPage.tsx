@@ -719,84 +719,93 @@ ${userCategoriesMapping[user.id].map(c => `• ${c.name}`).join('\n')}`}
                     </div>
                   </div>
                   
-                  <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-gray-200">
-                      <thead className="bg-gray-50">
-                        <tr>
-                          <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nome</th>
-                          <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Descrição</th>
-                          <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cor</th>
-                          <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                          <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>
-                        </tr>
-                      </thead>
-                      <tbody className="bg-white divide-y divide-gray-200">
-                        {userCategories.length === 0 ? (
+                  <div className="border border-gray-200 rounded-lg overflow-hidden">
+                    {/* Cabeçalho fixo da tabela */}
+                    <div className="overflow-x-auto bg-gray-50 border-b border-gray-200">
+                      <table className="min-w-full">
+                        <thead>
                           <tr>
-                            <td colSpan={5} className="px-6 py-4 text-center text-sm text-gray-500">
-                              Nenhuma categoria encontrada
-                            </td>
+                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nome</th>
+                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Descrição</th>
+                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cor</th>
+                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>
                           </tr>
-                        ) : (
-                          userCategories
-                            .filter(category => 
-                              category.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                              (category.description && category.description.toLowerCase().includes(searchTerm.toLowerCase()))
-                            )
-                            .sort((a, b) => a.name.localeCompare(b.name))
-                            .map((category) => (
-                              <tr key={category.id}>
-                                <td className="px-6 py-4 whitespace-nowrap">
-                                  <div className="text-sm font-medium text-gray-900">{category.name}</div>
-                                </td>
-                                <td className="px-6 py-4">
-                                  <div className="text-sm text-gray-900">{category.description || "Sem descrição"}</div>
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap">
-                                  <div className="flex items-center">
-                                    <div 
-                                      className="w-4 h-4 rounded-full mr-2 border border-gray-300"
-                                      style={{ backgroundColor: category.color || '#gray' }}
-                                    />
-                                    <span className="text-sm text-gray-900">{category.color}</span>
-                                  </div>
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap">
-                                  <Badge variant={category.isActive ? "default" : "secondary"}>
-                                    {category.isActive ? "Ativa" : "Inativa"}
-                                  </Badge>
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                  <div className="flex items-center space-x-2">
-                                    <Button 
-                                      variant="ghost" 
-                                      size="icon" 
-                                      className="h-8 w-8 text-blue-600 hover:text-blue-900 hover:bg-blue-50" 
-                                      title="Editar"
-                                      onClick={() => handleEditCategory(category.id)}
-                                    >
-                                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                      </svg>
-                                    </Button>
-                                    <Button 
-                                      variant="ghost" 
-                                      size="icon" 
-                                      className="h-8 w-8 text-red-600 hover:text-red-900 hover:bg-red-50" 
-                                      title="Remover"
-                                      onClick={() => handleDeleteCategory(category.id)}
-                                    >
-                                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                      </svg>
-                                    </Button>
-                                  </div>
-                                </td>
-                              </tr>
-                            ))
-                        )}
-                      </tbody>
-                    </table>
+                        </thead>
+                      </table>
+                    </div>
+                    
+                    {/* Corpo da tabela com scroll vertical */}
+                    <div className="overflow-x-auto overflow-y-auto max-h-[500px] bg-white">
+                      <table className="min-w-full">
+                        <tbody className="bg-white divide-y divide-gray-200">
+                          {userCategories.length === 0 ? (
+                            <tr>
+                              <td colSpan={5} className="px-6 py-4 text-center text-sm text-gray-500">
+                                Nenhuma categoria encontrada
+                              </td>
+                            </tr>
+                          ) : (
+                            userCategories
+                              .filter(category => 
+                                category.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                (category.description && category.description.toLowerCase().includes(searchTerm.toLowerCase()))
+                              )
+                              .sort((a, b) => a.name.localeCompare(b.name))
+                              .map((category) => (
+                                <tr key={category.id}>
+                                  <td className="px-6 py-4 whitespace-nowrap">
+                                    <div className="text-sm font-medium text-gray-900">{category.name}</div>
+                                  </td>
+                                  <td className="px-6 py-4">
+                                    <div className="text-sm text-gray-900">{category.description || "Sem descrição"}</div>
+                                  </td>
+                                  <td className="px-6 py-4 whitespace-nowrap">
+                                    <div className="flex items-center">
+                                      <div 
+                                        className="w-4 h-4 rounded-full mr-2 border border-gray-300"
+                                        style={{ backgroundColor: category.color || '#gray' }}
+                                      />
+                                      <span className="text-sm text-gray-900">{category.color}</span>
+                                    </div>
+                                  </td>
+                                  <td className="px-6 py-4 whitespace-nowrap">
+                                    <Badge variant={category.isActive ? "default" : "secondary"}>
+                                      {category.isActive ? "Ativa" : "Inativa"}
+                                    </Badge>
+                                  </td>
+                                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                    <div className="flex items-center space-x-2">
+                                      <Button 
+                                        variant="ghost" 
+                                        size="icon" 
+                                        className="h-8 w-8 text-blue-600 hover:text-blue-900 hover:bg-blue-50" 
+                                        title="Editar"
+                                        onClick={() => handleEditCategory(category.id)}
+                                      >
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                        </svg>
+                                      </Button>
+                                      <Button 
+                                        variant="ghost" 
+                                        size="icon" 
+                                        className="h-8 w-8 text-red-600 hover:text-red-900 hover:bg-red-50" 
+                                        title="Remover"
+                                        onClick={() => handleDeleteCategory(category.id)}
+                                      >
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                        </svg>
+                                      </Button>
+                                    </div>
+                                  </td>
+                                </tr>
+                              ))
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -826,71 +835,80 @@ ${userCategoriesMapping[user.id].map(c => `• ${c.name}`).join('\n')}`}
                       <p>Carregando grupos...</p>
                     </div>
                   ) : (
-                    <div className="overflow-x-auto">
-                      <table className="min-w-full divide-y divide-gray-200">
-                        <thead className="bg-gray-50">
-                          <tr>
-                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nome</th>
-                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Descrição</th>
-                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Criado em</th>
-                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>
-                          </tr>
-                        </thead>
-                        <tbody className="bg-white divide-y divide-gray-200">
-                          {filteredGroups.length === 0 ? (
+                    <div className="border border-gray-200 rounded-lg overflow-hidden">
+                      {/* Cabeçalho fixo da tabela */}
+                      <div className="overflow-x-auto bg-gray-50 border-b border-gray-200">
+                        <table className="min-w-full">
+                          <thead>
                             <tr>
-                              <td colSpan={4} className="px-6 py-4 text-center text-sm text-gray-500">
-                                Nenhum grupo encontrado
-                              </td>
+                              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nome</th>
+                              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Descrição</th>
+                              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Criado em</th>
+                              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>
                             </tr>
-                          ) : (
-                            [...filteredGroups]
-                              .sort((a, b) => a.name.localeCompare(b.name))
-                              .map((group) => (
-                              <tr key={group.id}>
-                                <td className="px-6 py-4 whitespace-nowrap">
-                                  <div className="text-sm font-medium text-gray-900">{group.name}</div>
-                                </td>
-                                <td className="px-6 py-4">
-                                  <div className="text-sm text-gray-900">{group.description || "Sem descrição"}</div>
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap">
-                                  <div className="text-sm text-gray-900">
-                                    {group.createdAt ? new Date(group.createdAt).toLocaleDateString('pt-BR') : 'Data não disponível'}
-                                  </div>
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                  <div className="flex space-x-2">
-                                    <Button 
-                                      variant="ghost" 
-                                      size="icon" 
-                                      className="h-8 w-8 text-blue-600 hover:text-blue-900 hover:bg-blue-50" 
-                                      title="Editar"
-                                      onClick={() => handleEditGroup(group.id)}
-                                    >
-                                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                      </svg>
-                                    </Button>
-                                    <Button 
-                                      variant="ghost" 
-                                      size="icon" 
-                                      className="h-8 w-8 text-red-600 hover:text-red-900 hover:bg-red-50" 
-                                      title="Remover"
-                                      onClick={() => handleDeleteGroup(group.id)}
-                                      disabled={deleteGroupMutation.isPending}
-                                    >
-                                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                      </svg>
-                                    </Button>
-                                  </div>
+                          </thead>
+                        </table>
+                      </div>
+                      
+                      {/* Corpo da tabela com scroll vertical */}
+                      <div className="overflow-x-auto overflow-y-auto max-h-[500px] bg-white">
+                        <table className="min-w-full">
+                          <tbody className="bg-white divide-y divide-gray-200">
+                            {filteredGroups.length === 0 ? (
+                              <tr>
+                                <td colSpan={4} className="px-6 py-4 text-center text-sm text-gray-500">
+                                  Nenhum grupo encontrado
                                 </td>
                               </tr>
-                            ))
-                          )}
-                        </tbody>
-                      </table>
+                            ) : (
+                              [...filteredGroups]
+                                .sort((a, b) => a.name.localeCompare(b.name))
+                                .map((group) => (
+                                <tr key={group.id}>
+                                  <td className="px-6 py-4 whitespace-nowrap">
+                                    <div className="text-sm font-medium text-gray-900">{group.name}</div>
+                                  </td>
+                                  <td className="px-6 py-4">
+                                    <div className="text-sm text-gray-900">{group.description || "Sem descrição"}</div>
+                                  </td>
+                                  <td className="px-6 py-4 whitespace-nowrap">
+                                    <div className="text-sm text-gray-900">
+                                      {group.createdAt ? new Date(group.createdAt).toLocaleDateString('pt-BR') : 'Data não disponível'}
+                                    </div>
+                                  </td>
+                                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    <div className="flex space-x-2">
+                                      <Button 
+                                        variant="ghost" 
+                                        size="icon" 
+                                        className="h-8 w-8 text-blue-600 hover:text-blue-900 hover:bg-blue-50" 
+                                        title="Editar"
+                                        onClick={() => handleEditGroup(group.id)}
+                                      >
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                        </svg>
+                                      </Button>
+                                      <Button 
+                                        variant="ghost" 
+                                        size="icon" 
+                                        className="h-8 w-8 text-red-600 hover:text-red-900 hover:bg-red-50" 
+                                        title="Remover"
+                                        onClick={() => handleDeleteGroup(group.id)}
+                                        disabled={deleteGroupMutation.isPending}
+                                      >
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                        </svg>
+                                      </Button>
+                                    </div>
+                                  </td>
+                                </tr>
+                              ))
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
                     </div>
                   )}
                 </CardContent>
