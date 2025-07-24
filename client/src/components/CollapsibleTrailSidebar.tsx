@@ -37,7 +37,7 @@ export function CollapsibleTrailSidebar({
   return (
     <div className={cn(
       "relative transition-all duration-300 ease-in-out",
-      isCollapsed ? "w-12" : "w-full"
+      isCollapsed ? "w-12" : "w-80"
     )}>
       {/* Toggle Button */}
       <Button

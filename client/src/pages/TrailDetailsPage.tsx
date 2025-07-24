@@ -202,9 +202,9 @@ export default function TrailDetailsPage() {
               </div>
             )}
 
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+            <div className="flex gap-8">
               {/* Lista de Conteúdos - Sidebar Colapsável */}
-              <div className="lg:col-span-1">
+              <div className="flex-shrink-0">
                 <CollapsibleTrailSidebar
                   contents={trail.contents || []}
                   selectedContent={selectedContent}
@@ -215,7 +215,7 @@ export default function TrailDetailsPage() {
               </div>
 
               {/* Área de Conteúdo */}
-              <div className="lg:col-span-3">
+              <div className="flex-1 min-w-0">
                 {selectedContent ? (
                   <div className="space-y-6">
                     <Card>
