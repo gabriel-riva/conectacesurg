@@ -2,6 +2,7 @@ import express, { type Request, type Response } from "express";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
+import crypto from "crypto";
 import { storage as dbStorage } from "./storage";
 import { insertMaterialFolderSchema, insertMaterialFileSchema } from "@shared/schema";
 import { z } from "zod";
@@ -20,7 +21,6 @@ const multerStorage = multer.diskStorage({
   },
   filename: function (req, file, cb) {
     // Gerar nome único baseado em hash para evitar conflitos
-    const crypto = require('crypto');
     const hash = crypto.createHash('md5').update(file.originalname + Date.now() + Math.random()).digest('hex');
     console.log(`📁 Upload de arquivo iniciado - Hash: ${hash}, Original: ${file.originalname}, User: ${(req.user as any)?.name} (${(req.user as any)?.role})`);
     cb(null, hash);
