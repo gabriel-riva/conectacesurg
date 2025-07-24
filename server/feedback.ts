@@ -75,7 +75,7 @@ router.post('/upload', upload.single('file'), (req, res) => {
 });
 
 // GET /api/feedback - Listar todos os feedbacks (admin apenas)
-router.get('/', async (req, res) => {
+router.get('/', requireAdmin, async (req, res) => {
   try {
     const feedbacks = await storage.getAllFeedbacks();
     res.json(feedbacks);
@@ -207,7 +207,7 @@ router.delete('/:id/image/:imageId', requireAdmin, async (req, res) => {
     };
     
     // Update the feedback with the new attachments
-    await storage.updateFeedback(feedbackId, { attachments: updatedAttachments });
+    await storage.updateFeedback(feedbackId, { attachments: JSON.stringify(updatedAttachments) });
     
     res.json({ message: 'Image deleted successfully' });
   } catch (error) {
