@@ -22,7 +22,7 @@ const multerStorage = multer.diskStorage({
     // Gerar nome único baseado em hash para evitar conflitos
     const crypto = require('crypto');
     const hash = crypto.createHash('md5').update(file.originalname + Date.now() + Math.random()).digest('hex');
-    console.log(`📁 Upload de arquivo iniciado - Hash: ${hash}, Original: ${file.originalname}, User: ${req.user?.name} (${req.user?.role})`);
+    console.log(`📁 Upload de arquivo iniciado - Hash: ${hash}, Original: ${file.originalname}, User: ${(req.user as any)?.name} (${(req.user as any)?.role})`);
     cb(null, hash);
   }
 });
@@ -48,14 +48,14 @@ const isAuthenticated = (req: Request, res: Response, next: Function) => {
 
 // Middleware para verificar se é admin
 const isAdmin = (req: Request, res: Response, next: Function) => {
-  if (!req.user || (req.user.role !== "admin" && req.user.role !== "superadmin")) {
+  if (!req.user || ((req.user as any).role !== "admin" && (req.user as any).role !== "superadmin")) {
     return res.status(403).json({ error: "Acesso negado" });
   }
   next();
 };
 
 // Função para verificar se o usuário tem acesso a uma pasta
-const hasAccessToFolder = async (folderId: number, userId: number, userRole: string) => {
+const hasAccessToFolder = async (folderId: number, userId: number | undefined, userRole: string) => {
   if (userRole === "admin" || userRole === "superadmin") {
     return true;
   }
@@ -70,7 +70,7 @@ const hasAccessToFolder = async (folderId: number, userId: number, userRole: str
   const userGroups = await dbStorage.getUserGroups(userId);
   const userGroupIds = userGroups.map(g => g.id);
   
-  return folder.groupIds.some(groupId => userGroupIds.includes(groupId));
+  return folder.groupIds.some((groupId: any) => userGroupIds.includes(groupId));
 };
 
 // ROTAS PARA PASTAS
@@ -96,7 +96,7 @@ router.get("/folders", isAuthenticated, async (req: Request, res: Response) => {
         const userGroups = await dbStorage.getUserGroups(userId);
         const userGroupIds = userGroups.map(g => g.id);
         
-        if (folder.groupIds.some(groupId => userGroupIds.includes(groupId))) {
+        if (folder.groupIds.some((groupId: any) => userGroupIds.includes(groupId))) {
           accessibleFolders.push(folder);
         }
       }
@@ -346,7 +346,7 @@ router.post("/files", isAdmin, upload.single("file"), async (req: Request, res: 
         return res.status(400).json({ error: "Nenhum arquivo enviado" });
       }
       
-      console.log(`📤 Processando upload de arquivo - Original: ${req.file.originalname}, Hash: ${req.file.filename}, Size: ${req.file.size}, User: ${req.user?.name} (${req.user?.role})`);
+      console.log(`📤 Processando upload de arquivo - Original: ${req.file.originalname}, Hash: ${req.file.filename}, Size: ${req.file.size}, User: ${(req.user as any)?.name} (${(req.user as any)?.role})`);
       
       const fileData = {
         name: req.body.name || req.file.originalname,
@@ -367,10 +367,10 @@ router.post("/files", isAdmin, upload.single("file"), async (req: Request, res: 
       const file = await dbStorage.createMaterialFile(validatedData);
       
       // Log para auditoria de sucesso
-      console.log(`✅ Arquivo salvo no banco - ID: ${file.id}, Nome: ${file.name}, Hash: ${req.file.filename}, User: ${req.user?.name} (${req.user?.role})`);
+      console.log(`✅ Arquivo salvo no banco - ID: ${file.id}, Nome: ${file.name}, Hash: ${req.file.filename}, User: ${(req.user as any)?.name} (${(req.user as any)?.role})`);
       
       // Verificar se o arquivo realmente existe após o upload
-      const filePath = path.join(process.cwd(), "public", file.fileUrl);
+      const filePath = path.join(process.cwd(), "public", file.fileUrl!);
       if (!fs.existsSync(filePath)) {
         console.error(`❌ ERRO CRÍTICO: Arquivo não encontrado após upload - Path: ${filePath}`);
       } else {
@@ -413,13 +413,13 @@ router.get("/files/:id/download", isAuthenticated, async (req: Request, res: Res
     await dbStorage.incrementDownloadCount(fileId);
     
     // Servir arquivo
-    const filePath = path.join(process.cwd(), "public", file.fileUrl);
+    const filePath = path.join(process.cwd(), "public", file.fileUrl!);
     
     if (!fs.existsSync(filePath)) {
       return res.status(404).json({ error: "Arquivo não encontrado no servidor" });
     }
     
-    res.download(filePath, file.fileName);
+    res.download(filePath, file.fileName!);
   } catch (error) {
     console.error("Erro ao fazer download:", error);
     res.status(500).json({ error: "Erro interno do servidor" });
@@ -448,7 +448,7 @@ router.get("/files/:id/view", isAuthenticated, async (req: Request, res: Respons
     }
     
     // Servir arquivo para visualização
-    const filePath = path.join(process.cwd(), "public", file.fileUrl);
+    const filePath = path.join(process.cwd(), "public", file.fileUrl!);
     
     if (!fs.existsSync(filePath)) {
       return res.status(404).json({ error: "Arquivo não encontrado no servidor" });
@@ -457,7 +457,7 @@ router.get("/files/:id/view", isAuthenticated, async (req: Request, res: Respons
     // Definir headers apropriados para diferentes tipos de arquivo
     const mimeType = file.fileType || 'application/octet-stream';
     res.setHeader('Content-Type', mimeType);
-    res.setHeader('Content-Disposition', `inline; filename="${file.fileName}"`);
+    res.setHeader('Content-Disposition', `inline; filename="${file.fileName!}"`);
     
     // Headers adicionais para PDFs
     if (file.fileType === 'application/pdf') {
@@ -520,7 +520,7 @@ router.delete("/files/:id", isAdmin, async (req: Request, res: Response) => {
     
     // Deletar arquivo físico se existir
     if (file.fileUrl && typeof file.fileUrl === 'string') {
-      const filePath = path.join(process.cwd(), "public", file.fileUrl);
+      const filePath = path.join(process.cwd(), "public", file.fileUrl!);
       console.log("📁 Tentando deletar arquivo físico:", filePath);
       
       if (fs.existsSync(filePath)) {
@@ -569,7 +569,7 @@ router.get("/files/integrity-check", isAdmin, async (req: Request, res: Response
     
     for (const file of files) {
       if (file.fileUrl && file.contentType === "file") {
-        const filePath = path.join(process.cwd(), "public", file.fileUrl);
+        const filePath = path.join(process.cwd(), "public", file.fileUrl!);
         
         if (fs.existsSync(filePath)) {
           results.existing++;
@@ -607,7 +607,7 @@ router.delete("/files/cleanup-orphaned", isAdmin, async (req: Request, res: Resp
     
     for (const file of files) {
       if (file.fileUrl && file.contentType === "file") {
-        const filePath = path.join(process.cwd(), "public", file.fileUrl);
+        const filePath = path.join(process.cwd(), "public", file.fileUrl!);
         
         if (!fs.existsSync(filePath)) {
           console.log(`🗑️ Removendo entrada órfã - ID: ${file.id}, Nome: ${file.name}`);
