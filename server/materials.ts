@@ -373,6 +373,20 @@ router.post("/files", isAdmin, upload.single("file"), async (req: Request, res: 
       const filePath = path.join(process.cwd(), "public", file.fileUrl!);
       if (!fs.existsSync(filePath)) {
         console.error(`❌ ERRO CRÍTICO: Arquivo não encontrado após upload - Path: ${filePath}`);
+        
+        // ROLLBACK: Remover registro do banco se arquivo físico não existe
+        try {
+          await dbStorage.deleteMaterialFile(file.id);
+          console.log(`🔄 ROLLBACK: Registro removido do banco - ID: ${file.id}`);
+          return res.status(500).json({ 
+            error: "Falha no upload: arquivo não foi salvo corretamente. Tente novamente." 
+          });
+        } catch (rollbackError) {
+          console.error("Erro no rollback:", rollbackError);
+          return res.status(500).json({ 
+            error: "Erro crítico no upload. Contate o administrador." 
+          });
+        }
       } else {
         console.log(`✅ Arquivo físico confirmado - Path: ${filePath}, Size: ${fs.statSync(filePath).size} bytes`);
       }
