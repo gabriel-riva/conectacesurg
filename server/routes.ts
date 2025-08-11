@@ -19,6 +19,7 @@ import newsRouter from "./news";
 import announcementsRouter from "./announcements";
 import uploadRouter from "./upload";
 import materialsRouter from "./materials";
+import materialsAdminRouter from "./materials-admin";
 import featureSettingsRouter from "./feature-settings";
 import userCategoriesRouter from "./user-categories";
 import userCategoryAssignmentsRouter from "./user-category-assignments";
@@ -803,6 +804,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Adicionar rotas de materiais
   app.use('/api/materials', materialsRouter);
+  app.use("/api/materials-admin", materialsAdminRouter);
   
   // Adicionar rotas de configurações de funcionalidades
   app.use('/api/feature-settings', featureSettingsRouter);

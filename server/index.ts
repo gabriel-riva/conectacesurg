@@ -1,6 +1,7 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import { fileIntegrityMonitor } from "./file-integrity-monitor";
 import path from "path";
 
 const app = express();
@@ -51,6 +52,14 @@ app.use((req, res, next) => {
 
 (async () => {
   const server = await registerRoutes(app);
+  
+  // Iniciar monitoramento de integridade de arquivos
+  fileIntegrityMonitor.startMonitoring();
+  
+  // Verificação inicial de integridade
+  setTimeout(() => {
+    fileIntegrityMonitor.checkIntegrity();
+  }, 5000);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
