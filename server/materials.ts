@@ -348,6 +348,29 @@ router.post("/files", isAdmin, upload.single("file"), async (req: Request, res: 
       
       console.log(`📤 Processando upload de arquivo - Original: ${req.file.originalname}, Hash: ${req.file.filename}, Size: ${req.file.size}, User: ${(req.user as any)?.name} (${(req.user as any)?.role})`);
       
+      // PASSO 1: Verificar IMEDIATAMENTE se arquivo foi salvo pelo Multer
+      const filePath = path.join(process.cwd(), "public", "uploads", "materials", req.file.filename);
+      if (!fs.existsSync(filePath)) {
+        console.error(`❌ FALHA CRÍTICA: Multer não salvou o arquivo - Path: ${filePath}`);
+        return res.status(500).json({ 
+          error: "Falha no upload: arquivo não foi salvo pelo sistema. Verifique configurações." 
+        });
+      }
+      
+      // PASSO 2: Verificar integridade do arquivo salvo
+      const savedFileSize = fs.statSync(filePath).size;
+      if (savedFileSize !== req.file.size) {
+        console.error(`❌ FALHA DE INTEGRIDADE: Tamanho divergente - Esperado: ${req.file.size}, Salvo: ${savedFileSize}`);
+        // Remover arquivo corrompido
+        fs.unlinkSync(filePath);
+        return res.status(500).json({ 
+          error: "Falha no upload: arquivo corrompido durante salvamento." 
+        });
+      }
+      
+      console.log(`✅ Arquivo físico verificado - Path: ${filePath}, Size: ${savedFileSize} bytes`);
+      
+      // PASSO 3: Só AGORA salvar no banco de dados
       const fileData = {
         name: req.body.name || req.file.originalname,
         description: req.body.description,
@@ -366,20 +389,19 @@ router.post("/files", isAdmin, upload.single("file"), async (req: Request, res: 
       
       const file = await dbStorage.createMaterialFile(validatedData);
       
-      // Log para auditoria de sucesso
-      console.log(`✅ Arquivo salvo no banco - ID: ${file.id}, Nome: ${file.name}, Hash: ${req.file.filename}, User: ${(req.user as any)?.name} (${(req.user as any)?.role})`);
+      // Log para auditoria de sucesso completo
+      console.log(`🎯 UPLOAD COMPLETO - ID: ${file.id}, Nome: ${file.name}, Hash: ${req.file.filename}, User: ${(req.user as any)?.name} (${(req.user as any)?.role})`);
       
-      // Verificar se o arquivo realmente existe após o upload
-      const filePath = path.join(process.cwd(), "public", file.fileUrl!);
+      // PASSO 4: Verificação dupla pós-transação
       if (!fs.existsSync(filePath)) {
-        console.error(`❌ ERRO CRÍTICO: Arquivo não encontrado após upload - Path: ${filePath}`);
+        console.error(`❌ ERRO PÓS-TRANSAÇÃO: Arquivo desapareceu após salvar no banco!`);
         
         // ROLLBACK: Remover registro do banco se arquivo físico não existe
         try {
           await dbStorage.deleteMaterialFile(file.id);
           console.log(`🔄 ROLLBACK: Registro removido do banco - ID: ${file.id}`);
           return res.status(500).json({ 
-            error: "Falha no upload: arquivo não foi salvo corretamente. Tente novamente." 
+            error: "Falha crítica: arquivo desapareceu após salvamento. Contate o administrador." 
           });
         } catch (rollbackError) {
           console.error("Erro no rollback:", rollbackError);
@@ -387,8 +409,6 @@ router.post("/files", isAdmin, upload.single("file"), async (req: Request, res: 
             error: "Erro crítico no upload. Contate o administrador." 
           });
         }
-      } else {
-        console.log(`✅ Arquivo físico confirmado - Path: ${filePath}, Size: ${fs.statSync(filePath).size} bytes`);
       }
       
       res.status(201).json(file);
