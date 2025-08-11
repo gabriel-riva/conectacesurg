@@ -17,12 +17,18 @@ if (!fs.existsSync(uploadDir)) {
 
 const multerStorage = multer.diskStorage({
   destination: function (req, file, cb) {
+    console.log(`🎯 MULTER DESTINATION: Salvando em ${uploadDir}`);
+    // Garantir que diretório existe
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+      console.log(`📁 Diretório criado: ${uploadDir}`);
+    }
     cb(null, uploadDir);
   },
   filename: function (req, file, cb) {
     // Gerar nome único baseado em hash para evitar conflitos
     const hash = crypto.createHash('md5').update(file.originalname + Date.now() + Math.random()).digest('hex');
-    console.log(`📁 Upload de arquivo iniciado - Hash: ${hash}, Original: ${file.originalname}, User: ${(req.user as any)?.name} (${(req.user as any)?.role})`);
+    console.log(`🎯 MULTER FILENAME: Hash: ${hash}, Original: ${file.originalname}, MIME: ${file.mimetype}, Size: ${file.size || 'desconhecido'}`);
     cb(null, hash);
   }
 });
@@ -33,9 +39,14 @@ const upload = multer({
     fileSize: 50 * 1024 * 1024, // 50MB limit
   },
   fileFilter: (req, file, cb) => {
+    console.log(`🔍 MULTER FILTER: Arquivo ${file.originalname} (${file.mimetype}) - ACEITO`);
     // Permitir todos os tipos de arquivo
     cb(null, true);
   },
+  onError: (err, next) => {
+    console.error(`❌ MULTER ERROR:`, err);
+    next(err);
+  }
 });
 
 // Middleware para verificar autenticação
@@ -306,7 +317,17 @@ router.get("/files/:id", isAuthenticated, async (req: Request, res: Response) =>
 });
 
 // Upload de arquivo ou link do YouTube (admin apenas)
-router.post("/files", isAdmin, upload.single("file"), async (req: Request, res: Response) => {
+router.post("/files", isAdmin, (req: Request, res: Response, next: Function) => {
+  console.log(`🚀 INICIANDO UPLOAD - Content-Type: ${req.headers['content-type']}, User: ${(req.user as any)?.name}`);
+  upload.single("file")(req, res, (err) => {
+    if (err) {
+      console.error(`❌ ERRO NO MULTER:`, err);
+      return res.status(500).json({ error: "Erro no upload: " + err.message });
+    }
+    console.log(`✅ MULTER PROCESSADO - Arquivo: ${req.file ? req.file.filename : 'nenhum'}`);
+    next();
+  });
+}, async (req: Request, res: Response) => {
   try {
     const contentType = req.body.contentType || "file";
     
