@@ -419,6 +419,15 @@ router.get("/files/:id/download", isAuthenticated, async (req: Request, res: Res
     
     if (!fs.existsSync(filePath)) {
       console.error(`❌ Arquivo físico não encontrado - Path: ${filePath}`);
+      
+      // Remove o registro órfão do banco de dados
+      try {
+        await dbStorage.deleteMaterialFile(fileId);
+        console.log(`🗑️ Registro órfão removido do banco - ID: ${fileId}`);
+      } catch (deleteError) {
+        console.error("Erro ao remover registro órfão:", deleteError);
+      }
+      
       return res.status(404).json({ error: "Arquivo não encontrado no servidor" });
     }
     
