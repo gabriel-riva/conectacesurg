@@ -419,6 +419,10 @@ router.get("/files/:id/download", isAuthenticated, async (req: Request, res: Res
       return res.status(404).json({ error: "Arquivo não encontrado no servidor" });
     }
     
+    // Fix character encoding for download filename
+    const encodedFileName = encodeURIComponent(file.fileName!);
+    res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${encodedFileName}; filename="${file.fileName!}"`);
+    res.setHeader('Content-Type', file.fileType || 'application/octet-stream');
     res.download(filePath, file.fileName!);
   } catch (error) {
     console.error("Erro ao fazer download:", error);

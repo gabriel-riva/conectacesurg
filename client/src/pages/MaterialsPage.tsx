@@ -120,23 +120,45 @@ export default function MaterialsPage() {
         return;
       }
       
-      // Trigger download using direct link
+      // Use fetch to download with proper authentication and error handling
+      const response = await fetch(`/api/materials/files/${file.id}/download`, {
+        method: 'GET',
+        credentials: 'include', // Include cookies for authentication
+      });
+      
+      if (!response.ok) {
+        if (response.status === 401) {
+          throw new Error('Você precisa estar logado para baixar arquivos.');
+        } else if (response.status === 403) {
+          throw new Error('Você não tem permissão para baixar este arquivo.');
+        } else if (response.status === 404) {
+          throw new Error('Arquivo não encontrado.');
+        } else {
+          throw new Error('Erro no servidor ao processar o download.');
+        }
+      }
+      
+      // Get the file blob and create download link
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
-      link.href = `/api/materials/files/${file.id}/download`;
-      link.download = file.fileName;
+      link.href = url;
+      link.download = file.fileName || 'download';
       link.style.display = 'none';
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
       
       toast({
         title: 'Download iniciado',
         description: `Download de ${file.fileName} iniciado com sucesso.`
       });
     } catch (error) {
+      console.error('Erro no download:', error);
       toast({
         title: 'Erro no download',
-        description: 'Não foi possível fazer o download do arquivo.',
+        description: error instanceof Error ? error.message : 'Não foi possível fazer o download do arquivo.',
         variant: 'destructive'
       });
     }
