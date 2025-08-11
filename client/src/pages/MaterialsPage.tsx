@@ -120,40 +120,69 @@ export default function MaterialsPage() {
         return;
       }
       
-      // Use fetch to download with proper authentication and error handling
-      const response = await fetch(`/api/materials/files/${file.id}/download`, {
-        method: 'GET',
-        credentials: 'include', // Include cookies for authentication
+      // First check if we're authenticated
+      const authResponse = await fetch('/api/auth/status', {
+        credentials: 'include'
       });
+      const authData = await authResponse.json();
       
-      if (!response.ok) {
-        if (response.status === 401) {
-          throw new Error('Você precisa estar logado para baixar arquivos.');
-        } else if (response.status === 403) {
-          throw new Error('Você não tem permissão para baixar este arquivo.');
-        } else if (response.status === 404) {
-          throw new Error('Arquivo não encontrado.');
-        } else {
-          throw new Error('Erro no servidor ao processar o download.');
-        }
+      if (!authData.authenticated) {
+        throw new Error('Você precisa estar logado para baixar arquivos.');
       }
       
-      // Get the file blob and create download link
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = file.fileName || 'download';
-      link.style.display = 'none';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
+      // Create a temporary form to submit the download request
+      // This maintains the session properly unlike fetch
+      const form = document.createElement('form');
+      form.method = 'GET';
+      form.action = `/api/materials/files/${file.id}/download`;
+      form.style.display = 'none';
+      document.body.appendChild(form);
       
-      toast({
-        title: 'Download iniciado',
-        description: `Download de ${file.fileName} iniciado com sucesso.`
-      });
+      // Try to submit the form
+      try {
+        form.submit();
+        toast({
+          title: 'Download iniciado',
+          description: `Download de ${file.fileName} iniciado com sucesso.`
+        });
+      } catch (submitError) {
+        // If form submission fails, try fetch as fallback
+        const response = await fetch(`/api/materials/files/${file.id}/download`, {
+          method: 'GET',
+          credentials: 'include',
+        });
+        
+        if (!response.ok) {
+          if (response.status === 401) {
+            throw new Error('Você precisa estar logado para baixar arquivos.');
+          } else if (response.status === 403) {
+            throw new Error('Você não tem permissão para baixar este arquivo.');
+          } else if (response.status === 404) {
+            throw new Error('Arquivo não encontrado.');
+          } else {
+            throw new Error('Erro no servidor ao processar o download.');
+          }
+        }
+        
+        // Get the file blob and create download link
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = file.fileName || 'download';
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+        
+        toast({
+          title: 'Download iniciado',
+          description: `Download de ${file.fileName} iniciado com sucesso.`
+        });
+      } finally {
+        document.body.removeChild(form);
+      }
     } catch (error) {
       console.error('Erro no download:', error);
       toast({

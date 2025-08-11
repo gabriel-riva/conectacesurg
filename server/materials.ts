@@ -395,9 +395,12 @@ router.get("/files/:id/download", isAuthenticated, async (req: Request, res: Res
     const userId = req.user?.id;
     const userRole = req.user?.role;
     
+    console.log(`📥 Tentativa de download - Arquivo ID: ${fileId}, User: ${(req.user as any)?.name} (${(req.user as any)?.role})`);
+    
     const file = await dbStorage.getMaterialFile(fileId);
     
     if (!file) {
+      console.log(`❌ Arquivo não encontrado no banco - ID: ${fileId}`);
       return res.status(404).json({ error: "Arquivo não encontrado" });
     }
     
@@ -405,24 +408,33 @@ router.get("/files/:id/download", isAuthenticated, async (req: Request, res: Res
     if (file.folderId) {
       const hasAccess = await hasAccessToFolder(file.folderId, userId, userRole);
       if (!hasAccess) {
+        console.log(`❌ Acesso negado - User: ${(req.user as any)?.name}, Arquivo: ${file.name}, Pasta: ${file.folderId}`);
         return res.status(403).json({ error: "Acesso negado" });
       }
+    }
+    
+    // Construir caminho do arquivo
+    const filePath = path.join(process.cwd(), "public", file.fileUrl!);
+    console.log(`📂 Verificando arquivo físico - Path: ${filePath}`);
+    
+    if (!fs.existsSync(filePath)) {
+      console.error(`❌ Arquivo físico não encontrado - Path: ${filePath}`);
+      return res.status(404).json({ error: "Arquivo não encontrado no servidor" });
     }
     
     // Incrementar contador de downloads
     await dbStorage.incrementDownloadCount(fileId);
     
-    // Servir arquivo
-    const filePath = path.join(process.cwd(), "public", file.fileUrl!);
-    
-    if (!fs.existsSync(filePath)) {
-      return res.status(404).json({ error: "Arquivo não encontrado no servidor" });
-    }
+    // Log de sucesso
+    console.log(`✅ Download autorizado - Arquivo: ${file.name}, User: ${(req.user as any)?.name}`);
     
     // Fix character encoding for download filename
     const encodedFileName = encodeURIComponent(file.fileName!);
     res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${encodedFileName}; filename="${file.fileName!}"`);
     res.setHeader('Content-Type', file.fileType || 'application/octet-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Pragma', 'no-cache');
+    
     res.download(filePath, file.fileName!);
   } catch (error) {
     console.error("Erro ao fazer download:", error);
