@@ -45,7 +45,7 @@ Preferred communication style: Simple, everyday language.
 - **Ferramentas (Tools) System**: Database-integrated tools system with category-based permission and dynamic link mapping.
 - **Survey/Polls System**: Comprehensive survey functionality with multiple question types, user category targeting, and an adaptive widget display (floating icon on desktop, full-screen modal on mobile).
 - **Trail System**: Content pages with commenting, replies, likes, and category-based visibility.
-- **Homepage Gamification Carousel**: Horizontal scrollable display of active, uncompleted challenges on the homepage with navigation arrows, fixed height to match other dashboard cards, and direct links to individual challenges.
+- **Homepage Gamification Carousel**: Horizontal scrollable display of active, uncompleted challenges on the homepage with navigation arrows, fixed height (280px) to match other dashboard cards, optimized card sizing (260px width, 16px image height) for better content visibility, and direct links to individual challenge details via URL parameters.
 
 ## External Dependencies
 
