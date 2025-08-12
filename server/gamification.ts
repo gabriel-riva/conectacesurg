@@ -451,6 +451,81 @@ router.get("/challenges", isAuthenticated, async (req: Request, res: Response) =
   }
 });
 
+// Buscar desafios ativos não completados pelo usuário
+router.get("/challenges/active-for-user", isAuthenticated, async (req: Request, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    
+    if (!userId) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    const now = new Date();
+    console.log("Buscando desafios ativos para usuário:", userId, "Data atual:", now);
+    
+    // Buscar desafios ativos
+    const activeChallenges = await db
+      .select({
+        id: gamificationChallenges.id,
+        title: gamificationChallenges.title,
+        description: gamificationChallenges.description,
+        imageUrl: gamificationChallenges.imageUrl,
+        points: gamificationChallenges.points,
+        startDate: gamificationChallenges.startDate,
+        endDate: gamificationChallenges.endDate,
+        type: gamificationChallenges.type,
+        evaluationType: gamificationChallenges.evaluationType,
+        isActive: gamificationChallenges.isActive,
+        categoryId: gamificationChallenges.categoryId,
+      })
+      .from(gamificationChallenges)
+      .where(and(
+        eq(gamificationChallenges.isActive, true),
+        lte(gamificationChallenges.startDate, now.toISOString()),
+        gte(gamificationChallenges.endDate, now.toISOString())
+      ))
+      .orderBy(asc(gamificationChallenges.endDate));
+
+    console.log("Desafios encontrados:", activeChallenges.length);
+    console.log("Desafios detalhes:", activeChallenges);
+
+    // Se não há desafios ativos, retornar array vazio
+    if (activeChallenges.length === 0) {
+      return res.json([]);
+    }
+
+    // Buscar submissões do usuário para estes desafios
+    const userSubmissions = await db
+      .select({
+        challengeId: challengeSubmissions.challengeId,
+        status: challengeSubmissions.status,
+      })
+      .from(challengeSubmissions)
+      .where(and(
+        eq(challengeSubmissions.userId, userId),
+        inArray(challengeSubmissions.challengeId, activeChallenges.map(c => c.id))
+      ));
+
+    // Criar um mapa das submissões por desafio
+    const submissionMap = new Map();
+    userSubmissions.forEach(sub => {
+      submissionMap.set(sub.challengeId, sub.status);
+    });
+
+    // Filtrar desafios que o usuário não completou
+    const uncompletedChallenges = activeChallenges.filter(challenge => {
+      const submissionStatus = submissionMap.get(challenge.id);
+      // Mostrar se não tem submissão ou se foi rejeitado
+      return !submissionStatus || submissionStatus === 'rejected';
+    });
+
+    res.json(uncompletedChallenges);
+  } catch (error) {
+    console.error("Error fetching active challenges for user:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 // Buscar desafio por ID
 router.get("/challenges/:id", isAuthenticated, async (req: Request, res: Response) => {
   try {
@@ -1172,81 +1247,6 @@ router.get("/challenges/:id/my-submission", isAuthenticated, async (req: Request
     res.json(submission[0]);
   } catch (error) {
     console.error("Error fetching user submission:", error);
-    res.status(500).json({ error: "Internal server error" });
-  }
-});
-
-// Buscar desafios ativos não completados pelo usuário
-router.get("/challenges/active-for-user", isAuthenticated, async (req: Request, res: Response) => {
-  try {
-    const userId = req.user?.id;
-    
-    if (!userId) {
-      return res.status(401).json({ error: "Unauthorized" });
-    }
-
-    const now = new Date();
-    console.log("Buscando desafios ativos para usuário:", userId, "Data atual:", now);
-    
-    // Buscar desafios ativos
-    const activeChallenges = await db
-      .select({
-        id: gamificationChallenges.id,
-        title: gamificationChallenges.title,
-        description: gamificationChallenges.description,
-        imageUrl: gamificationChallenges.imageUrl,
-        points: gamificationChallenges.points,
-        startDate: gamificationChallenges.startDate,
-        endDate: gamificationChallenges.endDate,
-        type: gamificationChallenges.type,
-        evaluationType: gamificationChallenges.evaluationType,
-        isActive: gamificationChallenges.isActive,
-        categoryId: gamificationChallenges.categoryId,
-      })
-      .from(gamificationChallenges)
-      .where(and(
-        eq(gamificationChallenges.isActive, true),
-        lte(gamificationChallenges.startDate, now.toISOString()),
-        gte(gamificationChallenges.endDate, now.toISOString())
-      ))
-      .orderBy(asc(gamificationChallenges.endDate));
-
-    console.log("Desafios encontrados:", activeChallenges.length);
-    console.log("Desafios detalhes:", activeChallenges);
-
-    // Se não há desafios ativos, retornar array vazio
-    if (activeChallenges.length === 0) {
-      return res.json([]);
-    }
-
-    // Buscar submissões do usuário para estes desafios
-    const userSubmissions = await db
-      .select({
-        challengeId: challengeSubmissions.challengeId,
-        status: challengeSubmissions.status,
-      })
-      .from(challengeSubmissions)
-      .where(and(
-        eq(challengeSubmissions.userId, userId),
-        inArray(challengeSubmissions.challengeId, activeChallenges.map(c => c.id))
-      ));
-
-    // Criar um mapa das submissões por desafio
-    const submissionMap = new Map();
-    userSubmissions.forEach(sub => {
-      submissionMap.set(sub.challengeId, sub.status);
-    });
-
-    // Filtrar desafios que o usuário não completou
-    const uncompletedChallenges = activeChallenges.filter(challenge => {
-      const submissionStatus = submissionMap.get(challenge.id);
-      // Mostrar se não tem submissão ou se foi rejeitado
-      return !submissionStatus || submissionStatus === 'rejected';
-    });
-
-    res.json(uncompletedChallenges);
-  } catch (error) {
-    console.error("Error fetching active challenges for user:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 });
