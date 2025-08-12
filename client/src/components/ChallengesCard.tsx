@@ -48,7 +48,7 @@ function ChallengeItem({ challenge }: ChallengeCardProps) {
   };
 
   return (
-    <Link href={`/gamificacao/desafio/${challenge.id}`}>
+    <Link href={`/gamificacao?desafio=${challenge.id}`}>
       <div className="min-w-[260px] max-w-[260px] h-full flex flex-col rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 transform hover:translate-y-[-2px] group cursor-pointer bg-white border">
         <div className="h-16 bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center relative overflow-hidden flex-shrink-0">
           {challenge.imageUrl ? (

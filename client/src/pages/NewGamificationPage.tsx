@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -23,6 +23,10 @@ function NewGamificationPageContent() {
   const { user } = useAuth();
   const [, navigate] = useLocation();
   const [selectedChallenge, setSelectedChallenge] = useState<GamificationChallenge | null>(null);
+  
+  // Verificar se há um desafio específico na URL
+  const urlParams = new URLSearchParams(window.location.search);
+  const challengeIdFromUrl = urlParams.get('desafio');
 
   // Queries
   const { data: periodicChallenges = [], isLoading: periodicLoading } = useQuery({
@@ -51,12 +55,38 @@ function NewGamificationPageContent() {
     queryKey: ["/api/gamification/points/extract"],
   });
 
+  // Buscar todos os desafios para encontrar o específico se necessário
+  const { data: allChallenges = [] } = useQuery({
+    queryKey: ["/api/gamification/challenges"],
+    queryFn: async () => {
+      const response = await fetch("/api/gamification/challenges");
+      if (!response.ok) throw new Error("Failed to fetch challenges");
+      return response.json();
+    },
+    enabled: !!challengeIdFromUrl,
+  });
+
+  // Efeito para selecionar desafio automaticamente quando há ID na URL
+  useEffect(() => {
+    if (challengeIdFromUrl && allChallenges.length > 0) {
+      const challengeId = parseInt(challengeIdFromUrl);
+      const challenge = allChallenges.find((c: GamificationChallenge) => c.id === challengeId);
+      if (challenge) {
+        setSelectedChallenge(challenge);
+      }
+    }
+  }, [challengeIdFromUrl, allChallenges]);
+
   const handleChallengeClick = (challenge: GamificationChallenge) => {
     setSelectedChallenge(challenge);
   };
 
   const handleBackClick = () => {
     setSelectedChallenge(null);
+    // Limpar parâmetro da URL
+    const url = new URL(window.location.href);
+    url.searchParams.delete('desafio');
+    window.history.replaceState({}, '', url.toString());
   };
 
   if (periodicLoading || annualLoading) {
