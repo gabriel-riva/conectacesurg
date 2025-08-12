@@ -47,6 +47,15 @@ Preferred communication style: Simple, everyday language.
 - **Trail System**: Content pages with commenting, replies, likes, and category-based visibility.
 - **Homepage Gamification Carousel**: Horizontal scrollable display of active, uncompleted challenges on the homepage with navigation arrows, fixed height (280px) to match other dashboard cards, optimized card sizing (260px width, 16px image height) for better content visibility, and direct links to individual challenge details via URL parameters.
 
+## Database Environment Separation
+- **Development/Production Separation**: Fully implemented with backward compatibility
+- **Configuration Priority**: 
+  - Development: DATABASE_URL_DEV → DATABASE_URL (fallback)
+  - Production: DATABASE_URL_PRODUCTION → DATABASE_URL (fallback)
+- **Automatic Environment Detection**: Based on NODE_ENV variable
+- **Zero Breaking Changes**: System maintains 100% compatibility with existing DATABASE_URL
+- **Setup Script**: Available at `scripts/setup-environments.cjs` for configuration verification
+
 ## External Dependencies
 
 ### Authentication
