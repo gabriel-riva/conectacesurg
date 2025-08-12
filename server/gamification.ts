@@ -465,19 +465,7 @@ router.get("/challenges/active-for-user", isAuthenticated, async (req: Request, 
     
     // Buscar desafios ativos
     const activeChallenges = await db
-      .select({
-        id: gamificationChallenges.id,
-        title: gamificationChallenges.title,
-        description: gamificationChallenges.description,
-        imageUrl: gamificationChallenges.imageUrl,
-        points: gamificationChallenges.points,
-        startDate: gamificationChallenges.startDate,
-        endDate: gamificationChallenges.endDate,
-        type: gamificationChallenges.type,
-        evaluationType: gamificationChallenges.evaluationType,
-        isActive: gamificationChallenges.isActive,
-        categoryId: gamificationChallenges.categoryId,
-      })
+      .select()
       .from(gamificationChallenges)
       .where(and(
         eq(gamificationChallenges.isActive, true),
