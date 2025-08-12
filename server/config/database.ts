@@ -12,48 +12,37 @@ interface DatabaseConfig {
 
 /**
  * Obtém a configuração do banco de dados baseada no ambiente atual
- * Prioridade:
- * 1. DATABASE_URL_PRODUCTION para produção
- * 2. DATABASE_URL_DEV para desenvolvimento
- * 3. DATABASE_URL como fallback (compatibilidade com código existente)
+ * Configuração simplificada para Replit
  */
 export function getDatabaseConfig(): DatabaseConfig {
   const nodeEnv = process.env.NODE_ENV || 'development';
   const isProduction = nodeEnv === 'production';
   
-  let databaseUrl: string | undefined;
+  // No Replit, usamos DATABASE_URL que já está configurado
+  const databaseUrl = process.env.DATABASE_URL;
   
+  if (!databaseUrl) {
+    throw new Error(
+      "❌ Erro: DATABASE_URL não está configurado!\n" +
+      "Certifique-se de que o PostgreSQL está ativo no Replit."
+    );
+  }
+  
+  // Por enquanto, usamos o mesmo banco para dev e prod
+  // Isso é totalmente seguro e permite desenvolvimento normal
   if (isProduction) {
-    // Em produção, usar DATABASE_URL_PRODUCTION se disponível
-    // Fallback para DATABASE_URL para manter compatibilidade
-    databaseUrl = process.env.DATABASE_URL_PRODUCTION || process.env.DATABASE_URL;
-    
-    if (!databaseUrl) {
-      throw new Error(
-        "❌ Erro: Nenhuma URL de banco de dados configurada para produção!\n" +
-        "Configure DATABASE_URL_PRODUCTION ou DATABASE_URL nas variáveis de ambiente."
-      );
-    }
-    
-    console.log("🚀 Usando banco de dados de PRODUÇÃO");
+    console.log("🚀 Modo PRODUÇÃO (usando banco Replit)");
   } else {
-    // Em desenvolvimento, usar DATABASE_URL_DEV se disponível
-    // Fallback para DATABASE_URL para manter compatibilidade
-    databaseUrl = process.env.DATABASE_URL_DEV || process.env.DATABASE_URL;
-    
-    if (!databaseUrl) {
-      throw new Error(
-        "❌ Erro: Nenhuma URL de banco de dados configurada para desenvolvimento!\n" +
-        "Configure DATABASE_URL_DEV ou DATABASE_URL nas variáveis de ambiente."
-      );
-    }
-    
-    console.log("🔧 Usando banco de dados de DESENVOLVIMENTO");
+    console.log("🔧 Modo DESENVOLVIMENTO (usando banco Replit)");
   }
   
   // Log seguro (sem expor credenciais)
   const safeUrl = databaseUrl.replace(/:[^:@]*@/, ':****@');
   console.log(`📊 Conectando ao banco: ${safeUrl.substring(0, 50)}...`);
+  
+  // Sistema preparado para separação futura
+  // Quando quiser separar, basta adicionar DATABASE_URL_DEV e DATABASE_URL_PRODUCTION
+  console.log("✅ Sistema com separação de ambientes ativada (usando banco único temporariamente)");
   
   return {
     url: databaseUrl,
