@@ -1186,6 +1186,7 @@ router.get("/challenges/active-for-user", isAuthenticated, async (req: Request, 
     }
 
     const now = new Date();
+    console.log("Buscando desafios ativos para usuário:", userId, "Data atual:", now);
     
     // Buscar desafios ativos
     const activeChallenges = await db
@@ -1209,6 +1210,14 @@ router.get("/challenges/active-for-user", isAuthenticated, async (req: Request, 
         gte(gamificationChallenges.endDate, now.toISOString())
       ))
       .orderBy(asc(gamificationChallenges.endDate));
+
+    console.log("Desafios encontrados:", activeChallenges.length);
+    console.log("Desafios detalhes:", activeChallenges);
+
+    // Se não há desafios ativos, retornar array vazio
+    if (activeChallenges.length === 0) {
+      return res.json([]);
+    }
 
     // Buscar submissões do usuário para estes desafios
     const userSubmissions = await db
