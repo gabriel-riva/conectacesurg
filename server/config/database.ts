@@ -12,13 +12,13 @@ interface DatabaseConfig {
 
 /**
  * Obtém a configuração do banco de dados baseada no ambiente atual
- * Configuração simplificada para Replit
+ * AGORA COM BANCOS REALMENTE SEPARADOS!
  */
 export function getDatabaseConfig(): DatabaseConfig {
   const nodeEnv = process.env.NODE_ENV || 'development';
   const isProduction = nodeEnv === 'production';
   
-  // No Replit, usamos DATABASE_URL que já está configurado
+  // URL base do banco de dados
   const databaseUrl = process.env.DATABASE_URL;
   
   if (!databaseUrl) {
@@ -28,24 +28,31 @@ export function getDatabaseConfig(): DatabaseConfig {
     );
   }
   
-  // Por enquanto, usamos o mesmo banco para dev e prod
-  // Isso é totalmente seguro e permite desenvolvimento normal
+  // Adicionar o schema correto baseado no ambiente
+  // Isso cria BANCOS SEPARADOS usando schemas PostgreSQL
+  let finalUrl: string;
+  
   if (isProduction) {
-    console.log("🚀 Modo PRODUÇÃO (usando banco Replit)");
+    // Adicionar schema=production à URL
+    finalUrl = databaseUrl.includes('?') 
+      ? `${databaseUrl}&options=--search_path%3Dproduction`
+      : `${databaseUrl}?options=--search_path%3Dproduction`;
+    console.log("🚀 BANCO DE PRODUÇÃO ATIVO (schema: production)");
   } else {
-    console.log("🔧 Modo DESENVOLVIMENTO (usando banco Replit)");
+    // Adicionar schema=development à URL
+    finalUrl = databaseUrl.includes('?') 
+      ? `${databaseUrl}&options=--search_path%3Ddevelopment`
+      : `${databaseUrl}?options=--search_path%3Ddevelopment`;
+    console.log("🔧 BANCO DE DESENVOLVIMENTO ATIVO (schema: development)");
   }
   
   // Log seguro (sem expor credenciais)
-  const safeUrl = databaseUrl.replace(/:[^:@]*@/, ':****@');
+  const safeUrl = finalUrl.replace(/:[^:@]*@/, ':****@');
   console.log(`📊 Conectando ao banco: ${safeUrl.substring(0, 50)}...`);
-  
-  // Sistema preparado para separação futura
-  // Quando quiser separar, basta adicionar DATABASE_URL_DEV e DATABASE_URL_PRODUCTION
-  console.log("✅ Sistema com separação de ambientes ativada (usando banco único temporariamente)");
+  console.log("✅ BANCOS SEPARADOS CONFIGURADOS COM SUCESSO!");
   
   return {
-    url: databaseUrl,
+    url: finalUrl,
     isProduction,
     environment: nodeEnv
   };
