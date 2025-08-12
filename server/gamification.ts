@@ -463,14 +463,26 @@ router.get("/challenges/active-for-user", isAuthenticated, async (req: Request, 
     const now = new Date();
     console.log("Buscando desafios ativos para usuário:", userId, "Data atual:", now);
     
-    // Buscar desafios ativos
+    // Buscar desafios ativos - usar uma query mais simples primeiro
     const activeChallenges = await db
-      .select()
+      .select({
+        id: gamificationChallenges.id,
+        title: gamificationChallenges.title,
+        description: gamificationChallenges.description,
+        imageUrl: gamificationChallenges.imageUrl,
+        points: gamificationChallenges.points,
+        startDate: sql<string>`DATE(${gamificationChallenges.startDate})`,
+        endDate: sql<string>`DATE(${gamificationChallenges.endDate})`,
+        type: gamificationChallenges.type,
+        evaluationType: gamificationChallenges.evaluationType,
+        isActive: gamificationChallenges.isActive,
+        targetUserCategories: gamificationChallenges.targetUserCategories,
+      })
       .from(gamificationChallenges)
       .where(and(
         eq(gamificationChallenges.isActive, true),
-        lte(gamificationChallenges.startDate, now.toISOString()),
-        gte(gamificationChallenges.endDate, now.toISOString())
+        sql`${gamificationChallenges.startDate} <= NOW()`,
+        sql`${gamificationChallenges.endDate} >= NOW()`
       ))
       .orderBy(asc(gamificationChallenges.endDate));
 
