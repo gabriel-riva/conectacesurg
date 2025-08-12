@@ -49,8 +49,8 @@ function ChallengeItem({ challenge }: ChallengeCardProps) {
 
   return (
     <Link href={`/gamificacao/desafio/${challenge.id}`}>
-      <div className="min-w-[280px] max-w-[280px] flex flex-col rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 transform hover:translate-y-[-2px] group cursor-pointer bg-white border">
-        <div className="h-32 bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center relative overflow-hidden">
+      <div className="min-w-[260px] max-w-[260px] h-full flex flex-col rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 transform hover:translate-y-[-2px] group cursor-pointer bg-white border">
+        <div className="h-24 bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center relative overflow-hidden flex-shrink-0">
           {challenge.imageUrl ? (
             <img 
               src={challenge.imageUrl} 
@@ -59,23 +59,23 @@ function ChallengeItem({ challenge }: ChallengeCardProps) {
             />
           ) : (
             <div className="text-center">
-              <Trophy className="w-8 h-8 text-primary/60 mx-auto mb-2" />
+              <Trophy className="w-6 h-6 text-primary/60 mx-auto mb-1" />
               <div className="text-xs font-medium text-primary/80">DESAFIO</div>
             </div>
           )}
-          <div className="absolute top-2 right-2">
+          <div className="absolute top-1 right-1">
             {getStatusBadge()}
           </div>
         </div>
-        <div className="p-4 flex-1 flex flex-col">
+        <div className="p-3 flex-1 flex flex-col min-h-0">
           <h3 className="font-semibold text-sm group-hover:text-primary transition-colors line-clamp-2 mb-2">
             {challenge.title}
           </h3>
-          <p className="text-xs text-gray-600 line-clamp-2 flex-1 mb-3">
+          <p className="text-xs text-gray-600 line-clamp-3 flex-1 mb-2">
             {challenge.description}
           </p>
           
-          <div className="space-y-2">
+          <div className="space-y-1 mt-auto">
             <div className="flex items-center justify-between text-xs text-gray-500">
               <div className="flex items-center">
                 <Calendar className="w-3 h-3 mr-1" />
@@ -165,8 +165,8 @@ export function ChallengesCard() {
   }
 
   return (
-    <Card className="shadow-md hover:shadow-lg transition-shadow duration-300 border-none">
-      <CardHeader className="pb-2 bg-gradient-to-r from-primary/5 to-transparent">
+    <Card className="h-[280px] flex flex-col shadow-md hover:shadow-lg transition-shadow duration-300 border-none">
+      <CardHeader className="pb-2 bg-gradient-to-r from-primary/5 to-transparent flex-shrink-0">
         <div className="flex items-center justify-between">
           <CardTitle className="text-primary/90 flex items-center">
             <span className="inline-block w-1 h-5 bg-primary rounded mr-2"></span>
@@ -194,23 +194,23 @@ export function ChallengesCard() {
           </div>
         </div>
       </CardHeader>
-      <CardContent className="p-4">
+      <CardContent className="flex-1 overflow-hidden p-4">
         {isLoading ? (
-          <div className="flex space-x-4">
-            {[...Array(3)].map((_, i) => (
-              <div key={i} className="min-w-[280px] h-48 bg-gray-200 rounded-lg animate-pulse" />
+          <div className="flex space-x-4 h-full">
+            {[...Array(2)].map((_, i) => (
+              <div key={i} className="min-w-[280px] h-full bg-gray-200 rounded-lg animate-pulse" />
             ))}
           </div>
         ) : challenges.length === 0 ? (
-          <div className="text-center text-gray-500 py-8">
-            <Trophy className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+          <div className="text-center text-gray-500 flex flex-col items-center justify-center h-full">
+            <Trophy className="w-12 h-12 mb-4 text-gray-300" />
             <p className="text-base font-medium">Nenhum desafio ativo</p>
             <p className="text-sm mt-1">Aguarde novos desafios serem publicados</p>
           </div>
         ) : (
           <div 
             ref={scrollContainerRef}
-            className="flex space-x-4 overflow-x-hidden scroll-smooth"
+            className="flex space-x-4 overflow-x-hidden scroll-smooth h-full"
             onScroll={(e) => setScrollPosition(e.currentTarget.scrollLeft)}
           >
             {challenges.map((challenge: Challenge) => (
