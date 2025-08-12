@@ -669,7 +669,9 @@ export const ChallengeEvaluationForm: React.FC<ChallengeEvaluationFormProps> = (
           <div className="space-y-2">
             <p className="text-sm">
               <strong>Status:</strong> {existingSubmission.status === 'pending' ? 'Aguardando revisão' : 
-                existingSubmission.status === 'approved' ? 'Aprovado' : 'Rejeitado'}
+                existingSubmission.status === 'approved' ? 'Aprovado' : 
+                existingSubmission.status === 'completed' ? 'Concluído' :
+                existingSubmission.status === 'rejected' ? 'Rejeitado' : 'Desconhecido'}
             </p>
             <p className="text-sm">
               <strong>Pontos:</strong> {existingSubmission.points}
