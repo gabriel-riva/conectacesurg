@@ -1079,25 +1079,19 @@ router.put("/submissions/:id/review", isAdmin, async (req: Request, res: Respons
         .limit(1);
 
       if (challenge.length > 0) {
-        // Remover pontos provisórios se existirem
+        // Converter pontos provisórios em pontos aprovados (apenas mudar o tipo, não adicionar novos pontos)
         await db
-          .delete(gamificationPoints)
+          .update(gamificationPoints)
+          .set({
+            type: 'approved',
+            description: `Desafio aprovado: ${challenge[0].title}`,
+            createdBy: reviewerId
+          })
           .where(and(
             eq(gamificationPoints.userId, currentSubmission.userId),
             eq(gamificationPoints.type, 'provisional'),
             like(gamificationPoints.description, `%${challenge[0].title}%`)
           ));
-
-        // Adicionar pontos aprovados
-        await db
-          .insert(gamificationPoints)
-          .values({
-            userId: currentSubmission.userId,
-            points: points || currentSubmission.points,
-            description: `Desafio aprovado: ${challenge[0].title}`,
-            type: 'approved',
-            createdBy: reviewerId
-          });
       }
     } else if (status === 'rejected' && currentSubmission.status !== 'rejected') {
       // Buscar o desafio para feedback
