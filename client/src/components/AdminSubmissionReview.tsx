@@ -261,88 +261,101 @@ export const AdminSubmissionReview: React.FC<AdminSubmissionReviewProps> = ({
                   )}
 
                   <div className="flex justify-end">
-                    <Dialog>
-                      <DialogTrigger asChild>
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => openReviewDialog(submission)}
-                        >
-                          <Eye className="w-4 h-4 mr-2" />
-                          Revisar
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent className="max-w-2xl">
-                        <DialogHeader>
-                          <DialogTitle>Revisar Submissão</DialogTitle>
-                          <DialogDescription>
-                            Revisar submissão de {selectedSubmission?.userName}
-                          </DialogDescription>
-                        </DialogHeader>
-                        
-                        {selectedSubmission && (
-                          <div className="space-y-4">
-                            <div className="border-b pb-4">
-                              {renderSubmissionPreview(selectedSubmission)}
-                            </div>
-                            
+                    {/* Só mostrar botão de revisar para submissões que precisam de revisão manual */}
+                    {(submission.submissionType === 'text' || submission.submissionType === 'file') && submission.status === 'pending' ? (
+                      <Dialog>
+                        <DialogTrigger asChild>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => openReviewDialog(submission)}
+                          >
+                            <Eye className="w-4 h-4 mr-2" />
+                            Revisar
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent className="max-w-2xl">
+                          <DialogHeader>
+                            <DialogTitle>Revisar Submissão</DialogTitle>
+                            <DialogDescription>
+                              Revisar submissão de {selectedSubmission?.userName}
+                            </DialogDescription>
+                          </DialogHeader>
+                          
+                          {selectedSubmission && (
                             <div className="space-y-4">
-                              <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                  <Label htmlFor="status">Status</Label>
-                                  <Select value={reviewStatus} onValueChange={setReviewStatus}>
-                                    <SelectTrigger>
-                                      <SelectValue placeholder="Selecione o status" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      <SelectItem value="pending">Pendente</SelectItem>
-                                      <SelectItem value="approved">Aprovado</SelectItem>
-                                      <SelectItem value="rejected">Rejeitado</SelectItem>
-                                    </SelectContent>
-                                  </Select>
+                              <div className="border-b pb-4">
+                                {renderSubmissionPreview(selectedSubmission)}
+                              </div>
+                              
+                              <div className="space-y-4">
+                                <div className="grid grid-cols-2 gap-4">
+                                  <div>
+                                    <Label htmlFor="status">Status</Label>
+                                    <Select value={reviewStatus} onValueChange={setReviewStatus}>
+                                      <SelectTrigger>
+                                        <SelectValue placeholder="Selecione o status" />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        <SelectItem value="pending">Pendente</SelectItem>
+                                        <SelectItem value="approved">Aprovado</SelectItem>
+                                        <SelectItem value="rejected">Rejeitado</SelectItem>
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
+                                  
+                                  <div>
+                                    <Label htmlFor="points">Pontos</Label>
+                                    <Input
+                                      id="points"
+                                      type="number"
+                                      value={reviewPoints}
+                                      onChange={(e) => setReviewPoints(parseInt(e.target.value) || 0)}
+                                      min="0"
+                                    />
+                                  </div>
                                 </div>
                                 
                                 <div>
-                                  <Label htmlFor="points">Pontos</Label>
-                                  <Input
-                                    id="points"
-                                    type="number"
-                                    value={reviewPoints}
-                                    onChange={(e) => setReviewPoints(parseInt(e.target.value) || 0)}
-                                    min="0"
+                                  <Label htmlFor="feedback">Feedback (opcional)</Label>
+                                  <Textarea
+                                    id="feedback"
+                                    value={reviewFeedback}
+                                    onChange={(e) => setReviewFeedback(e.target.value)}
+                                    placeholder="Deixe um feedback para o usuário..."
                                   />
                                 </div>
-                              </div>
-                              
-                              <div>
-                                <Label htmlFor="feedback">Feedback (opcional)</Label>
-                                <Textarea
-                                  id="feedback"
-                                  value={reviewFeedback}
-                                  onChange={(e) => setReviewFeedback(e.target.value)}
-                                  placeholder="Deixe um feedback para o usuário..."
-                                />
-                              </div>
-                              
-                              <div className="flex justify-end space-x-2">
-                                <Button
-                                  variant="outline"
-                                  onClick={() => setSelectedSubmission(null)}
-                                >
-                                  Cancelar
-                                </Button>
-                                <Button
-                                  onClick={handleReviewSubmit}
-                                  disabled={reviewMutation.isPending}
-                                >
-                                  {reviewMutation.isPending ? 'Salvando...' : 'Salvar Revisão'}
-                                </Button>
+                                
+                                <div className="flex justify-end space-x-2">
+                                  <Button
+                                    variant="outline"
+                                    onClick={() => setSelectedSubmission(null)}
+                                  >
+                                    Cancelar
+                                  </Button>
+                                  <Button
+                                    onClick={handleReviewSubmit}
+                                    disabled={reviewMutation.isPending}
+                                  >
+                                    {reviewMutation.isPending ? 'Salvando...' : 'Salvar Revisão'}
+                                  </Button>
+                                </div>
                               </div>
                             </div>
-                          </div>
-                        )}
-                      </DialogContent>
-                    </Dialog>
+                          )}
+                        </DialogContent>
+                      </Dialog>
+                    ) : (
+                      <div className="text-sm text-gray-500">
+                        {submission.status === 'approved' && (submission.submissionType === 'quiz' || submission.submissionType === 'qrcode') 
+                          ? 'Avaliação automática' 
+                          : submission.status === 'approved' 
+                            ? 'Já revisado' 
+                            : submission.status === 'rejected'
+                              ? 'Rejeitado'
+                              : 'Aguardando revisão'}
+                      </div>
+                    )}
                   </div>
                 </div>
               </CardContent>

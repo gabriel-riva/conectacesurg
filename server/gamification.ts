@@ -905,7 +905,7 @@ router.post("/challenges/:id/submit", isAuthenticated, async (req: Request, res:
             }
             
             points = Math.round(basePoints);
-            status = 'completed';
+            status = 'approved';
           } else {
             status = 'pending';
           }
@@ -923,7 +923,7 @@ router.post("/challenges/:id/submit", isAuthenticated, async (req: Request, res:
         
         if (qrConfig?.qrcode && qrSubmission?.scannedData === qrConfig.qrcode.qrCodeData) {
           points = challengeData.points;
-          status = 'completed';
+          status = 'approved';
         } else {
           return res.status(400).json({ error: "Invalid QR code" });
         }
@@ -951,14 +951,14 @@ router.post("/challenges/:id/submit", isAuthenticated, async (req: Request, res:
       .returning();
 
     // Adicionar pontos baseado no status
-    if (status === 'completed') {
+    if (status === 'approved') {
       // Para submissões automaticamente aprovadas (quiz, qrcode)
       await db
         .insert(gamificationPoints)
         .values({
           userId,
           points,
-          description: `Desafio concluído: ${challengeData.title}`,
+          description: `Desafio aprovado automaticamente: ${challengeData.title}`,
           type: 'automatic'
         });
     } else if (status === 'pending' && points > 0) {
