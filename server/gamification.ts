@@ -994,6 +994,8 @@ router.post("/challenges/:id/submit", isAuthenticated, async (req: Request, res:
           const score = calculateQuizScore(quizSubmission.answers, quizConfig.questions);
           const attemptNumber = existingSubmission.length + 1;
           
+          // Quizzes são automaticamente aprovados (completados) ao serem enviados
+          // A pontuação determina quantos pontos o usuário ganha
           if (score >= quizConfig.minScore) {
             let basePoints = challengeData.points;
             
@@ -1004,10 +1006,13 @@ router.post("/challenges/:id/submit", isAuthenticated, async (req: Request, res:
             }
             
             points = Math.round(basePoints);
-            status = 'approved';
           } else {
-            status = 'pending';
+            // Mesmo não atingindo a pontuação mínima, o quiz é considerado completado
+            points = 0;
           }
+          
+          // Quizzes são sempre marcados como 'completed' pois são avaliados automaticamente
+          status = 'completed';
           
           submissionData.quiz.score = score;
           submissionData.quiz.totalQuestions = quizConfig.questions.length;
@@ -1092,6 +1097,41 @@ function calculateQuizScore(answers: { questionId: string; answer: number }[], q
   
   return Math.round((correct / questions.length) * 100);
 }
+
+// Buscar TODAS as submissões (admin)
+router.get("/all-submissions", isAdmin, async (req: Request, res: Response) => {
+  try {
+    const submissions = await db
+      .select({
+        id: challengeSubmissions.id,
+        challengeId: challengeSubmissions.challengeId,
+        userId: challengeSubmissions.userId,
+        submissionType: challengeSubmissions.submissionType,
+        submissionData: challengeSubmissions.submissionData,
+        status: challengeSubmissions.status,
+        points: challengeSubmissions.points,
+        adminFeedback: challengeSubmissions.adminFeedback,
+        reviewedBy: challengeSubmissions.reviewedBy,
+        reviewedAt: challengeSubmissions.reviewedAt,
+        createdAt: challengeSubmissions.createdAt,
+        updatedAt: challengeSubmissions.updatedAt,
+        userName: users.name,
+        userEmail: users.email,
+        userPhotoUrl: users.photoUrl,
+        challengeTitle: gamificationChallenges.title,
+        challengeType: gamificationChallenges.type,
+      })
+      .from(challengeSubmissions)
+      .leftJoin(users, eq(challengeSubmissions.userId, users.id))
+      .leftJoin(gamificationChallenges, eq(challengeSubmissions.challengeId, gamificationChallenges.id))
+      .orderBy(desc(challengeSubmissions.createdAt));
+    
+    res.json(submissions);
+  } catch (error) {
+    console.error("Error fetching all submissions:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
 
 // Buscar submissões de um desafio (admin)
 router.get("/challenges/:id/submissions", isAdmin, async (req: Request, res: Response) => {

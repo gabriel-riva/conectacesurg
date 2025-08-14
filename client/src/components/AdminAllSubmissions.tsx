@@ -57,33 +57,14 @@ export const AdminAllSubmissions: React.FC = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Buscar todos os desafios
+  // Buscar todos os desafios para filtros
   const { data: challenges = [], isLoading: challengesLoading } = useQuery<Challenge[]>({
     queryKey: ['/api/gamification/challenges'],
   });
 
-  // Buscar todas as submissões de todos os desafios
+  // Buscar todas as submissões usando a nova rota
   const { data: allSubmissions = [], isLoading: submissionsLoading } = useQuery<Submission[]>({
     queryKey: ['/api/gamification/all-submissions'],
-    queryFn: async () => {
-      // Buscar submissões de cada desafio que tem avaliação
-      const challengesWithEval = challenges.filter(c => c.evaluationType !== 'none');
-      const submissionsPromises = challengesWithEval.map(challenge => 
-        apiRequest(`/api/gamification/challenges/${challenge.id}/submissions`)
-          .then((submissions: any[]) => 
-            submissions.map(sub => ({
-              ...sub,
-              challengeTitle: challenge.title,
-              challengeId: challenge.id
-            }))
-          )
-          .catch(() => [])
-      );
-      
-      const allSubmissionsArrays = await Promise.all(submissionsPromises);
-      return allSubmissionsArrays.flat();
-    },
-    enabled: challenges.length > 0,
   });
 
   const reviewMutation = useMutation({
@@ -310,6 +291,7 @@ export const AdminAllSubmissions: React.FC = () => {
   const totalPending = allSubmissions.filter(s => s.status === 'pending').length;
   const totalApproved = allSubmissions.filter(s => s.status === 'approved').length;
   const totalRejected = allSubmissions.filter(s => s.status === 'rejected').length;
+  const totalCompleted = allSubmissions.filter(s => s.status === 'completed').length;
 
   if (challengesLoading || submissionsLoading) {
     return (
@@ -324,7 +306,7 @@ export const AdminAllSubmissions: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Cards de resumo */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium">Total de Submissões</CardTitle>
@@ -358,6 +340,15 @@ export const AdminAllSubmissions: React.FC = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-red-600">{totalRejected}</div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium">Concluídas</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-blue-600">{totalCompleted}</div>
           </CardContent>
         </Card>
       </div>
