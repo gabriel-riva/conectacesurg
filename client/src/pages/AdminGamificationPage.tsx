@@ -1,13 +1,14 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -1146,26 +1147,57 @@ export default function AdminGamificationPage() {
                 <Card>
                   <CardHeader>
                     <CardTitle>Submissões de Desafios</CardTitle>
+                    <CardDescription>
+                      Gerencie e revise as submissões dos usuários para cada desafio
+                    </CardDescription>
                   </CardHeader>
                   <CardContent>
                     {challengesLoading ? (
                       <div className="text-center py-8">Carregando desafios...</div>
                     ) : Array.isArray(challenges) && challenges.length > 0 ? (
-                      <div className="space-y-6">
-                        {challenges.filter((challenge: any) => challenge.evaluationType !== 'none').map((challenge: any) => (
-                          <div key={challenge.id}>
-                            <AdminSubmissionReview
-                              challengeId={challenge.id}
-                              challengeTitle={challenge.title}
-                            />
-                          </div>
+                      <Accordion type="single" collapsible className="w-full">
+                        {challenges.filter((challenge: any) => challenge.evaluationType !== 'none').map((challenge: any, index: number) => (
+                          <AccordionItem key={challenge.id} value={`challenge-${challenge.id}`}>
+                            <AccordionTrigger className="hover:no-underline">
+                              <div className="flex items-center justify-between w-full pr-4">
+                                <div className="flex items-center gap-3">
+                                  <span className="font-medium">{challenge.title}</span>
+                                  <Badge variant="outline" className="text-xs">
+                                    {challenge.type === 'periodic' ? 'Ciclo' : 'Anual'}
+                                  </Badge>
+                                  {challenge.evaluationType && (
+                                    <Badge variant="secondary" className="text-xs">
+                                      {challenge.evaluationType === 'quiz' ? 'Quiz' : 
+                                       challenge.evaluationType === 'text' ? 'Texto' :
+                                       challenge.evaluationType === 'file' ? 'Arquivo' :
+                                       challenge.evaluationType === 'qrcode' ? 'QR Code' : 
+                                       challenge.evaluationType}
+                                    </Badge>
+                                  )}
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <Badge variant={challenge.isActive ? 'default' : 'secondary'} className="text-xs">
+                                    {challenge.isActive ? 'Ativo' : 'Inativo'}
+                                  </Badge>
+                                </div>
+                              </div>
+                            </AccordionTrigger>
+                            <AccordionContent>
+                              <div className="pt-4">
+                                <AdminSubmissionReview
+                                  challengeId={challenge.id}
+                                  challengeTitle={challenge.title}
+                                />
+                              </div>
+                            </AccordionContent>
+                          </AccordionItem>
                         ))}
                         {challenges.filter((challenge: any) => challenge.evaluationType !== 'none').length === 0 && (
                           <div className="text-center py-8 text-gray-500">
                             Nenhum desafio com avaliação encontrado
                           </div>
                         )}
-                      </div>
+                      </Accordion>
                     ) : (
                       <div className="text-center py-8 text-gray-500">
                         Nenhum desafio encontrado
