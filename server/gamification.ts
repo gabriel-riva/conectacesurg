@@ -1134,7 +1134,13 @@ router.get("/all-submissions", isAdmin, async (req: Request, res: Response) => {
       .leftJoin(gamificationChallenges, eq(challengeSubmissions.challengeId, gamificationChallenges.id))
       .orderBy(desc(challengeSubmissions.createdAt));
     
-    console.log(`📊 Encontradas ${submissions.length} submissões:`, submissions.map(s => ({id: s.id, status: s.status, type: s.submissionType})));
+    console.log(`📊 Encontradas ${submissions.length} submissões:`, submissions.map(s => ({id: s.id, status: s.status, type: s.submissionType, userId: s.userId, points: s.points})));
+    
+    // Log detalhado da primeira submissão para debug
+    if (submissions.length > 0) {
+      console.log('🔍 Primeira submissão (detalhada):', JSON.stringify(submissions[0], null, 2));
+    }
+    
     res.json(submissions);
   } catch (error) {
     console.error("Error fetching all submissions:", error);
