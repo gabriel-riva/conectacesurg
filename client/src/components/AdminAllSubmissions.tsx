@@ -66,6 +66,10 @@ export const AdminAllSubmissions: React.FC = () => {
   const { data: allSubmissions = [], isLoading: submissionsLoading, error } = useQuery<Submission[]>({
     queryKey: ['/api/gamification/all-submissions'],
     retry: 1,
+    staleTime: 0, // Força sempre buscar dados frescos
+    cacheTime: 0, // Remove cache completamente
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
     onSuccess: (data) => {
       console.log('📊 Submissões recebidas no frontend:', data);
     },
@@ -79,6 +83,16 @@ export const AdminAllSubmissions: React.FC = () => {
   console.log('- submissionsLoading:', submissionsLoading);
   console.log('- allSubmissions:', allSubmissions);
   console.log('- error:', error);
+  
+  // Limpar cache se houver erro de autenticação
+  React.useEffect(() => {
+    if (error) {
+      console.log('❌ Erro detectado, limpando cache:', error);
+      queryClient.removeQueries({
+        queryKey: ['/api/gamification/all-submissions']
+      });
+    }
+  }, [error]);
 
   const reviewMutation = useMutation({
     mutationFn: async (data: { submissionId: number; status: string; points: number; adminFeedback: string }) => {

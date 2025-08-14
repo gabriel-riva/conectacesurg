@@ -1105,9 +1105,10 @@ function calculateQuizScore(answers: { questionId: string; answer: number }[], q
 // Buscar TODAS as submissões (admin)
 router.get("/all-submissions", isAdmin, async (req: Request, res: Response) => {
   try {
-    console.log("🔍 Admin buscando todas as submissões");
+    console.log("🔍 ===== ADMIN BUSCANDO TODAS AS SUBMISSÕES =====");
     console.log("🔍 Database environment:", databaseEnvironment);
-    console.log("🔍 Database URL:", process.env.DATABASE_URL ? 'CONFIGURADO' : 'NÃO CONFIGURADO');
+    console.log("🔍 User:", req.user?.name, req.user?.email);
+    console.log("🔍 Timestamp:", new Date().toISOString());
     
     const submissions = await db
       .select({
@@ -1139,6 +1140,23 @@ router.get("/all-submissions", isAdmin, async (req: Request, res: Response) => {
     // Log detalhado da primeira submissão para debug
     if (submissions.length > 0) {
       console.log('🔍 Primeira submissão (detalhada):', JSON.stringify(submissions[0], null, 2));
+      
+      // Corrigir submissões de quiz que deveriam estar completed
+      for (const submission of submissions) {
+        if (submission.submissionType === 'quiz' && submission.status === 'pending') {
+          console.log(`🔧 Corrigindo status da submissão ${submission.id} de pending para completed`);
+          await db
+            .update(challengeSubmissions)
+            .set({ 
+              status: 'completed',
+              updatedAt: new Date()
+            })
+            .where(eq(challengeSubmissions.id, submission.id));
+          
+          // Atualizar o objeto retornado
+          submission.status = 'completed';
+        }
+      }
     }
     
     res.json(submissions);
