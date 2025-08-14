@@ -53,7 +53,7 @@ const challengeSchema = z.object({
   type: z.enum(["periodic", "annual"]),
   isActive: z.boolean().default(true),
   targetUserCategories: z.array(z.string()).default([]),
-  // displayOrder: z.number().min(0, "Ordem deve ser 0 ou maior").default(0), // TEMP DISABLED
+  displayOrder: z.number().min(0, "Ordem deve ser 0 ou maior").default(0),
 });
 
 type AddPointsForm = z.infer<typeof addPointsSchema>;
