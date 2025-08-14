@@ -140,34 +140,62 @@ export const ChallengeEvaluationForm: React.FC<ChallengeEvaluationFormProps> = (
       
       // Para cada requisito de arquivo
       for (const [requirementId, files] of Object.entries(selectedFiles)) {
+        if (!files || files.length === 0) continue;
+        
         for (const file of files) {
-          // Criar FormData para envio do arquivo
-          const formData = new FormData();
-          formData.append('file', file);
-          formData.append('challengeId', challengeId.toString());
-          formData.append('requirementId', requirementId);
+          try {
+            // Criar FormData para envio do arquivo
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('challengeId', challengeId.toString());
+            formData.append('requirementId', requirementId);
 
-          // Enviar arquivo para o servidor
-          const response = await fetch('/api/files', {
-            method: 'POST',
-            body: formData
-          });
+            console.log('Enviando arquivo:', file.name, 'para requisito:', requirementId);
 
-          if (!response.ok) {
-            throw new Error(`Erro ao enviar ${file.name}`);
+            // Enviar arquivo para o servidor
+            const response = await fetch('/api/upload', {
+              method: 'POST',
+              body: formData
+            });
+
+            if (!response.ok) {
+              const errorText = await response.text();
+              console.error('Erro no upload:', response.status, errorText);
+              throw new Error(`Erro ao enviar ${file.name}: ${response.status}`);
+            }
+
+            const uploadResult = await response.json();
+            console.log('Upload bem-sucedido:', uploadResult);
+            
+            filesData.push({
+              requirementId,
+              fileName: file.name,
+              fileUrl: uploadResult.url || uploadResult.fileUrl, // Aceita ambos os formatos
+              fileSize: file.size,
+              mimeType: file.type
+            });
+          } catch (fileError: any) {
+            console.error('Erro específico do arquivo:', fileError);
+            toast({
+              title: "Erro no Upload",
+              description: `Falha ao enviar ${file.name}: ${fileError.message}`,
+              variant: "destructive"
+            });
+            return; // Para o processo se houver erro em qualquer arquivo
           }
-
-          const uploadResult = await response.json();
-          
-          filesData.push({
-            requirementId,
-            fileName: file.name,
-            fileUrl: uploadResult.url, // API retorna 'url', não 'fileUrl'
-            fileSize: file.size,
-            mimeType: file.type
-          });
         }
       }
+
+      if (filesData.length === 0) {
+        toast({
+          title: "Erro",
+          description: "Nenhum arquivo foi enviado com sucesso.",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      console.log('Dados dos arquivos preparados:', filesData);
 
       const submission = {
         file: {
@@ -177,6 +205,7 @@ export const ChallengeEvaluationForm: React.FC<ChallengeEvaluationFormProps> = (
 
       onSubmit(submission);
     } catch (error: any) {
+      console.error('Erro geral no upload:', error);
       toast({
         title: "Erro",
         description: error.message || "Erro ao enviar arquivos",

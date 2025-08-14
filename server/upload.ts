@@ -30,23 +30,41 @@ const upload = multer({
     fileSize: 10 * 1024 * 1024, // 10MB
   },
   fileFilter: (req, file, cb) => {
-    // Permitir apenas imagens e alguns tipos de arquivo
+    // Permitir ampla gama de tipos de arquivo
     const allowedTypes = [
+      // Imagens
       'image/jpeg',
-      'image/jpg',
+      'image/jpg', 
       'image/png',
       'image/gif',
       'image/webp',
+      'image/bmp',
+      'image/tiff',
+      // Documentos
       'application/pdf',
       'application/msword',
       'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-      'text/plain'
+      'application/vnd.ms-excel',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'application/vnd.ms-powerpoint',
+      'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+      // Texto
+      'text/plain',
+      'text/csv',
+      'text/rtf',
+      // Outros
+      'application/zip',
+      'application/x-rar-compressed',
+      'application/json',
+      'application/xml',
+      'text/xml'
     ];
     
     if (allowedTypes.includes(file.mimetype)) {
       cb(null, true);
     } else {
-      cb(new Error('Tipo de arquivo não permitido'));
+      console.log(`Tipo de arquivo rejeitado: ${file.mimetype} para arquivo: ${file.originalname}`);
+      cb(new Error(`Tipo de arquivo não permitido: ${file.mimetype}`));
     }
   }
 });
