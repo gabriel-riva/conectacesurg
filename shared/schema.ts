@@ -474,6 +474,7 @@ export const gamificationChallenges = pgTable("gamification_challenges", {
   createdBy: integer("created_by").notNull().references(() => users.id),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
+  displayOrder: integer("display_order").notNull().default(0),
 });
 
 export const challengeComments: any = pgTable("challenge_comments", {

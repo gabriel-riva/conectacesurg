@@ -20,7 +20,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Plus, Edit, Trash2, Settings, Trophy, Users, Calendar, Target, Award } from "lucide-react";
+import { Plus, Edit, Trash2, Settings, Trophy, Users, Calendar, Target, Award, ArrowUpDown } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import ReactQuill from "react-quill";
@@ -28,6 +28,8 @@ import "react-quill/dist/quill.snow.css";
 import { ChallengeEvaluationConfig } from "@/components/ChallengeEvaluationConfig";
 import { AdminSubmissionReview } from "@/components/AdminSubmissionReview";
 import { AdminAllSubmissions } from "@/components/AdminAllSubmissions";
+import { AdminChallengeReorder } from "@/components/AdminChallengeReorder";
+import { apiRequest } from "@/lib/queryClient";
 
 const addPointsSchema = z.object({
   userId: z.string(),
@@ -71,6 +73,7 @@ export default function AdminGamificationPage() {
   const [quillValue, setQuillValue] = useState("");
   const [evaluationType, setEvaluationType] = useState<'none' | 'quiz' | 'text' | 'file' | 'qrcode'>('none');
   const [evaluationConfig, setEvaluationConfig] = useState<any>({});
+  const [isReorderDialogOpen, setIsReorderDialogOpen] = useState(false);
 
   // Queries
   const { data: settings, isLoading: settingsLoading } = useQuery({
@@ -98,7 +101,8 @@ export default function AdminGamificationPage() {
   });
 
   const { data: challenges, isLoading: challengesLoading } = useQuery({
-    queryKey: ["/api/gamification/challenges"],
+    queryKey: ["/api/gamification/challenges", { admin: true }],
+    queryFn: () => apiRequest("/api/gamification/challenges?admin=true"),
   });
 
   // Mutations
@@ -835,10 +839,20 @@ export default function AdminGamificationPage() {
                   <CardHeader>
                     <div className="flex items-center justify-between">
                       <CardTitle>Gerenciar Desafios</CardTitle>
-                      <Button onClick={openCreateChallengeDialog}>
-                        <Plus className="h-4 w-4 mr-2" />
-                        Novo Desafio
-                      </Button>
+                      <div className="flex gap-2">
+                        <Button 
+                          variant="outline"
+                          onClick={() => setIsReorderDialogOpen(true)}
+                          disabled={!challenges || challenges.length === 0}
+                        >
+                          <ArrowUpDown className="h-4 w-4 mr-2" />
+                          Reordenar
+                        </Button>
+                        <Button onClick={openCreateChallengeDialog}>
+                          <Plus className="h-4 w-4 mr-2" />
+                          Novo Desafio
+                        </Button>
+                      </div>
                     </div>
                   </CardHeader>
                   <CardContent>
@@ -1152,6 +1166,18 @@ export default function AdminGamificationPage() {
           </div>
         </main>
       </div>
+
+      {/* Modal de Reordenação */}
+      <Dialog open={isReorderDialogOpen} onOpenChange={setIsReorderDialogOpen}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          {challenges && challenges.length > 0 && (
+            <AdminChallengeReorder
+              challenges={challenges}
+              onClose={() => setIsReorderDialogOpen(false)}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

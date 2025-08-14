@@ -379,9 +379,10 @@ router.get("/categories", isAuthenticated, async (req: Request, res: Response) =
 // Listar desafios
 router.get("/challenges", isAuthenticated, async (req: Request, res: Response) => {
   try {
-    const { type = "all" } = req.query;
+    const { type = "all", admin = "false" } = req.query;
     const userId = req.user.id;
     const userRole = req.user.role;
+    const isAdminRequest = admin === "true" && (userRole === "admin" || userRole === "superadmin");
     
     // Buscar todas as categorias do usuário
     const userCategories = await db
@@ -409,11 +410,12 @@ router.get("/challenges", isAuthenticated, async (req: Request, res: Response) =
         createdAt: gamificationChallenges.createdAt,
         createdBy: gamificationChallenges.createdBy,
         creatorName: users.name,
+        displayOrder: gamificationChallenges.displayOrder,
       })
       .from(gamificationChallenges)
       .leftJoin(users, eq(gamificationChallenges.createdBy, users.id))
-      .where(eq(gamificationChallenges.isActive, true))
-      .orderBy(desc(gamificationChallenges.createdAt));
+      .where(isAdminRequest ? sql`1=1` : eq(gamificationChallenges.isActive, true))
+      .orderBy(asc(gamificationChallenges.displayOrder), desc(gamificationChallenges.createdAt));
     
     if (type !== "all") {
       query = query.where(eq(gamificationChallenges.type, type as string));
@@ -600,6 +602,30 @@ router.get("/challenges/:id", isAuthenticated, async (req: Request, res: Respons
 });
 
 // Criar desafio (admin)
+// Reordenar desafios
+router.put("/challenges/reorder", isAdmin, async (req: Request, res: Response) => {
+  try {
+    const { challengeIds } = req.body;
+    
+    if (!Array.isArray(challengeIds)) {
+      return res.status(400).json({ error: "challengeIds must be an array" });
+    }
+    
+    // Atualizar a ordem de cada desafio
+    for (let i = 0; i < challengeIds.length; i++) {
+      await db
+        .update(gamificationChallenges)
+        .set({ displayOrder: i })
+        .where(eq(gamificationChallenges.id, challengeIds[i]));
+    }
+    
+    res.json({ success: true });
+  } catch (error) {
+    console.error("Error reordering challenges:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 router.post("/challenges", isAdmin, async (req: Request, res: Response) => {
   try {
     const data = insertGamificationChallengeSchema.parse({
