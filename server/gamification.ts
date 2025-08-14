@@ -380,6 +380,11 @@ router.get("/categories", isAuthenticated, async (req: Request, res: Response) =
 router.get("/challenges", isAuthenticated, async (req: Request, res: Response) => {
   try {
     const { type = "all", admin = "false" } = req.query;
+    
+    if (!req.user) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+    
     const userId = req.user.id;
     const userRole = req.user.role;
     const isAdminRequest = admin === "true" && (userRole === "admin" || userRole === "superadmin");
@@ -410,12 +415,11 @@ router.get("/challenges", isAuthenticated, async (req: Request, res: Response) =
         createdAt: gamificationChallenges.createdAt,
         createdBy: gamificationChallenges.createdBy,
         creatorName: users.name,
-        displayOrder: gamificationChallenges.displayOrder,
       })
       .from(gamificationChallenges)
       .leftJoin(users, eq(gamificationChallenges.createdBy, users.id))
       .where(isAdminRequest ? sql`1=1` : eq(gamificationChallenges.isActive, true))
-      .orderBy(asc(gamificationChallenges.displayOrder), desc(gamificationChallenges.createdAt));
+      .orderBy(desc(gamificationChallenges.createdAt));
     
     if (type !== "all") {
       query = query.where(eq(gamificationChallenges.type, type as string));
