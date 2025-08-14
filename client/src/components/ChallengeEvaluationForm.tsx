@@ -30,13 +30,20 @@ interface EvaluationConfig {
     maxLength: number;
   };
   file?: {
-    allowedTypes: string[];
-    maxSize: number;
+    fileRequirements: {
+      id: string;
+      name: string;
+      description: string;
+      points: number;
+      acceptedTypes: string[];
+      maxSize: number;
+    }[];
     maxFiles: number;
   };
   qrcode?: {
     qrCodeData: string;
     qrCodeImage: string;
+    instructions: string;
   };
 }
 
@@ -58,7 +65,7 @@ export const ChallengeEvaluationForm: React.FC<ChallengeEvaluationFormProps> = (
   existingSubmission
 }) => {
   const [formData, setFormData] = useState<any>({});
-  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [selectedFiles, setSelectedFiles] = useState<{[requirementId: string]: File[]}>({});
   const [qrScannerActive, setQrScannerActive] = useState(false);
   const [scannedData, setScannedData] = useState<string>('');
 
@@ -113,8 +120,13 @@ export const ChallengeEvaluationForm: React.FC<ChallengeEvaluationFormProps> = (
     onSubmit(submission);
   };
 
-  const handleFileSubmit = () => {
-    if (selectedFiles.length === 0) {
+  const handleFileSubmit = async () => {
+    const config = evaluationConfig.file;
+    if (!config?.fileRequirements) return;
+
+    // Verificar se há arquivos selecionados
+    const totalFiles = Object.values(selectedFiles).flat().length;
+    if (totalFiles === 0) {
       toast({
         title: "Erro",
         description: "Selecione pelo menos um arquivo.",
@@ -123,21 +135,54 @@ export const ChallengeEvaluationForm: React.FC<ChallengeEvaluationFormProps> = (
       return;
     }
 
-    const submission = {
-      file: {
-        files: selectedFiles.map(file => ({
-          name: file.name,
-          size: file.size,
-          type: file.type,
-          // Em uma implementação real, você enviaria o arquivo para o servidor
-          // e receberia uma URL de volta
-          url: URL.createObjectURL(file)
-        })),
-        submittedAt: new Date().toISOString()
-      }
-    };
+    try {
+      const filesData = [];
+      
+      // Para cada requisito de arquivo
+      for (const [requirementId, files] of Object.entries(selectedFiles)) {
+        for (const file of files) {
+          // Criar FormData para envio do arquivo
+          const formData = new FormData();
+          formData.append('file', file);
+          formData.append('challengeId', challengeId.toString());
+          formData.append('requirementId', requirementId);
 
-    onSubmit(submission);
+          // Enviar arquivo para o servidor
+          const response = await fetch('/api/files', {
+            method: 'POST',
+            body: formData
+          });
+
+          if (!response.ok) {
+            throw new Error(`Erro ao enviar ${file.name}`);
+          }
+
+          const uploadResult = await response.json();
+          
+          filesData.push({
+            requirementId,
+            fileName: file.name,
+            fileUrl: uploadResult.url, // API retorna 'url', não 'fileUrl'
+            fileSize: file.size,
+            mimeType: file.type
+          });
+        }
+      }
+
+      const submission = {
+        file: {
+          files: filesData
+        }
+      };
+
+      onSubmit(submission);
+    } catch (error: any) {
+      toast({
+        title: "Erro",
+        description: error.message || "Erro ao enviar arquivos",
+        variant: "destructive"
+      });
+    }
   };
 
   const handleQRCodeSubmit = () => {
@@ -327,25 +372,21 @@ export const ChallengeEvaluationForm: React.FC<ChallengeEvaluationFormProps> = (
 
 
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = (requirementId: string, requirement: any) => (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
-    const config = evaluationConfig.file;
     
-    if (!config) return;
+    if (!requirement) return;
 
     // Validar tipos de arquivo
     const validFiles = files.filter(file => {
       const extension = file.name.split('.').pop()?.toLowerCase();
-      return config.allowedTypes.includes(extension || '');
+      return requirement.acceptedTypes.includes(extension || '');
     });
 
     // Validar tamanho
-    const sizeValidFiles = validFiles.filter(file => file.size <= config.maxSize);
+    const sizeValidFiles = validFiles.filter(file => file.size <= requirement.maxSize);
 
-    // Validar quantidade
-    const finalFiles = sizeValidFiles.slice(0, config.maxFiles);
-
-    if (finalFiles.length !== files.length) {
+    if (sizeValidFiles.length !== files.length) {
       toast({
         title: "Atenção",
         description: "Alguns arquivos foram removidos por não atenderem aos critérios.",
@@ -353,7 +394,10 @@ export const ChallengeEvaluationForm: React.FC<ChallengeEvaluationFormProps> = (
       });
     }
 
-    setSelectedFiles(finalFiles);
+    setSelectedFiles(prev => ({
+      ...prev,
+      [requirementId]: sizeValidFiles
+    }));
   };
 
   // Renderizar formulário baseado no tipo de avaliação
@@ -459,55 +503,88 @@ export const ChallengeEvaluationForm: React.FC<ChallengeEvaluationFormProps> = (
 
       case 'file':
         const fileConfig = evaluationConfig.file;
-        if (!fileConfig || !fileConfig.allowedTypes || !Array.isArray(fileConfig.allowedTypes)) return null;
+        if (!fileConfig?.fileRequirements || !Array.isArray(fileConfig.fileRequirements)) return null;
+
+        const totalSelectedFiles = Object.values(selectedFiles).flat().length;
 
         return (
           <div className="space-y-6">
             <div className="flex items-center space-x-2">
               <Upload className="w-5 h-5 text-purple-600" />
-              <h3 className="text-lg font-semibold">Upload de Arquivo</h3>
+              <h3 className="text-lg font-semibold">Upload de Arquivos</h3>
             </div>
 
-            <div className="space-y-4">
-              <Label htmlFor="fileInput">Selecione os arquivos</Label>
-              <Input
-                id="fileInput"
-                type="file"
-                multiple={fileConfig.maxFiles > 1}
-                accept={fileConfig.allowedTypes.map(type => `.${type}`).join(',')}
-                onChange={handleFileChange}
-              />
-              
-              <div className="text-sm text-gray-500 space-y-1">
-                <p>Tipos permitidos: {fileConfig.allowedTypes.join(', ')}</p>
-                <p>Tamanho máximo: {(fileConfig.maxSize / 1024 / 1024).toFixed(1)}MB por arquivo</p>
-                <p>Máximo de arquivos: {fileConfig.maxFiles}</p>
-              </div>
-
-              {selectedFiles.length > 0 && (
-                <div className="space-y-2">
-                  <Label>Arquivos selecionados:</Label>
-                  <div className="space-y-1">
-                    {selectedFiles.map((file, index) => (
-                      <div key={index} className="flex items-center space-x-2 p-2 bg-gray-50 rounded">
-                        <CheckCircle className="w-4 h-4 text-green-500" />
-                        <span className="text-sm">{file.name}</span>
-                        <span className="text-xs text-gray-500">
-                          ({(file.size / 1024 / 1024).toFixed(1)}MB)
-                        </span>
+            <div className="space-y-6">
+              {fileConfig.fileRequirements.map((requirement) => (
+                <Card key={requirement.id} className="border-l-4 border-l-purple-500">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-sm font-semibold text-purple-700">
+                        {requirement.name}
+                      </CardTitle>
+                      <Badge variant="outline" className="text-xs">
+                        {requirement.points} pontos
+                      </Badge>
+                    </div>
+                    {requirement.description && (
+                      <CardDescription className="text-xs">
+                        {requirement.description}
+                      </CardDescription>
+                    )}
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor={`fileInput-${requirement.id}`}>Selecione os arquivos</Label>
+                      <Input
+                        id={`fileInput-${requirement.id}`}
+                        type="file"
+                        multiple
+                        accept={requirement.acceptedTypes.map(type => `.${type}`).join(',')}
+                        onChange={handleFileChange(requirement.id, requirement)}
+                      />
+                      
+                      <div className="text-xs text-gray-500 space-y-1">
+                        <p>Tipos permitidos: {requirement.acceptedTypes.join(', ')}</p>
+                        <p>Tamanho máximo: {(requirement.maxSize / 1024 / 1024).toFixed(1)}MB por arquivo</p>
                       </div>
-                    ))}
-                  </div>
-                </div>
-              )}
+                    </div>
+
+                    {selectedFiles[requirement.id] && selectedFiles[requirement.id].length > 0 && (
+                      <div className="space-y-2">
+                        <Label className="text-xs font-medium text-green-700">Arquivos selecionados:</Label>
+                        <div className="space-y-1">
+                          {selectedFiles[requirement.id].map((file, index) => (
+                            <div key={index} className="flex items-center space-x-2 p-2 bg-green-50 rounded border">
+                              <CheckCircle className="w-3 h-3 text-green-500" />
+                              <span className="text-xs">{file.name}</span>
+                              <span className="text-xs text-gray-500">
+                                ({(file.size / 1024 / 1024).toFixed(1)}MB)
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              ))}
+              
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <p className="text-sm text-gray-700">
+                  <strong>Total de arquivos selecionados:</strong> {totalSelectedFiles}
+                </p>
+                <p className="text-sm text-gray-700">
+                  <strong>Máximo permitido:</strong> {fileConfig.maxFiles}
+                </p>
+              </div>
             </div>
 
             <Button 
               onClick={handleFileSubmit} 
               className="w-full"
-              disabled={isLoading || selectedFiles.length === 0}
+              disabled={isLoading || totalSelectedFiles === 0 || totalSelectedFiles > fileConfig.maxFiles}
             >
-              {isLoading ? 'Enviando...' : 'Enviar Arquivos'}
+              {isLoading ? 'Enviando...' : `Enviar ${totalSelectedFiles} arquivo${totalSelectedFiles !== 1 ? 's' : ''}`}
             </Button>
           </div>
         );

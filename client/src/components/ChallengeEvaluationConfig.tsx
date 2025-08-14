@@ -19,6 +19,15 @@ interface QuizQuestion {
   correctAnswer: number;
 }
 
+interface FileRequirement {
+  id: string;
+  name: string;
+  description: string;
+  points: number;
+  acceptedTypes: string[];
+  maxSize: number;
+}
+
 interface EvaluationConfig {
   quiz?: {
     questions: QuizQuestion[];
@@ -32,13 +41,13 @@ interface EvaluationConfig {
     maxLength: number;
   };
   file?: {
-    allowedTypes: string[];
-    maxSize: number;
+    fileRequirements: FileRequirement[];
     maxFiles: number;
   };
   qrcode?: {
     qrCodeData: string;
     qrCodeImage: string;
+    instructions: string;
   };
 }
 
@@ -130,6 +139,48 @@ export const ChallengeEvaluationConfig: React.FC<ChallengeEvaluationConfigProps>
       quiz: {
         ...prev.quiz,
         questions: prev.quiz?.questions?.filter(q => q.id !== questionId) || []
+      }
+    }));
+  };
+
+  const addFileRequirement = () => {
+    const newRequirement: FileRequirement = {
+      id: Date.now().toString(),
+      name: '',
+      description: '',
+      points: 10,
+      acceptedTypes: ['pdf'],
+      maxSize: 5 * 1024 * 1024 // 5MB
+    };
+
+    setConfig(prev => ({
+      ...prev,
+      file: {
+        ...prev.file,
+        fileRequirements: [...(prev.file?.fileRequirements || []), newRequirement],
+        maxFiles: prev.file?.maxFiles || 5
+      }
+    }));
+  };
+
+  const removeFileRequirement = (requirementId: string) => {
+    setConfig(prev => ({
+      ...prev,
+      file: {
+        ...prev.file,
+        fileRequirements: prev.file?.fileRequirements?.filter(req => req.id !== requirementId) || []
+      }
+    }));
+  };
+
+  const updateFileRequirement = (requirementId: string, updates: Partial<FileRequirement>) => {
+    setConfig(prev => ({
+      ...prev,
+      file: {
+        ...prev.file,
+        fileRequirements: prev.file?.fileRequirements?.map(req =>
+          req.id === requirementId ? { ...req, ...updates } : req
+        ) || []
       }
     }));
   };
@@ -335,56 +386,130 @@ export const ChallengeEvaluationConfig: React.FC<ChallengeEvaluationConfigProps>
           <div className="space-y-6">
             <div className="flex items-center space-x-2">
               <Upload className="w-5 h-5 text-purple-600" />
-              <h3 className="text-lg font-semibold">Configuração de Arquivo</h3>
+              <h3 className="text-lg font-semibold">Configuração de Arquivos</h3>
             </div>
 
             <div className="space-y-4">
               <div>
-                <Label htmlFor="allowedTypes">Tipos de Arquivo Permitidos</Label>
+                <Label htmlFor="maxFiles">Máximo Total de Arquivos</Label>
                 <Input
-                  id="allowedTypes"
-                  value={config.file?.allowedTypes?.join(', ') || ''}
+                  id="maxFiles"
+                  type="number"
+                  min="1"
+                  max="20"
+                  value={config.file?.maxFiles || 5}
                   onChange={(e) => setConfig(prev => ({
                     ...prev,
-                    file: { ...prev.file, allowedTypes: e.target.value.split(',').map(type => type.trim()) }
+                    file: { ...prev.file, maxFiles: parseInt(e.target.value) || 5 }
                   }))}
-                  placeholder="pdf, doc, docx, jpg, png"
                 />
                 <p className="text-sm text-gray-500 mt-1">
-                  Separe os tipos por vírgula (ex: pdf, doc, jpg)
+                  Limite total de arquivos que podem ser enviados em todas as categorias
                 </p>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="maxSize">Tamanho Máximo (MB)</Label>
-                  <Input
-                    id="maxSize"
-                    type="number"
-                    min="1"
-                    max="100"
-                    value={Math.round((config.file?.maxSize || 5242880) / 1024 / 1024)}
-                    onChange={(e) => setConfig(prev => ({
-                      ...prev,
-                      file: { ...prev.file, maxSize: (parseInt(e.target.value) || 5) * 1024 * 1024 }
-                    }))}
-                  />
+              <Separator />
+
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-md font-semibold">Requisitos de Arquivo</h4>
+                  <Button type="button" onClick={addFileRequirement} size="sm">
+                    <Plus className="w-4 h-4 mr-2" />
+                    Adicionar Requisito
+                  </Button>
                 </div>
 
-                <div>
-                  <Label htmlFor="maxFiles">Máximo de Arquivos</Label>
-                  <Input
-                    id="maxFiles"
-                    type="number"
-                    min="1"
-                    max="10"
-                    value={config.file?.maxFiles || 1}
-                    onChange={(e) => setConfig(prev => ({
-                      ...prev,
-                      file: { ...prev.file, maxFiles: parseInt(e.target.value) || 1 }
-                    }))}
-                  />
-                </div>
+                {config.file?.fileRequirements?.map((requirement, index) => (
+                  <Card key={requirement.id} className="border-l-4 border-l-purple-500">
+                    <CardHeader>
+                      <div className="flex items-center justify-between">
+                        <CardTitle className="text-sm">Requisito {index + 1}</CardTitle>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removeFileRequirement(requirement.id)}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <Label htmlFor={`name-${requirement.id}`}>Nome do Requisito</Label>
+                            <Input
+                              id={`name-${requirement.id}`}
+                              value={requirement.name}
+                              onChange={(e) => updateFileRequirement(requirement.id, { name: e.target.value })}
+                              placeholder="Ex: Relatório Final"
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor={`points-${requirement.id}`}>Pontos</Label>
+                            <Input
+                              id={`points-${requirement.id}`}
+                              type="number"
+                              min="0"
+                              max="100"
+                              value={requirement.points}
+                              onChange={(e) => updateFileRequirement(requirement.id, { points: parseInt(e.target.value) || 0 })}
+                            />
+                          </div>
+                        </div>
+
+                        <div>
+                          <Label htmlFor={`description-${requirement.id}`}>Descrição</Label>
+                          <Textarea
+                            id={`description-${requirement.id}`}
+                            value={requirement.description}
+                            onChange={(e) => updateFileRequirement(requirement.id, { description: e.target.value })}
+                            placeholder="Descreva o que deve ser enviado..."
+                          />
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <Label htmlFor={`types-${requirement.id}`}>Tipos Permitidos</Label>
+                            <Input
+                              id={`types-${requirement.id}`}
+                              value={requirement.acceptedTypes.join(', ')}
+                              onChange={(e) => updateFileRequirement(requirement.id, { 
+                                acceptedTypes: e.target.value.split(',').map(type => type.trim()).filter(Boolean)
+                              })}
+                              placeholder="pdf, doc, docx, jpg, png"
+                            />
+                            <p className="text-xs text-gray-500 mt-1">
+                              Separe por vírgula
+                            </p>
+                          </div>
+                          <div>
+                            <Label htmlFor={`size-${requirement.id}`}>Tamanho Máximo (MB)</Label>
+                            <Input
+                              id={`size-${requirement.id}`}
+                              type="number"
+                              min="1"
+                              max="100"
+                              value={Math.round(requirement.maxSize / 1024 / 1024)}
+                              onChange={(e) => updateFileRequirement(requirement.id, { 
+                                maxSize: (parseInt(e.target.value) || 5) * 1024 * 1024 
+                              })}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+
+                {(!config.file?.fileRequirements || config.file.fileRequirements.length === 0) && (
+                  <div className="text-center py-8 border-2 border-dashed border-gray-300 rounded-lg">
+                    <Upload className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                    <p className="text-gray-500">Nenhum requisito de arquivo configurado</p>
+                    <p className="text-sm text-gray-400">Clique em "Adicionar Requisito" para começar</p>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -415,6 +540,19 @@ export const ChallengeEvaluationConfig: React.FC<ChallengeEvaluationConfigProps>
                     }
                   }}
                   placeholder="Digite o texto ou URL que será codificado no QR Code..."
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="qrInstructions">Instruções para o Usuário</Label>
+                <Textarea
+                  id="qrInstructions"
+                  value={config.qrcode?.instructions || ''}
+                  onChange={(e) => setConfig(prev => ({
+                    ...prev,
+                    qrcode: { ...prev.qrcode, instructions: e.target.value }
+                  }))}
+                  placeholder="Explique onde encontrar ou como usar este QR Code..."
                 />
               </div>
 

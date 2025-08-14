@@ -148,17 +148,38 @@ export const AdminSubmissionReview: React.FC<AdminSubmissionReviewProps> = ({
       case 'file':
         return (
           <div className="space-y-2">
-            <p className="text-sm font-medium">Arquivos enviados:</p>
-            <div className="space-y-1">
+            <p className="text-sm font-medium">Arquivos enviados ({data.file?.files?.length || 0}):</p>
+            <div className="space-y-2">
               {data.file?.files?.map((file: any, index: number) => (
-                <div key={index} className="flex items-center space-x-2 p-2 bg-gray-50 rounded">
-                  <FileText className="w-4 h-4" />
-                  <span className="text-sm">{file.name}</span>
-                  <Button size="sm" variant="ghost">
-                    <Download className="w-3 h-3" />
-                  </Button>
+                <div key={index} className="bg-gray-50 p-3 rounded border">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <FileText className="w-4 h-4 text-blue-600" />
+                      <div>
+                        <p className="text-sm font-medium">{file.fileName}</p>
+                        {file.requirementId && (
+                          <p className="text-xs text-gray-500">Requisito: {file.requirementId}</p>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <span className="text-xs text-gray-500">
+                        {((file.fileSize || 0) / 1024 / 1024).toFixed(1)}MB
+                      </span>
+                      {file.fileUrl && (
+                        <Button size="sm" variant="ghost" asChild>
+                          <a href={file.fileUrl} target="_blank" rel="noopener noreferrer">
+                            <Download className="w-3 h-3" />
+                          </a>
+                        </Button>
+                      )}
+                    </div>
+                  </div>
                 </div>
               ))}
+              {(!data.file?.files || data.file.files.length === 0) && (
+                <p className="text-sm text-gray-500 italic">Nenhum arquivo enviado</p>
+              )}
             </div>
           </div>
         );
