@@ -18,7 +18,7 @@ const isAuthenticated = (req: Request, res: Response, next: Function) => {
 
 // Middleware para verificar se é admin
 const isAdmin = (req: Request, res: Response, next: Function) => {
-  if (!req.user || (req.user.role !== "admin" && req.user.role !== "superadmin")) {
+  if (!req.user || ((req.user as any).role !== "admin" && (req.user as any).role !== "superadmin")) {
     return res.status(403).json({ error: "Forbidden" });
   }
   next();
@@ -380,8 +380,8 @@ router.get("/categories", isAuthenticated, async (req: Request, res: Response) =
 router.get("/challenges", isAuthenticated, async (req: Request, res: Response) => {
   try {
     const { type = "all" } = req.query;
-    const userId = req.user.id;
-    const userRole = req.user.role;
+    const userId = (req.user as any).id;
+    const userRole = (req.user as any).role;
     
     // Buscar todas as categorias do usuário
     const userCategories = await db
@@ -391,7 +391,14 @@ router.get("/challenges", isAuthenticated, async (req: Request, res: Response) =
     
     const userCategoryIds = userCategories.map(uc => uc.categoryId);
     
-    let query = db
+    let whereCondition = eq(gamificationChallenges.isActive, true);
+    
+    if (type !== "all") {
+      const typeCondition = and(whereCondition, eq(gamificationChallenges.type, type as string));
+      whereCondition = typeCondition || whereCondition;
+    }
+    
+    const query = db
       .select({
         id: gamificationChallenges.id,
         title: gamificationChallenges.title,
@@ -413,12 +420,8 @@ router.get("/challenges", isAuthenticated, async (req: Request, res: Response) =
       })
       .from(gamificationChallenges)
       .leftJoin(users, eq(gamificationChallenges.createdBy, users.id))
-      .where(eq(gamificationChallenges.isActive, true))
+      .where(whereCondition)
       .orderBy(asc(gamificationChallenges.displayOrder), desc(gamificationChallenges.id));
-    
-    if (type !== "all") {
-      query = query.where(eq(gamificationChallenges.type, type as string));
-    }
     
     const allChallenges = await query;
     
