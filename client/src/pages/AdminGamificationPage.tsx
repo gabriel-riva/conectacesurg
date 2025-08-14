@@ -25,7 +25,7 @@ import { ptBR } from "date-fns/locale";
 import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
 import { ChallengeEvaluationConfig } from "@/components/ChallengeEvaluationConfig";
-import { AdminSubmissionReview } from "@/components/AdminSubmissionReview";
+import { AdminSubmissionsOverview } from "@/components/AdminSubmissionsOverview";
 
 const addPointsSchema = z.object({
   userId: z.string(),
@@ -1292,36 +1292,7 @@ function OrderManagement({ challenges }: { challenges: any[] }) {
               </TabsContent>
 
               <TabsContent value="submissions">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Submissões de Desafios</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {challengesLoading ? (
-                      <div className="text-center py-8">Carregando desafios...</div>
-                    ) : Array.isArray(challenges) && challenges.length > 0 ? (
-                      <div className="space-y-6">
-                        {challenges.filter((challenge: any) => challenge.evaluationType !== 'none').map((challenge: any) => (
-                          <div key={challenge.id}>
-                            <AdminSubmissionReview
-                              challengeId={challenge.id}
-                              challengeTitle={challenge.title}
-                            />
-                          </div>
-                        ))}
-                        {challenges.filter((challenge: any) => challenge.evaluationType !== 'none').length === 0 && (
-                          <div className="text-center py-8 text-gray-500">
-                            Nenhum desafio com avaliação encontrado
-                          </div>
-                        )}
-                      </div>
-                    ) : (
-                      <div className="text-center py-8 text-gray-500">
-                        Nenhum desafio encontrado
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
+                <AdminSubmissionsOverview />
               </TabsContent>
             </Tabs>
           </div>

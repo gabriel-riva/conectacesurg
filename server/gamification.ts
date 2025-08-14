@@ -1186,6 +1186,42 @@ router.put("/submissions/:id/review", isAdmin, async (req: Request, res: Respons
   }
 });
 
+// Buscar todas as submissões de todos os desafios (admin) - agrupadas por desafio
+router.get("/submissions/all", isAdmin, async (req: Request, res: Response) => {
+  try {
+    const submissions = await db
+      .select({
+        id: challengeSubmissions.id,
+        challengeId: challengeSubmissions.challengeId,
+        userId: challengeSubmissions.userId,
+        submissionType: challengeSubmissions.submissionType,
+        submissionData: challengeSubmissions.submissionData,
+        status: challengeSubmissions.status,
+        points: challengeSubmissions.points,
+        adminFeedback: challengeSubmissions.adminFeedback,
+        reviewedBy: challengeSubmissions.reviewedBy,
+        reviewedAt: challengeSubmissions.reviewedAt,
+        createdAt: challengeSubmissions.createdAt,
+        updatedAt: challengeSubmissions.updatedAt,
+        userName: users.name,
+        userEmail: users.email,
+        userPhotoUrl: users.photoUrl,
+        challengeTitle: gamificationChallenges.title,
+        challengeType: gamificationChallenges.type,
+        challengeEvaluationType: gamificationChallenges.evaluationType,
+      })
+      .from(challengeSubmissions)
+      .leftJoin(users, eq(challengeSubmissions.userId, users.id))
+      .leftJoin(gamificationChallenges, eq(challengeSubmissions.challengeId, gamificationChallenges.id))
+      .orderBy(desc(challengeSubmissions.createdAt));
+    
+    res.json(submissions);
+  } catch (error) {
+    console.error("Error fetching all submissions:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 // Buscar submissões do usuário atual
 router.get("/my-submissions", isAuthenticated, async (req: Request, res: Response) => {
   try {
