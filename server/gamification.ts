@@ -480,7 +480,6 @@ router.get("/challenges/active-for-user", isAuthenticated, async (req: Request, 
       .from(gamificationChallenges)
       .where(and(
         eq(gamificationChallenges.isActive, true),
-        sql`${gamificationChallenges.startDate} <= NOW()`,
         sql`${gamificationChallenges.endDate} >= NOW()`
       ))
       .orderBy(asc(gamificationChallenges.endDate));
@@ -513,8 +512,8 @@ router.get("/challenges/active-for-user", isAuthenticated, async (req: Request, 
     // Filtrar desafios que o usuário não completou
     const uncompletedChallenges = activeChallenges.filter(challenge => {
       const submissionStatus = submissionMap.get(challenge.id);
-      // Mostrar se não tem submissão ou se foi rejeitado
-      return !submissionStatus || submissionStatus === 'rejected';
+      // Mostrar se não tem submissão, se foi rejeitado, ou se está pendente
+      return !submissionStatus || submissionStatus === 'rejected' || submissionStatus === 'pending';
     });
 
     res.json(uncompletedChallenges);

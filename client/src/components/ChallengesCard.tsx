@@ -20,6 +20,7 @@ interface Challenge {
   endDate: string;
   type: 'periodic' | 'annual';
   evaluationType: 'quiz' | 'text' | 'file' | 'qrcode' | 'none';
+  displayOrder?: number;
 }
 
 interface ChallengeCardProps {
