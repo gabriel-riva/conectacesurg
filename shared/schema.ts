@@ -430,6 +430,7 @@ export const gamificationChallenges = pgTable("gamification_challenges", {
   type: text("type").notNull().default("periodic"), // 'periodic', 'annual'
   isActive: boolean("is_active").notNull().default(true),
   targetUserCategories: integer("target_user_categories").array().default([]), // IDs das categorias de usuário alvo
+  displayOrder: integer("display_order").notNull().default(0), // Campo para controlar ordem de exibição
   // Novos campos para tipos de avaliação
   evaluationType: text("evaluation_type").notNull().default("none"), // 'none', 'quiz', 'text', 'file', 'qrcode'
   evaluationConfig: jsonb("evaluation_config").$type<{

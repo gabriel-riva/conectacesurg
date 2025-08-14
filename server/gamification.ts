@@ -406,6 +406,7 @@ router.get("/challenges", isAuthenticated, async (req: Request, res: Response) =
         evaluationType: gamificationChallenges.evaluationType,
         evaluationConfig: gamificationChallenges.evaluationConfig,
         targetUserCategories: gamificationChallenges.targetUserCategories,
+        displayOrder: gamificationChallenges.displayOrder,
         createdAt: gamificationChallenges.createdAt,
         createdBy: gamificationChallenges.createdBy,
         creatorName: users.name,
@@ -413,7 +414,7 @@ router.get("/challenges", isAuthenticated, async (req: Request, res: Response) =
       .from(gamificationChallenges)
       .leftJoin(users, eq(gamificationChallenges.createdBy, users.id))
       .where(eq(gamificationChallenges.isActive, true))
-      .orderBy(desc(gamificationChallenges.createdAt));
+      .orderBy(asc(gamificationChallenges.displayOrder), desc(gamificationChallenges.id));
     
     if (type !== "all") {
       query = query.where(eq(gamificationChallenges.type, type as string));
@@ -476,6 +477,7 @@ router.get("/challenges/active-for-user", isAuthenticated, async (req: Request, 
         evaluationType: gamificationChallenges.evaluationType,
         isActive: gamificationChallenges.isActive,
         targetUserCategories: gamificationChallenges.targetUserCategories,
+        displayOrder: gamificationChallenges.displayOrder,
       })
       .from(gamificationChallenges)
       .where(and(
@@ -483,7 +485,7 @@ router.get("/challenges/active-for-user", isAuthenticated, async (req: Request, 
         sql`${gamificationChallenges.startDate} <= NOW()`,
         sql`${gamificationChallenges.endDate} >= NOW()`
       ))
-      .orderBy(asc(gamificationChallenges.endDate));
+      .orderBy(asc(gamificationChallenges.displayOrder), asc(gamificationChallenges.endDate));
 
 
 
@@ -1245,6 +1247,35 @@ router.get("/challenges/:id/my-submission", isAuthenticated, async (req: Request
     res.json(submission[0]);
   } catch (error) {
     console.error("Error fetching user submission:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// Atualizar ordem de exibição dos desafios (admin)
+router.patch("/challenges/order", isAdmin, async (req: Request, res: Response) => {
+  try {
+    const { challengeOrders } = req.body;
+    
+    // Validar dados recebidos
+    if (!Array.isArray(challengeOrders)) {
+      return res.status(400).json({ error: "challengeOrders deve ser um array" });
+    }
+    
+    // Atualizar displayOrder para cada desafio
+    for (const order of challengeOrders) {
+      if (typeof order.id !== 'number' || typeof order.displayOrder !== 'number') {
+        continue;
+      }
+      
+      await db
+        .update(gamificationChallenges)
+        .set({ displayOrder: order.displayOrder })
+        .where(eq(gamificationChallenges.id, order.id));
+    }
+    
+    res.json({ message: "Ordem dos desafios atualizada com sucesso" });
+  } catch (error) {
+    console.error("Error updating challenge order:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 });
