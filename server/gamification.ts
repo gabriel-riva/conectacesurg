@@ -409,12 +409,11 @@ router.get("/challenges", isAuthenticated, async (req: Request, res: Response) =
         createdAt: gamificationChallenges.createdAt,
         createdBy: gamificationChallenges.createdBy,
         creatorName: users.name,
-        displayOrder: gamificationChallenges.displayOrder,
       })
       .from(gamificationChallenges)
       .leftJoin(users, eq(gamificationChallenges.createdBy, users.id))
       .where(eq(gamificationChallenges.isActive, true))
-      .orderBy(asc(gamificationChallenges.displayOrder), desc(gamificationChallenges.createdAt));
+      .orderBy(desc(gamificationChallenges.createdAt));
     
     if (type !== "all") {
       query = query.where(eq(gamificationChallenges.type, type as string));

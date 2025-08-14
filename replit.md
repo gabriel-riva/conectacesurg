@@ -9,6 +9,12 @@ Preferred communication style: Simple, everyday language.
 - Focus on practical functionality over complex features
 - Prefers clear, direct explanations without technical jargon
 
+## Recent Changes (August 2025)
+- **Multi-file Upload System**: Implemented support for multiple file uploads per challenge submission
+- **Challenge Ordering**: Database field `display_order` exists but temporarily disabled in schema due to Drizzle ORM sync issues
+- **Gamification API**: Restored and stabilized challenge listing functionality
+- **Upload Endpoints**: Both `/api/upload` (single) and `/api/upload/multiple` endpoints fully functional
+
 ## System Architecture
 
 ### Frontend
