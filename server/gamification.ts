@@ -413,7 +413,7 @@ router.get("/challenges", isAuthenticated, async (req: Request, res: Response) =
       .from(gamificationChallenges)
       .leftJoin(users, eq(gamificationChallenges.createdBy, users.id))
       .where(eq(gamificationChallenges.isActive, true))
-      .orderBy(desc(gamificationChallenges.createdAt));
+      .orderBy(asc(gamificationChallenges.displayOrder), desc(gamificationChallenges.createdAt));
     
     if (type !== "all") {
       query = query.where(eq(gamificationChallenges.type, type as string));
@@ -483,7 +483,7 @@ router.get("/challenges/active-for-user", isAuthenticated, async (req: Request, 
         sql`${gamificationChallenges.startDate} <= NOW()`,
         sql`${gamificationChallenges.endDate} >= NOW()`
       ))
-      .orderBy(asc(gamificationChallenges.endDate));
+      .orderBy(asc(gamificationChallenges.displayOrder), asc(gamificationChallenges.endDate));
 
 
 

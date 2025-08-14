@@ -53,6 +53,7 @@ const challengeSchema = z.object({
   type: z.enum(["periodic", "annual"]),
   isActive: z.boolean().default(true),
   targetUserCategories: z.array(z.string()).default([]),
+  displayOrder: z.number().min(0, "Ordem deve ser 0 ou maior").default(0),
 });
 
 type AddPointsForm = z.infer<typeof addPointsSchema>;
@@ -406,6 +407,7 @@ export default function AdminGamificationPage() {
       type: challenge.type,
       isActive: challenge.isActive,
       targetUserCategories: challenge.targetUserCategories?.map((id: number) => id.toString()) || [],
+      displayOrder: challenge.displayOrder || 0,
     });
     setIsChallengeDialogOpen(true);
   };
@@ -845,6 +847,7 @@ export default function AdminGamificationPage() {
                       <Table>
                         <TableHeader>
                           <TableRow>
+                            <TableHead>Ordem</TableHead>
                             <TableHead>Título</TableHead>
                             <TableHead>Tipo</TableHead>
                             <TableHead>Pontos</TableHead>
@@ -856,6 +859,9 @@ export default function AdminGamificationPage() {
                         <TableBody>
                           {Array.isArray(challenges) && challenges.map((challenge: any) => (
                             <TableRow key={challenge.id}>
+                              <TableCell>
+                                <Badge variant="outline">{challenge.displayOrder || 0}</Badge>
+                              </TableCell>
                               <TableCell>
                                 <div>
                                   <div className="font-medium">{challenge.title}</div>
@@ -968,6 +974,28 @@ export default function AdminGamificationPage() {
                                     onChange={(e) => field.onChange(parseInt(e.target.value))}
                                   />
                                 </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+
+                          <FormField
+                            control={challengeForm.control}
+                            name="displayOrder"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Ordem de Exibição</FormLabel>
+                                <FormControl>
+                                  <Input
+                                    type="number"
+                                    placeholder="Ordem (0 = primeiro)"
+                                    {...field}
+                                    onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                                  />
+                                </FormControl>
+                                <FormDescription>
+                                  Define a ordem em que o desafio aparece na página inicial e gamificação (0 = primeiro, 1 = segundo, etc.)
+                                </FormDescription>
                                 <FormMessage />
                               </FormItem>
                             )}
