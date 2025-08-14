@@ -1105,6 +1105,7 @@ function calculateQuizScore(answers: { questionId: string; answer: number }[], q
 // Buscar TODAS as submissões (admin)
 router.get("/all-submissions", isAdmin, async (req: Request, res: Response) => {
   try {
+    console.log("🔍 Admin buscando todas as submissões");
     const submissions = await db
       .select({
         id: challengeSubmissions.id,
@@ -1130,6 +1131,7 @@ router.get("/all-submissions", isAdmin, async (req: Request, res: Response) => {
       .leftJoin(gamificationChallenges, eq(challengeSubmissions.challengeId, gamificationChallenges.id))
       .orderBy(desc(challengeSubmissions.createdAt));
     
+    console.log(`📊 Encontradas ${submissions.length} submissões:`, submissions.map(s => ({id: s.id, status: s.status, type: s.submissionType})));
     res.json(submissions);
   } catch (error) {
     console.error("Error fetching all submissions:", error);
