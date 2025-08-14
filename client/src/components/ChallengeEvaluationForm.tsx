@@ -503,7 +503,37 @@ export const ChallengeEvaluationForm: React.FC<ChallengeEvaluationFormProps> = (
 
       case 'file':
         const fileConfig = evaluationConfig.file;
-        if (!fileConfig?.fileRequirements || !Array.isArray(fileConfig.fileRequirements)) return null;
+        if (!fileConfig?.fileRequirements || !Array.isArray(fileConfig.fileRequirements) || fileConfig.fileRequirements.length === 0) {
+          return (
+            <div className="space-y-6">
+              <div className="flex items-center space-x-2">
+                <Upload className="w-5 h-5 text-purple-600" />
+                <h3 className="text-lg font-semibold">Upload de Arquivos</h3>
+              </div>
+              
+              <Card className="border-orange-200 bg-orange-50">
+                <CardContent className="pt-6">
+                  <div className="text-center space-y-3">
+                    <Upload className="w-12 h-12 text-orange-500 mx-auto" />
+                    <h4 className="font-semibold text-orange-800">Configuração Incompleta</h4>
+                    <p className="text-sm text-orange-700">
+                      Este desafio ainda não possui requisitos de arquivo configurados.
+                    </p>
+                    <div className="bg-orange-100 p-3 rounded-lg text-left">
+                      <p className="text-xs text-orange-800 font-medium mb-2">Para resolver:</p>
+                      <ol className="text-xs text-orange-700 space-y-1">
+                        <li>1. Vá ao painel administrativo</li>
+                        <li>2. Edite este desafio</li>
+                        <li>3. Configure os requisitos de arquivo</li>
+                        <li>4. Salve as alterações</li>
+                      </ol>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          );
+        }
 
         const totalSelectedFiles = Object.values(selectedFiles).flat().length;
 
