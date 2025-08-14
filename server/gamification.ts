@@ -1,6 +1,6 @@
 import { Router } from "express";
 import type { Request, Response } from "express";
-import { db } from "./db";
+import { db, databaseEnvironment } from "./db";
 import { gamificationSettings, gamificationPoints, gamificationChallenges, users, userCategories, userCategoryAssignments, challengeComments, challengeCommentLikes, challengeSubmissions } from "@/shared/schema";
 import { eq, desc, asc, and, gte, lte, sql, inArray, like } from "drizzle-orm";
 import { z } from "zod";
@@ -1106,6 +1106,9 @@ function calculateQuizScore(answers: { questionId: string; answer: number }[], q
 router.get("/all-submissions", isAdmin, async (req: Request, res: Response) => {
   try {
     console.log("🔍 Admin buscando todas as submissões");
+    console.log("🔍 Database environment:", databaseEnvironment);
+    console.log("🔍 Database URL:", process.env.DATABASE_URL ? 'CONFIGURADO' : 'NÃO CONFIGURADO');
+    
     const submissions = await db
       .select({
         id: challengeSubmissions.id,
