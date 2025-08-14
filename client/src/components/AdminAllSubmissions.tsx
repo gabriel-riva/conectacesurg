@@ -63,12 +63,22 @@ export const AdminAllSubmissions: React.FC = () => {
   });
 
   // Buscar todas as submissões usando a nova rota
-  const { data: allSubmissions = [], isLoading: submissionsLoading } = useQuery<Submission[]>({
+  const { data: allSubmissions = [], isLoading: submissionsLoading, error } = useQuery<Submission[]>({
     queryKey: ['/api/gamification/all-submissions'],
+    retry: 1,
     onSuccess: (data) => {
       console.log('📊 Submissões recebidas no frontend:', data);
     },
+    onError: (error) => {
+      console.error('❌ Erro ao buscar submissões:', error);
+    }
   });
+
+  // Debug para verificar o que está acontecendo
+  console.log('🔍 Debug AdminAllSubmissions:');
+  console.log('- submissionsLoading:', submissionsLoading);
+  console.log('- allSubmissions:', allSubmissions);
+  console.log('- error:', error);
 
   const reviewMutation = useMutation({
     mutationFn: async (data: { submissionId: number; status: string; points: number; adminFeedback: string }) => {
