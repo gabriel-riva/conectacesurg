@@ -189,6 +189,7 @@ function Router() {
         <NewsListPage />
       </Route>
       <Route path="/access-denied" component={AccessDeniedPage} />
+      <Route path="/login" component={LoginPage} />
       <Route path="/" component={LoginPage} />
       <Route component={NotFound} />
       </Switch>

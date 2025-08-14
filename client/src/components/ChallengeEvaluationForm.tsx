@@ -263,7 +263,10 @@ export const ChallengeEvaluationForm: React.FC<ChallengeEvaluationFormProps> = (
       
       // Tentar detectar QR code com configurações otimizadas
       const code = jsQR(imageData.data, imageData.width, imageData.height, {
-        inversionAttempts: "attemptBoth"
+        inversionAttempts: "attemptBoth",
+        allowUndefinedSymbols: true,
+        assumeGS1: false,
+        canOverwriteImage: true
       });
 
       if (code && code.data) {
@@ -455,7 +458,7 @@ export const ChallengeEvaluationForm: React.FC<ChallengeEvaluationFormProps> = (
                     <RadioGroup
                       value={formData[question.id]?.toString()}
                       onValueChange={(value) => 
-                        setFormData((prev: any) => ({ ...prev, [question.id]: parseInt(value) }))
+                        setFormData(prev => ({ ...prev, [question.id]: parseInt(value) }))
                       }
                     >
                       {question.options.map((option, optionIndex) => (
@@ -509,7 +512,7 @@ export const ChallengeEvaluationForm: React.FC<ChallengeEvaluationFormProps> = (
                 placeholder={textConfig.placeholder}
                 maxLength={textConfig.maxLength}
                 value={formData.textContent || ''}
-                onChange={(e) => setFormData((prev: any) => ({ ...prev, textContent: e.target.value }))}
+                onChange={(e) => setFormData(prev => ({ ...prev, textContent: e.target.value }))}
                 className="min-h-32"
               />
               <p className="text-sm text-gray-500">
