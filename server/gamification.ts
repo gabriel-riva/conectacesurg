@@ -413,7 +413,7 @@ router.get("/challenges", isAuthenticated, async (req: Request, res: Response) =
       .from(gamificationChallenges)
       .leftJoin(users, eq(gamificationChallenges.createdBy, users.id))
       .where(eq(gamificationChallenges.isActive, true))
-      .orderBy(desc(gamificationChallenges.createdAt));
+      .orderBy(asc(gamificationChallenges.position), desc(gamificationChallenges.createdAt));
     
     if (type !== "all") {
       query = query.where(eq(gamificationChallenges.type, type as string));
@@ -623,7 +623,7 @@ router.put("/challenges/:id", isAdmin, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     // Filtrar apenas campos válidos do body
-    const allowedFields = ['title', 'description', 'detailedDescription', 'imageUrl', 'points', 'startDate', 'endDate', 'type', 'isActive', 'targetUserCategories', 'evaluationType', 'evaluationConfig'];
+    const allowedFields = ['title', 'description', 'detailedDescription', 'imageUrl', 'points', 'startDate', 'endDate', 'type', 'isActive', 'targetUserCategories', 'evaluationType', 'evaluationConfig', 'position'];
     const filteredData: any = { updatedAt: new Date() };
     
     for (const field of allowedFields) {
