@@ -18,7 +18,7 @@ const isAuthenticated = (req: Request, res: Response, next: Function) => {
 
 // Middleware para verificar se é admin
 const isAdmin = (req: Request, res: Response, next: Function) => {
-  if (!req.user || (req.user.role !== "admin" && req.user.role !== "superadmin")) {
+  if (!req.user || ((req.user as any).role !== "admin" && (req.user as any).role !== "superadmin")) {
     return res.status(403).json({ error: "Forbidden" });
   }
   next();
@@ -380,8 +380,8 @@ router.get("/categories", isAuthenticated, async (req: Request, res: Response) =
 router.get("/challenges", isAuthenticated, async (req: Request, res: Response) => {
   try {
     const { type = "all" } = req.query;
-    const userId = req.user.id;
-    const userRole = req.user.role;
+    const userId = (req.user as any).id;
+    const userRole = (req.user as any).role;
     
     // Buscar todas as categorias do usuário
     const userCategories = await db
@@ -391,7 +391,14 @@ router.get("/challenges", isAuthenticated, async (req: Request, res: Response) =
     
     const userCategoryIds = userCategories.map(uc => uc.categoryId);
     
-    let query = db
+    let whereCondition = eq(gamificationChallenges.isActive, true);
+    
+    if (type !== "all") {
+      const typeCondition = and(whereCondition, eq(gamificationChallenges.type, type as string));
+      whereCondition = typeCondition || whereCondition;
+    }
+    
+    const query = db
       .select({
         id: gamificationChallenges.id,
         title: gamificationChallenges.title,
@@ -406,18 +413,15 @@ router.get("/challenges", isAuthenticated, async (req: Request, res: Response) =
         evaluationType: gamificationChallenges.evaluationType,
         evaluationConfig: gamificationChallenges.evaluationConfig,
         targetUserCategories: gamificationChallenges.targetUserCategories,
+        displayOrder: gamificationChallenges.displayOrder,
         createdAt: gamificationChallenges.createdAt,
         createdBy: gamificationChallenges.createdBy,
         creatorName: users.name,
       })
       .from(gamificationChallenges)
       .leftJoin(users, eq(gamificationChallenges.createdBy, users.id))
-      .where(eq(gamificationChallenges.isActive, true))
-      .orderBy(asc(gamificationChallenges.position), desc(gamificationChallenges.createdAt));
-    
-    if (type !== "all") {
-      query = query.where(eq(gamificationChallenges.type, type as string));
-    }
+      .where(whereCondition)
+      .orderBy(asc(gamificationChallenges.displayOrder), desc(gamificationChallenges.id));
     
     const allChallenges = await query;
     
@@ -476,13 +480,15 @@ router.get("/challenges/active-for-user", isAuthenticated, async (req: Request, 
         evaluationType: gamificationChallenges.evaluationType,
         isActive: gamificationChallenges.isActive,
         targetUserCategories: gamificationChallenges.targetUserCategories,
+        displayOrder: gamificationChallenges.displayOrder,
       })
       .from(gamificationChallenges)
       .where(and(
         eq(gamificationChallenges.isActive, true),
+        sql`${gamificationChallenges.startDate} <= NOW()`,
         sql`${gamificationChallenges.endDate} >= NOW()`
       ))
-      .orderBy(asc(gamificationChallenges.endDate));
+      .orderBy(asc(gamificationChallenges.displayOrder), asc(gamificationChallenges.endDate));
 
 
 
@@ -512,8 +518,8 @@ router.get("/challenges/active-for-user", isAuthenticated, async (req: Request, 
     // Filtrar desafios que o usuário não completou
     const uncompletedChallenges = activeChallenges.filter(challenge => {
       const submissionStatus = submissionMap.get(challenge.id);
-      // Mostrar se não tem submissão, se foi rejeitado, ou se está pendente
-      return !submissionStatus || submissionStatus === 'rejected' || submissionStatus === 'pending';
+      // Mostrar se não tem submissão ou se foi rejeitado
+      return !submissionStatus || submissionStatus === 'rejected';
     });
 
     res.json(uncompletedChallenges);
@@ -622,27 +628,14 @@ router.post("/challenges", isAdmin, async (req: Request, res: Response) => {
 router.put("/challenges/:id", isAdmin, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    // Filtrar apenas campos válidos do body
-    const allowedFields = ['title', 'description', 'detailedDescription', 'imageUrl', 'points', 'startDate', 'endDate', 'type', 'isActive', 'targetUserCategories', 'evaluationType', 'evaluationConfig', 'position'];
-    const filteredData: any = { updatedAt: new Date() };
-    
-    for (const field of allowedFields) {
-      if (req.body[field] !== undefined) {
-        filteredData[field] = req.body[field];
-      }
-    }
-    
-    // Converter datas se necessário
-    if (filteredData.startDate && typeof filteredData.startDate === 'string') {
-      filteredData.startDate = new Date(filteredData.startDate);
-    }
-    if (filteredData.endDate && typeof filteredData.endDate === 'string') {
-      filteredData.endDate = new Date(filteredData.endDate);
-    }
+    const data = updateGamificationChallengeSchema.parse({
+      ...req.body,
+      updatedAt: new Date()
+    });
     
     const result = await db
       .update(gamificationChallenges)
-      .set(filteredData)
+      .set(data)
       .where(eq(gamificationChallenges.id, parseInt(id)))
       .returning();
     
@@ -1257,6 +1250,35 @@ router.get("/challenges/:id/my-submission", isAuthenticated, async (req: Request
     res.json(submission[0]);
   } catch (error) {
     console.error("Error fetching user submission:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// Atualizar ordem de exibição dos desafios (admin)
+router.patch("/challenges/order", isAdmin, async (req: Request, res: Response) => {
+  try {
+    const { challengeOrders } = req.body;
+    
+    // Validar dados recebidos
+    if (!Array.isArray(challengeOrders)) {
+      return res.status(400).json({ error: "challengeOrders deve ser um array" });
+    }
+    
+    // Atualizar displayOrder para cada desafio
+    for (const order of challengeOrders) {
+      if (typeof order.id !== 'number' || typeof order.displayOrder !== 'number') {
+        continue;
+      }
+      
+      await db
+        .update(gamificationChallenges)
+        .set({ displayOrder: order.displayOrder })
+        .where(eq(gamificationChallenges.id, order.id));
+    }
+    
+    res.json({ message: "Ordem dos desafios atualizada com sucesso" });
+  } catch (error) {
+    console.error("Error updating challenge order:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 });
