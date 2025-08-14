@@ -19,7 +19,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Plus, Edit, Trash2, Settings, Trophy, Users, Calendar, Target, Award, ArrowUpDown, ChevronUp, ChevronDown } from "lucide-react";
+import { Plus, Edit, Trash2, Settings, Trophy, Users, Calendar, Target, Award } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import ReactQuill from "react-quill";
@@ -61,147 +61,6 @@ type ChallengeForm = z.infer<typeof challengeSchema>;
 
 export default function AdminGamificationPage() {
   const { toast } = useToast();
-
-// Componente para gerenciar ordem dos desafios
-function OrderManagement({ challenges }: { challenges: any[] }) {
-  const [challengeOrders, setChallengeOrders] = useState<{id: number, displayOrder: number, title: string}[]>([]);
-  const queryClient = useQueryClient();
-
-  useEffect(() => {
-    if (Array.isArray(challenges)) {
-      const orders = challenges
-        .sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0))
-        .map((challenge, index) => ({
-          id: challenge.id,
-          displayOrder: challenge.displayOrder || index,
-          title: challenge.title
-        }));
-      setChallengeOrders(orders);
-    }
-  }, [challenges]);
-
-  const updateOrderMutation = useMutation({
-    mutationFn: async (orders: {id: number, displayOrder: number}[]) => {
-      const response = await fetch('/api/gamification/challenges/order', {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ challengeOrders: orders }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Erro ao atualizar ordem dos desafios');
-      }
-
-      return response.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/gamification/challenges'] });
-      toast({
-        title: "Sucesso!",
-        description: "Ordem dos desafios atualizada com sucesso.",
-      });
-    },
-    onError: (error) => {
-      toast({
-        title: "Erro",
-        description: "Erro ao atualizar ordem dos desafios.",
-        variant: "destructive",
-      });
-    },
-  });
-
-  const moveUp = (index: number) => {
-    if (index === 0) return;
-    const newOrders = [...challengeOrders];
-    [newOrders[index], newOrders[index - 1]] = [newOrders[index - 1], newOrders[index]];
-    // Renumerar displayOrder
-    newOrders.forEach((order, idx) => {
-      order.displayOrder = idx;
-    });
-    setChallengeOrders(newOrders);
-  };
-
-  const moveDown = (index: number) => {
-    if (index === challengeOrders.length - 1) return;
-    const newOrders = [...challengeOrders];
-    [newOrders[index], newOrders[index + 1]] = [newOrders[index + 1], newOrders[index]];
-    // Renumerar displayOrder
-    newOrders.forEach((order, idx) => {
-      order.displayOrder = idx;
-    });
-    setChallengeOrders(newOrders);
-  };
-
-  const saveOrder = () => {
-    updateOrderMutation.mutate(challengeOrders.map(({ id, displayOrder }) => ({ id, displayOrder })));
-  };
-
-  return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle>Ordem de Exibição dos Desafios</CardTitle>
-            <p className="text-sm text-gray-500 mt-1">
-              Configure a ordem que os desafios aparecem na página inicial e na página de gamificação
-            </p>
-          </div>
-          <Button 
-            onClick={saveOrder} 
-            disabled={updateOrderMutation.isPending}
-          >
-            {updateOrderMutation.isPending ? "Salvando..." : "Salvar Ordem"}
-          </Button>
-        </div>
-      </CardHeader>
-      <CardContent>
-        {challengeOrders.length === 0 ? (
-          <div className="text-center py-8 text-gray-500">
-            Nenhum desafio encontrado
-          </div>
-        ) : (
-          <div className="space-y-2">
-            {challengeOrders.map((challenge, index) => (
-              <div
-                key={challenge.id}
-                className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border"
-              >
-                <div className="flex items-center space-x-3">
-                  <Badge variant="outline" className="w-12 justify-center">
-                    {index + 1}º
-                  </Badge>
-                  <div>
-                    <h4 className="font-medium">{challenge.title}</h4>
-                  </div>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => moveUp(index)}
-                    disabled={index === 0}
-                  >
-                    <ChevronUp className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => moveDown(index)}
-                    disabled={index === challengeOrders.length - 1}
-                  >
-                    <ChevronDown className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </CardContent>
-    </Card>
-  );
-}
   const queryClient = useQueryClient();
   const [isAddPointsDialogOpen, setIsAddPointsDialogOpen] = useState(false);
   const [isSettingsDialogOpen, setIsSettingsDialogOpen] = useState(false);
@@ -848,10 +707,6 @@ function OrderManagement({ challenges }: { challenges: any[] }) {
                   <Target className="h-4 w-4 mr-2" />
                   Desafios
                 </TabsTrigger>
-                <TabsTrigger value="order">
-                  <ArrowUpDown className="h-4 w-4 mr-2" />
-                  Ordem de Exibição
-                </TabsTrigger>
                 <TabsTrigger value="submissions">
                   <Award className="h-4 w-4 mr-2" />
                   Submissões
@@ -1287,10 +1142,6 @@ function OrderManagement({ challenges }: { challenges: any[] }) {
                 </Dialog>
               </TabsContent>
 
-              <TabsContent value="order">
-                <OrderManagement challenges={challenges} />
-              </TabsContent>
-
               <TabsContent value="submissions">
                 <Card>
                   <CardHeader>
@@ -1303,10 +1154,10 @@ function OrderManagement({ challenges }: { challenges: any[] }) {
                       <div className="space-y-6">
                         {challenges.filter((challenge: any) => challenge.evaluationType !== 'none').map((challenge: any) => (
                           <div key={challenge.id}>
-                            <h3 className="text-lg font-semibold mb-4">{challenge.title}</h3>
-                            <p className="text-sm text-gray-500 mb-4">
-                              Navegando para a nova página de submissões em breve...
-                            </p>
+                            <AdminSubmissionReview
+                              challengeId={challenge.id}
+                              challengeTitle={challenge.title}
+                            />
                           </div>
                         ))}
                         {challenges.filter((challenge: any) => challenge.evaluationType !== 'none').length === 0 && (

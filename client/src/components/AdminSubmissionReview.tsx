@@ -48,7 +48,7 @@ export const AdminSubmissionReview: React.FC<AdminSubmissionReviewProps> = ({
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: submissions = [], isLoading, error } = useQuery({
+  const { data: submissions = [], isLoading, error } = useQuery<Submission[]>({
     queryKey: ['/api/gamification/challenges', challengeId, 'submissions'],
     queryFn: () => apiRequest(`/api/gamification/challenges/${challengeId}/submissions`),
   });
