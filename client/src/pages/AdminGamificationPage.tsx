@@ -27,6 +27,7 @@ import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
 import { ChallengeEvaluationConfig } from "@/components/ChallengeEvaluationConfig";
 import { AdminSubmissionReview } from "@/components/AdminSubmissionReview";
+import { AdminAllSubmissions } from "@/components/AdminAllSubmissions";
 
 const addPointsSchema = z.object({
   userId: z.string(),
@@ -337,13 +338,14 @@ export default function AdminGamificationPage() {
   // Update form when settings are loaded
   useEffect(() => {
     if (settings && typeof settings === 'object') {
+      const settingsData = settings as any;
       settingsForm.reset({
-        generalCategoryId: settings.generalCategoryId?.toString() || "",
-        enabledCategoryIds: Array.isArray(settings.enabledCategoryIds) ? settings.enabledCategoryIds.map((id: number) => id.toString()) : [],
-        cycleStartDate: settings.cycleStartDate || "",
-        cycleEndDate: settings.cycleEndDate || "",
-        annualStartDate: settings.annualStartDate || "",
-        annualEndDate: settings.annualEndDate || "",
+        generalCategoryId: settingsData.generalCategoryId?.toString() || "",
+        enabledCategoryIds: Array.isArray(settingsData.enabledCategoryIds) ? settingsData.enabledCategoryIds.map((id: number) => id.toString()) : [],
+        cycleStartDate: settingsData.cycleStartDate || "",
+        cycleEndDate: settingsData.cycleEndDate || "",
+        annualStartDate: settingsData.annualStartDate || "",
+        annualEndDate: settingsData.annualEndDate || "",
       });
     }
   }, [settings, settingsForm]);
@@ -1144,67 +1146,7 @@ export default function AdminGamificationPage() {
               </TabsContent>
 
               <TabsContent value="submissions">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Submissões de Desafios</CardTitle>
-                    <CardDescription>
-                      Gerencie e revise as submissões dos usuários para cada desafio
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    {challengesLoading ? (
-                      <div className="text-center py-8">Carregando desafios...</div>
-                    ) : Array.isArray(challenges) && challenges.length > 0 ? (
-                      <Accordion type="single" collapsible className="w-full">
-                        {challenges.filter((challenge: any) => challenge.evaluationType !== 'none').map((challenge: any, index: number) => (
-                          <AccordionItem key={challenge.id} value={`challenge-${challenge.id}`}>
-                            <AccordionTrigger className="hover:no-underline">
-                              <div className="flex items-center justify-between w-full pr-4">
-                                <div className="flex items-center gap-3">
-                                  <span className="font-medium">{challenge.title}</span>
-                                  <Badge variant="outline" className="text-xs">
-                                    {challenge.type === 'periodic' ? 'Ciclo' : 'Anual'}
-                                  </Badge>
-                                  {challenge.evaluationType && (
-                                    <Badge variant="secondary" className="text-xs">
-                                      {challenge.evaluationType === 'quiz' ? 'Quiz' : 
-                                       challenge.evaluationType === 'text' ? 'Texto' :
-                                       challenge.evaluationType === 'file' ? 'Arquivo' :
-                                       challenge.evaluationType === 'qrcode' ? 'QR Code' : 
-                                       challenge.evaluationType}
-                                    </Badge>
-                                  )}
-                                </div>
-                                <div className="flex items-center gap-2">
-                                  <Badge variant={challenge.isActive ? 'default' : 'secondary'} className="text-xs">
-                                    {challenge.isActive ? 'Ativo' : 'Inativo'}
-                                  </Badge>
-                                </div>
-                              </div>
-                            </AccordionTrigger>
-                            <AccordionContent>
-                              <div className="pt-4">
-                                <AdminSubmissionReview
-                                  challengeId={challenge.id}
-                                  challengeTitle={challenge.title}
-                                />
-                              </div>
-                            </AccordionContent>
-                          </AccordionItem>
-                        ))}
-                        {challenges.filter((challenge: any) => challenge.evaluationType !== 'none').length === 0 && (
-                          <div className="text-center py-8 text-gray-500">
-                            Nenhum desafio com avaliação encontrado
-                          </div>
-                        )}
-                      </Accordion>
-                    ) : (
-                      <div className="text-center py-8 text-gray-500">
-                        Nenhum desafio encontrado
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
+                <AdminAllSubmissions />
               </TabsContent>
             </Tabs>
           </div>
