@@ -622,14 +622,27 @@ router.post("/challenges", isAdmin, async (req: Request, res: Response) => {
 router.put("/challenges/:id", isAdmin, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const data = updateGamificationChallengeSchema.parse({
-      ...req.body,
-      updatedAt: new Date()
-    });
+    // Filtrar apenas campos válidos do body
+    const allowedFields = ['title', 'description', 'detailedDescription', 'imageUrl', 'points', 'startDate', 'endDate', 'type', 'isActive', 'targetUserCategories', 'evaluationType', 'evaluationConfig'];
+    const filteredData: any = { updatedAt: new Date() };
+    
+    for (const field of allowedFields) {
+      if (req.body[field] !== undefined) {
+        filteredData[field] = req.body[field];
+      }
+    }
+    
+    // Converter datas se necessário
+    if (filteredData.startDate && typeof filteredData.startDate === 'string') {
+      filteredData.startDate = new Date(filteredData.startDate);
+    }
+    if (filteredData.endDate && typeof filteredData.endDate === 'string') {
+      filteredData.endDate = new Date(filteredData.endDate);
+    }
     
     const result = await db
       .update(gamificationChallenges)
-      .set(data)
+      .set(filteredData)
       .where(eq(gamificationChallenges.id, parseInt(id)))
       .returning();
     
