@@ -95,32 +95,7 @@ export function GamificationPeriodCard({ settings }: GamificationPeriodCardProps
           </div>
         )}
 
-        {/* Links para regulamentos */}
-        <div className="space-y-2 pt-2 border-t">
-          <h4 className="text-sm font-medium text-gray-800">Regulamentos</h4>
-          <div className="space-y-1">
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="w-full justify-start text-xs h-8"
-              onClick={() => window.open('#', '_blank')}
-            >
-              <FileText className="h-3 w-3 mr-2" />
-              Regulamento do Ciclo
-              <ExternalLink className="h-3 w-3 ml-auto" />
-            </Button>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="w-full justify-start text-xs h-8"
-              onClick={() => window.open('#', '_blank')}
-            >
-              <FileText className="h-3 w-3 mr-2" />
-              Regulamento Anual
-              <ExternalLink className="h-3 w-3 ml-auto" />
-            </Button>
-          </div>
-        </div>
+
       </CardContent>
     </Card>
   );
