@@ -6,48 +6,10 @@ import crypto from "crypto";
 import { storage as dbStorage } from "./storage";
 import { insertMaterialFolderSchema, insertMaterialFileSchema } from "@shared/schema";
 import { z } from "zod";
+import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
+import { ObjectPermission } from "./objectAcl";
 
 const router = express.Router();
-
-// Configurar multer para upload de arquivos
-const uploadDir = path.join(process.cwd(), "public", "uploads", "materials");
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
-}
-
-const multerStorage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    console.log(`🎯 MULTER DESTINATION: Salvando em ${uploadDir}`);
-    // Garantir que diretório existe
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
-      console.log(`📁 Diretório criado: ${uploadDir}`);
-    }
-    cb(null, uploadDir);
-  },
-  filename: function (req, file, cb) {
-    // Gerar nome único baseado em hash para evitar conflitos
-    const hash = crypto.createHash('md5').update(file.originalname + Date.now() + Math.random()).digest('hex');
-    console.log(`🎯 MULTER FILENAME: Hash: ${hash}, Original: ${file.originalname}, MIME: ${file.mimetype}, Size: ${file.size || 'desconhecido'}`);
-    cb(null, hash);
-  }
-});
-
-const upload = multer({
-  storage: multerStorage,
-  limits: {
-    fileSize: 50 * 1024 * 1024, // 50MB limit
-  },
-  fileFilter: (req, file, cb) => {
-    console.log(`🔍 MULTER FILTER: Arquivo ${file.originalname} (${file.mimetype}) - ACEITO`);
-    // Permitir todos os tipos de arquivo
-    cb(null, true);
-  },
-  onError: (err, next) => {
-    console.error(`❌ MULTER ERROR:`, err);
-    next(err);
-  }
-});
 
 // Middleware para verificar autenticação
 const isAuthenticated = (req: Request, res: Response, next: Function) => {
@@ -64,6 +26,46 @@ const isAdmin = (req: Request, res: Response, next: Function) => {
   }
   next();
 };
+
+// Rota para servir arquivos do Object Storage
+router.get("/objects/:objectPath(*)", isAuthenticated, async (req: Request, res: Response) => {
+  const userId = req.user?.id;
+  const objectStorageService = new ObjectStorageService();
+  
+  try {
+    const objectFile = await objectStorageService.getObjectEntityFile(req.path);
+    const canAccess = await objectStorageService.canAccessObjectEntity({
+      objectFile,
+      userId: userId?.toString(),
+      requestedPermission: ObjectPermission.READ,
+    });
+    
+    if (!canAccess) {
+      return res.sendStatus(403);
+    }
+    
+    objectStorageService.downloadObject(objectFile, res);
+  } catch (error) {
+    console.error("Error accessing object:", error);
+    if (error instanceof ObjectNotFoundError) {
+      return res.sendStatus(404);
+    }
+    return res.sendStatus(500);
+  }
+});
+
+// Configurar multer para upload de arquivos na memória (para Object Storage)
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 50 * 1024 * 1024, // 50MB limit
+  },
+  fileFilter: (req, file, cb) => {
+    console.log(`🔍 MULTER FILTER: Arquivo ${file.originalname} (${file.mimetype}) - ACEITO`);
+    // Permitir todos os tipos de arquivo
+    cb(null, true);
+  },
+});
 
 // Função para verificar se o usuário tem acesso a uma pasta
 const hasAccessToFolder = async (folderId: number, userId: number | undefined, userRole: string) => {
@@ -362,45 +364,34 @@ router.post("/files", isAdmin, (req: Request, res: Response, next: Function) => 
       
       res.status(201).json(file);
     } else {
-      // Processar arquivo normal
+      // Processar arquivo normal usando Object Storage
       if (!req.file) {
         return res.status(400).json({ error: "Nenhum arquivo enviado" });
       }
       
-      console.log(`📤 Processando upload de arquivo - Original: ${req.file.originalname}, Hash: ${req.file.filename}, Size: ${req.file.size}, User: ${(req.user as any)?.name} (${(req.user as any)?.role})`);
+      console.log(`📤 Processando upload de arquivo - Original: ${req.file.originalname}, Size: ${req.file.size}, User: ${(req.user as any)?.name} (${(req.user as any)?.role})`);
       
-      // PASSO 1: Verificar IMEDIATAMENTE se arquivo foi salvo pelo Multer
-      const filePath = path.join(process.cwd(), "public", "uploads", "materials", req.file.filename);
-      if (!fs.existsSync(filePath)) {
-        console.error(`❌ FALHA CRÍTICA: Multer não salvou o arquivo - Path: ${filePath}`);
-        return res.status(500).json({ 
-          error: "Falha no upload: arquivo não foi salvo pelo sistema. Verifique configurações." 
-        });
-      }
+      // Upload para o Object Storage
+      const objectStorageService = new ObjectStorageService();
+      const { objectPath, fileSize } = await objectStorageService.uploadMaterialFile(
+        req.file.buffer,
+        req.file.originalname,
+        req.file.mimetype,
+        req.user?.id.toString()
+      );
       
-      // PASSO 2: Verificar integridade do arquivo salvo
-      const savedFileSize = fs.statSync(filePath).size;
-      if (savedFileSize !== req.file.size) {
-        console.error(`❌ FALHA DE INTEGRIDADE: Tamanho divergente - Esperado: ${req.file.size}, Salvo: ${savedFileSize}`);
-        // Remover arquivo corrompido
-        fs.unlinkSync(filePath);
-        return res.status(500).json({ 
-          error: "Falha no upload: arquivo corrompido durante salvamento." 
-        });
-      }
+      console.log(`✅ Arquivo uploadado para Object Storage - Path: ${objectPath}, Size: ${fileSize} bytes`);
       
-      console.log(`✅ Arquivo físico verificado - Path: ${filePath}, Size: ${savedFileSize} bytes`);
-      
-      // PASSO 3: Só AGORA salvar no banco de dados
+      // Salvar no banco de dados
       const fileData = {
         name: req.body.name || req.file.originalname,
         description: req.body.description,
         folderId: req.body.folderId ? parseInt(req.body.folderId) : null,
         uploaderId: req.user?.id,
-        fileUrl: `/uploads/materials/${req.file.filename}`,
+        fileUrl: objectPath, // Usar o path do Object Storage
         fileName: req.file.originalname,
         fileType: req.file.mimetype,
-        fileSize: req.file.size,
+        fileSize: fileSize,
         contentType: "file",
         youtubeUrl: null,
       };
@@ -410,27 +401,7 @@ router.post("/files", isAdmin, (req: Request, res: Response, next: Function) => 
       
       const file = await dbStorage.createMaterialFile(validatedData);
       
-      // Log para auditoria de sucesso completo
-      console.log(`🎯 UPLOAD COMPLETO - ID: ${file.id}, Nome: ${file.name}, Hash: ${req.file.filename}, User: ${(req.user as any)?.name} (${(req.user as any)?.role})`);
-      
-      // PASSO 4: Verificação dupla pós-transação
-      if (!fs.existsSync(filePath)) {
-        console.error(`❌ ERRO PÓS-TRANSAÇÃO: Arquivo desapareceu após salvar no banco!`);
-        
-        // ROLLBACK: Remover registro do banco se arquivo físico não existe
-        try {
-          await dbStorage.deleteMaterialFile(file.id);
-          console.log(`🔄 ROLLBACK: Registro removido do banco - ID: ${file.id}`);
-          return res.status(500).json({ 
-            error: "Falha crítica: arquivo desapareceu após salvamento. Contate o administrador." 
-          });
-        } catch (rollbackError) {
-          console.error("Erro no rollback:", rollbackError);
-          return res.status(500).json({ 
-            error: "Erro crítico no upload. Contate o administrador." 
-          });
-        }
-      }
+      console.log(`🎯 UPLOAD COMPLETO - ID: ${file.id}, Nome: ${file.name}, Object Path: ${objectPath}, User: ${(req.user as any)?.name} (${(req.user as any)?.role})`);
       
       res.status(201).json(file);
     }
@@ -468,29 +439,59 @@ router.get("/files/:id/download", isAuthenticated, async (req: Request, res: Res
       }
     }
     
-    // Construir caminho do arquivo
+    // Verificar se é um arquivo no Object Storage
+    if (file.fileUrl && file.fileUrl.startsWith('/objects/')) {
+      const objectStorageService = new ObjectStorageService();
+      
+      try {
+        const objectFile = await objectStorageService.getObjectEntityFile(file.fileUrl);
+        
+        // Verificar se o usuário tem acesso ao objeto
+        const canAccess = await objectStorageService.canAccessObjectEntity({
+          objectFile,
+          userId: userId?.toString(),
+          requestedPermission: ObjectPermission.READ,
+        });
+        
+        if (!canAccess) {
+          console.log(`❌ Acesso negado ao Object Storage - User: ${(req.user as any)?.name}, Arquivo: ${file.name}`);
+          return res.status(403).json({ error: "Acesso negado" });
+        }
+        
+        // Incrementar contador de downloads
+        await dbStorage.incrementDownloadCount(fileId);
+        
+        console.log(`✅ Download autorizado via Object Storage - Arquivo: ${file.name}, User: ${(req.user as any)?.name}`);
+        
+        // Fix character encoding for download filename
+        const encodedFileName = encodeURIComponent(file.fileName!);
+        res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${encodedFileName}; filename="${file.fileName!}"`);
+        
+        // Stream do Object Storage
+        await objectStorageService.downloadObject(objectFile, res);
+        return;
+      } catch (error) {
+        if (error instanceof ObjectNotFoundError) {
+          console.error(`❌ Arquivo não encontrado no Object Storage - Path: ${file.fileUrl}`);
+          return res.status(404).json({ error: "Arquivo não encontrado no servidor" });
+        }
+        throw error;
+      }
+    }
+    
+    // Fallback para arquivos legados no sistema de arquivos local
     const filePath = path.join(process.cwd(), "public", file.fileUrl!);
-    console.log(`📂 Verificando arquivo físico - Path: ${filePath}`);
+    console.log(`📂 Verificando arquivo físico legado - Path: ${filePath}`);
     
     if (!fs.existsSync(filePath)) {
       console.error(`❌ Arquivo físico não encontrado - Path: ${filePath}`);
-      
-      // Remove o registro órfão do banco de dados
-      try {
-        await dbStorage.deleteMaterialFile(fileId);
-        console.log(`🗑️ Registro órfão removido do banco - ID: ${fileId}`);
-      } catch (deleteError) {
-        console.error("Erro ao remover registro órfão:", deleteError);
-      }
-      
       return res.status(404).json({ error: "Arquivo não encontrado no servidor" });
     }
     
     // Incrementar contador de downloads
     await dbStorage.incrementDownloadCount(fileId);
     
-    // Log de sucesso
-    console.log(`✅ Download autorizado - Arquivo: ${file.name}, User: ${(req.user as any)?.name}`);
+    console.log(`✅ Download autorizado (legado) - Arquivo: ${file.name}, User: ${(req.user as any)?.name}`);
     
     // Fix character encoding for download filename
     const encodedFileName = encodeURIComponent(file.fileName!);
@@ -527,7 +528,44 @@ router.get("/files/:id/view", isAuthenticated, async (req: Request, res: Respons
       }
     }
     
-    // Servir arquivo para visualização
+    // Verificar se é um arquivo no Object Storage
+    if (file.fileUrl && file.fileUrl.startsWith('/objects/')) {
+      const objectStorageService = new ObjectStorageService();
+      
+      try {
+        const objectFile = await objectStorageService.getObjectEntityFile(file.fileUrl);
+        
+        // Verificar se o usuário tem acesso ao objeto
+        const canAccess = await objectStorageService.canAccessObjectEntity({
+          objectFile,
+          userId: userId?.toString(),
+          requestedPermission: ObjectPermission.READ,
+        });
+        
+        if (!canAccess) {
+          return res.status(403).json({ error: "Acesso negado" });
+        }
+        
+        // Headers adicionais para PDFs
+        if (file.fileType === 'application/pdf') {
+          res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+          res.setHeader('Content-Security-Policy', "frame-ancestors 'self'");
+        }
+        
+        res.setHeader('Content-Disposition', `inline; filename="${file.fileName!}"`);
+        
+        // Stream do Object Storage
+        await objectStorageService.downloadObject(objectFile, res);
+        return;
+      } catch (error) {
+        if (error instanceof ObjectNotFoundError) {
+          return res.status(404).json({ error: "Arquivo não encontrado no servidor" });
+        }
+        throw error;
+      }
+    }
+    
+    // Fallback para arquivos legados no sistema de arquivos local
     const filePath = path.join(process.cwd(), "public", file.fileUrl!);
     
     if (!fs.existsSync(filePath)) {
@@ -600,19 +638,35 @@ router.delete("/files/:id", isAdmin, async (req: Request, res: Response) => {
     
     // Deletar arquivo físico se existir
     if (file.fileUrl && typeof file.fileUrl === 'string') {
-      const filePath = path.join(process.cwd(), "public", file.fileUrl!);
-      console.log("📁 Tentando deletar arquivo físico:", filePath);
-      
-      if (fs.existsSync(filePath)) {
+      // Verificar se é um arquivo no Object Storage
+      if (file.fileUrl.startsWith('/objects/')) {
+        console.log("📁 Tentando deletar arquivo do Object Storage:", file.fileUrl);
+        const objectStorageService = new ObjectStorageService();
+        
         try {
-          fs.unlinkSync(filePath);
-          console.log("✅ Arquivo físico deletado");
-        } catch (fsError) {
-          console.error("❌ Erro ao deletar arquivo físico:", fsError);
-          // Continuar mesmo se não conseguir deletar o arquivo físico
+          const objectFile = await objectStorageService.getObjectEntityFile(file.fileUrl);
+          await objectFile.delete();
+          console.log("✅ Arquivo do Object Storage deletado");
+        } catch (error) {
+          console.error("❌ Erro ao deletar arquivo do Object Storage:", error);
+          // Continuar mesmo se não conseguir deletar o arquivo
         }
       } else {
-        console.log("⚠️ Arquivo físico não encontrado:", filePath);
+        // Arquivo legado no sistema de arquivos local
+        const filePath = path.join(process.cwd(), "public", file.fileUrl!);
+        console.log("📁 Tentando deletar arquivo físico legado:", filePath);
+        
+        if (fs.existsSync(filePath)) {
+          try {
+            fs.unlinkSync(filePath);
+            console.log("✅ Arquivo físico legado deletado");
+          } catch (fsError) {
+            console.error("❌ Erro ao deletar arquivo físico:", fsError);
+            // Continuar mesmo se não conseguir deletar o arquivo físico
+          }
+        } else {
+          console.log("⚠️ Arquivo físico não encontrado:", filePath);
+        }
       }
     } else {
       console.log("⚠️ Arquivo não tem URL física (provavelmente é um link do YouTube)");
