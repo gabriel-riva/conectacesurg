@@ -94,6 +94,13 @@ Preferred communication style: Simple, everyday language.
   - Database field `displayOrder` with backend API `/api/gamification/challenges/reorder`
   - Public pages automatically display challenges sorted by admin-defined order
   - AdminChallengeReorder component with save/cancel functionality
+- **File Challenge Points Fix**: Fixed critical gamification bug where file upload challenges were awarding full points instead of proportional points based on submitted requirements. Now correctly calculates points based on individual file requirement submissions, supporting both specific requirement points and proportional distribution.
+
+### August 15, 2025 - Gamification Points Calculation Fix
+- **Proportional Points System**: Fixed file upload challenges to calculate points based on completed requirements rather than awarding full challenge points
+- **Requirement-Based Scoring**: File challenges now properly evaluate individual file requirements and award points accordingly
+- **Backward Compatibility**: System supports both new requirement-specific points and legacy proportional calculations
+- **Accurate User Experience**: Users now receive appropriate partial credit for incomplete submissions in file upload challenges
 
 ### Critical Debugging Lessons (August 2025)
 - **Multiple Schema Issue**: PostgreSQL database contains 3 schemas (public, development, production)

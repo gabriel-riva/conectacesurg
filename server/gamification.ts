@@ -1110,9 +1110,62 @@ router.post("/challenges/:id/submit", isAuthenticated, async (req: Request, res:
         break;
         
       case 'text':
-      case 'file':
-        // Para texto e arquivo, pontos são atribuídos provisoriamente
+        // Para texto, pontos são atribuídos provisoriamente
         points = challengeData.points;
+        status = 'pending';
+        break;
+        
+      case 'file':
+        // Para arquivo, calcular pontos proporcionais baseado nos requisitos enviados
+        const fileSubmission = submissionData.file;
+        const fileConfig = challengeData.evaluationConfig as any;
+        
+        if (fileConfig?.file && fileSubmission?.files) {
+          // Calcular pontos baseado nos requisitos atendidos
+          let totalRequirementPoints = 0;
+          let achievedPoints = 0;
+          
+          // Primeiro, calcular o total de pontos possível de todos os requisitos
+          if (fileConfig.file.fileRequirements) {
+            totalRequirementPoints = fileConfig.file.fileRequirements.reduce((sum: number, req: any) => sum + req.points, 0);
+          }
+          
+          // Se não há requisitos específicos com pontos, usar o ponto total do desafio
+          if (totalRequirementPoints === 0) {
+            totalRequirementPoints = challengeData.points;
+          }
+          
+          // Calcular pontos pelos requisitos atendidos
+          const submittedRequirementIds = fileSubmission.files.map((f: any) => f.requirementId);
+          const uniqueSubmittedIds = [...new Set(submittedRequirementIds)];
+          
+          for (const reqId of uniqueSubmittedIds) {
+            const requirement = fileConfig.file.fileRequirements?.find((req: any) => req.id === reqId);
+            if (requirement) {
+              achievedPoints += requirement.points;
+            }
+          }
+          
+          // Se não há sistema de pontos por requisito, calcular proporcionalmente
+          if (fileConfig.file.fileRequirements && fileConfig.file.fileRequirements.length > 0) {
+            const totalRequirements = fileConfig.file.fileRequirements.length;
+            const completedRequirements = uniqueSubmittedIds.length;
+            
+            if (achievedPoints === 0) {
+              // Fallback: calcular proporcionalmente se não há pontos específicos
+              points = Math.round((completedRequirements / totalRequirements) * challengeData.points);
+            } else {
+              // Usar pontos específicos dos requisitos
+              points = achievedPoints;
+            }
+          } else {
+            // Se não há configuração de requisitos, usar pontos totais
+            points = challengeData.points;
+          }
+        } else {
+          points = challengeData.points;
+        }
+        
         status = 'pending';
         break;
     }
