@@ -73,6 +73,16 @@ Preferred communication style: Simple, everyday language.
 - **Data Integration**: Added `/api/gamification/my-submissions` endpoint integration to track user challenge progress
 - **Type Safety**: Proper TypeScript interfaces for challenge submissions and gamification data
 
+### August 15, 2025 - Enhanced Challenge Status Display
+- **Three-Category Challenge Statistics**: Updated challenge statistics to show three distinct states:
+  - "Concluídos" (green) - completed/approved submissions
+  - "Em revisão" (yellow) - pending submissions awaiting review
+  - "Abertos" (blue) - challenges without submissions
+- **Improved Grid Layout**: Changed from 2x2 to 3x2 grid layout in GamificationInfoCard to accommodate three categories
+- **Visual Status Indicators**: Enhanced challenge cards with color-coded status badges and consistent terminology
+- **Transparent Points Display**: All submissions now show earned points regardless of value (including 0 points)
+- **Terminology Standardization**: Changed "Pendente" to "Em revisão" across the interface for better user understanding
+
 ### Critical Debugging Lessons (August 2025)
 - **Multiple Schema Issue**: PostgreSQL database contains 3 schemas (public, development, production)
 - **Schema Verification**: Always verify which schema the application is using with `SELECT current_schema()`
