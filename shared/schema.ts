@@ -461,6 +461,8 @@ export const gamificationChallenges = pgTable("gamification_challenges", {
         points: number;
         acceptedTypes: string[];
         maxSize: number;
+        submissionType: 'file' | 'link'; // Tipo de submissão: arquivo ou link
+        allowMultiple?: boolean; // Se permite múltiplos arquivos/links para este requisito
       }[];
       maxFiles: number;
     };
@@ -517,12 +519,18 @@ export const challengeSubmissions = pgTable("challenge_submissions", {
     };
     // File submission
     file?: {
-      files: {
+      submissions: {
         requirementId: string;
-        fileName: string;
-        fileUrl: string;
-        fileSize: number;
-        mimeType: string;
+        submissionType: 'file' | 'link';
+        // Para arquivos
+        fileName?: string;
+        fileUrl?: string;
+        fileSize?: number;
+        mimeType?: string;
+        // Para links
+        linkUrl?: string;
+        linkTitle?: string;
+        linkDescription?: string;
       }[];
     };
     // QR Code submission

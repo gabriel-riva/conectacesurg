@@ -26,6 +26,8 @@ interface FileRequirement {
   points: number;
   acceptedTypes: string[];
   maxSize: number;
+  submissionType: 'file' | 'link'; // Tipo de submissão: arquivo ou link
+  allowMultiple?: boolean; // Se permite múltiplos arquivos/links para este requisito
 }
 
 interface EvaluationConfig {
@@ -38,7 +40,7 @@ interface EvaluationConfig {
   };
   text?: {
     placeholder: string;
-    maxLength: number;
+    maxLength?: number;
   };
   file?: {
     fileRequirements: FileRequirement[];
@@ -47,7 +49,7 @@ interface EvaluationConfig {
   qrcode?: {
     qrCodeData: string;
     qrCodeImage: string;
-    instructions: string;
+    instructions?: string;
   };
 }
 
@@ -150,7 +152,9 @@ export const ChallengeEvaluationConfig: React.FC<ChallengeEvaluationConfigProps>
       description: '',
       points: 10,
       acceptedTypes: ['pdf'],
-      maxSize: 5 * 1024 * 1024 // 5MB
+      maxSize: 5 * 1024 * 1024, // 5MB
+      submissionType: 'file', // Padrão para arquivo
+      allowMultiple: false
     };
 
     setConfig(prev => ({
@@ -436,7 +440,7 @@ export const ChallengeEvaluationConfig: React.FC<ChallengeEvaluationConfigProps>
                     </CardHeader>
                     <CardContent>
                       <div className="space-y-4">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                           <div>
                             <Label htmlFor={`name-${requirement.id}`}>Nome do Requisito</Label>
                             <Input
@@ -457,6 +461,21 @@ export const ChallengeEvaluationConfig: React.FC<ChallengeEvaluationConfigProps>
                               onChange={(e) => updateFileRequirement(requirement.id, { points: parseInt(e.target.value) || 0 })}
                             />
                           </div>
+                          <div>
+                            <Label htmlFor={`submissionType-${requirement.id}`}>Tipo de Submissão</Label>
+                            <Select 
+                              value={requirement.submissionType || 'file'} 
+                              onValueChange={(value: 'file' | 'link') => updateFileRequirement(requirement.id, { submissionType: value })}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Selecione o tipo" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="file">Upload de Arquivo</SelectItem>
+                                <SelectItem value="link">Link/URL</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
                         </div>
 
                         <div>
@@ -465,39 +484,68 @@ export const ChallengeEvaluationConfig: React.FC<ChallengeEvaluationConfigProps>
                             id={`description-${requirement.id}`}
                             value={requirement.description}
                             onChange={(e) => updateFileRequirement(requirement.id, { description: e.target.value })}
-                            placeholder="Descreva o que deve ser enviado..."
+                            placeholder={requirement.submissionType === 'link' ? 
+                              "Descreva o tipo de link que deve ser enviado..." : 
+                              "Descreva o que deve ser enviado..."
+                            }
                           />
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div>
-                            <Label htmlFor={`types-${requirement.id}`}>Tipos Permitidos</Label>
-                            <Input
-                              id={`types-${requirement.id}`}
-                              value={requirement.acceptedTypes.join(', ')}
-                              onChange={(e) => updateFileRequirement(requirement.id, { 
-                                acceptedTypes: e.target.value.split(',').map(type => type.trim()).filter(Boolean)
-                              })}
-                              placeholder="pdf, doc, docx, jpg, png"
-                            />
-                            <p className="text-xs text-gray-500 mt-1">
-                              Separe por vírgula
+                        <div className="flex items-center space-x-2">
+                          <Switch
+                            id={`allowMultiple-${requirement.id}`}
+                            checked={requirement.allowMultiple || false}
+                            onCheckedChange={(checked) => updateFileRequirement(requirement.id, { allowMultiple: checked })}
+                          />
+                          <Label htmlFor={`allowMultiple-${requirement.id}`}>
+                            Permitir múltiplos {requirement.submissionType === 'link' ? 'links' : 'arquivos'}
+                          </Label>
+                        </div>
+
+                        {requirement.submissionType === 'file' && (
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                              <Label htmlFor={`types-${requirement.id}`}>Tipos de Arquivo Permitidos</Label>
+                              <Input
+                                id={`types-${requirement.id}`}
+                                value={requirement.acceptedTypes.join(', ')}
+                                onChange={(e) => updateFileRequirement(requirement.id, { 
+                                  acceptedTypes: e.target.value.split(',').map(type => type.trim()).filter(Boolean)
+                                })}
+                                placeholder="pdf, doc, docx, jpg, png"
+                              />
+                              <p className="text-xs text-gray-500 mt-1">
+                                Separe por vírgula (ex: pdf, doc, jpg)
+                              </p>
+                            </div>
+                            <div>
+                              <Label htmlFor={`size-${requirement.id}`}>Tamanho Máximo (MB)</Label>
+                              <Input
+                                id={`size-${requirement.id}`}
+                                type="number"
+                                min="1"
+                                max="100"
+                                value={Math.round(requirement.maxSize / 1024 / 1024)}
+                                onChange={(e) => updateFileRequirement(requirement.id, { 
+                                  maxSize: (parseInt(e.target.value) || 5) * 1024 * 1024 
+                                })}
+                              />
+                            </div>
+                          </div>
+                        )}
+
+                        {requirement.submissionType === 'link' && (
+                          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                            <div className="flex items-center space-x-2 mb-2">
+                              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                              <span className="text-sm font-medium text-blue-800">Submissão por Link</span>
+                            </div>
+                            <p className="text-sm text-blue-700">
+                              O usuário enviará links/URLs em vez de fazer upload de arquivos. 
+                              Configure a descrição acima para orientar sobre que tipo de link deve ser enviado.
                             </p>
                           </div>
-                          <div>
-                            <Label htmlFor={`size-${requirement.id}`}>Tamanho Máximo (MB)</Label>
-                            <Input
-                              id={`size-${requirement.id}`}
-                              type="number"
-                              min="1"
-                              max="100"
-                              value={Math.round(requirement.maxSize / 1024 / 1024)}
-                              onChange={(e) => updateFileRequirement(requirement.id, { 
-                                maxSize: (parseInt(e.target.value) || 5) * 1024 * 1024 
-                              })}
-                            />
-                          </div>
-                        </div>
+                        )}
                       </div>
                     </CardContent>
                   </Card>
