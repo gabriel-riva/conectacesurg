@@ -47,6 +47,7 @@ Preferred communication style: Simple, everyday language.
 - **Trail System**: Content pages with commenting, replies, likes, and category-based visibility.
 - **Homepage Gamification Carousel**: Horizontal scrollable display of active, uncompleted challenges on the homepage with navigation arrows, fixed height (280px) to match other dashboard cards, optimized card sizing (260px width, 16px image height) for better content visibility, and direct links to individual challenge details via URL parameters.
 - **Granular File Review System**: Advanced review system for file challenges with individual requirement evaluation, automatic scoring calculation, and comprehensive administrative interface for granular approval/rejection.
+- **Unified Gamification Information Card**: Consolidated sidebar component that combines cycle information, challenge statistics, and points history into a single "Informações" card with three subsections: "Ciclo Atual" (current cycle with progress), "Meus desafios" (challenge completion stats for both cycle and annual), and "Meus pontos" (points total and history).
 
 ## Database Environment Separation
 - **Development/Production Separation**: Fully implemented with schema-based separation
@@ -60,6 +61,17 @@ Preferred communication style: Simple, everyday language.
   - Development changes: Apply via `npm run db:push` in development
   - Production deployment: Apply via `NODE_ENV=production npm run db:push` or manual SQL for complex migrations
   - Manual sync: Use `psql $DATABASE_URL -c "SET search_path TO production; [SQL COMMAND]"` when needed
+
+## Recent Changes
+
+### August 2025 - Gamification UI Improvements
+- **Unified Information Card**: Replaced separate "Ciclo Atual" and "Meus pontos" cards with a single comprehensive "Informações" card that includes:
+  - Current cycle information with period dates and progress bar
+  - Challenge statistics showing completed vs open challenges for both cycle and annual categories
+  - Points total and recent transaction history
+- **Component Architecture**: Created `GamificationInfoCard.tsx` component that fetches user submission data to calculate real-time challenge completion statistics
+- **Data Integration**: Added `/api/gamification/my-submissions` endpoint integration to track user challenge progress
+- **Type Safety**: Proper TypeScript interfaces for challenge submissions and gamification data
 
 ### Critical Debugging Lessons (August 2025)
 - **Multiple Schema Issue**: PostgreSQL database contains 3 schemas (public, development, production)
