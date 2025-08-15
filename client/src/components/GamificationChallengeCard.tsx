@@ -47,7 +47,7 @@ export function GamificationChallengeCard({ challenge, onClick, submission }: Ga
         };
       case 'pending':
         return {
-          label: 'Pendente',
+          label: 'Em revisão',
           icon: <AlertCircle className="h-3 w-3" />,
           variant: 'secondary' as const,
           className: 'bg-yellow-100 text-yellow-800 border-yellow-300'
