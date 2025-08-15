@@ -49,13 +49,17 @@ Preferred communication style: Simple, everyday language.
 - **Granular File Review System**: Advanced review system for file challenges with individual requirement evaluation, automatic scoring calculation, and comprehensive administrative interface for granular approval/rejection.
 
 ## Database Environment Separation
-- **Development/Production Separation**: Fully implemented with backward compatibility
-- **Configuration Priority**: 
-  - Development: DATABASE_URL_DEV → DATABASE_URL (fallback)
-  - Production: DATABASE_URL_PRODUCTION → DATABASE_URL (fallback)
+- **Development/Production Separation**: Fully implemented with schema-based separation
+- **Schema Structure**: 
+  - Development: `development` schema (NODE_ENV=development)
+  - Production: `production` schema (NODE_ENV=production)
+  - Public: `public` schema (legacy, not actively used)
 - **Automatic Environment Detection**: Based on NODE_ENV variable
-- **Zero Breaking Changes**: System maintains 100% compatibility with existing DATABASE_URL
-- **Setup Script**: Available at `scripts/setup-environments.cjs` for configuration verification
+- **Database Configuration**: Uses search_path to isolate environments completely
+- **Migration Process**: 
+  - Development changes: Apply via `npm run db:push` in development
+  - Production deployment: Apply via `NODE_ENV=production npm run db:push` or manual SQL for complex migrations
+  - Manual sync: Use `psql $DATABASE_URL -c "SET search_path TO production; [SQL COMMAND]"` when needed
 
 ### Critical Debugging Lessons (August 2025)
 - **Multiple Schema Issue**: PostgreSQL database contains 3 schemas (public, development, production)
