@@ -428,18 +428,21 @@ router.get("/challenges", isAuthenticated, async (req: Request, res: Response) =
       );
     
     if (type !== "all") {
-      query = query.where(eq(gamificationChallenges.type, type as string));
+      const baseCondition = isAdminRequest ? sql`1=1` : eq(gamificationChallenges.isActive, true);
+      const typeCondition = eq(gamificationChallenges.type, type as string);
+      query = query.where(and(baseCondition, typeCondition));
     }
     
     const allChallenges = await query;
     
     // Filtrar desafios baseado nas categorias do usuário
     const filteredChallenges = allChallenges.filter(challenge => {
-      // Administradores e superadministradores veem todos os desafios
-      if (userRole === 'admin' || userRole === 'superadmin') {
+      // Para requisições admin, administradores e superadministradores veem TODOS os desafios sem filtros
+      if (isAdminRequest && (userRole === 'admin' || userRole === 'superadmin')) {
         return true;
       }
       
+      // Para requisições não-admin, aplicar filtros normais mesmo para admins
       // Se o desafio não tem categorias específicas (array vazio ou null), é visível para todos
       if (!challenge.targetUserCategories || challenge.targetUserCategories.length === 0) {
         return true;
