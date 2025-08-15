@@ -7,7 +7,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { QrCode, Upload, FileText, Brain, CheckCircle, Camera } from 'lucide-react';
+import { QrCode, Upload, FileText, Brain, CheckCircle, Camera, Link, Plus, X } from 'lucide-react';
 import jsQR from 'jsqr';
 
 interface QuizQuestion {
@@ -15,6 +15,17 @@ interface QuizQuestion {
   question: string;
   options: string[];
   correctAnswer: number;
+}
+
+interface FileRequirement {
+  id: string;
+  name: string;
+  description: string;
+  points: number;
+  acceptedTypes: string[];
+  maxSize: number;
+  submissionType?: 'file' | 'link';
+  allowMultiple?: boolean;
 }
 
 interface EvaluationConfig {
@@ -30,14 +41,7 @@ interface EvaluationConfig {
     maxLength: number;
   };
   file?: {
-    fileRequirements: {
-      id: string;
-      name: string;
-      description: string;
-      points: number;
-      acceptedTypes: string[];
-      maxSize: number;
-    }[];
+    fileRequirements: FileRequirement[];
     maxFiles: number;
   };
   qrcode?: {
@@ -66,6 +70,7 @@ export const ChallengeEvaluationForm: React.FC<ChallengeEvaluationFormProps> = (
 }) => {
   const [formData, setFormData] = useState<any>({});
   const [selectedFiles, setSelectedFiles] = useState<{[requirementId: string]: File[]}>({});
+  const [linkInputs, setLinkInputs] = useState<{[requirementId: string]: string[]}>({});
   const [qrScannerActive, setQrScannerActive] = useState(false);
   const [scannedData, setScannedData] = useState<string>('');
 
@@ -124,82 +129,87 @@ export const ChallengeEvaluationForm: React.FC<ChallengeEvaluationFormProps> = (
     const config = evaluationConfig.file;
     if (!config?.fileRequirements) return;
 
-    // Verificar se há arquivos selecionados
-    const totalFiles = Object.values(selectedFiles).flat().length;
-    if (totalFiles === 0) {
-      toast({
-        title: "Erro",
-        description: "Selecione pelo menos um arquivo.",
-        variant: "destructive"
-      });
-      return;
-    }
-
     try {
-      const filesData = [];
+      const submissionData = [];
+      let hasData = false;
       
-      // Para cada requisito de arquivo
-      for (const [requirementId, files] of Object.entries(selectedFiles)) {
-        if (!files || files.length === 0) continue;
+      // Para cada requisito
+      for (const requirement of config.fileRequirements) {
+        const requirementId = requirement.id;
+        const submissionType = requirement.submissionType || 'file';
         
-        for (const file of files) {
-          try {
-            // Criar FormData para envio do arquivo
-            const formData = new FormData();
-            formData.append('file', file);
-            formData.append('challengeId', challengeId.toString());
-            formData.append('requirementId', requirementId);
+        if (submissionType === 'file') {
+          // Processar arquivos
+          const files = selectedFiles[requirementId] || [];
+          
+          for (const file of files) {
+            try {
+              // Criar FormData para envio do arquivo
+              const formData = new FormData();
+              formData.append('file', file);
+              formData.append('challengeId', challengeId.toString());
+              formData.append('requirementId', requirementId);
 
-            console.log('Enviando arquivo:', file.name, 'para requisito:', requirementId);
+              // Enviar arquivo para o servidor
+              const response = await fetch('/api/upload', {
+                method: 'POST',
+                body: formData
+              });
 
-            // Enviar arquivo para o servidor
-            const response = await fetch('/api/upload', {
-              method: 'POST',
-              body: formData
-            });
+              if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(`Erro ao enviar ${file.name}: ${response.status}`);
+              }
 
-            if (!response.ok) {
-              const errorText = await response.text();
-              console.error('Erro no upload:', response.status, errorText);
-              throw new Error(`Erro ao enviar ${file.name}: ${response.status}`);
+              const uploadResult = await response.json();
+              
+              submissionData.push({
+                requirementId,
+                type: 'file',
+                fileName: file.name,
+                fileUrl: uploadResult.url || uploadResult.fileUrl,
+                fileSize: file.size,
+                mimeType: file.type
+              });
+              hasData = true;
+            } catch (fileError: any) {
+              toast({
+                title: "Erro no Upload",
+                description: `Falha ao enviar ${file.name}: ${fileError.message}`,
+                variant: "destructive"
+              });
+              return;
             }
-
-            const uploadResult = await response.json();
-            console.log('Upload bem-sucedido:', uploadResult);
-            
-            filesData.push({
-              requirementId,
-              fileName: file.name,
-              fileUrl: uploadResult.url || uploadResult.fileUrl, // Aceita ambos os formatos
-              fileSize: file.size,
-              mimeType: file.type
-            });
-          } catch (fileError: any) {
-            console.error('Erro específico do arquivo:', fileError);
-            toast({
-              title: "Erro no Upload",
-              description: `Falha ao enviar ${file.name}: ${fileError.message}`,
-              variant: "destructive"
-            });
-            return; // Para o processo se houver erro em qualquer arquivo
+          }
+        } else if (submissionType === 'link') {
+          // Processar links
+          const links = linkInputs[requirementId] || [];
+          
+          for (const link of links) {
+            if (link && link.trim()) {
+              submissionData.push({
+                requirementId,
+                type: 'link',
+                linkUrl: link.trim()
+              });
+              hasData = true;
+            }
           }
         }
       }
 
-      if (filesData.length === 0) {
+      if (!hasData) {
         toast({
           title: "Erro",
-          description: "Nenhum arquivo foi enviado com sucesso.",
+          description: "Adicione pelo menos um arquivo ou link.",
           variant: "destructive"
         });
         return;
       }
 
-      console.log('Dados dos arquivos preparados:', filesData);
-
       const submission = {
         file: {
-          files: filesData
+          files: submissionData
         }
       };
 
@@ -208,7 +218,7 @@ export const ChallengeEvaluationForm: React.FC<ChallengeEvaluationFormProps> = (
       console.error('Erro geral no upload:', error);
       toast({
         title: "Erro",
-        description: error.message || "Erro ao enviar arquivos",
+        description: error.message || "Erro ao enviar submissão",
         variant: "destructive"
       });
     }
@@ -398,6 +408,36 @@ export const ChallengeEvaluationForm: React.FC<ChallengeEvaluationFormProps> = (
 
 
 
+  // Função para adicionar link
+  const handleAddLink = (requirementId: string) => {
+    const requirement = evaluationConfig.file?.fileRequirements?.find(r => r.id === requirementId);
+    const maxLinks = requirement?.allowMultiple ? 5 : 1;
+    const currentLinks = linkInputs[requirementId] || [];
+    
+    if (currentLinks.length < maxLinks) {
+      setLinkInputs(prev => ({
+        ...prev,
+        [requirementId]: [...currentLinks, '']
+      }));
+    }
+  };
+
+  // Função para remover link
+  const handleRemoveLink = (requirementId: string, index: number) => {
+    setLinkInputs(prev => ({
+      ...prev,
+      [requirementId]: (prev[requirementId] || []).filter((_, i) => i !== index)
+    }));
+  };
+
+  // Função para atualizar link
+  const handleUpdateLink = (requirementId: string, index: number, value: string) => {
+    setLinkInputs(prev => ({
+      ...prev,
+      [requirementId]: (prev[requirementId] || []).map((link, i) => i === index ? value : link)
+    }));
+  };
+
   const handleFileChange = (requirementId: string, requirement: any) => (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     
@@ -562,85 +602,183 @@ export const ChallengeEvaluationForm: React.FC<ChallengeEvaluationFormProps> = (
         }
 
         const totalSelectedFiles = Object.values(selectedFiles).flat().length;
+        const totalSelectedLinks = Object.values(linkInputs).flat().filter(link => link.trim()).length;
+        const totalSubmissions = totalSelectedFiles + totalSelectedLinks;
 
         return (
           <div className="space-y-6">
             <div className="flex items-center space-x-2">
               <Upload className="w-5 h-5 text-purple-600" />
-              <h3 className="text-lg font-semibold">Upload de Arquivos</h3>
+              <h3 className="text-lg font-semibold">Requisitos do Desafio</h3>
             </div>
 
             <div className="space-y-6">
-              {fileConfig.fileRequirements.map((requirement) => (
-                <Card key={requirement.id} className="border-l-4 border-l-purple-500">
-                  <CardHeader className="pb-3">
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="text-sm font-semibold text-purple-700">
-                        {requirement.name}
-                      </CardTitle>
-                      <Badge variant="outline" className="text-xs">
-                        {requirement.points} pontos
-                      </Badge>
-                    </div>
-                    {requirement.description && (
-                      <CardDescription className="text-xs">
-                        {requirement.description}
-                      </CardDescription>
-                    )}
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor={`fileInput-${requirement.id}`}>Selecione os arquivos</Label>
-                      <Input
-                        id={`fileInput-${requirement.id}`}
-                        type="file"
-                        multiple
-                        accept={requirement.acceptedTypes.map(type => `.${type}`).join(',')}
-                        onChange={handleFileChange(requirement.id, requirement)}
-                      />
-                      
-                      <div className="text-xs text-gray-500 space-y-1">
-                        <p>Tipos permitidos: {requirement.acceptedTypes.join(', ')}</p>
-                        <p>Tamanho máximo: {(requirement.maxSize / 1024 / 1024).toFixed(1)}MB por arquivo</p>
-                      </div>
-                    </div>
-
-                    {selectedFiles[requirement.id] && selectedFiles[requirement.id].length > 0 && (
-                      <div className="space-y-2">
-                        <Label className="text-xs font-medium text-green-700">Arquivos selecionados:</Label>
-                        <div className="space-y-1">
-                          {selectedFiles[requirement.id].map((file, index) => (
-                            <div key={index} className="flex items-center space-x-2 p-2 bg-green-50 rounded border">
-                              <CheckCircle className="w-3 h-3 text-green-500" />
-                              <span className="text-xs">{file.name}</span>
-                              <span className="text-xs text-gray-500">
-                                ({(file.size / 1024 / 1024).toFixed(1)}MB)
-                              </span>
-                            </div>
-                          ))}
+              {fileConfig.fileRequirements.map((requirement) => {
+                const submissionType = requirement.submissionType || 'file';
+                const allowMultiple = requirement.allowMultiple || false;
+                const currentLinks = linkInputs[requirement.id] || [];
+                const currentFiles = selectedFiles[requirement.id] || [];
+                
+                return (
+                  <Card key={requirement.id} className={`border-l-4 ${
+                    submissionType === 'link' ? 'border-l-blue-500' : 'border-l-purple-500'
+                  }`}>
+                    <CardHeader className="pb-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          {submissionType === 'link' ? (
+                            <Link className="w-4 h-4 text-blue-600" />
+                          ) : (
+                            <Upload className="w-4 h-4 text-purple-600" />
+                          )}
+                          <CardTitle className={`text-sm font-semibold ${
+                            submissionType === 'link' ? 'text-blue-700' : 'text-purple-700'
+                          }`}>
+                            {requirement.name}
+                          </CardTitle>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Badge variant="outline" className="text-xs">
+                            {requirement.points} pontos
+                          </Badge>
+                          <Badge variant="secondary" className="text-xs">
+                            {submissionType === 'link' ? 'Link' : 'Arquivo'}
+                          </Badge>
                         </div>
                       </div>
-                    )}
-                  </CardContent>
-                </Card>
-              ))}
+                      {requirement.description && (
+                        <CardDescription className="text-xs">
+                          {requirement.description}
+                        </CardDescription>
+                      )}
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      {submissionType === 'file' ? (
+                        // Formulário de arquivo
+                        <div className="space-y-2">
+                          <Label htmlFor={`fileInput-${requirement.id}`}>Selecione os arquivos</Label>
+                          <Input
+                            id={`fileInput-${requirement.id}`}
+                            type="file"
+                            multiple={allowMultiple}
+                            accept={requirement.acceptedTypes.map(type => `.${type}`).join(',')}
+                            onChange={handleFileChange(requirement.id, requirement)}
+                          />
+                          
+                          <div className="text-xs text-gray-500 space-y-1">
+                            <p>Tipos permitidos: {requirement.acceptedTypes.join(', ')}</p>
+                            <p>Tamanho máximo: {(requirement.maxSize / 1024 / 1024).toFixed(1)}MB por arquivo</p>
+                            {allowMultiple && <p>Múltiplos arquivos permitidos</p>}
+                          </div>
+                          
+                          {currentFiles.length > 0 && (
+                            <div className="space-y-2">
+                              <Label className="text-xs font-medium text-green-700">Arquivos selecionados:</Label>
+                              <div className="space-y-1">
+                                {currentFiles.map((file, index) => (
+                                  <div key={index} className="flex items-center space-x-2 p-2 bg-green-50 rounded border">
+                                    <CheckCircle className="w-3 h-3 text-green-500" />
+                                    <span className="text-xs">{file.name}</span>
+                                    <span className="text-xs text-gray-500">
+                                      ({(file.size / 1024 / 1024).toFixed(1)}MB)
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        // Formulário de link
+                        <div className="space-y-4">
+                          {currentLinks.length === 0 ? (
+                            <div className="text-center py-4">
+                              <Button
+                                type="button"
+                                onClick={() => handleAddLink(requirement.id)}
+                                variant="outline"
+                                size="sm"
+                                className="flex items-center gap-2"
+                              >
+                                <Plus className="w-4 h-4" />
+                                Adicionar Link
+                              </Button>
+                            </div>
+                          ) : (
+                            <div className="space-y-2">
+                              <Label className="text-xs font-medium text-blue-700">
+                                Links ({currentLinks.length}/{allowMultiple ? '5' : '1'}):
+                              </Label>
+                              {currentLinks.map((link, index) => (
+                                <div key={index} className="flex items-center gap-2">
+                                  <Input
+                                    type="url"
+                                    placeholder="https://exemplo.com"
+                                    value={link}
+                                    onChange={(e) => handleUpdateLink(requirement.id, index, e.target.value)}
+                                    className="flex-1"
+                                  />
+                                  <Button
+                                    type="button"
+                                    onClick={() => handleRemoveLink(requirement.id, index)}
+                                    variant="outline"
+                                    size="sm"
+                                    className="text-red-500"
+                                  >
+                                    <X className="w-4 h-4" />
+                                  </Button>
+                                </div>
+                              ))}
+                              
+                              {allowMultiple && currentLinks.length < 5 && (
+                                <Button
+                                  type="button"
+                                  onClick={() => handleAddLink(requirement.id)}
+                                  variant="outline"
+                                  size="sm"
+                                  className="flex items-center gap-2 w-full mt-2"
+                                >
+                                  <Plus className="w-4 h-4" />
+                                  Adicionar Outro Link
+                                </Button>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                );
+              })}
               
               <div className="bg-gray-50 p-4 rounded-lg">
-                <p className="text-sm text-gray-700">
-                  <strong>Total de arquivos selecionados:</strong> {totalSelectedFiles}
-                </p>
-                <p className="text-sm text-gray-700">
-                  <strong>Máximo permitido:</strong> {fileConfig.maxFiles}
-                </p>
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <p className="text-gray-700">
+                      <strong>Arquivos:</strong> {totalSelectedFiles}
+                    </p>
+                    <p className="text-gray-700">
+                      <strong>Links:</strong> {totalSelectedLinks}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-gray-700">
+                      <strong>Total de submissões:</strong> {totalSubmissions}
+                    </p>
+                    <p className="text-gray-700">
+                      <strong>Máximo permitido:</strong> {fileConfig.maxFiles}
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
 
             <Button 
               onClick={handleFileSubmit} 
               className="w-full"
-              disabled={isLoading || totalSelectedFiles === 0 || totalSelectedFiles > fileConfig.maxFiles}
+              disabled={isLoading || totalSubmissions === 0 || totalSubmissions > fileConfig.maxFiles}
             >
-              {isLoading ? 'Enviando...' : `Enviar ${totalSelectedFiles} arquivo${totalSelectedFiles !== 1 ? 's' : ''}`}
+              {isLoading ? 'Enviando...' : `Enviar ${totalSubmissions} submiss${totalSubmissions !== 1 ? 'ões' : 'ão'}`}
             </Button>
           </div>
         );
