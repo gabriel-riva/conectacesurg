@@ -20,7 +20,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Plus, Edit, Trash2, Settings, Trophy, Users, Calendar, Target, Award, ArrowUpDown } from "lucide-react";
+import { Plus, Edit, Trash2, Settings, Trophy, Users, Calendar, Target, Award, ArrowUpDown, Upload } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import ReactQuill from "react-quill";
@@ -102,7 +102,6 @@ export default function AdminGamificationPage() {
 
   const { data: challenges, isLoading: challengesLoading } = useQuery({
     queryKey: ["/api/gamification/challenges", { admin: true }],
-    queryFn: () => apiRequest("/api/gamification/challenges?admin=true"),
   });
 
   // Mutations
@@ -843,7 +842,7 @@ export default function AdminGamificationPage() {
                         <Button 
                           variant="outline"
                           onClick={() => setIsReorderDialogOpen(true)}
-                          disabled={!challenges || challenges.length === 0}
+                          disabled={!challenges || !Array.isArray(challenges) || challenges.length === 0}
                         >
                           <ArrowUpDown className="h-4 w-4 mr-2" />
                           Reordenar
@@ -1190,9 +1189,9 @@ export default function AdminGamificationPage() {
       {/* Modal de Reordenação */}
       <Dialog open={isReorderDialogOpen} onOpenChange={setIsReorderDialogOpen}>
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-          {challenges && challenges.length > 0 && (
+          {challenges && Array.isArray(challenges) && challenges.length > 0 && (
             <AdminChallengeReorder
-              challenges={challenges}
+              challenges={challenges as any[]}
               onClose={() => setIsReorderDialogOpen(false)}
             />
           )}
