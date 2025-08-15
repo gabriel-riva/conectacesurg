@@ -6,14 +6,27 @@ interface MenuItem {
   href: string;
   label: string;
   icon: React.ReactNode;
+  children?: MenuItem[];
 }
 
 export function AdminSidebar() {
   const [location] = useLocation();
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [expandedMenus, setExpandedMenus] = useState<Set<string>>(new Set());
   
   // Determinar a página ativa
   const isActive = (path: string) => location === path;
+  
+  // Toggle para expandir/recolher menus com subitens
+  const toggleMenu = (label: string) => {
+    const newExpanded = new Set(expandedMenus);
+    if (newExpanded.has(label)) {
+      newExpanded.delete(label);
+    } else {
+      newExpanded.add(label);
+    }
+    setExpandedMenus(newExpanded);
+  };
 
   // Ícones para o menu
   const menuItems = [
@@ -27,31 +40,52 @@ export function AdminSidebar() {
       ),
     },
     {
-      href: "/admin/calendar",
-      label: "Calendário",
+      href: "",
+      label: "Pág. Início",
       icon: (
         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 21V7a2 2 0 012-2h4a2 2 0 012 2v14" />
         </svg>
       ),
-    },
-    {
-      href: "/admin/avisos",
-      label: "Avisos",
-      icon: (
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-        </svg>
-      ),
-    },
-    {
-      href: "/admin/noticias",
-      label: "Notícias",
-      icon: (
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" />
-        </svg>
-      ),
+      children: [
+        {
+          href: "/admin/calendar",
+          label: "Calendário",
+          icon: (
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+          ),
+        },
+        {
+          href: "/admin/avisos",
+          label: "Avisos",
+          icon: (
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+            </svg>
+          ),
+        },
+        {
+          href: "/admin/noticias",
+          label: "Notícias",
+          icon: (
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" />
+            </svg>
+          ),
+        },
+        {
+          href: "/admin/links",
+          label: "Links Úteis",
+          icon: (
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+            </svg>
+          ),
+        },
+      ],
     },
     {
       href: "/admin/materiais",
@@ -118,15 +152,6 @@ export function AdminSidebar() {
       ),
     },
     {
-      href: "/admin/links",
-      label: "Links Úteis",
-      icon: (
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-        </svg>
-      ),
-    },
-    {
       href: "/admin/funcionalidades",
       label: "Funcionalidades",
       icon: (
@@ -188,21 +213,75 @@ export function AdminSidebar() {
       <div className="mt-5">
         <ul className="space-y-2 px-3">
           {menuItems.map((item) => (
-            <li key={item.href} className="group/menu-item relative">
-              <Link 
-                href={item.href} 
-                className={`flex items-center p-2 w-full rounded-md hover:bg-gray-100 ${
-                  isActive(item.href) ? 'bg-primary/10 text-primary font-medium' : 'text-gray-700'
-                }`}
-                title={isCollapsed ? item.label : undefined}
-              >
-                <span className="flex-shrink-0">{item.icon}</span>
-                <span className={`ml-3 transition-all duration-300 ${
-                  isCollapsed ? 'opacity-0 hidden' : 'opacity-100'
-                }`}>
-                  {item.label}
-                </span>
-              </Link>
+            <li key={item.href || item.label} className="group/menu-item relative">
+              {item.children ? (
+                // Menu com subitens (colapsável)
+                <div>
+                  <button
+                    onClick={() => toggleMenu(item.label)}
+                    className={`flex items-center justify-between p-2 w-full rounded-md hover:bg-gray-100 transition-colors ${
+                      item.children.some(child => isActive(child.href)) ? 'bg-primary/10 text-primary font-medium' : 'text-gray-700'
+                    }`}
+                    title={isCollapsed ? item.label : undefined}
+                  >
+                    <div className="flex items-center">
+                      <span className="flex-shrink-0">{item.icon}</span>
+                      <span className={`ml-3 transition-all duration-300 ${
+                        isCollapsed ? 'opacity-0 hidden' : 'opacity-100'
+                      }`}>
+                        {item.label}
+                      </span>
+                    </div>
+                    {!isCollapsed && (
+                      <svg
+                        className={`h-4 w-4 transition-transform duration-200 ${
+                          expandedMenus.has(item.label) ? 'rotate-180' : ''
+                        }`}
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    )}
+                  </button>
+                  
+                  {/* Subitens */}
+                  {expandedMenus.has(item.label) && !isCollapsed && (
+                    <ul className="ml-8 mt-2 space-y-1">
+                      {item.children.map((child) => (
+                        <li key={child.href}>
+                          <Link
+                            href={child.href}
+                            className={`flex items-center p-2 w-full rounded-md hover:bg-gray-100 transition-colors ${
+                              isActive(child.href) ? 'bg-primary/10 text-primary font-medium' : 'text-gray-600'
+                            }`}
+                          >
+                            <span className="flex-shrink-0">{child.icon}</span>
+                            <span className="ml-3 text-sm">{child.label}</span>
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              ) : (
+                // Menu simples (sem subitens)
+                <Link 
+                  href={item.href} 
+                  className={`flex items-center p-2 w-full rounded-md hover:bg-gray-100 transition-colors ${
+                    isActive(item.href) ? 'bg-primary/10 text-primary font-medium' : 'text-gray-700'
+                  }`}
+                  title={isCollapsed ? item.label : undefined}
+                >
+                  <span className="flex-shrink-0">{item.icon}</span>
+                  <span className={`ml-3 transition-all duration-300 ${
+                    isCollapsed ? 'opacity-0 hidden' : 'opacity-100'
+                  }`}>
+                    {item.label}
+                  </span>
+                </Link>
+              )}
             </li>
           ))}
         </ul>
