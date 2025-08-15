@@ -14,7 +14,8 @@ import { useToast } from "@/hooks/use-toast";
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { apiRequest } from '@/lib/queryClient';
-import { Eye, CheckCircle, XCircle, Clock, User, FileText, Download, Search, Filter, AlertCircle } from 'lucide-react';
+import { Eye, CheckCircle, XCircle, Clock, User, FileText, Download, Search, Filter, AlertCircle, Settings } from 'lucide-react';
+import { GranularSubmissionReview } from './GranularSubmissionReview';
 
 interface Submission {
   id: number;
@@ -53,6 +54,8 @@ export const AdminAllSubmissions: React.FC = () => {
   const [challengeFilter, setChallengeFilter] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [expandedChallenges, setExpandedChallenges] = useState<string[]>([]);
+  const [granularReviewSubmission, setGranularReviewSubmission] = useState<Submission | null>(null);
+  const [granularReviewChallenge, setGranularReviewChallenge] = useState<Challenge | null>(null);
   
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -183,6 +186,20 @@ export const AdminAllSubmissions: React.FC = () => {
     setReviewStatus(submission.status);
     setReviewPoints(submission.points);
     setReviewFeedback(submission.adminFeedback || '');
+  };
+
+  const openGranularReview = (submission: Submission) => {
+    const challenge = challenges.find(c => c.id === submission.challengeId);
+    setGranularReviewSubmission(submission);
+    setGranularReviewChallenge(challenge || null);
+  };
+
+  const handleGranularReviewCompleted = () => {
+    setGranularReviewSubmission(null);
+    setGranularReviewChallenge(null);
+    queryClient.invalidateQueries({
+      queryKey: ['/api/gamification/all-submissions']
+    });
   };
 
   const getStatusBadge = (status: string) => {
@@ -554,16 +571,30 @@ export const AdminAllSubmissions: React.FC = () => {
                           </div>
                         </TableCell>
                         <TableCell className="text-right">
-                          <Dialog>
-                            <DialogTrigger asChild>
-                              <Button 
-                                variant="ghost" 
+                          <div className="flex items-center gap-1">
+                            {/* Botão para revisão granular em desafios de arquivo */}
+                            {submission.submissionType === 'file' && (
+                              <Button
+                                variant="ghost"
                                 size="sm"
-                                onClick={() => openReviewDialog(submission)}
+                                onClick={() => openGranularReview(submission)}
+                                title="Revisão Granular"
                               >
-                                <Eye className="w-4 h-4" />
+                                <Settings className="w-4 h-4" />
                               </Button>
-                            </DialogTrigger>
+                            )}
+                            
+                            <Dialog>
+                              <DialogTrigger asChild>
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm"
+                                  onClick={() => openReviewDialog(submission)}
+                                  title="Ver Detalhes"
+                                >
+                                  <Eye className="w-4 h-4" />
+                                </Button>
+                              </DialogTrigger>
                             <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                               <DialogHeader>
                                 <DialogTitle>Detalhes da Submissão</DialogTitle>
@@ -682,6 +713,7 @@ export const AdminAllSubmissions: React.FC = () => {
                               )}
                             </DialogContent>
                           </Dialog>
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -691,6 +723,27 @@ export const AdminAllSubmissions: React.FC = () => {
             </AccordionItem>
           ))}
         </Accordion>
+      )}
+
+      {/* Dialog de Revisão Granular */}
+      {granularReviewSubmission && granularReviewChallenge && (
+        <Dialog open={true} onOpenChange={() => setGranularReviewSubmission(null)}>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Revisão Granular por Requisito</DialogTitle>
+              <DialogDescription>
+                Submissão de {granularReviewSubmission.userName} para {granularReviewSubmission.challengeTitle}
+              </DialogDescription>
+            </DialogHeader>
+            
+            <GranularSubmissionReview
+              submission={granularReviewSubmission}
+              challenge={granularReviewChallenge}
+              onReviewCompleted={handleGranularReviewCompleted}
+              onCancel={() => setGranularReviewSubmission(null)}
+            />
+          </DialogContent>
+        </Dialog>
       )}
     </div>
   );

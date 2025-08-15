@@ -971,24 +971,39 @@ export default function AdminGamificationPage() {
                             )}
                           />
 
-                          <FormField
-                            control={challengeForm.control}
-                            name="points"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Pontos</FormLabel>
-                                <FormControl>
-                                  <Input
-                                    type="number"
-                                    placeholder="Pontos do desafio"
-                                    {...field}
-                                    onChange={(e) => field.onChange(parseInt(e.target.value))}
-                                  />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
+                          {evaluationType !== 'file' && (
+                            <FormField
+                              control={challengeForm.control}
+                              name="points"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Pontos</FormLabel>
+                                  <FormControl>
+                                    <Input
+                                      type="number"
+                                      placeholder="Pontos do desafio"
+                                      {...field}
+                                      onChange={(e) => field.onChange(parseInt(e.target.value))}
+                                    />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                          )}
+                          
+                          {evaluationType === 'file' && (
+                            <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                              <div className="flex items-center gap-2 text-blue-700 font-medium">
+                                <Upload className="w-4 h-4" />
+                                <span>Pontuação por Requisito</span>
+                              </div>
+                              <p className="text-sm text-blue-600 mt-1">
+                                Para desafios de arquivo, a pontuação é definida individualmente para cada requisito.
+                                A pontuação total será a soma de todos os requisitos.
+                              </p>
+                            </div>
+                          )}
 
                           <FormField
                             control={challengeForm.control}

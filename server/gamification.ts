@@ -1242,6 +1242,115 @@ router.get("/challenges/:id/submissions", isAdmin, async (req: Request, res: Res
   }
 });
 
+// Revisar submissão granular por requisito (admin)
+router.put("/submissions/:id/review-granular", isAdmin, async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const submissionId = parseInt(id);
+    const { requirementReviews, adminFeedback } = req.body;
+    const reviewerId = req.user?.id;
+    
+    if (!reviewerId) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    // Buscar a submissão
+    const submission = await db
+      .select()
+      .from(challengeSubmissions)
+      .where(eq(challengeSubmissions.id, submissionId))
+      .limit(1);
+
+    if (submission.length === 0) {
+      return res.status(404).json({ error: "Submission not found" });
+    }
+
+    const currentSubmission = submission[0];
+    
+    // Buscar o desafio para obter a configuração dos requisitos
+    const challenge = await db
+      .select()
+      .from(gamificationChallenges)
+      .where(eq(gamificationChallenges.id, currentSubmission.challengeId))
+      .limit(1);
+
+    if (challenge.length === 0) {
+      return res.status(404).json({ error: "Challenge not found" });
+    }
+
+    const challengeData = challenge[0];
+    const evaluationConfig = challengeData.evaluationConfig;
+    
+    // Calcular pontuação total baseada nas aprovações
+    let totalPoints = 0;
+    const fileRequirements = evaluationConfig?.file?.fileRequirements || [];
+    
+    // Atualizar o submissionData com o status de revisão de cada requisito
+    const updatedSubmissionData = {
+      ...currentSubmission.submissionData,
+      requirementReviews
+    };
+    
+    // Calcular pontos apenas dos requisitos aprovados
+    requirementReviews.forEach((review: any) => {
+      if (review.status === 'approved') {
+        const requirement = fileRequirements.find((req: any) => req.id === review.requirementId);
+        if (requirement) {
+          totalPoints += requirement.points;
+        }
+      }
+    });
+    
+    // Determinar status geral da submissão
+    const allApproved = requirementReviews.every((review: any) => review.status === 'approved');
+    const anyRejected = requirementReviews.some((review: any) => review.status === 'rejected');
+    const overallStatus = allApproved ? 'approved' : anyRejected ? 'partially_approved' : 'pending';
+    
+    // Atualizar a submissão
+    const updatedSubmission = await db
+      .update(challengeSubmissions)
+      .set({
+        status: overallStatus,
+        points: totalPoints,
+        submissionData: updatedSubmissionData,
+        adminFeedback,
+        reviewedBy: reviewerId,
+        reviewedAt: new Date(),
+        updatedAt: new Date()
+      })
+      .where(eq(challengeSubmissions.id, submissionId))
+      .returning();
+
+    // Gerenciar pontos na tabela de gamificação
+    // Remover pontos provisórios anteriores
+    await db
+      .delete(gamificationPoints)
+      .where(and(
+        eq(gamificationPoints.userId, currentSubmission.userId),
+        eq(gamificationPoints.type, 'provisional'),
+        like(gamificationPoints.description, `%${challengeData.title}%`)
+      ));
+
+    // Adicionar pontos finais baseados na revisão granular
+    if (totalPoints > 0) {
+      await db
+        .insert(gamificationPoints)
+        .values({
+          userId: currentSubmission.userId,
+          points: totalPoints,
+          description: `Desafio aprovado (${requirementReviews.filter((r: any) => r.status === 'approved').length}/${requirementReviews.length} requisitos): ${challengeData.title}`,
+          type: 'challenge',
+          createdBy: reviewerId
+        });
+    }
+
+    res.json(updatedSubmission[0]);
+  } catch (error) {
+    console.error("Error reviewing submission granularly:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 // Revisar uma submissão (admin)
 router.put("/submissions/:id/review", isAdmin, async (req: Request, res: Response) => {
   try {
