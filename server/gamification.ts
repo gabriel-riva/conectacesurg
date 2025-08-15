@@ -666,6 +666,9 @@ router.post("/challenges", isAdmin, async (req: Request, res: Response) => {
 router.put("/challenges/:id", isAdmin, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
+    console.log("Updating challenge:", id);
+    console.log("Request body:", JSON.stringify(req.body, null, 2));
+    
     const data = {
       ...req.body,
       updatedAt: new Date()
@@ -684,6 +687,8 @@ router.put("/challenges/:id", isAdmin, async (req: Request, res: Response) => {
     delete data.createdBy;
     delete data.createdAt;
     
+    console.log("Data to update:", JSON.stringify(data, null, 2));
+    
     const result = await db
       .update(gamificationChallenges)
       .set(data)
@@ -694,9 +699,12 @@ router.put("/challenges/:id", isAdmin, async (req: Request, res: Response) => {
       return res.status(404).json({ error: "Challenge not found" });
     }
     
+    console.log("Update successful:", result[0].id);
     res.json(result[0]);
   } catch (error) {
     console.error("Error updating challenge:", error);
+    console.error("Error details:", error.message);
+    console.error("Error stack:", error.stack);
     res.status(500).json({ error: "Internal server error" });
   }
 });
