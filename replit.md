@@ -39,7 +39,7 @@ Preferred communication style: Simple, everyday language.
 - **AI Integration**: Configurable AI agents, conversation management, and reusable prompt system with admin controls.
 - **News System**: Automated import from CESURG website, external link integration, and simplified news management.
 - **Announcements System**: Streamlined system for notices with essential fields, "read more" functionality, and "see all" dialog.
-- **Gamification System**: Ranking, challenge evaluation (quiz, text/file submissions, QR code), category-based challenge visibility, granular file challenge review system with individual requirement scoring.
+- **Gamification System**: Ranking, challenge evaluation (quiz, text/file submissions, QR code), category-based challenge visibility, granular file challenge review system with individual requirement scoring, admin-controlled challenge display ordering with drag-and-drop interface.
 - **Feedback System**: Comprehensive feedback management with sliding panel interface, real user names, admin deletion, screenshot capture, and image attachments.
 - **Admin Table UX**: Fixed-header scrollable tables for improved navigation in admin lists.
 - **Ferramentas (Tools) System**: Database-integrated tools system with category-based permission and dynamic link mapping.
@@ -82,6 +82,12 @@ Preferred communication style: Simple, everyday language.
 - **Visual Status Indicators**: Enhanced challenge cards with color-coded status badges and consistent terminology
 - **Transparent Points Display**: All submissions now show earned points regardless of value (including 0 points)
 - **Terminology Standardization**: Changed "Pendente" to "Em revisão" across the interface for better user understanding
+- **Challenge Display Ordering System**: Comprehensive admin-controlled ordering system allowing administrators to define custom display order for challenges via drag-and-drop interface in Admin > Gamificação > Desafios. Features include:
+  - Drag-and-drop reordering with visual feedback using @dnd-kit
+  - Automatic duplicate order prevention and sequential numbering
+  - Database field `displayOrder` with backend API `/api/gamification/challenges/reorder`
+  - Public pages automatically display challenges sorted by admin-defined order
+  - AdminChallengeReorder component with save/cancel functionality
 
 ### Critical Debugging Lessons (August 2025)
 - **Multiple Schema Issue**: PostgreSQL database contains 3 schemas (public, development, production)
