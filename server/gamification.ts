@@ -637,6 +637,14 @@ router.post("/challenges", isAdmin, async (req: Request, res: Response) => {
       createdBy: req.user!.id
     };
     
+    // Converter datas corretamente
+    if (data.startDate && typeof data.startDate === 'string') {
+      data.startDate = new Date(data.startDate);
+    }
+    if (data.endDate && typeof data.endDate === 'string') {
+      data.endDate = new Date(data.endDate);
+    }
+    
     // Remover campos que não devem ser inseridos
     delete data.id;
     delete data.createdAt;
@@ -658,11 +666,18 @@ router.post("/challenges", isAdmin, async (req: Request, res: Response) => {
 router.put("/challenges/:id", isAdmin, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    // Remover validação temporariamente para depuração
     const data = {
       ...req.body,
       updatedAt: new Date()
     };
+    
+    // Converter datas corretamente
+    if (data.startDate && typeof data.startDate === 'string') {
+      data.startDate = new Date(data.startDate);
+    }
+    if (data.endDate && typeof data.endDate === 'string') {
+      data.endDate = new Date(data.endDate);
+    }
     
     // Remover campos que não devem ser atualizados
     delete data.id;
