@@ -57,11 +57,13 @@ export function GamificationInfoCard({
   const progressPercentage = Math.min(100, (elapsedDays / totalDays) * 100);
 
   // Calculate challenge statistics
-  const completedCycleChallenges = periodicChallenges.filter(c => c.hasSubmission && c.status === 'completed').length;
-  const openCycleChallenges = periodicChallenges.length - completedCycleChallenges;
+  const completedCycleChallenges = periodicChallenges.filter(c => c.hasSubmission && (c.status === 'completed' || c.status === 'approved')).length;
+  const reviewingCycleChallenges = periodicChallenges.filter(c => c.hasSubmission && c.status === 'pending').length;
+  const openCycleChallenges = periodicChallenges.length - completedCycleChallenges - reviewingCycleChallenges;
   
-  const completedAnnualChallenges = annualChallenges.filter(c => c.hasSubmission && c.status === 'completed').length;
-  const openAnnualChallenges = annualChallenges.length - completedAnnualChallenges;
+  const completedAnnualChallenges = annualChallenges.filter(c => c.hasSubmission && (c.status === 'completed' || c.status === 'approved')).length;
+  const reviewingAnnualChallenges = annualChallenges.filter(c => c.hasSubmission && c.status === 'pending').length;
+  const openAnnualChallenges = annualChallenges.length - completedAnnualChallenges - reviewingAnnualChallenges;
 
   const getPointsBadgeStyle = (type: string, points: number) => {
     switch (type) {
@@ -160,32 +162,53 @@ export function GamificationInfoCard({
             Meus Desafios
           </h4>
           
-          <div className="grid grid-cols-2 gap-3">
-            <div className="bg-blue-50 rounded-lg p-3">
+          <div className="grid grid-cols-3 gap-2">
+            {/* Ciclo - Concluídos */}
+            <div className="bg-green-50 rounded-lg p-2">
               <div className="text-center">
-                <div className="text-lg font-bold text-blue-700">{completedCycleChallenges}</div>
-                <div className="text-xs text-blue-600">Concluídos</div>
+                <div className="text-lg font-bold text-green-700">{completedCycleChallenges}</div>
+                <div className="text-xs text-green-600">Concluídos</div>
                 <div className="text-xs text-gray-500">Ciclo</div>
               </div>
             </div>
-            <div className="bg-orange-50 rounded-lg p-3">
+            {/* Ciclo - Em revisão */}
+            <div className="bg-yellow-50 rounded-lg p-2">
               <div className="text-center">
-                <div className="text-lg font-bold text-orange-700">{openCycleChallenges}</div>
-                <div className="text-xs text-orange-600">Em aberto</div>
+                <div className="text-lg font-bold text-yellow-700">{reviewingCycleChallenges}</div>
+                <div className="text-xs text-yellow-600">Em revisão</div>
                 <div className="text-xs text-gray-500">Ciclo</div>
               </div>
             </div>
-            <div className="bg-green-50 rounded-lg p-3">
+            {/* Ciclo - Abertos */}
+            <div className="bg-blue-50 rounded-lg p-2">
+              <div className="text-center">
+                <div className="text-lg font-bold text-blue-700">{openCycleChallenges}</div>
+                <div className="text-xs text-blue-600">Abertos</div>
+                <div className="text-xs text-gray-500">Ciclo</div>
+              </div>
+            </div>
+            
+            {/* Anual - Concluídos */}
+            <div className="bg-green-50 rounded-lg p-2">
               <div className="text-center">
                 <div className="text-lg font-bold text-green-700">{completedAnnualChallenges}</div>
                 <div className="text-xs text-green-600">Concluídos</div>
                 <div className="text-xs text-gray-500">Anual</div>
               </div>
             </div>
-            <div className="bg-red-50 rounded-lg p-3">
+            {/* Anual - Em revisão */}
+            <div className="bg-yellow-50 rounded-lg p-2">
               <div className="text-center">
-                <div className="text-lg font-bold text-red-700">{openAnnualChallenges}</div>
-                <div className="text-xs text-red-600">Em aberto</div>
+                <div className="text-lg font-bold text-yellow-700">{reviewingAnnualChallenges}</div>
+                <div className="text-xs text-yellow-600">Em revisão</div>
+                <div className="text-xs text-gray-500">Anual</div>
+              </div>
+            </div>
+            {/* Anual - Abertos */}
+            <div className="bg-blue-50 rounded-lg p-2">
+              <div className="text-center">
+                <div className="text-lg font-bold text-blue-700">{openAnnualChallenges}</div>
+                <div className="text-xs text-blue-600">Abertos</div>
                 <div className="text-xs text-gray-500">Anual</div>
               </div>
             </div>
