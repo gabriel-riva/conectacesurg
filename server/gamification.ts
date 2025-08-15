@@ -1131,8 +1131,11 @@ router.post("/challenges/:id/submit", isAuthenticated, async (req: Request, res:
       .returning();
 
     // Adicionar pontos baseado no status
+    console.log(`🎯 PONTOS - Submissão criada: status=${status}, points=${points}, type=${challengeData.evaluationType}`);
+    
     if (status === 'approved') {
       // Para submissões automaticamente aprovadas (quiz, qrcode)
+      console.log(`✅ PONTOS - Adicionando pontos automaticamente: ${points} pontos para usuário ${userId}`);
       await db
         .insert(gamificationPoints)
         .values({
@@ -1141,8 +1144,20 @@ router.post("/challenges/:id/submit", isAuthenticated, async (req: Request, res:
           description: `Desafio aprovado automaticamente: ${challengeData.title}`,
           type: 'automatic'
         });
+    } else if (status === 'completed' && points > 0) {
+      // Para submissões completadas (quiz)
+      console.log(`✅ PONTOS - Adicionando pontos de quiz completado: ${points} pontos para usuário ${userId}`);
+      await db
+        .insert(gamificationPoints)
+        .values({
+          userId,
+          points,
+          description: `Quiz completado: ${challengeData.title}`,
+          type: 'quiz'
+        });
     } else if (status === 'pending' && points > 0) {
       // Para submissões pendentes (texto, arquivo), adicionar pontos provisórios
+      console.log(`⏳ PONTOS - Adicionando pontos provisórios: ${points} pontos para usuário ${userId}`);
       await db
         .insert(gamificationPoints)
         .values({
@@ -1151,6 +1166,8 @@ router.post("/challenges/:id/submit", isAuthenticated, async (req: Request, res:
           description: `Desafio submetido (aguardando aprovação): ${challengeData.title}`,
           type: 'provisional'
         });
+    } else {
+      console.log(`❌ PONTOS - Nenhum ponto adicionado: status=${status}, points=${points}`);
     }
 
     res.json(submission[0]);
