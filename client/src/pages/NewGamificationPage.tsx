@@ -180,14 +180,18 @@ function NewGamificationPageContent() {
                       </div>
                     ) : (
                       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                        {periodicChallenges.map((challenge: GamificationChallenge) => (
-                          <div key={challenge.id} className="h-64">
-                            <GamificationChallengeCard
-                              challenge={challenge}
-                              onClick={() => handleChallengeClick(challenge)}
-                            />
-                          </div>
-                        ))}
+                        {periodicChallenges.map((challenge: GamificationChallenge) => {
+                          const submission = userSubmissions.find((sub: ChallengeSubmission) => sub.challengeId === challenge.id);
+                          return (
+                            <div key={challenge.id} className="h-64">
+                              <GamificationChallengeCard
+                                challenge={challenge}
+                                onClick={() => handleChallengeClick(challenge)}
+                                submission={submission}
+                              />
+                            </div>
+                          );
+                        })}
                       </div>
                     )}
                   </CardContent>
@@ -210,14 +214,18 @@ function NewGamificationPageContent() {
                       </div>
                     ) : (
                       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                        {annualChallenges.map((challenge: GamificationChallenge) => (
-                          <div key={challenge.id} className="h-64">
-                            <GamificationChallengeCard
-                              challenge={challenge}
-                              onClick={() => handleChallengeClick(challenge)}
-                            />
-                          </div>
-                        ))}
+                        {annualChallenges.map((challenge: GamificationChallenge) => {
+                          const submission = userSubmissions.find((sub: ChallengeSubmission) => sub.challengeId === challenge.id);
+                          return (
+                            <div key={challenge.id} className="h-64">
+                              <GamificationChallengeCard
+                                challenge={challenge}
+                                onClick={() => handleChallengeClick(challenge)}
+                                submission={submission}
+                              />
+                            </div>
+                          );
+                        })}
                       </div>
                     )}
                   </CardContent>

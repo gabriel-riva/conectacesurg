@@ -1,16 +1,24 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Trophy, Clock } from "lucide-react";
+import { Calendar, Trophy, Clock, CheckCircle, AlertCircle, XCircle, Star } from "lucide-react";
 import { format, isPast, isFuture } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import type { GamificationChallenge } from "@/shared/schema";
 
+interface ChallengeSubmission {
+  id: number;
+  challengeId: number;
+  status: string;
+  points: number;
+}
+
 interface GamificationChallengeCardProps {
   challenge: GamificationChallenge;
   onClick: () => void;
+  submission?: ChallengeSubmission | null;
 }
 
-export function GamificationChallengeCard({ challenge, onClick }: GamificationChallengeCardProps) {
+export function GamificationChallengeCard({ challenge, onClick, submission }: GamificationChallengeCardProps) {
   // Tratamento das datas - agora chegam como strings no formato YYYY-MM-DD
   const startDate = new Date(challenge.startDate + 'T00:00:00');
   const endDate = new Date(challenge.endDate + 'T23:59:59');
@@ -24,7 +32,49 @@ export function GamificationChallengeCard({ challenge, onClick }: GamificationCh
   const isUpcoming = isFuture(startDate);
   const isExpired = isPast(endDate);
 
+  // Definir status e cores baseados na submissão
+  const getSubmissionStatus = () => {
+    if (!submission) return null;
+    
+    switch (submission.status) {
+      case 'completed':
+      case 'approved':
+        return {
+          label: 'Concluído',
+          icon: <CheckCircle className="h-3 w-3" />,
+          variant: 'default' as const,
+          className: 'bg-green-100 text-green-800 border-green-300'
+        };
+      case 'pending':
+        return {
+          label: 'Pendente',
+          icon: <AlertCircle className="h-3 w-3" />,
+          variant: 'secondary' as const,
+          className: 'bg-yellow-100 text-yellow-800 border-yellow-300'
+        };
+      case 'rejected':
+        return {
+          label: 'Rejeitado',
+          icon: <XCircle className="h-3 w-3" />,
+          variant: 'destructive' as const,
+          className: 'bg-red-100 text-red-800 border-red-300'
+        };
+      default:
+        return null;
+    }
+  };
+
   const getStatusBadge = () => {
+    const submissionStatus = getSubmissionStatus();
+    if (submissionStatus) {
+      return (
+        <Badge variant={submissionStatus.variant} className={`text-xs flex items-center gap-1 ${submissionStatus.className}`}>
+          {submissionStatus.icon}
+          {submissionStatus.label}
+        </Badge>
+      );
+    }
+
     if (isUpcoming) {
       return <Badge variant="secondary" className="text-xs">Em breve</Badge>;
     }
@@ -37,6 +87,22 @@ export function GamificationChallengeCard({ challenge, onClick }: GamificationCh
   };
 
   const getStatusColor = () => {
+    // Priorizar cores da submissão
+    if (submission) {
+      switch (submission.status) {
+        case 'completed':
+        case 'approved':
+          return "border-green-300 bg-green-50";
+        case 'pending':
+          return "border-yellow-300 bg-yellow-50";
+        case 'rejected':
+          return "border-red-300 bg-red-50";
+        default:
+          break;
+      }
+    }
+
+    // Cores padrão baseadas na data
     if (isUpcoming) return "border-blue-200 bg-blue-50";
     if (isActive) return "border-green-200 bg-green-50";
     if (isExpired) return "border-gray-200 bg-gray-50";
@@ -77,11 +143,19 @@ export function GamificationChallengeCard({ challenge, onClick }: GamificationCh
         {/* Informações do desafio */}
         <div className="space-y-2 mt-auto">
           {/* Pontos com destaque */}
-          <div className="flex items-center justify-center">
+          <div className="flex items-center justify-between">
             <div className="flex items-center bg-primary/10 px-3 py-1 rounded-full">
               <Trophy className="h-4 w-4 mr-1 text-primary" />
               <span className="text-sm font-bold text-primary">{challenge.points} pontos</span>
             </div>
+            
+            {/* Pontos conquistados */}
+            {submission && submission.points > 0 && (
+              <div className="flex items-center bg-green-100 px-2 py-1 rounded-full">
+                <Star className="h-3 w-3 mr-1 text-green-600" />
+                <span className="text-xs font-bold text-green-700">+{submission.points}</span>
+              </div>
+            )}
           </div>
 
           {/* Período compacto */}
