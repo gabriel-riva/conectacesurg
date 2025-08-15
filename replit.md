@@ -56,6 +56,17 @@ Preferred communication style: Simple, everyday language.
 - **Zero Breaking Changes**: System maintains 100% compatibility with existing DATABASE_URL
 - **Setup Script**: Available at `scripts/setup-environments.cjs` for configuration verification
 
+### Critical Debugging Lessons (August 2025)
+- **Multiple Schema Issue**: PostgreSQL database contains 3 schemas (public, development, production)
+- **Schema Verification**: Always verify which schema the application is using with `SELECT current_schema()`
+- **Authentication Cache Bug**: React Query can cache old data when API returns 403 Forbidden, creating "phantom" submissions that don't exist in current database
+- **Quiz Status Bug**: Quiz submissions were incorrectly staying as "pending" instead of auto-completing to "completed" status
+- **Debugging Process**: When submissions show in UI but not in database queries, check:
+  1. User authentication status (`/api/auth/status`)
+  2. Which database schema is active
+  3. React Query cache vs real API responses
+  4. Server logs to confirm API calls are reaching endpoints
+
 ## External Dependencies
 
 ### Authentication
