@@ -13,11 +13,17 @@ import { FeatureGuard } from "@/components/FeatureGuard";
 import { Header } from "@/components/Header";
 import { GamificationRankingCard } from "@/components/GamificationRankingCard";
 import { GamificationChallengeCard } from "@/components/GamificationChallengeCard";
-import { GamificationPeriodCard } from "@/components/GamificationPeriodCard";
-import { GamificationPointsHistoryCard } from "@/components/GamificationPointsHistoryCard";
+import { GamificationInfoCard } from "@/components/GamificationInfoCard";
 import { GamificationChallengeDetailCard } from "@/components/GamificationChallengeDetailCard";
 import { useAuth } from "@/lib/auth";
 import type { GamificationChallenge } from "@/shared/schema";
+
+interface ChallengeSubmission {
+  id: number;
+  challengeId: number;
+  status: string;
+  points: number;
+}
 
 function NewGamificationPageContent() {
   const { user } = useAuth();
@@ -29,7 +35,7 @@ function NewGamificationPageContent() {
   const challengeIdFromUrl = urlParams.get('desafio');
 
   // Queries
-  const { data: periodicChallenges = [], isLoading: periodicLoading } = useQuery({
+  const { data: periodicChallenges = [], isLoading: periodicLoading } = useQuery<GamificationChallenge[]>({
     queryKey: ["/api/gamification/challenges", { type: "periodic" }],
     queryFn: async () => {
       const response = await fetch("/api/gamification/challenges?type=periodic");
@@ -38,7 +44,7 @@ function NewGamificationPageContent() {
     },
   });
 
-  const { data: annualChallenges = [], isLoading: annualLoading } = useQuery({
+  const { data: annualChallenges = [], isLoading: annualLoading } = useQuery<GamificationChallenge[]>({
     queryKey: ["/api/gamification/challenges", { type: "annual" }],
     queryFn: async () => {
       const response = await fetch("/api/gamification/challenges?type=annual");
@@ -47,12 +53,22 @@ function NewGamificationPageContent() {
     },
   });
 
-  const { data: settings } = useQuery({
+  const { data: settings } = useQuery<any>({
     queryKey: ["/api/gamification/settings"],
   });
 
-  const { data: pointsExtract } = useQuery({
+  const { data: pointsExtract } = useQuery<any>({
     queryKey: ["/api/gamification/points/extract"],
+  });
+
+  // Buscar submissões do usuário
+  const { data: userSubmissions = [] } = useQuery<ChallengeSubmission[]>({
+    queryKey: ["/api/gamification/my-submissions"],
+    queryFn: async () => {
+      const response = await fetch("/api/gamification/my-submissions");
+      if (!response.ok) throw new Error("Failed to fetch user submissions");
+      return response.json();
+    },
   });
 
   // Buscar todos os desafios para encontrar o específico se necessário
@@ -120,10 +136,22 @@ function NewGamificationPageContent() {
 
         {/* Layout principal */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          {/* Coluna esquerda - Ciclo atual e pontos */}
+          {/* Coluna esquerda - Informações unificadas */}
           <div className="lg:col-span-3 flex flex-col gap-6">
-            <GamificationPeriodCard settings={settings} />
-            <GamificationPointsHistoryCard pointsExtract={pointsExtract} />
+            <GamificationInfoCard 
+              settings={settings} 
+              pointsExtract={pointsExtract}
+              periodicChallenges={periodicChallenges.map((challenge: GamificationChallenge) => ({
+                ...challenge,
+                hasSubmission: userSubmissions.some((sub: ChallengeSubmission) => sub.challengeId === challenge.id),
+                status: userSubmissions.find((sub: ChallengeSubmission) => sub.challengeId === challenge.id)?.status || 'open'
+              }))}
+              annualChallenges={annualChallenges.map((challenge: GamificationChallenge) => ({
+                ...challenge,
+                hasSubmission: userSubmissions.some((sub: ChallengeSubmission) => sub.challengeId === challenge.id),
+                status: userSubmissions.find((sub: ChallengeSubmission) => sub.challengeId === challenge.id)?.status || 'open'
+              }))}
+            />
           </div>
 
           {/* Coluna central - Desafios ou detalhes do desafio */}
@@ -152,7 +180,7 @@ function NewGamificationPageContent() {
                       </div>
                     ) : (
                       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                        {periodicChallenges.map((challenge) => (
+                        {periodicChallenges.map((challenge: GamificationChallenge) => (
                           <div key={challenge.id} className="h-64">
                             <GamificationChallengeCard
                               challenge={challenge}
@@ -182,7 +210,7 @@ function NewGamificationPageContent() {
                       </div>
                     ) : (
                       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                        {annualChallenges.map((challenge) => (
+                        {annualChallenges.map((challenge: GamificationChallenge) => (
                           <div key={challenge.id} className="h-64">
                             <GamificationChallengeCard
                               challenge={challenge}
