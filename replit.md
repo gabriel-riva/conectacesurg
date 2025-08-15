@@ -73,6 +73,12 @@ Preferred communication style: Simple, everyday language.
 - **Data Integration**: Added `/api/gamification/my-submissions` endpoint integration to track user challenge progress
 - **Type Safety**: Proper TypeScript interfaces for challenge submissions and gamification data
 
+### August 15, 2025 - File System Security & Download Fixes
+- **File Upload Security**: Comprehensive protection system is active including automated daily backups, real-time integrity monitoring, orphaned file detection, and rollback mechanisms to prevent data loss
+- **Download Functionality**: Fixed file size display and added download buttons directly in the granular submission review modal for easier file access by administrators
+- **File Size Display**: Corrected "NaN" display issues across all admin components (AdminAllSubmissions, AdminSubmissionReview, GranularSubmissionReview) with proper fileSize validation
+- **Admin UX Improvements**: Enhanced file management interface with visible file sizes and direct download capabilities in review workflows
+
 ### August 15, 2025 - Enhanced Challenge Status Display
 - **Three-Category Challenge Statistics**: Updated challenge statistics to show three distinct states:
   - "Concluídos" (green) - completed/approved submissions
