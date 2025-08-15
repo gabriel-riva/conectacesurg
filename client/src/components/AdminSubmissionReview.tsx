@@ -227,7 +227,9 @@ export const AdminSubmissionReview: React.FC<AdminSubmissionReviewProps> = ({
                     </div>
                     <div className="flex items-center space-x-2">
                       <span className="text-xs text-gray-500">
-                        {file.fileSize && !isNaN(file.fileSize) ? ((file.fileSize) / 1024 / 1024).toFixed(1) + 'MB' : 'Tamanho não disponível'}
+                        {(file.fileSize && typeof file.fileSize === 'number' && file.fileSize > 0) ? 
+                         (file.fileSize / 1024 / 1024).toFixed(1) + 'MB' : 
+                         'Arquivo disponível'}
                       </span>
                       {file.fileUrl && (
                         <Button size="sm" variant="ghost" asChild>

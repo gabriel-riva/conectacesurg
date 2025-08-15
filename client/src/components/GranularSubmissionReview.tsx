@@ -251,7 +251,11 @@ export const GranularSubmissionReview: React.FC<GranularSubmissionReviewProps> =
                               <FileText className="w-3 h-3 text-purple-500" />
                               <span className="text-xs flex-1">{item.filename}</span>
                               <span className="text-xs text-gray-500">
-                                ({item.size && !isNaN(item.size) ? (item.size / 1024 / 1024).toFixed(1) + 'MB' : 'Tamanho não disponível'})
+                                ({(item.size && typeof item.size === 'number' && item.size > 0) ? 
+                                 (item.size / 1024 / 1024).toFixed(1) + 'MB' : 
+                                 (item.fileSize && typeof item.fileSize === 'number' && item.fileSize > 0) ?
+                                 (item.fileSize / 1024 / 1024).toFixed(1) + 'MB' : 
+                                 'Arquivo disponível'})
                               </span>
                             </>
                           )}
