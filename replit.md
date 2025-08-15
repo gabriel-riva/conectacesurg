@@ -66,6 +66,8 @@ Preferred communication style: Simple, everyday language.
 - **Schema Verification**: Always verify which schema the application is using with `SELECT current_schema()`
 - **Authentication Cache Bug**: React Query can cache old data when API returns 403 Forbidden, creating "phantom" submissions that don't exist in current database
 - **Quiz Status Bug**: Quiz submissions were incorrectly staying as "pending" instead of auto-completing to "completed" status
+- **Data Synchronization**: Successfully implemented production-to-development data copying with proper handling of NULL display_order fields using COALESCE
+- **Admin Page Fix**: Resolved issue where only 1 challenge appeared in admin page while 2 showed on public page - was due to inactive challenge status
 - **Debugging Process**: When submissions show in UI but not in database queries, check:
   1. User authentication status (`/api/auth/status`)
   2. Which database schema is active
