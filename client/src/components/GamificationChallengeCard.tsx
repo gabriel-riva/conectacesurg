@@ -150,10 +150,12 @@ export function GamificationChallengeCard({ challenge, onClick, submission }: Ga
             </div>
             
             {/* Pontos conquistados */}
-            {submission && submission.points > 0 && (
+            {submission && (
               <div className="flex items-center bg-green-100 px-2 py-1 rounded-full">
                 <Star className="h-3 w-3 mr-1 text-green-600" />
-                <span className="text-xs font-bold text-green-700">+{submission.points}</span>
+                <span className="text-xs font-bold text-green-700">
+                  {submission.points > 0 ? `+${submission.points}` : submission.points}
+                </span>
               </div>
             )}
           </div>
