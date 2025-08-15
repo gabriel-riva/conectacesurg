@@ -296,9 +296,8 @@ export const AdminAllSubmissions: React.FC = () => {
                     </div>
                     <div className="flex items-center space-x-2">
                       <span className="text-xs text-gray-500">
-                        {console.log('🔍 DEBUG File:', file)}
-                        {(file.fileSize && !isNaN(file.fileSize)) ? ((file.fileSize) / 1024 / 1024).toFixed(1) + 'MB' : 
-                         (file.size && !isNaN(file.size)) ? ((file.size) / 1024 / 1024).toFixed(1) + 'MB' : 
+                        {(file.fileSize && typeof file.fileSize === 'number' && file.fileSize > 0) ? 
+                         (file.fileSize / 1024 / 1024).toFixed(1) + 'MB' : 
                          'Arquivo disponível'}
                       </span>
                       {file.fileUrl && (
