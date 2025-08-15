@@ -32,23 +32,23 @@ interface FileRequirement {
 
 interface EvaluationConfig {
   quiz?: {
-    questions: QuizQuestion[];
-    minScore: number;
-    allowMultipleAttempts: boolean;
-    maxAttempts: number;
-    scoreReductionPerAttempt: number;
+    questions?: QuizQuestion[];
+    minScore?: number;
+    allowMultipleAttempts?: boolean;
+    maxAttempts?: number;
+    scoreReductionPerAttempt?: number;
   };
   text?: {
-    placeholder: string;
+    placeholder?: string;
     maxLength?: number;
   };
   file?: {
-    fileRequirements: FileRequirement[];
-    maxFiles: number;
+    fileRequirements?: FileRequirement[];
+    maxFiles?: number;
   };
   qrcode?: {
-    qrCodeData: string;
-    qrCodeImage: string;
+    qrCodeData?: string;
+    qrCodeImage?: string;
     instructions?: string;
   };
 }
