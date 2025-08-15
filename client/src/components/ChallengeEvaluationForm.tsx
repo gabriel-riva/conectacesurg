@@ -680,7 +680,7 @@ export const ChallengeEvaluationForm: React.FC<ChallengeEvaluationFormProps> = (
                                     <CheckCircle className="w-3 h-3 text-green-500" />
                                     <span className="text-xs">{file.name}</span>
                                     <span className="text-xs text-gray-500">
-                                      ({(file.size / 1024 / 1024).toFixed(1)}MB)
+                                      ({file.size && !isNaN(file.size) ? (file.size / 1024 / 1024).toFixed(1) + 'MB' : 'Tamanho não disponível'})
                                     </span>
                                   </div>
                                 ))}

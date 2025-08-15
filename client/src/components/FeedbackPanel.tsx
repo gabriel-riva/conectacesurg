@@ -480,7 +480,7 @@ export default function FeedbackPanel({ isOpen, onClose, user }: FeedbackPanelPr
                                     {attachment.fileName}
                                   </p>
                                   <p className="text-xs text-gray-500">
-                                    {(attachment.fileSize / 1024 / 1024).toFixed(2)} MB
+                                    {attachment.fileSize && !isNaN(attachment.fileSize) ? (attachment.fileSize / 1024 / 1024).toFixed(2) + ' MB' : 'Tamanho não disponível'}
                                     {attachment.isScreenshot && ' • Screenshot'}
                                   </p>
                                 </div>
