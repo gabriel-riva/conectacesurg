@@ -558,6 +558,37 @@ export const ChallengeEvaluationConfig: React.FC<ChallengeEvaluationConfigProps>
                     <p className="text-sm text-gray-400">Clique em "Adicionar Requisito" para começar</p>
                   </div>
                 )}
+
+                {/* Resumo de Pontuação Total */}
+                {config.file?.fileRequirements && config.file.fileRequirements.length > 0 && (
+                  <Card className="bg-blue-50 border-blue-200">
+                    <CardHeader>
+                      <CardTitle className="text-sm flex items-center gap-2">
+                        <Badge variant="outline" className="bg-blue-100 text-blue-800">Automático</Badge>
+                        Pontuação Total do Desafio
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-gray-600">Total de pontos possíveis:</span>
+                          <Badge variant="default" className="bg-blue-600 text-white text-lg">
+                            {config.file.fileRequirements.reduce((total, req) => total + (req.points || 0), 0)} pontos
+                          </Badge>
+                        </div>
+                        <div className="text-xs text-blue-700 bg-blue-100 p-3 rounded-lg">
+                          <strong>Sistema de Pontuação Granular:</strong>
+                          <ul className="mt-2 space-y-1">
+                            <li>• Cada requisito é avaliado individualmente</li>
+                            <li>• Pontos são atribuídos apenas para requisitos aprovados</li>
+                            <li>• Pontuação total = soma dos requisitos aprovados</li>
+                            <li>• Não é possível alterar a pontuação total manualmente</li>
+                          </ul>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
               </div>
             </div>
           </div>

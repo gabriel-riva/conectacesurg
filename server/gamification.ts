@@ -651,6 +651,14 @@ router.post("/challenges", isAdmin, async (req: Request, res: Response) => {
       data.endDate = new Date(data.endDate);
     }
     
+    // Para desafios de arquivo, calcular automaticamente a pontuação total
+    if (data.evaluationType === 'file' && data.evaluationConfig?.file?.fileRequirements) {
+      const totalPoints = data.evaluationConfig.file.fileRequirements.reduce((sum: number, req: any) => {
+        return sum + (req.points || 0);
+      }, 0);
+      data.points = totalPoints;
+    }
+    
     // Remover campos que não devem ser inseridos
     delete data.id;
     delete data.createdAt;
@@ -686,6 +694,14 @@ router.put("/challenges/:id", isAdmin, async (req: Request, res: Response) => {
     }
     if (data.endDate && typeof data.endDate === 'string') {
       data.endDate = new Date(data.endDate);
+    }
+    
+    // Para desafios de arquivo, calcular automaticamente a pontuação total
+    if (data.evaluationType === 'file' && data.evaluationConfig?.file?.fileRequirements) {
+      const totalPoints = data.evaluationConfig.file.fileRequirements.reduce((sum: number, req: any) => {
+        return sum + (req.points || 0);
+      }, 0);
+      data.points = totalPoints;
     }
     
     // Remover campos que não devem ser atualizados

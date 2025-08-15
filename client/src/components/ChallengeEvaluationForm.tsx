@@ -877,7 +877,7 @@ export const ChallengeEvaluationForm: React.FC<ChallengeEvaluationFormProps> = (
                     <Button 
                       onClick={() => {
                         console.log('Debug info:', {
-                          videoReady: videoRef.current?.videoWidth > 0,
+                          videoReady: videoRef.current?.videoWidth && videoRef.current.videoWidth > 0,
                           streamActive: !!cameraStream,
                           scanningActive,
                           attempts: scanAttempts

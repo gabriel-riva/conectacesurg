@@ -994,13 +994,18 @@ export default function AdminGamificationPage() {
                           
                           {evaluationType === 'file' && (
                             <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-                              <div className="flex items-center gap-2 text-blue-700 font-medium">
-                                <Upload className="w-4 h-4" />
-                                <span>Pontuação por Requisito</span>
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2 text-blue-700 font-medium">
+                                  <Upload className="w-4 h-4" />
+                                  <span>Pontuação Automática</span>
+                                </div>
+                                <Badge variant="outline" className="bg-white text-blue-700 border-blue-300">
+                                  {evaluationConfig?.file?.fileRequirements?.reduce((total: number, req: any) => total + (req.points || 0), 0) || 0} pontos
+                                </Badge>
                               </div>
-                              <p className="text-sm text-blue-600 mt-1">
-                                Para desafios de arquivo, a pontuação é definida individualmente para cada requisito.
-                                A pontuação total será a soma de todos os requisitos.
+                              <p className="text-sm text-blue-600 mt-2">
+                                A pontuação total é calculada automaticamente como a soma de todos os requisitos.
+                                Configure os pontos individualmente para cada requisito na seção de configuração abaixo.
                               </p>
                             </div>
                           )}

@@ -39,13 +39,14 @@ Preferred communication style: Simple, everyday language.
 - **AI Integration**: Configurable AI agents, conversation management, and reusable prompt system with admin controls.
 - **News System**: Automated import from CESURG website, external link integration, and simplified news management.
 - **Announcements System**: Streamlined system for notices with essential fields, "read more" functionality, and "see all" dialog.
-- **Gamification System**: Ranking, challenge evaluation (quiz, text/file submissions, QR code), category-based challenge visibility.
+- **Gamification System**: Ranking, challenge evaluation (quiz, text/file submissions, QR code), category-based challenge visibility, granular file challenge review system with individual requirement scoring.
 - **Feedback System**: Comprehensive feedback management with sliding panel interface, real user names, admin deletion, screenshot capture, and image attachments.
 - **Admin Table UX**: Fixed-header scrollable tables for improved navigation in admin lists.
 - **Ferramentas (Tools) System**: Database-integrated tools system with category-based permission and dynamic link mapping.
 - **Survey/Polls System**: Comprehensive survey functionality with multiple question types, user category targeting, and an adaptive widget display (floating icon on desktop, full-screen modal on mobile).
 - **Trail System**: Content pages with commenting, replies, likes, and category-based visibility.
 - **Homepage Gamification Carousel**: Horizontal scrollable display of active, uncompleted challenges on the homepage with navigation arrows, fixed height (280px) to match other dashboard cards, optimized card sizing (260px width, 16px image height) for better content visibility, and direct links to individual challenge details via URL parameters.
+- **Granular File Review System**: Advanced review system for file challenges with individual requirement evaluation, automatic scoring calculation, and comprehensive administrative interface for granular approval/rejection.
 
 ## Database Environment Separation
 - **Development/Production Separation**: Fully implemented with backward compatibility
