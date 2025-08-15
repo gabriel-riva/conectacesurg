@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { CheckCircle, XCircle, FileText, Link, Upload, AlertCircle } from 'lucide-react';
+import { CheckCircle, XCircle, FileText, Link, Upload, AlertCircle, Download } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 
@@ -249,14 +249,24 @@ export const GranularSubmissionReview: React.FC<GranularSubmissionReviewProps> =
                           ) : (
                             <>
                               <FileText className="w-3 h-3 text-purple-500" />
-                              <span className="text-xs flex-1">{item.filename}</span>
-                              <span className="text-xs text-gray-500">
-                                ({(item.size && typeof item.size === 'number' && item.size > 0) ? 
-                                 (item.size / 1024 / 1024).toFixed(1) + 'MB' : 
-                                 (item.fileSize && typeof item.fileSize === 'number' && item.fileSize > 0) ?
-                                 (item.fileSize / 1024 / 1024).toFixed(1) + 'MB' : 
-                                 'Arquivo disponível'})
-                              </span>
+                              <div className="flex-1">
+                                <div className="text-xs">{item.filename || item.fileName}</div>
+                                <div className="text-xs text-gray-500">
+                                  {(item.size && typeof item.size === 'number' && item.size > 0) ? 
+                                   (item.size / 1024 / 1024).toFixed(1) + 'MB' : 
+                                   (item.fileSize && typeof item.fileSize === 'number' && item.fileSize > 0) ?
+                                   (item.fileSize / 1024 / 1024).toFixed(1) + 'MB' : 
+                                   'Arquivo disponível'}
+                                </div>
+                              </div>
+                              {(item.fileUrl || item.url) && (
+                                <Button size="sm" variant="ghost" asChild className="h-6 w-6 p-0">
+                                  <a href={item.fileUrl || item.url} target="_blank" rel="noopener noreferrer" 
+                                     title="Fazer download do arquivo">
+                                    <Download className="w-3 h-3" />
+                                  </a>
+                                </Button>
+                              )}
                             </>
                           )}
                         </div>
