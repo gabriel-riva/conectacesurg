@@ -386,7 +386,7 @@ router.get("/challenges", isAuthenticated, async (req: Request, res: Response) =
     }
     
     const userId = req.user.id;
-    const userRole = req.user.role;
+    const userRole = (req.user as any).role;
     const isAdminRequest = admin === "true" && (userRole === "admin" || userRole === "superadmin");
     
     // Buscar todas as categorias do usuário
@@ -396,6 +396,19 @@ router.get("/challenges", isAuthenticated, async (req: Request, res: Response) =
       .where(eq(userCategoryAssignments.userId, userId));
     
     const userCategoryIds = userCategories.map(uc => uc.categoryId);
+    
+    // Construir condições WHERE
+    const conditions: any[] = [];
+    
+    // Para usuários não-admin, filtrar apenas desafios ativos
+    if (!isAdminRequest) {
+      conditions.push(eq(gamificationChallenges.isActive, true));
+    }
+    
+    // Filtrar por tipo se especificado
+    if (type !== "all") {
+      conditions.push(eq(gamificationChallenges.type, type as string));
+    }
     
     let query = db
       .select({
@@ -418,20 +431,20 @@ router.get("/challenges", isAuthenticated, async (req: Request, res: Response) =
         displayOrder: gamificationChallenges.displayOrder,
       })
       .from(gamificationChallenges)
-      .leftJoin(users, eq(gamificationChallenges.createdBy, users.id))
-      .where(isAdminRequest ? sql`1=1` : eq(gamificationChallenges.isActive, true))
-      .orderBy(
-        isAdminRequest ? 
-          desc(gamificationChallenges.createdAt) : 
-          asc(gamificationChallenges.displayOrder), 
-        desc(gamificationChallenges.createdAt)
-      );
+      .leftJoin(users, eq(gamificationChallenges.createdBy, users.id));
     
-    if (type !== "all") {
-      const baseCondition = isAdminRequest ? sql`1=1` : eq(gamificationChallenges.isActive, true);
-      const typeCondition = eq(gamificationChallenges.type, type as string);
-      query = query.where(and(baseCondition, typeCondition));
+    // Aplicar condições WHERE se existirem
+    if (conditions.length > 0) {
+      query = query.where(conditions.length === 1 ? conditions[0] : and(...conditions));
     }
+    
+    // Aplicar ordenação
+    query = query.orderBy(
+      isAdminRequest ? 
+        desc(gamificationChallenges.createdAt) : 
+        asc(gamificationChallenges.displayOrder), 
+      desc(gamificationChallenges.createdAt)
+    );
     
     const allChallenges = await query;
     
