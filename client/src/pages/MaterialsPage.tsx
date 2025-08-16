@@ -34,7 +34,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { toast } from '@/hooks/use-toast';
 import { formatFileSize } from '@/lib/utils';
 import { Header } from '@/components/Header';
-import FileViewerModal from '@/components/materials/FileViewerModal';
+
 
 interface MaterialFolder {
   id: number;
@@ -83,8 +83,6 @@ interface MaterialFile {
 export default function MaterialsPage() {
   const [currentFolderId, setCurrentFolderId] = useState<number | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [viewerFile, setViewerFile] = useState<MaterialFile | null>(null);
-  const [viewerOpen, setViewerOpen] = useState(false);
 
   const { data: folders = [], isLoading: foldersLoading } = useQuery<MaterialFolder[]>({
     queryKey: ['/api/materials/folders'],
@@ -194,14 +192,17 @@ export default function MaterialsPage() {
   };
 
   const handlePreview = (file: MaterialFile) => {
-    setViewerFile(file);
-    setViewerOpen(true);
+    // Para vídeos do YouTube, abrir o link direto
+    if (file.fileType === 'video/youtube' && file.youtubeUrl) {
+      window.open(file.youtubeUrl, '_blank');
+      return;
+    }
+    
+    // Para todos os outros tipos de arquivo, abrir diretamente em nova aba
+    window.open(`/api/materials/files/${file.id}/view`, '_blank');
   };
 
-  const handleCloseViewer = () => {
-    setViewerOpen(false);
-    setViewerFile(null);
-  };
+
 
   // Função para retornar o ícone correto baseado no tipo de arquivo
   const getFileIcon = (file: MaterialFile) => {
@@ -510,14 +511,6 @@ export default function MaterialsPage() {
           </div>
         )}
       </div>
-      
-      {/* File Viewer Modal */}
-      <FileViewerModal
-        file={viewerFile}
-        open={viewerOpen}
-        onClose={handleCloseViewer}
-        onDownload={handleDownload}
-      />
     </div>
   );
 }
