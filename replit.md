@@ -51,7 +51,7 @@ Preferred communication style: Simple, everyday language.
 - **Automatic Environment Detection**: Based on `NODE_ENV` variable, utilizing `search_path` for complete environment isolation.
 - **Migration Process**: Leverages `npm run db:push` for schema synchronization.
 - **Data Synchronization**: Process established for copying production data to development with automatic path updates for environment isolation.
-- **Last Migration**: January 16, 2025 - Production schema copied to development with file paths updated from `/objects/materials/` to `/objects/dev/materials/`. Object Storage files also copied to development paths.
+- **Last Migration**: August 16, 2025 - Production schema copied to development with file paths updated from `/objects/materials/` to `/objects/dev/materials/`. Object Storage files also copied to development paths.
 - **Schema Organization**: 
   - `production`: Current production data (85 users, 51 tables, all features, 6 materials)
   - `development`: Testing environment with complete mirror of production (85 users, 51 tables, 6 materials with working files)
@@ -59,7 +59,7 @@ Preferred communication style: Simple, everyday language.
   - `public`: Standard PostgreSQL schema (empty, reserved for PostgreSQL extensions - NEVER USE)
 - **Important**: Application NEVER uses `public` or `production_legacy` schemas - only `production` or `development` based on NODE_ENV
 
-### File Upload Protection System (January 2025)
+### File Upload Protection System (August 2025)
 - **Environment-Based Object Storage**: All file uploads use environment-specific paths to prevent conflicts between development and production.
 - **Protected Systems**: Profile photos, profile documents, gamification challenges, and materials page uploads.
 - **Path Structure**: 
