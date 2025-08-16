@@ -27,6 +27,7 @@ interface FileRequirement {
   acceptedTypes: string[];
   maxSize: number;
   submissionType: 'file' | 'link'; // Tipo de submissão: arquivo ou link
+  fileCategory?: 'image' | 'video' | 'audio' | 'document' | 'any'; // Categoria de arquivo para sugestão
   allowMultiple?: boolean; // Se permite múltiplos arquivos/links para este requisito
 }
 
@@ -154,6 +155,7 @@ export const ChallengeEvaluationConfig: React.FC<ChallengeEvaluationConfigProps>
       acceptedTypes: [], // Aceitar todos os tipos
       maxSize: 10 * 1024 * 1024, // 10MB padrão
       submissionType: 'file', // Padrão para arquivo
+      fileCategory: 'any', // Categoria padrão
       allowMultiple: false
     };
 
@@ -503,7 +505,30 @@ export const ChallengeEvaluationConfig: React.FC<ChallengeEvaluationConfigProps>
                         </div>
 
                         {requirement.submissionType === 'file' && (
-                          <div className="grid grid-cols-1 gap-4">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                              <Label htmlFor={`category-${requirement.id}`}>Categoria de Arquivo</Label>
+                              <Select 
+                                value={requirement.fileCategory || 'any'}
+                                onValueChange={(value) => updateFileRequirement(requirement.id, { 
+                                  fileCategory: value as 'image' | 'video' | 'audio' | 'document' | 'any' 
+                                })}
+                              >
+                                <SelectTrigger id={`category-${requirement.id}`}>
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="any">Qualquer tipo</SelectItem>
+                                  <SelectItem value="image">Imagem</SelectItem>
+                                  <SelectItem value="video">Vídeo</SelectItem>
+                                  <SelectItem value="audio">Áudio</SelectItem>
+                                  <SelectItem value="document">Documento</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <p className="text-xs text-gray-500 mt-1">
+                                Sugere tipos na janela de seleção, mas aceita qualquer arquivo
+                              </p>
+                            </div>
                             <div>
                               <Label htmlFor={`size-${requirement.id}`}>Tamanho Máximo (MB)</Label>
                               <Input
@@ -516,9 +541,6 @@ export const ChallengeEvaluationConfig: React.FC<ChallengeEvaluationConfigProps>
                                   maxSize: (parseInt(e.target.value) || 5) * 1024 * 1024 
                                 })}
                               />
-                              <p className="text-xs text-gray-500 mt-1">
-                                Todos os tipos de arquivo são aceitos. Tamanho máximo: 50MB
-                              </p>
                             </div>
                           </div>
                         )}

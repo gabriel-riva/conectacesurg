@@ -462,6 +462,7 @@ export const gamificationChallenges = pgTable("gamification_challenges", {
         acceptedTypes: string[];
         maxSize: number;
         submissionType: 'file' | 'link'; // Tipo de submissão: arquivo ou link
+        fileCategory?: 'image' | 'video' | 'audio' | 'document' | 'any'; // Categoria de arquivo para sugestão
         allowMultiple?: boolean; // Se permite múltiplos arquivos/links para este requisito
       }[];
       maxFiles: number;

@@ -25,6 +25,7 @@ interface FileRequirement {
   acceptedTypes: string[];
   maxSize: number;
   submissionType?: 'file' | 'link';
+  fileCategory?: 'image' | 'video' | 'audio' | 'document' | 'any';
   allowMultiple?: boolean;
 }
 
@@ -82,6 +83,37 @@ export const ChallengeEvaluationForm: React.FC<ChallengeEvaluationFormProps> = (
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const scanIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const { toast } = useToast();
+
+  // Funções auxiliares para categorias de arquivo
+  const getAcceptString = (fileCategory?: string) => {
+    switch (fileCategory) {
+      case 'image':
+        return 'image/*';
+      case 'video':
+        return 'video/*';
+      case 'audio':
+        return 'audio/*';
+      case 'document':
+        return '.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.rtf,.odt';
+      default:
+        return '*/*'; // Aceita todos os tipos
+    }
+  };
+
+  const getCategoryDescription = (fileCategory?: string) => {
+    switch (fileCategory) {
+      case 'image':
+        return 'Sugestão: imagens (jpg, png, gif, etc.) - mas qualquer arquivo é aceito';
+      case 'video':
+        return 'Sugestão: vídeos (mp4, avi, mov, etc.) - mas qualquer arquivo é aceito';
+      case 'audio':
+        return 'Sugestão: áudios (mp3, wav, ogg, etc.) - mas qualquer arquivo é aceito';
+      case 'document':
+        return 'Sugestão: documentos (pdf, doc, xls, etc.) - mas qualquer arquivo é aceito';
+      default:
+        return 'Todos os tipos de arquivo são aceitos';
+    }
+  };
 
   // Cleanup da câmera quando o componente desmontar
   useEffect(() => {
@@ -656,11 +688,12 @@ export const ChallengeEvaluationForm: React.FC<ChallengeEvaluationFormProps> = (
                             id={`fileInput-${requirement.id}`}
                             type="file"
                             multiple={allowMultiple}
+                            accept={getAcceptString(requirement.fileCategory)}
                             onChange={handleFileChange(requirement.id, requirement)}
                           />
                           
                           <div className="text-xs text-gray-500 space-y-1">
-                            <p>Todos os tipos de arquivo são aceitos</p>
+                            <p>{getCategoryDescription(requirement.fileCategory)}</p>
                             <p>Tamanho máximo: {(requirement.maxSize / 1024 / 1024).toFixed(1)}MB por arquivo</p>
                             {allowMultiple && <p>Múltiplos arquivos permitidos</p>}
                           </div>
