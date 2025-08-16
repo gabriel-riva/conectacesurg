@@ -805,6 +805,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Adicionar rotas de materiais
   app.use('/api/materials', materialsRouter);
   app.use("/api/materials-admin", materialsAdminRouter);
+
+  // Rota para servir arquivos de desafios do Object Storage
+  app.get("/objects/challenges/:fileId", async (req, res) => {
+    try {
+      const { ObjectStorageService, ObjectNotFoundError } = await import("./objectStorage.js");
+      
+      const objectStorageService = new ObjectStorageService();
+      const objectPath = `/objects/challenges/${req.params.fileId}`;
+      
+      try {
+        const objectFile = await objectStorageService.getObjectEntityFile(objectPath);
+        
+        // Verificar permissões de acesso
+        const userId = (req.user as any)?.id?.toString();
+        const canAccess = await objectStorageService.canAccessObjectEntity({
+          objectFile,
+          userId: userId,
+          requestedPermission: "read" as any
+        });
+        
+        if (!canAccess) {
+          console.log(`🚫 Acesso negado ao arquivo ${objectPath} para usuário ${userId || 'anônimo'}`);
+          return res.status(403).json({ error: "Acesso negado" });
+        }
+        
+        console.log(`✅ Servindo arquivo de desafio: ${objectPath}`);
+        return objectStorageService.downloadObject(objectFile, res);
+        
+      } catch (error) {
+        if (error instanceof ObjectNotFoundError) {
+          console.log(`❌ Arquivo de desafio não encontrado: ${objectPath}`);
+          return res.status(404).json({ error: "Arquivo não encontrado" });
+        }
+        throw error;
+      }
+    } catch (error) {
+      console.error("Erro ao servir arquivo de desafio:", error);
+      return res.status(500).json({ error: "Erro interno do servidor" });
+    }
+  });
   
   // Adicionar rotas de configurações de funcionalidades
   app.use('/api/feature-settings', featureSettingsRouter);
