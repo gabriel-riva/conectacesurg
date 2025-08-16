@@ -801,6 +801,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Adicionar rotas de avisos
   app.use('/api/announcements', announcementsRouter);
   
+  // Endpoint temporário de diagnóstico para upload
+  app.get('/api/upload-debug', (req: Request, res: Response) => {
+    const diagnostics = {
+      environment: process.env.NODE_ENV,
+      objectStorageConfigured: !!(process.env.PRIVATE_OBJECT_DIR && process.env.PUBLIC_OBJECT_SEARCH_PATHS),
+      privateDir: process.env.PRIVATE_OBJECT_DIR || 'NOT SET',
+      publicPaths: process.env.PUBLIC_OBJECT_SEARCH_PATHS || 'NOT SET',
+      user: req.user ? { id: (req.user as any).id, email: (req.user as any).email } : 'NOT AUTHENTICATED',
+      cookies: !!req.headers.cookie,
+      sessionId: (req.session as any)?.id || 'NO SESSION'
+    };
+    res.json(diagnostics);
+  });
+
   app.use('/api/upload', uploadRouter);
   
   // Adicionar rotas de materiais
