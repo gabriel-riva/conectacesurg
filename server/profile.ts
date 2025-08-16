@@ -130,12 +130,14 @@ router.post('/photo', isAuthenticated, upload.single('photo'), async (req: Reque
 
     console.log(`🔄 UPLOAD FOTO PERFIL: Enviando ${file.originalname} para Object Storage`);
 
-    // Upload para Object Storage
+    // Upload para Object Storage com separação por ambiente
     const objectStorageService = new ObjectStorageService();
     const fileId = randomUUID();
     const ext = path.extname(file.originalname);
-    const privateDir = objectStorageService.getPrivateObjectDir();
+    const privateDir = objectStorageService.getPrivateObjectDirWithEnv();
     const objectPath = `${privateDir}/profile/photos/${fileId}${ext}`;
+    
+    console.log(`🛡️ UPLOAD FOTO PERFIL: Usando diretório seguro por ambiente: ${privateDir}`);
 
     // Parse object path para obter bucket e object name
     const { bucketName, objectName } = parseObjectPath(objectPath);
@@ -155,13 +157,16 @@ router.post('/photo', isAuthenticated, upload.single('photo'), async (req: Reque
       }
     });
 
-    // Definir ACL policy (foto pública)
-    await objectStorageService.trySetObjectEntityAclPolicy(`/objects/profile/photos/${fileId}${ext}`, {
+    // Definir ACL policy (foto pública) com ambiente
+    const env = process.env.NODE_ENV === 'production' ? 'prod' : 'dev';
+    const publicPhotoPath = `/objects/${env}/profile/photos/${fileId}${ext}`;
+    
+    await objectStorageService.trySetObjectEntityAclPolicy(publicPhotoPath, {
       owner: userId.toString(),
       visibility: "public" // Fotos de perfil são públicas
     });
 
-    const photoUrl = `/objects/profile/photos/${fileId}${ext}`;
+    const photoUrl = publicPhotoPath;
     
     // Atualizar o URL da foto no banco de dados
     const updatedUser = await storage.updateUser(userId, { photoUrl });
@@ -202,8 +207,11 @@ router.post('/documents', isAuthenticated, upload.array('documents', 5), async (
     }
 
     const objectStorageService = new ObjectStorageService();
-    const privateDir = objectStorageService.getPrivateObjectDir();
+    const privateDir = objectStorageService.getPrivateObjectDirWithEnv();
+    const env = process.env.NODE_ENV === 'production' ? 'prod' : 'dev';
     const newDocuments = [];
+    
+    console.log(`🛡️ UPLOAD DOCUMENTOS PERFIL: Usando diretório seguro por ambiente: ${privateDir}`);
     
     // Upload cada documento para Object Storage
     for (let index = 0; index < files.length; index++) {
@@ -230,15 +238,16 @@ router.post('/documents', isAuthenticated, upload.array('documents', 5), async (
         }
       });
 
-      // Definir ACL policy (documento privado)
-      await objectStorageService.trySetObjectEntityAclPolicy(`/objects/profile/documents/${fileId}${ext}`, {
+      // Definir ACL policy (documento privado) com ambiente
+      const publicDocumentPath = `/objects/${env}/profile/documents/${fileId}${ext}`;
+      await objectStorageService.trySetObjectEntityAclPolicy(publicDocumentPath, {
         owner: userId.toString(),
         visibility: "private" // Documentos são privados
       });
 
       newDocuments.push({
         name: file.originalname,
-        url: `/objects/profile/documents/${fileId}${ext}`,
+        url: publicDocumentPath,
         type: file.mimetype,
         description: descriptions[index] || ''
       });

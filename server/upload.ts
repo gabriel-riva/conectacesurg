@@ -100,11 +100,14 @@ router.post("/", isAuthenticated, upload.single('file'), async (req: Request, re
     // Criar instância do Object Storage
     const objectStorageService = new ObjectStorageService();
 
-    // Gerar ID único para o arquivo
+    // Gerar ID único para o arquivo com separação por ambiente
     const fileId = randomUUID();
-    const privateDir = objectStorageService.getPrivateObjectDir();
+    const privateDir = objectStorageService.getPrivateObjectDirWithEnv();
+    const env = process.env.NODE_ENV === 'production' ? 'prod' : 'dev';
     const ext = path.extname(req.file.originalname);
     const objectPath = `${privateDir}/challenges/${fileId}${ext}`;
+
+    console.log(`🛡️ UPLOAD GAMIFICAÇÃO: Usando diretório seguro por ambiente: ${privateDir}`);
 
     try {
       // Parse object path para obter bucket e object name
@@ -131,17 +134,18 @@ router.post("/", isAuthenticated, upload.single('file'), async (req: Request, re
         stream.end(req.file!.buffer);
       });
 
-      // Definir ACL policy
-      await objectStorageService.trySetObjectEntityAclPolicy(`/objects/challenges/${fileId}${ext}`, {
+      // Definir ACL policy com ambiente
+      const publicChallengesPath = `/objects/${env}/challenges/${fileId}${ext}`;
+      await objectStorageService.trySetObjectEntityAclPolicy(publicChallengesPath, {
         owner: (req.user as any).id.toString(),
         visibility: "private"
       });
 
       console.log(`✅ UPLOAD GAMIFICAÇÃO: Arquivo ${req.file.originalname} salvo com sucesso no Object Storage`);
 
-      // Retornar URL do arquivo no formato Object Storage
+      // Retornar URL do arquivo no formato Object Storage com ambiente
       res.json({
-        url: `/objects/challenges/${fileId}${ext}`,
+        url: publicChallengesPath,
         filename: `${fileId}${ext}`,
         originalName: req.file.originalname,
         size: req.file.size,

@@ -74,6 +74,13 @@ export class ObjectStorageService {
     return dir;
   }
 
+  // Gets the private object directory with environment prefix for safety
+  getPrivateObjectDirWithEnv(): string {
+    const baseDir = this.getPrivateObjectDir();
+    const env = process.env.NODE_ENV === 'production' ? 'prod' : 'dev';
+    return `${baseDir}/${env}`;
+  }
+
   // Search for a public object from the search paths.
   async searchPublicObject(filePath: string): Promise<File | null> {
     for (const searchPath of this.getPublicObjectSearchPaths()) {

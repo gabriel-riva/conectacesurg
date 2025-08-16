@@ -867,11 +867,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Rota para servir arquivos de desafios do Object Storage (protegido)
-  app.get("/objects/challenges/:fileId", async (req, res) => {
+  // Rota para servir arquivos de desafios do Object Storage com separação por ambiente
+  app.get("/objects/:env/challenges/:fileId", async (req, res) => {
+    const { env, fileId } = req.params;
+    console.log(`🔍 DOWNLOAD CHALLENGE: Tentando acessar desafio ${fileId} do ambiente ${env}`);
+    
+    // Validar ambiente
+    if (env !== 'prod' && env !== 'dev') {
+      return res.status(404).json({ error: "Ambiente não encontrado" });
+    }
+    
     try {
       const objectStorageService = new ObjectStorageService();
-      const objectPath = `/objects/challenges/${req.params.fileId}`;
+      const objectPath = `/objects/${env}/challenges/${fileId}`;
       
       try {
         const objectFile = await objectStorageService.getObjectEntityFile(objectPath);
@@ -889,7 +897,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(403).json({ error: "Acesso negado" });
         }
         
-        console.log(`✅ Servindo arquivo de desafio: ${objectPath}`);
+        console.log(`✅ Servindo arquivo de desafio: ${objectPath} (ambiente: ${env})`);
         return objectStorageService.downloadObject(objectFile, res);
         
       } catch (error) {
@@ -905,21 +913,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Rotas para servir arquivos de perfil do Object Storage
-  app.get("/objects/profile/photos/:fileId", async (req, res) => {
-    console.log(`🔍 DOWNLOAD PROFILE PHOTO: Tentando acessar foto ${req.params.fileId}`);
+  // Rota legacy para desafios (sem ambiente) - redireciona para produção
+  app.get("/objects/challenges/:fileId", async (req, res) => {
+    console.log(`🔄 LEGACY CHALLENGE: Redirecionando desafio ${req.params.fileId} para ambiente de produção`);
+    res.redirect(`/objects/prod/challenges/${req.params.fileId}`);
+  });
+
+  // Rotas para servir arquivos de perfil do Object Storage com separação por ambiente
+  app.get("/objects/:env/profile/photos/:fileId", async (req, res) => {
+    const { env, fileId } = req.params;
+    console.log(`🔍 DOWNLOAD PROFILE PHOTO: Tentando acessar foto ${fileId} do ambiente ${env}`);
+    
+    // Validar ambiente
+    if (env !== 'prod' && env !== 'dev') {
+      return res.status(404).json({ error: "Ambiente não encontrado" });
+    }
     
     try {
       const { ObjectStorageService, ObjectNotFoundError } = await import("./objectStorage.js");
       
-      const objectPath = `/objects/profile/photos/${req.params.fileId}`;
+      const objectPath = `/objects/${env}/profile/photos/${fileId}`;
       const objectStorageService = new ObjectStorageService();
       const objectFile = await objectStorageService.getObjectEntityFile(objectPath);
       
-      console.log(`✅ DOWNLOAD PROFILE PHOTO: Foto ${req.params.fileId} encontrada no Object Storage`);
+      console.log(`✅ DOWNLOAD PROFILE PHOTO: Foto ${fileId} encontrada no Object Storage (ambiente: ${env})`);
       await objectStorageService.downloadObject(objectFile, res);
     } catch (error) {
-      console.error(`❌ DOWNLOAD PROFILE PHOTO: Erro ao acessar foto ${req.params.fileId}:`, error);
+      console.error(`❌ DOWNLOAD PROFILE PHOTO: Erro ao acessar foto ${fileId} (${env}):`, error);
       const { ObjectNotFoundError } = await import("./objectStorage.js");
       if (error instanceof ObjectNotFoundError) {
         return res.status(404).json({ error: "Foto não encontrada" });
@@ -928,13 +948,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/objects/profile/documents/:fileId", async (req, res) => {
-    console.log(`🔍 DOWNLOAD PROFILE DOCUMENT: Tentando acessar documento ${req.params.fileId}`);
+  // Rota legacy para fotos de perfil (sem ambiente) - redireciona para produção
+  app.get("/objects/profile/photos/:fileId", async (req, res) => {
+    console.log(`🔄 LEGACY PHOTO: Redirecionando foto ${req.params.fileId} para ambiente de produção`);
+    res.redirect(`/objects/prod/profile/photos/${req.params.fileId}`);
+  });
+
+  app.get("/objects/:env/profile/documents/:fileId", async (req, res) => {
+    const { env, fileId } = req.params;
+    console.log(`🔍 DOWNLOAD PROFILE DOCUMENT: Tentando acessar documento ${fileId} do ambiente ${env}`);
+    
+    // Validar ambiente
+    if (env !== 'prod' && env !== 'dev') {
+      return res.status(404).json({ error: "Ambiente não encontrado" });
+    }
     
     try {
       const { ObjectStorageService, ObjectNotFoundError } = await import("./objectStorage.js");
       
-      const objectPath = `/objects/profile/documents/${req.params.fileId}`;
+      const objectPath = `/objects/${env}/profile/documents/${fileId}`;
       const objectStorageService = new ObjectStorageService();
       const objectFile = await objectStorageService.getObjectEntityFile(objectPath);
       
@@ -947,20 +979,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       
       if (!canAccess) {
-        console.log(`❌ DOWNLOAD PROFILE DOCUMENT: Acesso negado ao documento ${req.params.fileId}`);
+        console.log(`❌ DOWNLOAD PROFILE DOCUMENT: Acesso negado ao documento ${fileId} (${env})`);
         return res.status(403).json({ error: "Acesso negado ao documento" });
       }
       
-      console.log(`✅ DOWNLOAD PROFILE DOCUMENT: Documento ${req.params.fileId} encontrado no Object Storage`);
+      console.log(`✅ DOWNLOAD PROFILE DOCUMENT: Documento ${fileId} encontrado no Object Storage (ambiente: ${env})`);
       await objectStorageService.downloadObject(objectFile, res);
     } catch (error) {
-      console.error(`❌ DOWNLOAD PROFILE DOCUMENT: Erro ao acessar documento ${req.params.fileId}:`, error);
+      console.error(`❌ DOWNLOAD PROFILE DOCUMENT: Erro ao acessar documento ${fileId} (${env}):`, error);
       const { ObjectNotFoundError } = await import("./objectStorage.js");
       if (error instanceof ObjectNotFoundError) {
         return res.status(404).json({ error: "Documento não encontrado" });
       }
       return res.status(500).json({ error: "Erro interno do servidor" });
     }
+  });
+
+  // Rota legacy para documentos de perfil (sem ambiente) - redireciona para produção
+  app.get("/objects/profile/documents/:fileId", async (req, res) => {
+    console.log(`🔄 LEGACY DOCUMENT: Redirecionando documento ${req.params.fileId} para ambiente de produção`);
+    res.redirect(`/objects/prod/profile/documents/${req.params.fileId}`);
   });
   
   // Adicionar rotas de configurações de funcionalidades
