@@ -622,8 +622,8 @@ export const AdminAllSubmissions: React.FC = () => {
                               </Button>
                             )}
                             
-                            {/* Botão de devolver submissão - apenas se não for quiz completed */}
-                            {!(submission.submissionType === 'quiz' && submission.status === 'completed') && (
+                            {/* Botão de devolver submissão - disponível para todos os tipos */}
+                            {(
                               <Dialog>
                                 <DialogTrigger asChild>
                                   <Button

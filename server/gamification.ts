@@ -1634,13 +1634,10 @@ router.delete("/submissions/:id/return", isAdmin, async (req: Request, res: Resp
     }
 
     const currentSubmission = submission[0];
+    // Todas as submissões podem ser devolvidas (incluindo quiz e QR code completados)
+    console.log(`✅ Submissão pode ser devolvida: Tipo ${currentSubmission.submissionType}, Status ${currentSubmission.status}`);
+
     
-    // Verificar se a submissão pode ser devolvida (não pode ter status 'completed')
-    if (currentSubmission.status === 'completed') {
-      return res.status(400).json({ 
-        error: "Submissões de quiz completadas não podem ser devolvidas" 
-      });
-    }
 
     // Buscar dados do desafio para logs e exclusão de arquivos
     const challenge = await db
@@ -1750,12 +1747,9 @@ router.delete("/submissions/return-by-criteria", isAdmin, async (req: Request, r
 
     const currentSubmission = submission[0];
     
-    // Verificar se a submissão pode ser devolvida (não pode ter status 'completed')
-    if (currentSubmission.status === 'completed') {
-      return res.status(400).json({ 
-        error: "Submissões de quiz completadas não podem ser devolvidas" 
-      });
-    }
+    // Todas as submissões podem ser devolvidas (incluindo quiz e QR code completados)
+    console.log(`✅ Submissão pode ser devolvida: Tipo ${currentSubmission.submissionType}, Status ${currentSubmission.status}`);
+    
 
     // Buscar dados do desafio para logs e exclusão de arquivos
     const challenge = await db
