@@ -81,6 +81,8 @@ export default function AdminGamificationPage() {
     message: string;
   } | null>(null);
 
+  const [cleanupConfirmationOpen, setCleanupConfirmationOpen] = useState(false);
+
   // Queries
   const { data: settings, isLoading: settingsLoading } = useQuery({
     queryKey: ["/api/gamification/settings"],
@@ -399,6 +401,36 @@ export default function AdminGamificationPage() {
     
     setDeleteConfirmation(null);
   };
+
+  const cleanupOrphansMutation = useMutation({
+    mutationFn: async () => {
+      const response = await fetch(`/api/gamification/cleanup-orphans`, {
+        method: "DELETE",
+      });
+      
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || "Falha na limpeza");
+      }
+      
+      return response.json();
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "Limpeza concluída",
+        description: data.message || "Dados órfãos removidos com sucesso",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/gamification/all-submissions"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/gamification/ranking"] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Erro na limpeza",
+        description: error.message || "Falha ao limpar dados órfãos",
+        variant: "destructive",
+      });
+    },
+  });
 
   // Forms
   const addPointsForm = useForm<AddPointsForm>({
@@ -1261,7 +1293,20 @@ export default function AdminGamificationPage() {
               </TabsContent>
 
               <TabsContent value="submissions">
-                <AdminAllSubmissions />
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <h3 className="text-lg font-medium">Todas as Submissões</h3>
+                    <Button
+                      onClick={() => setCleanupConfirmationOpen(true)}
+                      variant="outline"
+                      size="sm"
+                      className="text-orange-600 border-orange-200 hover:bg-orange-50"
+                    >
+                      🧹 Limpar dados órfãos
+                    </Button>
+                  </div>
+                  <AdminAllSubmissions />
+                </div>
               </TabsContent>
             </Tabs>
           </div>
@@ -1327,6 +1372,47 @@ export default function AdminGamificationPage() {
               onClick={() => setDeleteConfirmation(null)}
               variant="outline"
               disabled={deleteChallengeMutation.isPending || returnSubmissionsMutation.isPending}
+            >
+              Cancelar
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de Confirmação de Limpeza */}
+      <Dialog open={cleanupConfirmationOpen} onOpenChange={setCleanupConfirmationOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-orange-600">🧹 Limpar dados órfãos</DialogTitle>
+            <DialogDescription className="space-y-3">
+              <p>Esta ação irá remover:</p>
+              <ul className="text-sm space-y-1 list-disc list-inside text-muted-foreground">
+                <li>Submissões sem desafio associado</li>
+                <li>Pontos relacionados a essas submissões</li>
+                <li>Arquivos órfãos do Object Storage</li>
+              </ul>
+              <div className="bg-yellow-50 p-3 rounded-lg border border-yellow-200">
+                <p className="text-sm text-yellow-800">
+                  ⚠️ Esta ação não pode ser desfeita. Continue apenas se tiver certeza.
+                </p>
+              </div>
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col gap-2 pt-4">
+            <Button
+              onClick={() => {
+                cleanupOrphansMutation.mutate();
+                setCleanupConfirmationOpen(false);
+              }}
+              disabled={cleanupOrphansMutation.isPending}
+              className="bg-orange-600 hover:bg-orange-700"
+            >
+              {cleanupOrphansMutation.isPending ? "Limpando..." : "🧹 Confirmar limpeza"}
+            </Button>
+            <Button
+              onClick={() => setCleanupConfirmationOpen(false)}
+              variant="outline"
+              disabled={cleanupOrphansMutation.isPending}
             >
               Cancelar
             </Button>

@@ -1478,15 +1478,13 @@ router.get("/all-submissions", isAdmin, async (req: Request, res: Response) => {
       .from(challengeSubmissions)
       .leftJoin(users, eq(challengeSubmissions.userId, users.id))
       .leftJoin(gamificationChallenges, eq(challengeSubmissions.challengeId, gamificationChallenges.id))
+      .where(isNotNull(challengeSubmissions.challengeId)) // Filtrar submissões órfãs
       .orderBy(desc(challengeSubmissions.createdAt));
     
-    console.log(`📊 Encontradas ${submissions.length} submissões:`, submissions.map(s => ({id: s.id, status: s.status, type: s.submissionType, userId: s.userId, points: s.points})));
+    console.log(`📊 Encontradas ${submissions.length} submissões válidas (órfãs filtradas)`);
     
-    // Log detalhado da primeira submissão para debug
+    // Corrigir submissões de quiz que deveriam estar completed
     if (submissions.length > 0) {
-      console.log('🔍 Primeira submissão (detalhada):', JSON.stringify(submissions[0], null, 2));
-      
-      // Corrigir submissões de quiz que deveriam estar completed
       for (const submission of submissions) {
         if (submission.submissionType === 'quiz' && submission.status === 'pending') {
           console.log(`🔧 Corrigindo status da submissão ${submission.id} de pending para completed`);
@@ -1498,7 +1496,6 @@ router.get("/all-submissions", isAdmin, async (req: Request, res: Response) => {
             })
             .where(eq(challengeSubmissions.id, submission.id));
           
-          // Atualizar o objeto retornado
           submission.status = 'completed';
         }
       }
@@ -1915,6 +1912,87 @@ router.delete("/submissions/:id/return", isAdmin, async (req: Request, res: Resp
   } catch (error) {
     console.error("❌ Erro ao devolver submissão:", error);
     res.status(500).json({ error: "Erro interno do servidor" });
+  }
+});
+
+// Limpar dados órfãos (admin)
+router.delete("/cleanup-orphans", isAdmin, async (req: Request, res: Response) => {
+  try {
+    console.log("🧹 Iniciando limpeza de dados órfãos...");
+    
+    // 1. Encontrar submissões órfãs (challengeId null)
+    const orphanedSubmissions = await db
+      .select()
+      .from(challengeSubmissions)
+      .where(isNull(challengeSubmissions.challengeId));
+    
+    console.log(`🔍 Encontradas ${orphanedSubmissions.length} submissões órfãs`);
+    
+    let cleanupResults = {
+      orphanedSubmissions: 0,
+      orphanedPoints: 0,
+      filesDeleted: 0
+    };
+    
+    // 2. Deletar submissões órfãs
+    if (orphanedSubmissions.length > 0) {
+      const { ObjectStorageService } = await import("./objectStorage.js");
+      const objectStorageService = new ObjectStorageService();
+      
+      for (const submission of orphanedSubmissions) {
+        try {
+          // Se tiver arquivos, deletar do Object Storage
+          if (submission.submissionType === 'file' && submission.submissionData?.file) {
+            const fileSubmissionData = submission.submissionData.file as any;
+            
+            if (fileSubmissionData.files && Array.isArray(fileSubmissionData.files)) {
+              for (const file of fileSubmissionData.files) {
+                try {
+                  const filePath = file.fileUrl;
+                  const objectFile = await objectStorageService.getObjectEntityFile(filePath);
+                  await objectStorageService.deleteFile(objectFile);
+                  cleanupResults.filesDeleted++;
+                } catch (error) {
+                  console.warn(`⚠️ Erro ao excluir arquivo ${file.fileUrl}:`, error);
+                }
+              }
+            }
+          }
+          
+          // Remover pontos relacionados a esta submissão órfã
+          await db
+            .delete(gamificationPoints)
+            .where(and(
+              eq(gamificationPoints.userId, submission.userId),
+              eq(gamificationPoints.points, submission.points || 0),
+              eq(gamificationPoints.type, 'challenge_completion')
+            ));
+          
+          cleanupResults.orphanedPoints++;
+        } catch (error) {
+          console.warn(`⚠️ Erro ao limpar submissão ${submission.id}:`, error);
+        }
+      }
+      
+      // Deletar as submissões órfãs do banco
+      await db
+        .delete(challengeSubmissions)
+        .where(isNull(challengeSubmissions.challengeId));
+        
+      cleanupResults.orphanedSubmissions = orphanedSubmissions.length;
+    }
+    
+    console.log("✅ Limpeza concluída:", cleanupResults);
+    
+    res.json({
+      success: true,
+      message: `Limpeza concluída: ${cleanupResults.orphanedSubmissions} submissões órfãs removidas`,
+      results: cleanupResults
+    });
+    
+  } catch (error) {
+    console.error("Error during cleanup:", error);
+    res.status(500).json({ error: "Internal server error" });
   }
 });
 
