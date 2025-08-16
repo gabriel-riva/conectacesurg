@@ -2,7 +2,7 @@ import { Router } from "express";
 import type { Request, Response } from "express";
 import { db, databaseEnvironment } from "./db";
 import { gamificationSettings, gamificationPoints, gamificationChallenges, users, userCategories, userCategoryAssignments, challengeComments, challengeCommentLikes, challengeSubmissions } from "@/shared/schema";
-import { eq, desc, asc, and, gte, lte, sql, inArray, like } from "drizzle-orm";
+import { eq, desc, asc, and, gte, lte, sql, inArray, like, isNull, isNotNull } from "drizzle-orm";
 import { z } from "zod";
 import { insertGamificationSettingsSchema, insertGamificationPointsSchema, insertGamificationChallengeSchema, updateGamificationChallengeSchema, updateGamificationSettingsSchema, insertChallengeCommentSchema, insertChallengeCommentLikeSchema, insertChallengeSubmissionSchema, updateChallengeSubmissionSchema } from "@/shared/schema";
 

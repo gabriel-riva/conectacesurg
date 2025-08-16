@@ -257,7 +257,16 @@ export const AdminAllSubmissions: React.FC = () => {
   };
 
   const getSubmissionSummary = (submission: Submission) => {
+    // Verificar se é uma submissão órfã
+    if (!submission.challengeId) {
+      return 'Submissão órfã (desafio removido)';
+    }
+    
     const data = submission.submissionData;
+    
+    if (!data) {
+      return 'Sem dados de submissão';
+    }
     
     switch (submission.submissionType) {
       case 'quiz':
@@ -555,7 +564,7 @@ export const AdminAllSubmissions: React.FC = () => {
                   </TableHeader>
                   <TableBody>
                     {submissions.map((submission: Submission) => (
-                      <TableRow key={submission.id || `${submission.userId}-${submission.challengeId}-${submission.createdAt}`}>
+                      <TableRow key={submission.id || `${submission.userId}-${submission.challengeId || 'orphan'}-${submission.createdAt}`}>
                         <TableCell>
                           <div className="flex items-center space-x-2">
                             {submission.userPhotoUrl ? (
