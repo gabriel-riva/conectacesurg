@@ -444,19 +444,13 @@ export const ChallengeEvaluationForm: React.FC<ChallengeEvaluationFormProps> = (
     
     if (!requirement) return;
 
-    // Validar tipos de arquivo
-    const validFiles = files.filter(file => {
-      const extension = file.name.split('.').pop()?.toLowerCase();
-      return requirement.acceptedTypes.includes(extension || '');
-    });
-
-    // Validar tamanho
-    const sizeValidFiles = validFiles.filter(file => file.size <= requirement.maxSize);
+    // Validar apenas tamanho
+    const sizeValidFiles = files.filter(file => file.size <= requirement.maxSize);
 
     if (sizeValidFiles.length !== files.length) {
       toast({
         title: "Atenção",
-        description: "Alguns arquivos foram removidos por não atenderem aos critérios.",
+        description: "Alguns arquivos foram removidos por excederem o tamanho máximo permitido.",
         variant: "destructive"
       });
     }
@@ -662,12 +656,11 @@ export const ChallengeEvaluationForm: React.FC<ChallengeEvaluationFormProps> = (
                             id={`fileInput-${requirement.id}`}
                             type="file"
                             multiple={allowMultiple}
-                            accept={requirement.acceptedTypes.map(type => `.${type}`).join(',')}
                             onChange={handleFileChange(requirement.id, requirement)}
                           />
                           
                           <div className="text-xs text-gray-500 space-y-1">
-                            <p>Tipos permitidos: {requirement.acceptedTypes.join(', ')}</p>
+                            <p>Todos os tipos de arquivo são aceitos</p>
                             <p>Tamanho máximo: {(requirement.maxSize / 1024 / 1024).toFixed(1)}MB por arquivo</p>
                             {allowMultiple && <p>Múltiplos arquivos permitidos</p>}
                           </div>

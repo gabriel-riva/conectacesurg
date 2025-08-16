@@ -151,8 +151,8 @@ export const ChallengeEvaluationConfig: React.FC<ChallengeEvaluationConfigProps>
       name: '',
       description: '',
       points: 10,
-      acceptedTypes: ['pdf'],
-      maxSize: 5 * 1024 * 1024, // 5MB
+      acceptedTypes: [], // Aceitar todos os tipos
+      maxSize: 10 * 1024 * 1024, // 10MB padrão
       submissionType: 'file', // Padrão para arquivo
       allowMultiple: false
     };
@@ -503,33 +503,22 @@ export const ChallengeEvaluationConfig: React.FC<ChallengeEvaluationConfigProps>
                         </div>
 
                         {requirement.submissionType === 'file' && (
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                              <Label htmlFor={`types-${requirement.id}`}>Tipos de Arquivo Permitidos</Label>
-                              <Input
-                                id={`types-${requirement.id}`}
-                                value={requirement.acceptedTypes.join(', ')}
-                                onChange={(e) => updateFileRequirement(requirement.id, { 
-                                  acceptedTypes: e.target.value.split(',').map(type => type.trim()).filter(Boolean)
-                                })}
-                                placeholder="pdf, doc, docx, jpg, png"
-                              />
-                              <p className="text-xs text-gray-500 mt-1">
-                                Separe por vírgula (ex: pdf, doc, jpg)
-                              </p>
-                            </div>
+                          <div className="grid grid-cols-1 gap-4">
                             <div>
                               <Label htmlFor={`size-${requirement.id}`}>Tamanho Máximo (MB)</Label>
                               <Input
                                 id={`size-${requirement.id}`}
                                 type="number"
                                 min="1"
-                                max="100"
+                                max="50"
                                 value={Math.round(requirement.maxSize / 1024 / 1024)}
                                 onChange={(e) => updateFileRequirement(requirement.id, { 
                                   maxSize: (parseInt(e.target.value) || 5) * 1024 * 1024 
                                 })}
                               />
+                              <p className="text-xs text-gray-500 mt-1">
+                                Todos os tipos de arquivo são aceitos. Tamanho máximo: 50MB
+                              </p>
                             </div>
                           </div>
                         )}

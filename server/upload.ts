@@ -42,62 +42,9 @@ const upload = multer({
     fileSize: 50 * 1024 * 1024, // 50MB
   },
   fileFilter: (req, file, cb) => {
-    // Permitir ampla gama de tipos de arquivo
-    const allowedTypes = [
-      // Imagens
-      'image/jpeg',
-      'image/jpg', 
-      'image/png',
-      'image/gif',
-      'image/webp',
-      'image/bmp',
-      'image/tiff',
-      // Vídeos
-      'video/mp4',
-      'video/mpeg',
-      'video/quicktime',
-      'video/x-msvideo',
-      'video/x-ms-wmv',
-      'video/webm',
-      'video/ogg',
-      'video/3gpp',
-      'video/3gpp2',
-      // Áudio
-      'audio/mpeg',
-      'audio/mp3',
-      'audio/wav',
-      'audio/ogg',
-      'audio/webm',
-      'audio/aac',
-      'audio/x-m4a',
-      // Documentos
-      'application/pdf',
-      'application/msword',
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-      'application/vnd.ms-excel',
-      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      'application/vnd.ms-powerpoint',
-      'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-      // Texto
-      'text/plain',
-      'text/csv',
-      'text/rtf',
-      // Outros
-      'application/zip',
-      'application/x-rar-compressed',
-      'application/json',
-      'application/xml',
-      'text/xml',
-      // Adicional para maior compatibilidade
-      'application/octet-stream' // Aceitar este tipo também
-    ];
-    
-    if (allowedTypes.includes(file.mimetype)) {
-      cb(null, true);
-    } else {
-      console.log(`Tipo de arquivo rejeitado: ${file.mimetype} para arquivo: ${file.originalname}`);
-      cb(new Error(`Tipo de arquivo não permitido: ${file.mimetype}`));
-    }
+    // Aceitar todos os tipos de arquivo
+    console.log(`📁 Arquivo recebido: ${file.originalname} (${file.mimetype})`);
+    cb(null, true);
   }
 });
 
