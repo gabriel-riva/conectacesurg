@@ -1599,4 +1599,113 @@ router.get("/challenges/:id/my-submission", isAuthenticated, async (req: Request
   }
 });
 
+// Devolver submissão (admin) - Remove completamente a submissão e seus efeitos
+router.delete("/submissions/:id/return", isAdmin, async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const submissionId = parseInt(id);
+    const adminId = req.user?.id;
+    
+    if (!adminId) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    console.log(`🔄 DEVOLVER SUBMISSÃO: Admin ${req.user?.email} devolvendo submissão ${submissionId}`);
+
+    // Buscar a submissão para verificar se existe e obter dados
+    const submission = await db
+      .select()
+      .from(challengeSubmissions)
+      .where(eq(challengeSubmissions.id, submissionId))
+      .limit(1);
+
+    if (submission.length === 0) {
+      return res.status(404).json({ error: "Submissão não encontrada" });
+    }
+
+    const currentSubmission = submission[0];
+    
+    // Verificar se a submissão pode ser devolvida (não pode ter status 'completed')
+    if (currentSubmission.status === 'completed') {
+      return res.status(400).json({ 
+        error: "Submissões de quiz completadas não podem ser devolvidas" 
+      });
+    }
+
+    // Buscar dados do desafio para logs e exclusão de arquivos
+    const challenge = await db
+      .select()
+      .from(gamificationChallenges)
+      .where(eq(gamificationChallenges.id, currentSubmission.challengeId))
+      .limit(1);
+
+    const challengeTitle = challenge.length > 0 ? challenge[0].title : `ID ${currentSubmission.challengeId}`;
+    
+    console.log(`📋 Devolvendo submissão: Usuário ${currentSubmission.userId}, Desafio "${challengeTitle}", Status: ${currentSubmission.status}`);
+
+    // PASSO 1: Remover TODOS os pontos relacionados a este desafio para este usuário
+    const deletedPoints = await db
+      .delete(gamificationPoints)
+      .where(and(
+        eq(gamificationPoints.userId, currentSubmission.userId),
+        like(gamificationPoints.description, `%${challengeTitle}%`)
+      ))
+      .returning();
+    
+    console.log(`🗑️ Removidos ${deletedPoints.length} registros de pontos relacionados ao desafio`);
+
+    // PASSO 2: Se for submissão de arquivo, excluir arquivos do Object Storage
+    if (currentSubmission.submissionType === 'file' && currentSubmission.submissionData?.file) {
+      const { ObjectStorageService } = await import("./objectStorage.js");
+      const objectStorageService = new ObjectStorageService();
+      
+      const fileSubmissionData = currentSubmission.submissionData.file as any;
+      const files = fileSubmissionData.files || fileSubmissionData.submissions || [];
+      
+      for (const file of files) {
+        if (file.type === 'file' && file.fileUrl) {
+          try {
+            // Extrair caminho do arquivo
+            const filePath = file.fileUrl; // Ex: /objects/dev/challenges/filename.ext
+            console.log(`🗑️ Excluindo arquivo: ${filePath}`);
+            
+            // Buscar e deletar o arquivo
+            const objectFile = await objectStorageService.getObjectEntityFile(filePath);
+            await objectStorageService.deleteObject(objectFile);
+            console.log(`✅ Arquivo excluído com sucesso: ${filePath}`);
+          } catch (error) {
+            console.warn(`⚠️ Erro ao excluir arquivo ${file.fileUrl}:`, error);
+            // Continuar mesmo se não conseguir deletar um arquivo
+          }
+        }
+      }
+    }
+
+    // PASSO 3: Deletar a submissão completamente
+    const deletedSubmission = await db
+      .delete(challengeSubmissions)
+      .where(eq(challengeSubmissions.id, submissionId))
+      .returning();
+
+    if (deletedSubmission.length === 0) {
+      return res.status(500).json({ error: "Erro ao excluir submissão" });
+    }
+
+    console.log(`✅ SUBMISSÃO DEVOLVIDA: Submissão ${submissionId} devolvida com sucesso`);
+    console.log(`📊 Resultado: Usuário ${currentSubmission.userId} pode resubmeter o desafio "${challengeTitle}"`);
+
+    res.json({ 
+      success: true, 
+      message: `Submissão devolvida com sucesso. O usuário pode agora resubmeter o desafio "${challengeTitle}".`,
+      deletedPoints: deletedPoints.length,
+      deletedFiles: currentSubmission.submissionType === 'file' ? 
+        (currentSubmission.submissionData?.file?.files?.length || 0) : 0
+    });
+
+  } catch (error) {
+    console.error("❌ Erro ao devolver submissão:", error);
+    res.status(500).json({ error: "Erro interno do servidor" });
+  }
+});
+
 export default router;

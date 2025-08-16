@@ -130,6 +130,30 @@ export const AdminAllSubmissions: React.FC = () => {
     }
   });
 
+  const returnSubmissionMutation = useMutation({
+    mutationFn: async (submissionId: number) => {
+      return apiRequest(`/api/gamification/submissions/${submissionId}/return`, {
+        method: 'DELETE'
+      });
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({
+        queryKey: ['/api/gamification/all-submissions']
+      });
+      toast({
+        title: "Submissão devolvida",
+        description: data.message || "Submissão devolvida com sucesso! O usuário pode resubmeter.",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Erro",
+        description: "Erro ao devolver submissão",
+        variant: "destructive"
+      });
+    }
+  });
+
   // Filtrar submissões baseado nos filtros globais
   const filteredSubmissions = useMemo(() => {
     if (!allSubmissions) return [];
@@ -531,7 +555,7 @@ export const AdminAllSubmissions: React.FC = () => {
                   </TableHeader>
                   <TableBody>
                     {submissions.map((submission: Submission) => (
-                      <TableRow key={submission.id}>
+                      <TableRow key={submission.id || `${submission.userId}-${submission.challengeId}-${submission.createdAt}`}>
                         <TableCell>
                           <div className="flex items-center space-x-2">
                             {submission.userPhotoUrl ? (
@@ -584,6 +608,61 @@ export const AdminAllSubmissions: React.FC = () => {
                               >
                                 <Settings className="w-4 h-4" />
                               </Button>
+                            )}
+                            
+                            {/* Botão de devolver submissão - apenas se não for quiz completed */}
+                            {!(submission.submissionType === 'quiz' && submission.status === 'completed') && (
+                              <Dialog>
+                                <DialogTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    title="Devolver Submissão"
+                                    className="text-orange-600 hover:text-orange-700 hover:bg-orange-50"
+                                  >
+                                    <AlertCircle className="w-4 h-4" />
+                                  </Button>
+                                </DialogTrigger>
+                                <DialogContent>
+                                  <DialogHeader>
+                                    <DialogTitle>Devolver Submissão</DialogTitle>
+                                    <DialogDescription>
+                                      Esta ação irá remover completamente a submissão e permitir que o usuário resubmeta.
+                                    </DialogDescription>
+                                  </DialogHeader>
+                                  <div className="space-y-4">
+                                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                                      <h4 className="font-medium text-yellow-800 mb-2">⚠️ Atenção</h4>
+                                      <ul className="text-sm text-yellow-700 space-y-1">
+                                        <li>• A submissão será completamente removida</li>
+                                        <li>• Todos os pontos relacionados serão deletados</li>
+                                        <li>• Arquivos enviados serão excluídos</li>
+                                        <li>• O usuário poderá resubmeter o desafio</li>
+                                      </ul>
+                                    </div>
+                                    <div className="bg-gray-50 p-3 rounded">
+                                      <p className="text-sm"><strong>Usuário:</strong> {submission.userName}</p>
+                                      <p className="text-sm"><strong>Desafio:</strong> {submission.challengeTitle}</p>
+                                      <p className="text-sm"><strong>Status atual:</strong> {submission.status}</p>
+                                      <p className="text-sm"><strong>Pontos:</strong> {submission.points}</p>
+                                    </div>
+                                    <div className="flex justify-end space-x-2">
+                                      <DialogTrigger asChild>
+                                        <Button variant="outline">Cancelar</Button>
+                                      </DialogTrigger>
+                                      <Button
+                                        variant="destructive"
+                                        onClick={() => {
+                                          returnSubmissionMutation.mutate(submission.id);
+                                        }}
+                                        disabled={returnSubmissionMutation.isPending}
+                                      >
+                                        {returnSubmissionMutation.isPending ? 'Devolvendo...' : 'Confirmar Devolução'}
+                                      </Button>
+                                    </div>
+                                  </div>
+                                </DialogContent>
+                              </Dialog>
                             )}
                             
                             <Dialog>
