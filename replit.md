@@ -53,9 +53,9 @@ Preferred communication style: Simple, everyday language.
 - **Data Synchronization**: Process established for copying production data to development with automatic path updates for environment isolation.
 - **Last Migration**: August 16, 2025 - Production schema copied to development with file paths updated from `/objects/materials/` to `/objects/dev/materials/`. Object Storage files also copied to development paths.
 - **Schema Organization**: 
-  - `production`: Current production data (85 users, 51 tables, all features, 6 materials)
-  - `development`: Testing environment with complete mirror of production (85 users, 51 tables, 6 materials with working files)
-  - `production_legacy`: Former `public` schema renamed to avoid confusion (84 users, old data - DO NOT USE)
+  - `production`: Current production data (active users, all features and tables)
+  - `development`: Testing environment with complete mirror of production data
+  - `production_legacy`: Former `public` schema renamed to avoid confusion (old data - DO NOT USE)
   - `public`: Standard PostgreSQL schema (empty, reserved for PostgreSQL extensions - NEVER USE)
 - **Important**: Application NEVER uses `public` or `production_legacy` schemas - only `production` or `development` based on NODE_ENV
 
