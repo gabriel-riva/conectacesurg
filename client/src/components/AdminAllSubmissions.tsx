@@ -460,8 +460,8 @@ export const AdminAllSubmissions: React.FC = () => {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todos os desafios</SelectItem>
-                {challenges.filter(c => c.evaluationType !== 'none').map(challenge => (
-                  <SelectItem key={challenge.id} value={challenge.id.toString()}>
+                {challenges.filter(c => c.evaluationType !== 'none' && c.id !== null).map(challenge => (
+                  <SelectItem key={challenge.id} value={challenge.id!.toString()}>
                     {challenge.title}
                   </SelectItem>
                 ))}
