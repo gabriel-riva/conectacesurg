@@ -177,15 +177,50 @@ export class ObjectStorageService {
     if (!entityDir.endsWith("/")) {
       entityDir = `${entityDir}/`;
     }
-    const objectEntityPath = `${entityDir}${entityId}`;
-    const { bucketName, objectName } = parseObjectPath(objectEntityPath);
-    const bucket = objectStorageClient.bucket(bucketName);
-    const objectFile = bucket.file(objectName);
-    const [exists] = await objectFile.exists();
-    if (!exists) {
-      throw new ObjectNotFoundError();
+    
+    // REDIRECIONAMENTO INTELIGENTE PARA DESENVOLVIMENTO
+    // Se estamos em desenvolvimento e o arquivo está em /objects/dev/materials/
+    const tryPaths = [];
+    
+    // Primeiro tenta o caminho original
+    tryPaths.push(`${entityDir}${entityId}`);
+    
+    // Se for desenvolvimento e o arquivo está em dev/materials/
+    if (process.env.NODE_ENV !== 'production' && entityId.startsWith('dev/materials/')) {
+      // Tenta o caminho legacy sem prefixo de ambiente
+      const legacyEntityId = entityId.replace('dev/materials/', 'materials/');
+      tryPaths.push(`${entityDir}${legacyEntityId}`);
+      
+      // Tenta também o caminho de produção
+      const prodEntityId = entityId.replace('dev/', 'prod/');
+      tryPaths.push(`${entityDir}${prodEntityId}`);
+      
+      console.log(`🔄 Redirecionamento para desenvolvimento - Tentando caminhos:`, tryPaths);
     }
-    return objectFile;
+    
+    // Tenta cada caminho até encontrar o arquivo
+    for (const objectEntityPath of tryPaths) {
+      try {
+        const { bucketName, objectName } = parseObjectPath(objectEntityPath);
+        const bucket = objectStorageClient.bucket(bucketName);
+        const objectFile = bucket.file(objectName);
+        const [exists] = await objectFile.exists();
+        
+        if (exists) {
+          if (objectEntityPath !== `${entityDir}${entityId}`) {
+            console.log(`✅ Arquivo encontrado via redirecionamento: ${objectEntityPath}`);
+          }
+          return objectFile;
+        }
+      } catch (error) {
+        // Continua para o próximo caminho
+        continue;
+      }
+    }
+    
+    // Se não encontrou em nenhum caminho, lança erro
+    console.error(`❌ Arquivo não encontrado. Caminhos tentados:`, tryPaths);
+    throw new ObjectNotFoundError();
   }
 
   normalizeObjectEntityPath(
