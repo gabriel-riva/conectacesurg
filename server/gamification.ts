@@ -1603,11 +1603,21 @@ router.get("/challenges/:id/my-submission", isAuthenticated, async (req: Request
 router.delete("/submissions/:id/return", isAdmin, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
+    
+    // Verificar se o ID é válido (não pode ser 'null' ou 'undefined')
+    if (id === 'null' || id === 'undefined' || !id) {
+      return res.status(400).json({ error: "ID de submissão inválido" });
+    }
+    
     const submissionId = parseInt(id);
     const adminId = req.user?.id;
     
     if (!adminId) {
       return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    if (isNaN(submissionId)) {
+      return res.status(400).json({ error: "ID de submissão deve ser um número válido" });
     }
 
     console.log(`🔄 DEVOLVER SUBMISSÃO: Admin ${req.user?.email} devolvendo submissão ${submissionId}`);
@@ -1671,7 +1681,7 @@ router.delete("/submissions/:id/return", isAdmin, async (req: Request, res: Resp
             
             // Buscar e deletar o arquivo
             const objectFile = await objectStorageService.getObjectEntityFile(filePath);
-            await objectStorageService.deleteObject(objectFile);
+            await objectStorageService.deleteFile(objectFile);
             console.log(`✅ Arquivo excluído com sucesso: ${filePath}`);
           } catch (error) {
             console.warn(`⚠️ Erro ao excluir arquivo ${file.fileUrl}:`, error);
@@ -1704,6 +1714,124 @@ router.delete("/submissions/:id/return", isAdmin, async (req: Request, res: Resp
 
   } catch (error) {
     console.error("❌ Erro ao devolver submissão:", error);
+    res.status(500).json({ error: "Erro interno do servidor" });
+  }
+});
+
+// Devolver submissão por critérios alternativos (admin) - Para submissões sem ID
+router.delete("/submissions/return-by-criteria", isAdmin, async (req: Request, res: Response) => {
+  try {
+    const { userId, challengeId } = req.body;
+    const adminId = req.user?.id;
+    
+    if (!adminId) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    if (!userId || !challengeId) {
+      return res.status(400).json({ error: "userId e challengeId são obrigatórios" });
+    }
+
+    console.log(`🔄 DEVOLVER SUBMISSÃO (por critérios): Admin ${req.user?.email} devolvendo submissão de usuário ${userId} no desafio ${challengeId}`);
+
+    // Buscar a submissão para verificar se existe e obter dados
+    const submission = await db
+      .select()
+      .from(challengeSubmissions)
+      .where(and(
+        eq(challengeSubmissions.userId, userId),
+        eq(challengeSubmissions.challengeId, challengeId)
+      ))
+      .limit(1);
+
+    if (submission.length === 0) {
+      return res.status(404).json({ error: "Submissão não encontrada" });
+    }
+
+    const currentSubmission = submission[0];
+    
+    // Verificar se a submissão pode ser devolvida (não pode ter status 'completed')
+    if (currentSubmission.status === 'completed') {
+      return res.status(400).json({ 
+        error: "Submissões de quiz completadas não podem ser devolvidas" 
+      });
+    }
+
+    // Buscar dados do desafio para logs e exclusão de arquivos
+    const challenge = await db
+      .select()
+      .from(gamificationChallenges)
+      .where(eq(gamificationChallenges.id, currentSubmission.challengeId))
+      .limit(1);
+
+    const challengeTitle = challenge.length > 0 ? challenge[0].title : `ID ${currentSubmission.challengeId}`;
+    
+    console.log(`📋 Devolvendo submissão: Usuário ${currentSubmission.userId}, Desafio "${challengeTitle}", Status: ${currentSubmission.status}`);
+
+    // PASSO 1: Remover TODOS os pontos relacionados a este desafio para este usuário
+    const deletedPoints = await db
+      .delete(gamificationPoints)
+      .where(and(
+        eq(gamificationPoints.userId, currentSubmission.userId),
+        like(gamificationPoints.description, `%${challengeTitle}%`)
+      ))
+      .returning();
+    
+    console.log(`🗑️ Removidos ${deletedPoints.length} registros de pontos relacionados ao desafio`);
+
+    // PASSO 2: Se for submissão de arquivo, excluir arquivos do Object Storage
+    if (currentSubmission.submissionType === 'file' && currentSubmission.submissionData?.file) {
+      const { ObjectStorageService } = await import("./objectStorage.js");
+      const objectStorageService = new ObjectStorageService();
+      
+      const fileSubmissionData = currentSubmission.submissionData.file as any;
+      const files = fileSubmissionData.files || fileSubmissionData.submissions || [];
+      
+      for (const file of files) {
+        if (file.type === 'file' && file.fileUrl) {
+          try {
+            // Extrair caminho do arquivo
+            const filePath = file.fileUrl; // Ex: /objects/dev/challenges/filename.ext
+            console.log(`🗑️ Excluindo arquivo: ${filePath}`);
+            
+            // Buscar e deletar o arquivo
+            const objectFile = await objectStorageService.getObjectEntityFile(filePath);
+            await objectStorageService.deleteFile(objectFile);
+            console.log(`✅ Arquivo excluído com sucesso: ${filePath}`);
+          } catch (error) {
+            console.warn(`⚠️ Erro ao excluir arquivo ${file.fileUrl}:`, error);
+            // Continuar mesmo se não conseguir deletar um arquivo
+          }
+        }
+      }
+    }
+
+    // PASSO 3: Deletar a submissão completamente (usando critérios já que pode não ter ID)
+    const deletedSubmission = await db
+      .delete(challengeSubmissions)
+      .where(and(
+        eq(challengeSubmissions.userId, userId),
+        eq(challengeSubmissions.challengeId, challengeId)
+      ))
+      .returning();
+
+    if (deletedSubmission.length === 0) {
+      return res.status(500).json({ error: "Erro ao excluir submissão" });
+    }
+
+    console.log(`✅ SUBMISSÃO DEVOLVIDA (por critérios): Submissão do usuário ${userId} no desafio ${challengeId} devolvida com sucesso`);
+    console.log(`📊 Resultado: Usuário ${userId} pode resubmeter o desafio "${challengeTitle}"`);
+
+    res.json({ 
+      success: true, 
+      message: `Submissão devolvida com sucesso. O usuário pode agora resubmeter o desafio "${challengeTitle}".`,
+      deletedPoints: deletedPoints.length,
+      deletedFiles: currentSubmission.submissionType === 'file' ? 
+        (currentSubmission.submissionData?.file?.files?.length || 0) : 0
+    });
+
+  } catch (error) {
+    console.error("❌ Erro ao devolver submissão por critérios:", error);
     res.status(500).json({ error: "Erro interno do servidor" });
   }
 });

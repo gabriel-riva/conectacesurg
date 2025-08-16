@@ -131,10 +131,22 @@ export const AdminAllSubmissions: React.FC = () => {
   });
 
   const returnSubmissionMutation = useMutation({
-    mutationFn: async (submissionId: number) => {
-      return apiRequest(`/api/gamification/submissions/${submissionId}/return`, {
-        method: 'DELETE'
-      });
+    mutationFn: async (submission: { id?: number; userId: number; challengeId: number }) => {
+      if (submission.id) {
+        // Submissão com ID válido - usar rota padrão
+        return apiRequest(`/api/gamification/submissions/${submission.id}/return`, {
+          method: 'DELETE'
+        });
+      } else {
+        // Submissão sem ID - usar rota alternativa por critérios
+        return apiRequest('/api/gamification/submissions/return-by-criteria', {
+          method: 'DELETE',
+          body: JSON.stringify({
+            userId: submission.userId,
+            challengeId: submission.challengeId
+          })
+        });
+      }
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({
@@ -653,7 +665,11 @@ export const AdminAllSubmissions: React.FC = () => {
                                       <Button
                                         variant="destructive"
                                         onClick={() => {
-                                          returnSubmissionMutation.mutate(submission.id);
+                                          returnSubmissionMutation.mutate({
+                                            id: submission.id,
+                                            userId: submission.userId,
+                                            challengeId: submission.challengeId
+                                          });
                                         }}
                                         disabled={returnSubmissionMutation.isPending}
                                       >

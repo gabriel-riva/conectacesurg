@@ -280,6 +280,17 @@ export class ObjectStorageService {
     });
   }
 
+  // Delete a file from object storage
+  async deleteFile(objectFile: File): Promise<void> {
+    try {
+      await objectFile.delete();
+      console.log(`🗑️ Arquivo deletado com sucesso do Object Storage: ${objectFile.name}`);
+    } catch (error) {
+      console.error(`❌ Erro ao deletar arquivo do Object Storage:`, error);
+      throw error;
+    }
+  }
+
   // Upload file directly to object storage for materials with environment separation
   async uploadMaterialFile(
     buffer: Buffer,
