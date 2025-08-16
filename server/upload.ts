@@ -140,29 +140,7 @@ router.post("/", isAuthenticated, upload.single('file'), async (req: Request, re
 
     } catch (storageError) {
       console.error(`❌ ERRO OBJECT STORAGE GAMIFICAÇÃO:`, storageError);
-      
-      // Fallback: salvar localmente se Object Storage falhar
-      console.log(`🔄 FALLBACK: Salvando ${req.file.originalname} localmente`);
-      
-      const uploadPath = path.join(process.cwd(), 'uploads');
-      if (!fs.existsSync(uploadPath)) {
-        fs.mkdirSync(uploadPath, { recursive: true });
-      }
-      
-      const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-      const name = path.basename(req.file.originalname, ext);
-      const filename = `${name}-${uniqueSuffix}${ext}`;
-      const filepath = path.join(uploadPath, filename);
-      
-      fs.writeFileSync(filepath, req.file.buffer);
-      
-      res.json({
-        url: `/uploads/${filename}`,
-        filename: filename,
-        originalName: req.file.originalname,
-        size: req.file.size,
-        mimetype: req.file.mimetype
-      });
+      throw new Error(`Falha no Object Storage: ${storageError.message}`);
     }
 
   } catch (error) {
@@ -233,28 +211,7 @@ router.post("/multiple", isAuthenticated, upload.array('files', 5), async (req: 
 
       } catch (error) {
         console.error(`❌ ERRO no upload de ${file.originalname}:`, error);
-        
-        // Fallback local para este arquivo específico
-        const uploadPath = path.join(process.cwd(), 'uploads');
-        if (!fs.existsSync(uploadPath)) {
-          fs.mkdirSync(uploadPath, { recursive: true });
-        }
-        
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        const ext = path.extname(file.originalname);
-        const name = path.basename(file.originalname, ext);
-        const filename = `${name}-${uniqueSuffix}${ext}`;
-        const filepath = path.join(uploadPath, filename);
-        
-        fs.writeFileSync(filepath, file.buffer);
-        
-        uploadedFiles.push({
-          url: `/uploads/${filename}`,
-          filename: filename,
-          originalName: file.originalname,
-          size: file.size,
-          mimetype: file.mimetype
-        });
+        throw error;
       }
     }
     
