@@ -23,9 +23,12 @@ const router = Router();
 
 // Middleware para verificar autenticação
 const isAuthenticated = (req: Request, res: Response, next: Function) => {
+  console.log(`🔐 VERIFICAÇÃO AUTH: User present: ${!!req.user}, ID: ${(req.user as any)?.id || 'N/A'}`);
   if (!req.user) {
+    console.log(`❌ AUTH FALHOU: Usuário não autenticado`);
     return res.status(401).json({ error: "Não autorizado" });
   }
+  console.log(`✅ AUTH OK: Usuário ${(req.user as any).id} autenticado`);
   next();
 };
 
@@ -83,11 +86,16 @@ const upload = multer({
 // Endpoint para upload de arquivo único (migrado para Object Storage)
 router.post("/", isAuthenticated, upload.single('file'), async (req: Request, res: Response) => {
   try {
+    console.log(`📥 UPLOAD REQUEST: Headers: ${JSON.stringify(req.headers.cookie ? 'present' : 'missing')}`);
+    console.log(`📥 UPLOAD REQUEST: User: ${(req.user as any)?.id || 'N/A'} (${(req.user as any)?.email || 'N/A'})`);
+    console.log(`📥 UPLOAD REQUEST: Body keys: ${Object.keys(req.body)}`);
+    
     if (!req.file) {
+      console.log(`❌ UPLOAD: Nenhum arquivo no request`);
       return res.status(400).json({ error: "Nenhum arquivo foi enviado" });
     }
 
-    console.log(`🔄 UPLOAD GAMIFICAÇÃO: Enviando ${req.file.originalname} para Object Storage`);
+    console.log(`🔄 UPLOAD GAMIFICAÇÃO: Enviando ${req.file.originalname} (${req.file.size} bytes) para Object Storage`);
 
     // Criar instância do Object Storage
     const objectStorageService = new ObjectStorageService();
@@ -142,12 +150,23 @@ router.post("/", isAuthenticated, upload.single('file'), async (req: Request, re
 
     } catch (storageError: any) {
       console.error(`❌ ERRO OBJECT STORAGE GAMIFICAÇÃO:`, storageError);
+      console.error(`❌ STORAGE ERROR STACK:`, storageError.stack);
+      console.error(`❌ PRIVATE DIR:`, privateDir);
+      console.error(`❌ OBJECT PATH:`, objectPath);
       throw new Error(`Falha no Object Storage: ${storageError?.message || 'Erro desconhecido'}`);
     }
 
-  } catch (error) {
-    console.error('Erro no upload de gamificação:', error);
-    res.status(500).json({ error: "Erro interno do servidor" });
+  } catch (error: any) {
+    console.error('❌ ERRO UPLOAD GAMIFICAÇÃO:', error);
+    console.error('❌ STACK TRACE:', error.stack);
+    console.error('❌ MESSAGE:', error.message);
+    
+    // Retornar erro específico para debugging
+    res.status(503).json({ 
+      error: "Erro no Upload", 
+      details: error.message || "Erro interno do servidor",
+      type: error.name || "UnknownError"
+    });
   }
 });
 
