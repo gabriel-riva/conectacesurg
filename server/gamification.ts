@@ -1771,8 +1771,19 @@ router.get("/my-submissions", isAuthenticated, async (req: Request, res: Respons
 router.get("/challenges/:id/my-submission", isAuthenticated, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const challengeId = parseInt(id);
     const userId = req.user?.id;
+    
+    // Verificar se o ID é válido (não pode ser 'null', 'undefined', ou NaN)
+    if (id === 'null' || id === 'undefined' || !id) {
+      return res.status(400).json({ error: "Challenge ID inválido" });
+    }
+    
+    const challengeId = parseInt(id);
+    
+    // Verificar se a conversão resultou em NaN
+    if (isNaN(challengeId)) {
+      return res.status(400).json({ error: "Challenge ID deve ser um número válido" });
+    }
     
     if (!userId) {
       return res.status(401).json({ error: "Unauthorized" });
