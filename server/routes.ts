@@ -845,6 +845,64 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(500).json({ error: "Erro interno do servidor" });
     }
   });
+
+  // Rotas para servir arquivos de perfil do Object Storage
+  app.get("/objects/profile/photos/:fileId", async (req, res) => {
+    console.log(`🔍 DOWNLOAD PROFILE PHOTO: Tentando acessar foto ${req.params.fileId}`);
+    
+    try {
+      const { ObjectStorageService, ObjectNotFoundError } = await import("./objectStorage.js");
+      
+      const objectPath = `/objects/profile/photos/${req.params.fileId}`;
+      const objectStorageService = new ObjectStorageService();
+      const objectFile = await objectStorageService.getObjectEntityFile(objectPath);
+      
+      console.log(`✅ DOWNLOAD PROFILE PHOTO: Foto ${req.params.fileId} encontrada no Object Storage`);
+      await objectStorageService.downloadObject(objectFile, res);
+    } catch (error) {
+      console.error(`❌ DOWNLOAD PROFILE PHOTO: Erro ao acessar foto ${req.params.fileId}:`, error);
+      const { ObjectNotFoundError } = await import("./objectStorage.js");
+      if (error instanceof ObjectNotFoundError) {
+        return res.status(404).json({ error: "Foto não encontrada" });
+      }
+      return res.status(500).json({ error: "Erro interno do servidor" });
+    }
+  });
+
+  app.get("/objects/profile/documents/:fileId", async (req, res) => {
+    console.log(`🔍 DOWNLOAD PROFILE DOCUMENT: Tentando acessar documento ${req.params.fileId}`);
+    
+    try {
+      const { ObjectStorageService, ObjectNotFoundError } = await import("./objectStorage.js");
+      
+      const objectPath = `/objects/profile/documents/${req.params.fileId}`;
+      const objectStorageService = new ObjectStorageService();
+      const objectFile = await objectStorageService.getObjectEntityFile(objectPath);
+      
+      // Verificar ACL para documentos privados
+      const userId = (req.user as any)?.id;
+      const canAccess = await objectStorageService.canAccessObjectEntity({
+        objectFile,
+        userId: userId?.toString(),
+        requestedPermission: "read" as any
+      });
+      
+      if (!canAccess) {
+        console.log(`❌ DOWNLOAD PROFILE DOCUMENT: Acesso negado ao documento ${req.params.fileId}`);
+        return res.status(403).json({ error: "Acesso negado ao documento" });
+      }
+      
+      console.log(`✅ DOWNLOAD PROFILE DOCUMENT: Documento ${req.params.fileId} encontrado no Object Storage`);
+      await objectStorageService.downloadObject(objectFile, res);
+    } catch (error) {
+      console.error(`❌ DOWNLOAD PROFILE DOCUMENT: Erro ao acessar documento ${req.params.fileId}:`, error);
+      const { ObjectNotFoundError } = await import("./objectStorage.js");
+      if (error instanceof ObjectNotFoundError) {
+        return res.status(404).json({ error: "Documento não encontrado" });
+      }
+      return res.status(500).json({ error: "Erro interno do servidor" });
+    }
+  });
   
   // Adicionar rotas de configurações de funcionalidades
   app.use('/api/feature-settings', featureSettingsRouter);

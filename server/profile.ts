@@ -7,25 +7,11 @@ import { users } from "@shared/schema";
 import multer from "multer";
 import fs from "fs";
 import path from "path";
+import { ObjectStorageService, objectStorageClient } from "./objectStorage.js";
+import { randomUUID } from "crypto";
 
-// Configuração do multer para upload de arquivos
-const storage_config = multer.diskStorage({
-  destination: function (req, file, cb) {
-    const folder = file.fieldname === "photo" ? "uploads/photos" : "uploads/documents";
-    
-    // Criar pasta se não existir
-    if (!fs.existsSync(folder)) {
-      fs.mkdirSync(folder, { recursive: true });
-    }
-    
-    cb(null, folder);
-  },
-  filename: function (req, file, cb) {
-    // Gera um nome de arquivo único baseado no timestamp e nome original
-    const uniqueName = `${Date.now()}-${Math.round(Math.random() * 1E9)}-${file.originalname.replace(/\s+/g, '-')}`;
-    cb(null, uniqueName);
-  }
-});
+// Configuração do multer para armazenamento em memória (Object Storage)
+const storage_config = multer.memoryStorage();
 
 // Filtro para tipos de arquivos permitidos
 const fileFilter = (req: Request, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
@@ -53,9 +39,23 @@ const upload = multer({
   storage: storage_config,
   fileFilter: fileFilter,
   limits: {
-    fileSize: 5 * 1024 * 1024, // 5MB
+    fileSize: 10 * 1024 * 1024, // 10MB para Object Storage
   }
 });
+
+// Função utilitária para parse do object path
+function parseObjectPath(path: string): { bucketName: string; objectName: string } {
+  if (!path.startsWith("/")) {
+    path = `/${path}`;
+  }
+  const pathParts = path.split("/");
+  if (pathParts.length < 3) {
+    throw new Error("Invalid path: must contain at least a bucket name");
+  }
+  const bucketName = pathParts[1];
+  const objectName = pathParts.slice(2).join("/");
+  return { bucketName, objectName };
+}
 
 const router = Router();
 
@@ -118,7 +118,7 @@ router.put('/', isAuthenticated, async (req: Request, res: Response) => {
   }
 });
 
-// Rota para upload de foto de perfil
+// Rota para upload de foto de perfil - OBJECT STORAGE
 router.post('/photo', isAuthenticated, upload.single('photo'), async (req: Request, res: Response) => {
   try {
     const userId = (req.user as any).id;
@@ -127,9 +127,41 @@ router.post('/photo', isAuthenticated, upload.single('photo'), async (req: Reque
     if (!file) {
       return res.status(400).json({ error: "Nenhuma foto enviada ou formato inválido" });
     }
+
+    console.log(`🔄 UPLOAD FOTO PERFIL: Enviando ${file.originalname} para Object Storage`);
+
+    // Upload para Object Storage
+    const objectStorageService = new ObjectStorageService();
+    const fileId = randomUUID();
+    const ext = path.extname(file.originalname);
+    const privateDir = objectStorageService.getPrivateObjectDir();
+    const objectPath = `${privateDir}/profile/photos/${fileId}${ext}`;
+
+    // Parse object path para obter bucket e object name
+    const { bucketName, objectName } = parseObjectPath(objectPath);
     
-    // Caminho relativo para acessar a foto
-    const photoUrl = `/uploads/photos/${file.filename}`;
+    // Upload direto para Object Storage
+    const bucket = objectStorageClient.bucket(bucketName);
+    const storageFile = bucket.file(objectName);
+    
+    await storageFile.save(file.buffer, {
+      metadata: {
+        contentType: file.mimetype,
+        metadata: {
+          originalName: file.originalname,
+          uploadedBy: userId.toString(),
+          uploadType: 'profile_photo'
+        }
+      }
+    });
+
+    // Definir ACL policy (foto pública)
+    await objectStorageService.trySetObjectEntityAclPolicy(`/objects/profile/photos/${fileId}${ext}`, {
+      owner: userId.toString(),
+      visibility: "public" // Fotos de perfil são públicas
+    });
+
+    const photoUrl = `/objects/profile/photos/${fileId}${ext}`;
     
     // Atualizar o URL da foto no banco de dados
     const updatedUser = await storage.updateUser(userId, { photoUrl });
@@ -137,16 +169,17 @@ router.post('/photo', isAuthenticated, upload.single('photo'), async (req: Reque
     if (!updatedUser) {
       return res.status(404).json({ error: "Usuário não encontrado" });
     }
-    
+
+    console.log(`✅ UPLOAD FOTO PERFIL: Foto ${file.originalname} salva no Object Storage`);
     res.json({ success: true, photoUrl });
     
   } catch (error) {
     console.error("Erro ao fazer upload da foto:", error);
-    res.status(500).json({ error: "Erro ao atualizar foto de perfil" });
+    res.status(500).json({ error: "Erro ao atualizar foto de perfil - Object Storage" });
   }
 });
 
-// Rota para upload de documentos
+// Rota para upload de documentos - OBJECT STORAGE
 router.post('/documents', isAuthenticated, upload.array('documents', 5), async (req: Request, res: Response) => {
   try {
     const userId = (req.user as any).id;
@@ -158,6 +191,8 @@ router.post('/documents', isAuthenticated, upload.array('documents', 5), async (
     if (!files || files.length === 0) {
       return res.status(400).json({ error: "Nenhum documento enviado ou formato inválido" });
     }
+
+    console.log(`🔄 UPLOAD DOCUMENTOS PERFIL: Enviando ${files.length} documentos para Object Storage`);
     
     // Buscar o usuário atual para obter documentos existentes
     const user = await storage.getUser(userId);
@@ -165,16 +200,49 @@ router.post('/documents', isAuthenticated, upload.array('documents', 5), async (
     if (!user) {
       return res.status(404).json({ error: "Usuário não encontrado" });
     }
+
+    const objectStorageService = new ObjectStorageService();
+    const privateDir = objectStorageService.getPrivateObjectDir();
+    const newDocuments = [];
     
-    // Criar array com os novos documentos
-    const newDocuments = files.map((file, index) => {
-      return {
+    // Upload cada documento para Object Storage
+    for (let index = 0; index < files.length; index++) {
+      const file = files[index];
+      const fileId = randomUUID();
+      const ext = path.extname(file.originalname);
+      const objectPath = `${privateDir}/profile/documents/${fileId}${ext}`;
+
+      // Parse object path
+      const { bucketName, objectName } = parseObjectPath(objectPath);
+      
+      // Upload para Object Storage
+      const bucket = objectStorageClient.bucket(bucketName);
+      const storageFile = bucket.file(objectName);
+      
+      await storageFile.save(file.buffer, {
+        metadata: {
+          contentType: file.mimetype,
+          metadata: {
+            originalName: file.originalname,
+            uploadedBy: userId.toString(),
+            uploadType: 'profile_document'
+          }
+        }
+      });
+
+      // Definir ACL policy (documento privado)
+      await objectStorageService.trySetObjectEntityAclPolicy(`/objects/profile/documents/${fileId}${ext}`, {
+        owner: userId.toString(),
+        visibility: "private" // Documentos são privados
+      });
+
+      newDocuments.push({
         name: file.originalname,
-        url: `/uploads/documents/${file.filename}`,
+        url: `/objects/profile/documents/${fileId}${ext}`,
         type: file.mimetype,
         description: descriptions[index] || ''
-      };
-    });
+      });
+    }
     
     // Combinar documentos existentes com novos
     const documents = [
@@ -184,6 +252,8 @@ router.post('/documents', isAuthenticated, upload.array('documents', 5), async (
     
     // Atualizar documentos no banco de dados
     const updatedUser = await storage.updateUser(userId, { documents });
+
+    console.log(`✅ UPLOAD DOCUMENTOS PERFIL: ${files.length} documentos salvos no Object Storage`);
     
     res.json({ 
       success: true, 
@@ -193,7 +263,7 @@ router.post('/documents', isAuthenticated, upload.array('documents', 5), async (
     
   } catch (error) {
     console.error("Erro ao fazer upload de documentos:", error);
-    res.status(500).json({ error: "Erro ao atualizar documentos" });
+    res.status(500).json({ error: "Erro ao atualizar documentos - Object Storage" });
   }
 });
 
