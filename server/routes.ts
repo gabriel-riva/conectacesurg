@@ -30,6 +30,7 @@ import surveysRouter from "./surveys";
 import toolProjectsRouter from "./tool-projects";
 import toolsRouter from "./tools";
 import { getAllToolProjects, updateProjectStatus, getEmailSettings, saveEmailSettings } from './admin-tool-projects';
+import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
 
 // Create PostgreSQL session store for production or memory store for development
 const createSessionStore = () => {
@@ -806,11 +807,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api/materials', materialsRouter);
   app.use("/api/materials-admin", materialsAdminRouter);
 
-  // Rota para servir arquivos de desafios do Object Storage
+  // ROTA CRÍTICA: Servir arquivos públicos do Object Storage (materiais)
+  // Esta rota permite que usuários comuns acessem materiais sem autenticação especial
+  app.get("/public-objects/:filePath(*)", async (req, res) => {
+    const filePath = req.params.filePath;
+    const objectStorageService = new ObjectStorageService();
+    try {
+      const file = await objectStorageService.searchPublicObject(filePath);
+      if (!file) {
+        console.log(`❌ Arquivo público não encontrado: ${filePath}`);
+        return res.status(404).json({ error: "File not found" });
+      }
+      console.log(`✅ Servindo arquivo público: ${filePath}`);
+      objectStorageService.downloadObject(file, res);
+    } catch (error) {
+      console.error("Erro ao servir objeto público:", error);
+      return res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Rota para servir arquivos de desafios do Object Storage (protegido)
   app.get("/objects/challenges/:fileId", async (req, res) => {
     try {
-      const { ObjectStorageService, ObjectNotFoundError } = await import("./objectStorage.js");
-      
       const objectStorageService = new ObjectStorageService();
       const objectPath = `/objects/challenges/${req.params.fileId}`;
       

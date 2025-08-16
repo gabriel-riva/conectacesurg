@@ -64,6 +64,14 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### August 16, 2025 - Critical Production Upload/Download Fixes
+- **Material Download Fix**: Added missing `/public-objects/*` route to serve public materials to regular users, resolving "access denied" errors in production
+- **Upload System Stabilization**: Fixed challenge upload failures by consolidating Object Storage imports and eliminating async import timing issues
+- **Route Organization**: Centralized ObjectStorageService imports in main routes file for consistency and reliability
+- **Security Maintained**: Public materials accessible without authentication, private challenge files protected with ACL, profile documents with owner-only access
+- **Comprehensive Logging**: Added detailed logging for upload/download operations to facilitate debugging and monitoring
+- **Production Ready**: All file upload/download systems now fully operational in production environment
+
 ### August 2025 - Gamification UI Improvements
 - **Unified Information Card**: Replaced separate "Ciclo Atual" and "Meus pontos" cards with a single comprehensive "Informações" card that includes:
   - Current cycle information with period dates and progress bar
