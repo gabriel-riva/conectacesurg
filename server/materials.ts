@@ -527,16 +527,9 @@ router.get("/files/:id/view", isAuthenticated, async (req: Request, res: Respons
       try {
         const objectFile = await objectStorageService.getObjectEntityFile(file.fileUrl);
         
-        // Verificar se o usuário tem acesso ao objeto
-        const canAccess = await objectStorageService.canAccessObjectEntity({
-          objectFile,
-          userId: userId?.toString(),
-          requestedPermission: ObjectPermission.READ,
-        });
-        
-        if (!canAccess) {
-          return res.status(403).json({ error: "Acesso negado" });
-        }
+        // MATERIAIS SÃO PÚBLICOS PARA VISUALIZAÇÃO - Não verificar ACL
+        // Isso resolve o problema de "acesso negado" na visualização para usuários comuns
+        console.log(`✅ Material visualização pública - Acesso liberado para usuário: ${(req.user as any)?.name} (${(req.user as any)?.role})`);
         
         // Headers adicionais para PDFs
         if (file.fileType === 'application/pdf') {

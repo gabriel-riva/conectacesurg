@@ -2,7 +2,7 @@ import { Request, Response, Router } from "express";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
-import { ObjectStorageService, objectStorageClient } from "./objectStorage.js";
+import { ObjectStorageService, objectStorageClient } from "./objectStorage";
 import { randomUUID } from "crypto";
 
 // Função utilitária para parse do object path
@@ -120,7 +120,7 @@ router.post("/", isAuthenticated, upload.single('file'), async (req: Request, re
       await new Promise((resolve, reject) => {
         stream.on('error', reject);
         stream.on('finish', resolve);
-        stream.end(req.file.buffer);
+        stream.end(req.file!.buffer);
       });
 
       // Definir ACL policy
@@ -140,9 +140,9 @@ router.post("/", isAuthenticated, upload.single('file'), async (req: Request, re
         mimetype: req.file.mimetype
       });
 
-    } catch (storageError) {
+    } catch (storageError: any) {
       console.error(`❌ ERRO OBJECT STORAGE GAMIFICAÇÃO:`, storageError);
-      throw new Error(`Falha no Object Storage: ${storageError.message}`);
+      throw new Error(`Falha no Object Storage: ${storageError?.message || 'Erro desconhecido'}`);
     }
 
   } catch (error) {
