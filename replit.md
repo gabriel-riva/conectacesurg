@@ -51,20 +51,24 @@ Preferred communication style: Simple, everyday language.
 - **Automatic Environment Detection**: Based on `NODE_ENV` variable, utilizing `search_path` for complete environment isolation.
 - **Migration Process**: Leverages `npm run db:push` for schema synchronization.
 - **Data Synchronization**: Process established for copying production data to development with automatic path updates for environment isolation.
-- **Last Migration**: August 16, 2025 - Production schema copied to development with file paths updated from `/objects/materials/` to `/objects/dev/materials/`.
+- **Last Migration**: January 16, 2025 - Production schema copied to development with file paths updated from `/objects/materials/` to `/objects/dev/materials/`. Object Storage files also copied to development paths.
 - **Schema Organization**: 
-  - `production`: Current production data (85 users, 51 tables, all features)
-  - `development`: Testing environment with complete mirror of production (85 users, 51 tables)
-  - `production_legacy`: Former `public` schema renamed to avoid confusion (84 users, old data)
-  - `public`: Standard PostgreSQL schema (empty, reserved for PostgreSQL extensions)
-- **Important**: Application NEVER uses `public` schema - only `production` or `development` based on NODE_ENV
+  - `production`: Current production data (85 users, 51 tables, all features, 6 materials)
+  - `development`: Testing environment with complete mirror of production (85 users, 51 tables, 6 materials with working files)
+  - `production_legacy`: Former `public` schema renamed to avoid confusion (84 users, old data - DO NOT USE)
+  - `public`: Standard PostgreSQL schema (empty, reserved for PostgreSQL extensions - NEVER USE)
+- **Important**: Application NEVER uses `public` or `production_legacy` schemas - only `production` or `development` based on NODE_ENV
 
-### File Upload Protection System (August 2025)
-- **Environment-Based Object Storage**: All file uploads now use environment-specific paths to prevent conflicts between development and production.
+### File Upload Protection System (January 2025)
+- **Environment-Based Object Storage**: All file uploads use environment-specific paths to prevent conflicts between development and production.
 - **Protected Systems**: Profile photos, profile documents, gamification challenges, and materials page uploads.
-- **Path Structure**: Production uses `/objects/prod/`, Development uses `/objects/dev/`.
-- **Legacy Compatibility**: Automatic redirection for files uploaded before environment separation.
-- **Isolation Guarantee**: Development testing cannot overwrite production files.
+- **Path Structure**: 
+  - Production: Uses `/objects/materials/` for legacy files, `/objects/prod/` for new uploads
+  - Development: Uses `/objects/dev/` for all files
+- **Smart Redirection**: Development environment automatically tries multiple paths when files are not found (dev → legacy → prod)
+- **Object Storage Sync**: Files from production (`/objects/materials/`) are copied to development (`/objects/dev/materials/`) for testing
+- **Isolation Guarantee**: Development testing cannot overwrite production files
+- **Bucket Configuration**: Uses Replit Object Storage bucket (`replit-objstore-5b76e1bd-68bc-4930-858a-2cd2f8ef34d4`)
 
 ## External Dependencies
 
@@ -76,7 +80,8 @@ Preferred communication style: Simple, everyday language.
 - **Neon Database**: Serverless PostgreSQL hosting.
 
 ### File Storage
-- **Google Cloud Storage**: Primary object storage for all uploaded files (materials, challenge submissions, profile photos/documents).
+- **Replit Object Storage**: Primary object storage for all uploaded files (materials, challenge submissions, profile photos/documents)
+- **Google Cloud Storage API**: Used via Replit's sidecar endpoint for Object Storage operations
 
 ### Frontend Libraries (Key)
 - **React Ecosystem**
