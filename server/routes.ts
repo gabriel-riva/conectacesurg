@@ -826,6 +826,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ROTA ESPECÍFICA: Servir materiais do Object Storage (sem autenticação)
+  // Esta rota serve especificamente os materiais que estão em /objects/materials/
+  app.get("/objects/materials/:fileId", async (req, res) => {
+    try {
+      const objectStorageService = new ObjectStorageService();
+      const objectPath = `/objects/materials/${req.params.fileId}`;
+      
+      console.log(`🔍 MATERIAL DOWNLOAD: Tentando acessar material ${req.params.fileId}`);
+      
+      const objectFile = await objectStorageService.getObjectEntityFile(objectPath);
+      
+      console.log(`✅ MATERIAL DOWNLOAD: Material ${req.params.fileId} encontrado no Object Storage`);
+      
+      // Materiais são públicos, não precisam de verificação de ACL especial
+      await objectStorageService.downloadObject(objectFile, res);
+      
+    } catch (error) {
+      console.error(`❌ MATERIAL DOWNLOAD: Erro ao acessar material ${req.params.fileId}:`, error);
+      if (error instanceof ObjectNotFoundError) {
+        return res.status(404).json({ error: "Material não encontrado" });
+      }
+      return res.status(500).json({ error: "Erro interno do servidor" });
+    }
+  });
+
   // Rota para servir arquivos de desafios do Object Storage (protegido)
   app.get("/objects/challenges/:fileId", async (req, res) => {
     try {

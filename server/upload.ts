@@ -66,7 +66,9 @@ const upload = multer({
       'application/x-rar-compressed',
       'application/json',
       'application/xml',
-      'text/xml'
+      'text/xml',
+      // Adicional para maior compatibilidade
+      'application/octet-stream' // Aceitar este tipo também
     ];
     
     if (allowedTypes.includes(file.mimetype)) {
