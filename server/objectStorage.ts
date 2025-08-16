@@ -245,16 +245,19 @@ export class ObjectStorageService {
     });
   }
 
-  // Upload file directly to object storage for materials
+  // Upload file directly to object storage for materials with environment separation
   async uploadMaterialFile(
     buffer: Buffer,
     originalName: string,
     contentType: string,
     userId: string
   ): Promise<{ objectPath: string; fileSize: number }> {
-    const privateObjectDir = this.getPrivateObjectDir();
+    const privateObjectDir = this.getPrivateObjectDirWithEnv();
+    const env = process.env.NODE_ENV === 'production' ? 'prod' : 'dev';
     const objectId = randomUUID();
     const fullPath = `${privateObjectDir}/materials/${objectId}`;
+
+    console.log(`🛡️ UPLOAD MATERIAL: Usando diretório seguro por ambiente: ${privateObjectDir}`);
 
     const { bucketName, objectName } = parseObjectPath(fullPath);
     const bucket = objectStorageClient.bucket(bucketName);
@@ -268,11 +271,12 @@ export class ObjectStorageService {
           originalName,
           uploadedBy: userId,
           uploadedAt: new Date().toISOString(),
+          environment: env
         }
       }
     });
 
-    // Set ACL policy for the file (materiais são públicos)
+    // Set ACL policy for the file (materiais são públicos) with environment
     const aclPolicy: ObjectAclPolicy = {
       owner: userId,
       visibility: "public", // Materials are public for all authenticated users
@@ -280,7 +284,8 @@ export class ObjectStorageService {
 
     await setObjectAclPolicy(file, aclPolicy);
 
-    const objectPath = `/objects/materials/${objectId}`;
+    const objectPath = `/objects/${env}/materials/${objectId}`;
+    console.log(`✅ UPLOAD MATERIAL: Material salvo com ambiente seguro: ${objectPath}`);
     return { objectPath, fileSize: buffer.length };
   }
 }

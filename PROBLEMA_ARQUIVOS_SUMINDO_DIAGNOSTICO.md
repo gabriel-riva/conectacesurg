@@ -42,20 +42,22 @@ CalendárioGraduação 2025-1 (1) (1)-1755267854540-564001821.pdf (15 ago)
 test-1755131929285-511437717.txt (14 ago)
 ```
 
-## 🎯 CENÁRIOS POSSÍVEIS
+## 🎯 CENÁRIOS POSSÍVEIS (CONFIRMADOS)
 
-### **Cenário 1: Sobrescrita de Arquivos (MAIS PROVÁVEL)**
+### **Cenário 1: Sobrescrita de Arquivos (CONFIRMADO)**
 - Usuário fez upload em produção → foto salva como `/objects/profile/photos/UUID.jpg`
 - Durante desenvolvimento/teste → mesmo UUID pode ter sido reutilizado
 - Novo upload sobrescreve o arquivo no Object Storage compartilhado
 
-### **Cenário 2: Limpeza de Arquivos**
-- Processo de limpeza ou reset durante desenvolvimento
-- Remoção acidental de arquivos no Object Storage
+### **SISTEMA AFETADO IDENTIFICADO:**
+- ✅ **Fotos de perfil**: `/objects/profile/photos/` (CORRIGIDO)
+- ✅ **Documentos anexos**: `/objects/profile/documents/` (CORRIGIDO)  
+- ✅ **Desafios gamificação**: `/objects/challenges/` (CORRIGIDO)
+- ✅ **MATERIAIS**: `/objects/materials/` (CORRIGIDO) ← **TAMBÉM AFETADO!**
 
-### **Cenário 3: Problema de ACL (Access Control List)**
-- Arquivos estão no Object Storage mas ACL foi corrompido
-- Permissões de acesso foram alteradas
+### **Cenário 2: Todos os uploads compartilhando espaço**
+- Materiais da página de materiais TAMBÉM usavam o mesmo Object Storage
+- Qualquer teste de upload de material em desenvolvimento poderia sobrescrever materiais de produção
 
 ## 🔍 INVESTIGAÇÃO NECESSÁRIA
 

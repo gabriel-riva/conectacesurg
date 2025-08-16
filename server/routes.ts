@@ -840,31 +840,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // ROTA ESPECÍFICA: Servir materiais do Object Storage (sem verificação de ACL)
-  // Esta rota serve especificamente os materiais que estão em /objects/materials/
-  // IMPORTANTE: Materiais são considerados públicos para usuários autenticados
-  app.get("/objects/materials/:fileId", async (req, res) => {
+  // ROTA ESPECÍFICA: Servir materiais do Object Storage com separação por ambiente
+  app.get("/objects/:env/materials/:fileId", async (req, res) => {
+    const { env, fileId } = req.params;
+    console.log(`🔍 MATERIAL DOWNLOAD: Tentando acessar material ${fileId} do ambiente ${env}`);
+    
+    // Validar ambiente
+    if (env !== 'prod' && env !== 'dev') {
+      return res.status(404).json({ error: "Ambiente não encontrado" });
+    }
+    
     try {
       const objectStorageService = new ObjectStorageService();
-      const objectPath = `/objects/materials/${req.params.fileId}`;
-      
-      console.log(`🔍 MATERIAL DOWNLOAD: Tentando acessar material ${req.params.fileId}`);
+      const objectPath = `/objects/${env}/materials/${fileId}`;
       
       const objectFile = await objectStorageService.getObjectEntityFile(objectPath);
       
-      console.log(`✅ MATERIAL DOWNLOAD: Material ${req.params.fileId} encontrado no Object Storage`);
+      console.log(`✅ MATERIAL DOWNLOAD: Material ${fileId} encontrado no Object Storage (ambiente: ${env})`);
       
       // MATERIAIS SÃO PÚBLICOS - Não verificar ACL, apenas baixar diretamente
       // Isso resolve o problema de "acesso negado" para usuários comuns
       await objectStorageService.downloadObject(objectFile, res, 3600);
       
     } catch (error) {
-      console.error(`❌ MATERIAL DOWNLOAD: Erro ao acessar material ${req.params.fileId}:`, error);
+      console.error(`❌ MATERIAL DOWNLOAD: Erro ao acessar material ${fileId} (${env}):`, error);
       if (error instanceof ObjectNotFoundError) {
         return res.status(404).json({ error: "Material não encontrado" });
       }
       return res.status(500).json({ error: "Erro interno do servidor" });
     }
+  });
+
+  // Rota legacy para materiais (sem ambiente) - redireciona para produção
+  app.get("/objects/materials/:fileId", async (req, res) => {
+    console.log(`🔄 LEGACY MATERIAL: Redirecionando material ${req.params.fileId} para ambiente de produção`);
+    res.redirect(`/objects/prod/materials/${req.params.fileId}`);
   });
 
   // Rota para servir arquivos de desafios do Object Storage com separação por ambiente
