@@ -826,8 +826,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // ROTA ESPECÍFICA: Servir materiais do Object Storage (sem autenticação)
+  // ROTA ESPECÍFICA: Servir materiais do Object Storage (sem verificação de ACL)
   // Esta rota serve especificamente os materiais que estão em /objects/materials/
+  // IMPORTANTE: Materiais são considerados públicos para usuários autenticados
   app.get("/objects/materials/:fileId", async (req, res) => {
     try {
       const objectStorageService = new ObjectStorageService();
@@ -839,8 +840,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log(`✅ MATERIAL DOWNLOAD: Material ${req.params.fileId} encontrado no Object Storage`);
       
-      // Materiais são públicos, não precisam de verificação de ACL especial
-      await objectStorageService.downloadObject(objectFile, res);
+      // MATERIAIS SÃO PÚBLICOS - Não verificar ACL, apenas baixar diretamente
+      // Isso resolve o problema de "acesso negado" para usuários comuns
+      await objectStorageService.downloadObject(objectFile, res, 3600);
       
     } catch (error) {
       console.error(`❌ MATERIAL DOWNLOAD: Erro ao acessar material ${req.params.fileId}:`, error);

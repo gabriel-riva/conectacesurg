@@ -265,10 +265,10 @@ export class ObjectStorageService {
       }
     });
 
-    // Set ACL policy for the file
+    // Set ACL policy for the file (materiais são públicos)
     const aclPolicy: ObjectAclPolicy = {
       owner: userId,
-      visibility: "private", // Materials are private by default
+      visibility: "public", // Materials are public for all authenticated users
     };
 
     await setObjectAclPolicy(file, aclPolicy);

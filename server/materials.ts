@@ -446,17 +446,9 @@ router.get("/files/:id/download", isAuthenticated, async (req: Request, res: Res
       try {
         const objectFile = await objectStorageService.getObjectEntityFile(file.fileUrl);
         
-        // Verificar se o usuário tem acesso ao objeto
-        const canAccess = await objectStorageService.canAccessObjectEntity({
-          objectFile,
-          userId: userId?.toString(),
-          requestedPermission: ObjectPermission.READ,
-        });
-        
-        if (!canAccess) {
-          console.log(`❌ Acesso negado ao Object Storage - User: ${(req.user as any)?.name}, Arquivo: ${file.name}`);
-          return res.status(403).json({ error: "Acesso negado" });
-        }
+        // MATERIAIS SÃO PÚBLICOS - Não verificar ACL para usuários autenticados
+        // Isso resolve o problema de "acesso negado" para usuários comuns
+        console.log(`✅ Material público - Acesso liberado para usuário: ${(req.user as any)?.name} (${(req.user as any)?.role})`);
         
         // Incrementar contador de downloads
         await dbStorage.incrementDownloadCount(fileId);
