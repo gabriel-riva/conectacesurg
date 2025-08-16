@@ -22,14 +22,12 @@ async function migrateProdToDev() {
     
     console.log('📊 Verificando dados atuais...');
     
-    // 1. Verificar dados de produção (schema public)
-    const prodUsers = await sql`SELECT COUNT(*) as count FROM public.users`;
-    const prodProfiles = await sql`SELECT COUNT(*) as count FROM public.user_profiles`;
-    const prodMaterials = await sql`SELECT COUNT(*) as count FROM public.material_files`;
+    // 1. Verificar dados de produção (schema production)
+    const prodUsers = await sql`SELECT COUNT(*) as count FROM production.users`;
+    const prodMaterials = await sql`SELECT COUNT(*) as count FROM production.material_files`;
     
-    console.log(`📈 PRODUÇÃO (public schema):`);
+    console.log(`📈 PRODUÇÃO (production schema):`);
     console.log(`   - Usuários: ${prodUsers[0].count}`);
-    console.log(`   - Perfis: ${prodProfiles[0].count}`);
     console.log(`   - Materiais: ${prodMaterials[0].count}`);
     
     // 2. Criar/verificar schema de desenvolvimento
@@ -72,7 +70,7 @@ async function migrateProdToDev() {
     const tables = await sql`
       SELECT table_name 
       FROM information_schema.tables 
-      WHERE table_schema = 'public' 
+      WHERE table_schema = 'production' 
       AND table_type = 'BASE TABLE'
       AND table_name NOT LIKE '%_backup_%'
       ORDER BY table_name
@@ -98,14 +96,14 @@ async function migrateProdToDev() {
         console.log(`📋 Migrando tabela: ${tableName}...`);
         
         // Criar tabela com estrutura e dados da produção
-        await sql`CREATE TABLE development.${sql(tableName)} AS SELECT * FROM public.${sql(tableName)}`;
+        await sql`CREATE TABLE development.${sql(tableName)} AS SELECT * FROM production.${sql(tableName)}`;
         
         // Copiar constraints e indexes (tentativa)
         try {
           const constraints = await sql`
             SELECT conname, pg_get_constraintdef(oid) as condef
             FROM pg_constraint 
-            WHERE conrelid = ('public.' || '${tableName}')::regclass
+            WHERE conrelid = ('production.' || '${tableName}')::regclass
           `;
           
           for (const constraint of constraints) {
@@ -132,23 +130,31 @@ async function migrateProdToDev() {
     // 5. Atualizar caminhos dos arquivos para ambiente de desenvolvimento
     console.log('🔄 Atualizando caminhos dos arquivos para ambiente de desenvolvimento...');
     
-    // Atualizar fotos de perfil
-    const photoUpdates = await sql`
-      UPDATE development.user_profiles 
-      SET image_url = REPLACE(image_url, '/objects/prod/', '/objects/dev/')
-      WHERE image_url LIKE '/objects/prod/profile/photos/%'
-      RETURNING id, image_url
-    `;
-    console.log(`   📸 Fotos de perfil atualizadas: ${photoUpdates.length}`);
+    // Atualizar fotos de perfil (se tabela existir)
+    try {
+      const photoUpdates = await sql`
+        UPDATE development.users 
+        SET image_url = REPLACE(image_url, '/objects/prod/', '/objects/dev/')
+        WHERE image_url LIKE '/objects/prod/profile/photos/%'
+        RETURNING id, image_url
+      `;
+      console.log(`   📸 Fotos de perfil atualizadas: ${photoUpdates.length}`);
+    } catch (error) {
+      console.log(`   📸 Fotos de perfil: tabela ou coluna não encontrada`);
+    }
     
-    // Atualizar documentos de perfil
-    const docUpdates = await sql`
-      UPDATE development.user_profiles 
-      SET document_url = REPLACE(document_url, '/objects/prod/', '/objects/dev/')
-      WHERE document_url LIKE '/objects/prod/profile/documents/%'
-      RETURNING id, document_url
-    `;
-    console.log(`   📄 Documentos de perfil atualizados: ${docUpdates.length}`);
+    // Atualizar documentos de perfil (se tabela existir)
+    try {
+      const docUpdates = await sql`
+        UPDATE development.users 
+        SET document_url = REPLACE(document_url, '/objects/prod/', '/objects/dev/')
+        WHERE document_url LIKE '/objects/prod/profile/documents/%'
+        RETURNING id, document_url
+      `;
+      console.log(`   📄 Documentos de perfil atualizados: ${docUpdates.length}`);
+    } catch (error) {
+      console.log(`   📄 Documentos de perfil: tabela ou coluna não encontrada`);
+    }
     
     // Atualizar materiais
     const materialUpdates = await sql`
@@ -160,21 +166,29 @@ async function migrateProdToDev() {
     console.log(`   📚 Materiais atualizados: ${materialUpdates.length}`);
     
     // Atualizar outros caminhos legacy (sem ambiente)
-    const legacyPhotoUpdates = await sql`
-      UPDATE development.user_profiles 
-      SET image_url = REPLACE(image_url, '/objects/profile/', '/objects/dev/profile/')
-      WHERE image_url LIKE '/objects/profile/photos/%'
-      RETURNING id, image_url
-    `;
-    console.log(`   📸 Fotos legacy atualizadas: ${legacyPhotoUpdates.length}`);
+    try {
+      const legacyPhotoUpdates = await sql`
+        UPDATE development.users 
+        SET image_url = REPLACE(image_url, '/objects/profile/', '/objects/dev/profile/')
+        WHERE image_url LIKE '/objects/profile/photos/%'
+        RETURNING id, image_url
+      `;
+      console.log(`   📸 Fotos legacy atualizadas: ${legacyPhotoUpdates.length}`);
+    } catch (error) {
+      console.log(`   📸 Fotos legacy: não encontradas`);
+    }
     
-    const legacyDocUpdates = await sql`
-      UPDATE development.user_profiles 
-      SET document_url = REPLACE(document_url, '/objects/profile/', '/objects/dev/profile/')
-      WHERE document_url LIKE '/objects/profile/documents/%'
-      RETURNING id, document_url
-    `;
-    console.log(`   📄 Documentos legacy atualizados: ${legacyDocUpdates.length}`);
+    try {
+      const legacyDocUpdates = await sql`
+        UPDATE development.users 
+        SET document_url = REPLACE(document_url, '/objects/profile/', '/objects/dev/profile/')
+        WHERE document_url LIKE '/objects/profile/documents/%'
+        RETURNING id, document_url
+      `;
+      console.log(`   📄 Documentos legacy atualizados: ${legacyDocUpdates.length}`);
+    } catch (error) {
+      console.log(`   📄 Documentos legacy: não encontrados`);
+    }
     
     const legacyMaterialUpdates = await sql`
       UPDATE development.material_files 

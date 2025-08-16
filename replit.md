@@ -50,6 +50,15 @@ Preferred communication style: Simple, everyday language.
 - **Development/Production Separation**: Fully implemented with schema-based separation (`development` and `production` schemas).
 - **Automatic Environment Detection**: Based on `NODE_ENV` variable, utilizing `search_path` for complete environment isolation.
 - **Migration Process**: Leverages `npm run db:push` for schema synchronization.
+- **Data Synchronization**: Process established for copying production data to development with automatic path updates for environment isolation.
+- **Last Migration**: August 16, 2025 - Production schema copied to development with file paths updated from `/objects/materials/` to `/objects/dev/materials/`.
+
+### File Upload Protection System (August 2025)
+- **Environment-Based Object Storage**: All file uploads now use environment-specific paths to prevent conflicts between development and production.
+- **Protected Systems**: Profile photos, profile documents, gamification challenges, and materials page uploads.
+- **Path Structure**: Production uses `/objects/prod/`, Development uses `/objects/dev/`.
+- **Legacy Compatibility**: Automatic redirection for files uploaded before environment separation.
+- **Isolation Guarantee**: Development testing cannot overwrite production files.
 
 ## External Dependencies
 
