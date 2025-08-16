@@ -894,8 +894,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       try {
         const objectFile = await objectStorageService.getObjectEntityFile(objectPath);
         
-        // Verificar permissões de acesso
-        const userId = (req.user as any)?.id?.toString();
+        // Verificar se o usuário está autenticado
+        const user = req.user as any;
+        if (!user) {
+          console.log(`🚫 Acesso negado ao arquivo ${objectPath} - usuário não autenticado`);
+          return res.status(403).json({ error: "Acesso negado" });
+        }
+        
+        // Admins e superadmins sempre têm acesso aos arquivos de desafios
+        // Para poder revisar as submissões dos usuários
+        const isAdmin = user.role === 'admin' || user.role === 'superadmin';
+        
+        if (isAdmin) {
+          console.log(`✅ Admin ${user.email} acessando arquivo de desafio: ${objectPath}`);
+          return objectStorageService.downloadObject(objectFile, res);
+        }
+        
+        // Para usuários comuns, verificar permissões normais
+        const userId = user.id?.toString();
         const canAccess = await objectStorageService.canAccessObjectEntity({
           objectFile,
           userId: userId,
@@ -903,7 +919,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
         
         if (!canAccess) {
-          console.log(`🚫 Acesso negado ao arquivo ${objectPath} para usuário ${userId || 'anônimo'}`);
+          console.log(`🚫 Acesso negado ao arquivo ${objectPath} para usuário ${userId}`);
           return res.status(403).json({ error: "Acesso negado" });
         }
         
