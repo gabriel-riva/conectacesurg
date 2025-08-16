@@ -52,6 +52,11 @@ Preferred communication style: Simple, everyday language.
 - **Migration Process**: Leverages `npm run db:push` for schema synchronization.
 - **Data Synchronization**: Process established for copying production data to development with automatic path updates for environment isolation.
 - **Last Migration**: August 16, 2025 - Production schema copied to development with file paths updated from `/objects/materials/` to `/objects/dev/materials/`.
+- **Schema Organization**: 
+  - `production`: Current production data (85 users, all features)
+  - `development`: Testing environment with copied production data
+  - `production_legacy`: Former `public` schema renamed to avoid confusion (identical to production)
+  - `public`: Standard PostgreSQL schema (empty, available for extensions)
 
 ### File Upload Protection System (August 2025)
 - **Environment-Based Object Storage**: All file uploads now use environment-specific paths to prevent conflicts between development and production.
