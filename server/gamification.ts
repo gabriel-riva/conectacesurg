@@ -1396,6 +1396,7 @@ router.post("/challenges/:id/submit", isAuthenticated, async (req: Request, res:
         .insert(gamificationPoints)
         .values({
           userId,
+          challengeId: challengeData.id, // USAR ID DO DESAFIO
           points,
           description: `Desafio aprovado automaticamente: ${challengeData.title}`,
           type: 'automatic'
@@ -1407,6 +1408,7 @@ router.post("/challenges/:id/submit", isAuthenticated, async (req: Request, res:
         .insert(gamificationPoints)
         .values({
           userId,
+          challengeId: challengeData.id, // USAR ID DO DESAFIO
           points,
           description: `Quiz completado: ${challengeData.title}`,
           type: 'quiz'
@@ -1418,6 +1420,7 @@ router.post("/challenges/:id/submit", isAuthenticated, async (req: Request, res:
         .insert(gamificationPoints)
         .values({
           userId,
+          challengeId: challengeData.id, // USAR ID DO DESAFIO
           points,
           description: `Desafio submetido (aguardando aprovação): ${challengeData.title}`,
           type: 'provisional'
@@ -1624,15 +1627,14 @@ router.put("/submissions/:id/review-granular", isAdmin, async (req: Request, res
       .returning();
 
     // Gerenciar pontos na tabela de gamificação
-    // Remover APENAS os pontos provisórios desta submissão específica
-    // CORREÇÃO CRÍTICA: Não apagar outros pontos do usuário
-    const specificDescription = `Desafio submetido (aguardando aprovação): ${challengeData.title}`;
+    // Remover APENAS os pontos provisórios DESTA SUBMISSÃO usando challengeId
+    // MUITO MAIS SEGURO: Usar ID do desafio em vez do nome
     await db
       .delete(gamificationPoints)
       .where(and(
         eq(gamificationPoints.userId, currentSubmission.userId),
-        eq(gamificationPoints.type, 'provisional'),
-        eq(gamificationPoints.description, specificDescription)
+        eq(gamificationPoints.challengeId, currentSubmission.challengeId),
+        eq(gamificationPoints.type, 'provisional')
       ));
 
     // Adicionar pontos finais baseados na revisão granular
@@ -1641,6 +1643,7 @@ router.put("/submissions/:id/review-granular", isAdmin, async (req: Request, res
         .insert(gamificationPoints)
         .values({
           userId: currentSubmission.userId,
+          challengeId: currentSubmission.challengeId, // USAR ID DO DESAFIO
           points: totalPoints,
           description: `Desafio aprovado (${requirementReviews.filter((r: any) => r.status === 'approved').length}/${requirementReviews.length} requisitos): ${challengeData.title}`,
           type: 'challenge',
@@ -1704,14 +1707,13 @@ router.put("/submissions/:id/review", isAdmin, async (req: Request, res: Respons
         .limit(1);
 
       if (challenge.length > 0) {
-        // Remover APENAS os pontos provisórios desta submissão específica
-        const specificDescription = `Desafio submetido (aguardando aprovação): ${challenge[0].title}`;
+        // Remover APENAS os pontos provisórios desta submissão específica USANDO ID
         await db
           .delete(gamificationPoints)
           .where(and(
             eq(gamificationPoints.userId, currentSubmission.userId),
-            eq(gamificationPoints.type, 'provisional'),
-            eq(gamificationPoints.description, specificDescription)
+            eq(gamificationPoints.challengeId, currentSubmission.challengeId),
+            eq(gamificationPoints.type, 'provisional')
           ));
 
         // Adicionar entrada negativa para mostrar rejeição
@@ -1719,6 +1721,7 @@ router.put("/submissions/:id/review", isAdmin, async (req: Request, res: Respons
           .insert(gamificationPoints)
           .values({
             userId: currentSubmission.userId,
+            challengeId: currentSubmission.challengeId, // USAR ID DO DESAFIO
             points: 0,
             description: `Desafio rejeitado: ${challenge[0].title}`,
             type: 'rejected',
@@ -1864,25 +1867,13 @@ router.delete("/submissions/:id/return", isAdmin, async (req: Request, res: Resp
     
     console.log(`📋 Devolvendo submissão: Usuário ${currentSubmission.userId}, Desafio "${challengeTitle}", Status: ${currentSubmission.status}`);
 
-    // PASSO 1: Remover APENAS os pontos relacionados A ESTA SUBMISSÃO ESPECÍFICA
-    // CORREÇÃO CRÍTICA: Buscar pontos específicos desta submissão, não todos os pontos similares
-    const possibleDescriptions = [
-      `Desafio submetido (aguardando aprovação): ${challengeTitle}`,
-      `Desafio aprovado: ${challengeTitle}`,
-      `Desafio rejeitado: ${challengeTitle}`,
-      `Desafio aprovado (parcial): ${challengeTitle}`
-    ];
-    
+    // PASSO 1: Remover APENAS os pontos desta submissão específica USANDO challengeId
+    // MUITO MAIS SEGURO: Usar ID do desafio em vez de nome/descrição
     const deletedPoints = await db
       .delete(gamificationPoints)
       .where(and(
         eq(gamificationPoints.userId, currentSubmission.userId),
-        or(
-          eq(gamificationPoints.description, possibleDescriptions[0]),
-          eq(gamificationPoints.description, possibleDescriptions[1]),
-          eq(gamificationPoints.description, possibleDescriptions[2]),
-          eq(gamificationPoints.description, possibleDescriptions[3])
-        )
+        eq(gamificationPoints.challengeId, currentSubmission.challengeId)
       ))
       .returning();
     

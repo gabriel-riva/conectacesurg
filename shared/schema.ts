@@ -411,9 +411,10 @@ export const gamificationSettings = pgTable("gamification_settings", {
 export const gamificationPoints = pgTable("gamification_points", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  challengeId: integer("challenge_id").references(() => gamificationChallenges.id, { onDelete: 'cascade' }), // Referência direta ao desafio
   points: integer("points").notNull(),
   description: text("description").notNull(),
-  type: text("type").notNull().default("manual"), // 'manual', 'automatic'
+  type: text("type").notNull().default("manual"), // 'manual', 'automatic', 'provisional', 'challenge', 'rejected'
   createdBy: integer("created_by").references(() => users.id),
   createdAt: timestamp("created_at").defaultNow(),
 });
