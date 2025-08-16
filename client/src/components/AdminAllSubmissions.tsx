@@ -671,7 +671,6 @@ export const AdminAllSubmissions: React.FC = () => {
                                   </div>
                                 </DialogContent>
                               </Dialog>
-                            )}
                             
                             <Dialog>
                               <DialogTrigger asChild>
