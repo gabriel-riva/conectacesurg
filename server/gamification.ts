@@ -783,11 +783,97 @@ router.get("/challenges/:id/submission-count", isAdmin, async (req: Request, res
   }
 });
 
+// Devolver apenas submissões sem deletar desafio (admin)
+router.delete("/challenges/:id/return-submissions", isAdmin, async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const challengeId = parseInt(id);
+    
+    // Verificar se o desafio existe
+    const challenge = await db
+      .select()
+      .from(gamificationChallenges)
+      .where(eq(gamificationChallenges.id, challengeId))
+      .limit(1);
+      
+    if (challenge.length === 0) {
+      return res.status(404).json({ error: "Challenge not found" });
+    }
+    
+    // Buscar submissões existentes
+    const existingSubmissions = await db
+      .select()
+      .from(challengeSubmissions)
+      .where(eq(challengeSubmissions.challengeId, challengeId));
+    
+    if (existingSubmissions.length === 0) {
+      return res.status(400).json({ error: "No submissions found" });
+    }
+    
+    console.log(`🔄 Devolvendo ${existingSubmissions.length} submissões do desafio "${challenge[0].title}" (mantendo o desafio ativo)`);
+    
+    const { ObjectStorageService } = await import("./objectStorage.js");
+    const objectStorageService = new ObjectStorageService();
+    
+    let returnedSubmissions = 0;
+    
+    for (const submission of existingSubmissions) {
+      try {
+        // Remover pontos relacionados a este desafio para este usuário
+        await db
+          .delete(gamificationPoints)
+          .where(and(
+            eq(gamificationPoints.userId, submission.userId),
+            like(gamificationPoints.description, `%${challenge[0].title}%`)
+          ));
+        
+        // Se for submissão de arquivo, excluir arquivos do Object Storage
+        if (submission.submissionType === 'file' && submission.submissionData?.file) {
+          const fileSubmissionData = submission.submissionData.file as any;
+          
+          if (fileSubmissionData.files && Array.isArray(fileSubmissionData.files)) {
+            for (const file of fileSubmissionData.files) {
+              try {
+                const filePath = file.fileUrl;
+                const objectFile = await objectStorageService.getObjectEntityFile(filePath);
+                await objectStorageService.deleteFile(objectFile);
+              } catch (error) {
+                console.warn(`⚠️ Erro ao excluir arquivo ${file.fileUrl}:`, error);
+              }
+            }
+          }
+        }
+        
+        returnedSubmissions++;
+      } catch (error) {
+        console.error(`❌ Erro ao devolver submissão ${submission.id}:`, error);
+      }
+    }
+    
+    // Deletar todas as submissões
+    await db
+      .delete(challengeSubmissions)
+      .where(eq(challengeSubmissions.challengeId, challengeId));
+    
+    console.log(`✅ ${returnedSubmissions} submissões devolvidas. Desafio "${challenge[0].title}" continua ativo para novas submissões`);
+    
+    res.json({ 
+      success: true, 
+      returnedSubmissions,
+      challengeTitle: challenge[0].title,
+      message: `${returnedSubmissions} submissões foram devolvidas. O desafio continua ativo e os usuários podem resubmeter.`
+    });
+  } catch (error) {
+    console.error("Error returning submissions:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 // Deletar desafio com proteção (admin)
 router.delete("/challenges/:id", isAdmin, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { forceDelete, returnSubmissions } = req.body;
+    const { forceDelete } = req.body;
     const challengeId = parseInt(id);
     
     // Verificar se o desafio existe
@@ -817,11 +903,9 @@ router.delete("/challenges/:id", isAdmin, async (req: Request, res: Response) =>
       });
     }
     
-    let returnedSubmissions = 0;
-    
-    // Se solicitado, devolver todas as submissões antes de deletar o desafio
-    if (returnSubmissions && existingSubmissions.length > 0) {
-      console.log(`🔄 Devolvendo ${existingSubmissions.length} submissões do desafio "${challenge[0].title}" antes da exclusão`);
+    // Se há submissões e foi forçada a exclusão, deletar tudo
+    if (existingSubmissions.length > 0 && forceDelete) {
+      console.log(`🗑️ Deletando desafio "${challenge[0].title}" com ${existingSubmissions.length} submissões (exclusão completa)`);
       
       const { ObjectStorageService } = await import("./objectStorage.js");
       const objectStorageService = new ObjectStorageService();
@@ -852,10 +936,8 @@ router.delete("/challenges/:id", isAdmin, async (req: Request, res: Response) =>
               }
             }
           }
-          
-          returnedSubmissions++;
         } catch (error) {
-          console.error(`❌ Erro ao devolver submissão ${submission.id}:`, error);
+          console.error(`❌ Erro ao limpar submissão ${submission.id}:`, error);
         }
       }
       
@@ -876,14 +958,11 @@ router.delete("/challenges/:id", isAdmin, async (req: Request, res: Response) =>
       .where(eq(gamificationChallenges.id, challengeId))
       .returning();
     
-    console.log(`✅ Desafio "${challenge[0].title}" deletado com sucesso`);
-    if (returnedSubmissions > 0) {
-      console.log(`📤 ${returnedSubmissions} submissões foram devolvidas automaticamente`);
-    }
+    console.log(`✅ Desafio "${challenge[0].title}" deletado completamente`);
     
     res.json({ 
       success: true, 
-      returnedSubmissions,
+      deletedSubmissions: existingSubmissions.length,
       challengeTitle: challenge[0].title 
     });
   } catch (error) {

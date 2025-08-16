@@ -295,11 +295,11 @@ export default function AdminGamificationPage() {
   });
 
   const deleteChallengeMutation = useMutation({
-    mutationFn: async ({ id, forceDelete, returnSubmissions }: { id: number; forceDelete?: boolean; returnSubmissions?: boolean }) => {
+    mutationFn: async ({ id, forceDelete }: { id: number; forceDelete?: boolean }) => {
       const response = await fetch(`/api/gamification/challenges/${id}`, {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ forceDelete, returnSubmissions }),
+        body: JSON.stringify({ forceDelete }),
       });
       
       const data = await response.json();
@@ -322,9 +322,9 @@ export default function AdminGamificationPage() {
       return data;
     },
     onSuccess: (data) => {
-      let description = "O desafio foi deletado com sucesso.";
-      if (data.returnedSubmissions > 0) {
-        description += ` ${data.returnedSubmissions} submissões foram devolvidas automaticamente.`;
+      let description = "O desafio foi deletado completamente.";
+      if (data.deletedSubmissions > 0) {
+        description += ` ${data.deletedSubmissions} submissões foram removidas junto.`;
       }
       
       toast({
@@ -332,6 +332,7 @@ export default function AdminGamificationPage() {
         description,
       });
       queryClient.invalidateQueries({ queryKey: ["/api/gamification/challenges"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/gamification/all-submissions"] });
     },
     onError: (error: any) => {
       if (error.type === "has_submissions") {
@@ -347,17 +348,53 @@ export default function AdminGamificationPage() {
     },
   });
 
+  const returnSubmissionsMutation = useMutation({
+    mutationFn: async (challengeId: number) => {
+      const response = await fetch(`/api/gamification/challenges/${challengeId}/return-submissions`, {
+        method: "DELETE",
+      });
+      
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || "Falha ao devolver submissões");
+      }
+      
+      return response.json();
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "Submissões devolvidas",
+        description: data.message || "Submissões devolvidas com sucesso! Usuários podem resubmeter.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/gamification/challenges"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/gamification/all-submissions"] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Erro",
+        description: error.message || "Falha ao devolver submissões.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleDeleteChallenge = (challengeId: number) => {
     deleteChallengeMutation.mutate({ id: challengeId });
   };
 
-  const handleConfirmDelete = (returnSubmissions: boolean) => {
+  const handleReturnSubmissions = () => {
+    if (!deleteConfirmation) return;
+    
+    returnSubmissionsMutation.mutate(deleteConfirmation.challengeId);
+    setDeleteConfirmation(null);
+  };
+
+  const handleForceDelete = () => {
     if (!deleteConfirmation) return;
     
     deleteChallengeMutation.mutate({ 
       id: deleteConfirmation.challengeId, 
-      forceDelete: true, 
-      returnSubmissions 
+      forceDelete: true 
     });
     
     setDeleteConfirmation(null);
@@ -1263,8 +1300,8 @@ export default function AdminGamificationPage() {
                   <div className="bg-yellow-50 p-3 rounded-lg border border-yellow-200">
                     <p className="text-sm font-medium text-yellow-800 mb-2">Escolha uma opção:</p>
                     <ul className="text-sm text-yellow-700 space-y-1">
-                      <li>• <strong>Devolver submissões:</strong> Usuários poderão reenviar suas respostas</li>
-                      <li>• <strong>Deletar tudo:</strong> Submissões serão perdidas permanentemente</li>
+                      <li>• <strong>Devolver apenas submissões:</strong> Desafio continua ativo, usuários podem resubmeter</li>
+                      <li>• <strong>Deletar desafio completo:</strong> Remove desafio e todas as submissões permanentemente</li>
                     </ul>
                   </div>
                 </>
@@ -1273,23 +1310,23 @@ export default function AdminGamificationPage() {
           </DialogHeader>
           <div className="flex flex-col gap-2 pt-4">
             <Button
-              onClick={() => handleConfirmDelete(true)}
-              disabled={deleteChallengeMutation.isPending}
+              onClick={handleReturnSubmissions}
+              disabled={returnSubmissionsMutation.isPending}
               className="bg-blue-600 hover:bg-blue-700"
             >
-              📤 Devolver submissões e deletar
+              📤 Devolver submissões (manter desafio)
             </Button>
             <Button
-              onClick={() => handleConfirmDelete(false)}
+              onClick={handleForceDelete}
               disabled={deleteChallengeMutation.isPending}
               variant="destructive"
             >
-              🗑️ Deletar tudo permanentemente
+              🗑️ Deletar desafio completamente
             </Button>
             <Button
               onClick={() => setDeleteConfirmation(null)}
               variant="outline"
-              disabled={deleteChallengeMutation.isPending}
+              disabled={deleteChallengeMutation.isPending || returnSubmissionsMutation.isPending}
             >
               Cancelar
             </Button>
