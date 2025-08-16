@@ -620,8 +620,7 @@ export const AdminAllSubmissions: React.FC = () => {
                             )}
                             
                             {/* Botão de devolver submissão - disponível para todos os tipos */}
-                            {(
-                              <Dialog>
+                            <Dialog>
                                 <DialogTrigger asChild>
                                   <Button
                                     variant="ghost"
