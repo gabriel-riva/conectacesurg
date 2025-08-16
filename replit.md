@@ -1,7 +1,7 @@
 # Portal Conecta CESURG
 
 ## Overview
-Portal Conecta CESURG is an institutional web platform for CESURG members, offering user management, community interaction, calendar, news publishing, and AI functionalities. It aims to be a comprehensive hub for the CESURG community.
+Portal Conecta CESURG is an institutional web platform for CESURG members, offering user management, community interaction, calendar, news publishing, and AI functionalities. It aims to be a comprehensive hub for the CESURG community, serving as a central hub for information and collaboration.
 
 ## User Preferences
 Preferred communication style: Simple, everyday language.
@@ -35,128 +35,33 @@ Preferred communication style: Simple, everyday language.
 - **Admin Page Layout**: Strict pattern for all admin pages requiring `<Header />` and `<AdminSidebar />` for consistent navigation and UI.
 - **Feature Management System**: Centralized system allowing administrators to enable/disable features via a dedicated admin interface (`/admin/feature-settings`). Features are guarded by `FeatureGuard` component and can display custom disabled messages.
 - **Database Schema**: Comprehensive schema covering users, groups, posts, comments, calendar events, news, AI components (agents, prompts, conversations), utility links, ideas, and announcements.
-- **File Management**: Centralized upload handling, static asset serving, and basic media processing.
+- **File Management**: Centralized upload handling, static asset serving, and secure object storage integration for all file types (materials, gamification challenges, user profiles).
 - **AI Integration**: Configurable AI agents, conversation management, and reusable prompt system with admin controls.
 - **News System**: Automated import from CESURG website, external link integration, and simplified news management.
 - **Announcements System**: Streamlined system for notices with essential fields, "read more" functionality, and "see all" dialog.
-- **Gamification System**: Ranking, challenge evaluation (quiz, text/file submissions, QR code), category-based challenge visibility, granular file challenge review system with individual requirement scoring, admin-controlled challenge display ordering with drag-and-drop interface.
+- **Gamification System**: Ranking, challenge evaluation (quiz, text/file submissions, QR code), category-based challenge visibility, granular file challenge review system with individual requirement scoring, admin-controlled challenge display ordering with drag-and-drop interface, and a unified gamification information card for user stats.
 - **Feedback System**: Comprehensive feedback management with sliding panel interface, real user names, admin deletion, screenshot capture, and image attachments.
 - **Admin Table UX**: Fixed-header scrollable tables for improved navigation in admin lists.
 - **Ferramentas (Tools) System**: Database-integrated tools system with category-based permission and dynamic link mapping.
-- **Survey/Polls System**: Comprehensive survey functionality with multiple question types, user category targeting, and an adaptive widget display (floating icon on desktop, full-screen modal on mobile).
+- **Survey/Polls System**: Comprehensive survey functionality with multiple question types, user category targeting, and an adaptive widget display.
 - **Trail System**: Content pages with commenting, replies, likes, and category-based visibility.
-- **Homepage Gamification Carousel**: Horizontal scrollable display of active, uncompleted challenges on the homepage with navigation arrows, fixed height (280px) to match other dashboard cards, optimized card sizing (260px width, 16px image height) for better content visibility, and direct links to individual challenge details via URL parameters.
-- **Granular File Review System**: Advanced review system for file challenges with individual requirement evaluation, automatic scoring calculation, and comprehensive administrative interface for granular approval/rejection.
-- **Unified Gamification Information Card**: Consolidated sidebar component that combines cycle information, challenge statistics, and points history into a single "Informações" card with three subsections: "Ciclo Atual" (current cycle with progress), "Meus desafios" (challenge completion stats for both cycle and annual), and "Meus pontos" (points total and history).
 
-## Database Environment Separation
-- **Development/Production Separation**: Fully implemented with schema-based separation
-- **Schema Structure**: 
-  - Development: `development` schema (NODE_ENV=development)
-  - Production: `production` schema (NODE_ENV=production)
-  - Public: `public` schema (legacy, not actively used)
-- **Automatic Environment Detection**: Based on NODE_ENV variable
-- **Database Configuration**: Uses search_path to isolate environments completely
-- **Migration Process**: 
-  - Development changes: Apply via `npm run db:push` in development
-  - Production deployment: Apply via `NODE_ENV=production npm run db:push` or manual SQL for complex migrations
-  - Manual sync: Use `psql $DATABASE_URL -c "SET search_path TO production; [SQL COMMAND]"` when needed
-
-## Recent Changes
-
-### August 16, 2025 - Complete Production File System Resolution
-- **Material Access Fix**: Resolved "access denied" errors for regular users viewing materials in production by removing ACL checks for public materials
-- **Upload System Stabilization**: Fixed 503 errors in file uploads by correcting TypeScript types and adding credentials to fetch requests
-- **Frontend Upload Fix**: Added `credentials: 'include'` to challenge file uploads to properly send authentication cookies
-- **Route Enhancement**: Added specific `/objects/materials/:fileId` route for direct material access bypassing ACL restrictions
-- **User Parity**: Both admin and regular users now have identical access to material viewing and downloading in production
-- **Challenge Uploads**: File upload system for gamification challenges working correctly for all user types
-- **Production Verified**: All file upload/download/viewing systems tested and confirmed working in production environment
-
-### August 2025 - Gamification UI Improvements
-- **Unified Information Card**: Replaced separate "Ciclo Atual" and "Meus pontos" cards with a single comprehensive "Informações" card that includes:
-  - Current cycle information with period dates and progress bar
-  - Challenge statistics showing completed vs open challenges for both cycle and annual categories
-  - Points total and recent transaction history
-- **Component Architecture**: Created `GamificationInfoCard.tsx` component that fetches user submission data to calculate real-time challenge completion statistics
-- **Data Integration**: Added `/api/gamification/my-submissions` endpoint integration to track user challenge progress
-- **Type Safety**: Proper TypeScript interfaces for challenge submissions and gamification data
-
-### August 15, 2025 - File System Security & Download Fixes
-- **File Upload Security**: Comprehensive protection system is active including automated daily backups, real-time integrity monitoring, orphaned file detection, and rollback mechanisms to prevent data loss
-- **Download Functionality**: Fixed file size display and added download buttons directly in the granular submission review modal for easier file access by administrators
-- **File Size Display**: Corrected "NaN" display issues across all admin components (AdminAllSubmissions, AdminSubmissionReview, GranularSubmissionReview) with proper fileSize validation
-- **Admin UX Improvements**: Enhanced file management interface with visible file sizes and direct download capabilities in review workflows
-
-### August 15, 2025 - Enhanced Challenge Status Display
-- **Three-Category Challenge Statistics**: Updated challenge statistics to show three distinct states:
-  - "Concluídos" (green) - completed/approved submissions
-  - "Em revisão" (yellow) - pending submissions awaiting review
-  - "Abertos" (blue) - challenges without submissions
-- **Improved Grid Layout**: Changed from 2x2 to 3x2 grid layout in GamificationInfoCard to accommodate three categories
-- **Visual Status Indicators**: Enhanced challenge cards with color-coded status badges and consistent terminology
-- **Transparent Points Display**: All submissions now show earned points regardless of value (including 0 points)
-- **Terminology Standardization**: Changed "Pendente" to "Em revisão" across the interface for better user understanding
-- **Challenge Display Ordering System**: Comprehensive admin-controlled ordering system allowing administrators to define custom display order for challenges via drag-and-drop interface in Admin > Gamificação > Desafios. Features include:
-  - Drag-and-drop reordering with visual feedback using @dnd-kit
-  - Automatic duplicate order prevention and sequential numbering
-  - Database field `displayOrder` with backend API `/api/gamification/challenges/reorder`
-  - Public pages automatically display challenges sorted by admin-defined order
-  - AdminChallengeReorder component with save/cancel functionality
-- **File Challenge Points Fix**: Fixed critical gamification bug where file upload challenges were awarding full points instead of proportional points based on submitted requirements. Now correctly calculates points based on individual file requirement submissions, supporting both specific requirement points and proportional distribution.
-
-### August 15, 2025 - Gamification Points Calculation Fix
-- **Proportional Points System**: Fixed file upload challenges to calculate points based on completed requirements rather than awarding full challenge points
-- **Requirement-Based Scoring**: File challenges now properly evaluate individual file requirements and award points accordingly
-- **Backward Compatibility**: System supports both new requirement-specific points and legacy proportional calculations
-- **Accurate User Experience**: Users now receive appropriate partial credit for incomplete submissions in file upload challenges
-
-### August 16, 2025 - Complete File System Migration to Object Storage (ALL SYSTEMS)
-- **Critical Production Issue Resolved**: Fixed all file upload systems from local storage vulnerability to secure Google Cloud Storage
-- **Three Vulnerabilities Discovered and Fixed**:
-  - Materials system: Was using mixed local/Object Storage (inconsistent)
-  - Gamification challenges: Was using mixed local/Object Storage (inconsistent) 
-  - **User profile documents/photos: Was 100% local storage (completely vulnerable)**
-- **Complete Cloud Migration**: ALL file upload systems now use Object Storage exclusively with zero local fallback
-- **Eliminated System Confusion**: Removed mixed storage approach that caused production instability and developer confusion
-- **Profile System Discovery**: Found user profile photo and document uploads were entirely vulnerable to the disappearing files issue
-- **ACL Security Implementation**: Proper access control for different file types:
-  - Profile photos: Public visibility (other users can see)
-  - Profile documents: Private with owner-only access
-  - Challenge files: Protected with owner-based access control
-- **New Routes Added**:
-  - `/objects/profile/photos/:fileId` - Serve profile photos from Object Storage
-  - `/objects/profile/documents/:fileId` - Serve profile documents with ACL security
-- **Key Migrations Completed**:
-  - `server/profile.ts`: Complete migration from local disk storage to Object Storage
-  - `server/upload.ts`: Removed fallback to force Object Storage consistency
-  - `server/routes.ts`: Added profile file serving routes
-- **Backward Compatibility Maintained**: Existing files (1 profile photo, 10 challenge files found) continue working
-- **Production Guarantee**: ZERO files will ever disappear in production again - all new uploads permanent in Google Cloud Storage
-
-### Critical Debugging Lessons (August 2025)
-- **Multiple Schema Issue**: PostgreSQL database contains 3 schemas (public, development, production)
-- **Schema Verification**: Always verify which schema the application is using with `SELECT current_schema()`
-- **Authentication Cache Bug**: React Query can cache old data when API returns 403 Forbidden, creating "phantom" submissions that don't exist in current database
-- **Quiz Status Bug**: Quiz submissions were incorrectly staying as "pending" instead of auto-completing to "completed" status
-- **Data Synchronization**: Successfully implemented production-to-development data copying with proper handling of NULL display_order fields using COALESCE
-- **Admin Page Fix**: Resolved issue where only 1 challenge appeared in admin page while 2 showed on public page - was due to inactive challenge status
-- **Debugging Process**: When submissions show in UI but not in database queries, check:
-  1. User authentication status (`/api/auth/status`)
-  2. Which database schema is active
-  3. React Query cache vs real API responses
-  4. Server logs to confirm API calls are reaching endpoints
+### Database Environment Separation
+- **Development/Production Separation**: Fully implemented with schema-based separation (`development` and `production` schemas).
+- **Automatic Environment Detection**: Based on `NODE_ENV` variable, utilizing `search_path` for complete environment isolation.
+- **Migration Process**: Leverages `npm run db:push` for schema synchronization.
 
 ## External Dependencies
 
 ### Authentication
 - **Google OAuth 2.0**: User authentication.
-  - Required Variables: `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`
 
 ### Database
 - **PostgreSQL**: Primary data storage.
 - **Neon Database**: Serverless PostgreSQL hosting.
-  - Required Variables: `DATABASE_URL`
+
+### File Storage
+- **Google Cloud Storage**: Primary object storage for all uploaded files (materials, challenge submissions, profile photos/documents).
 
 ### Frontend Libraries (Key)
 - **React Ecosystem**
