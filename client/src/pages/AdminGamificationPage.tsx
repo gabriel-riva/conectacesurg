@@ -74,6 +74,12 @@ export default function AdminGamificationPage() {
   const [evaluationType, setEvaluationType] = useState<'none' | 'quiz' | 'text' | 'file' | 'qrcode'>('none');
   const [evaluationConfig, setEvaluationConfig] = useState<any>({});
   const [isReorderDialogOpen, setIsReorderDialogOpen] = useState(false);
+  const [deleteConfirmation, setDeleteConfirmation] = useState<{
+    challengeId: number;
+    challengeTitle: string;
+    submissionCount: number;
+    message: string;
+  } | null>(null);
 
   // Queries
   const { data: settings, isLoading: settingsLoading } = useQuery({
@@ -289,32 +295,73 @@ export default function AdminGamificationPage() {
   });
 
   const deleteChallengeMutation = useMutation({
-    mutationFn: async (id: number) => {
+    mutationFn: async ({ id, forceDelete, returnSubmissions }: { id: number; forceDelete?: boolean; returnSubmissions?: boolean }) => {
       const response = await fetch(`/api/gamification/challenges/${id}`, {
         method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ forceDelete, returnSubmissions }),
       });
       
+      const data = await response.json();
+      
       if (!response.ok) {
-        throw new Error("Falha ao deletar desafio");
+        if (response.status === 400 && data.error === "Challenge has submissions") {
+          throw { 
+            type: "has_submissions", 
+            data: {
+              submissionCount: data.submissionCount,
+              challengeTitle: data.challengeTitle,
+              message: data.message,
+              challengeId: id
+            }
+          };
+        }
+        throw new Error(data.error || "Falha ao deletar desafio");
       }
       
-      return response.json();
+      return data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      let description = "O desafio foi deletado com sucesso.";
+      if (data.returnedSubmissions > 0) {
+        description += ` ${data.returnedSubmissions} submissões foram devolvidas automaticamente.`;
+      }
+      
       toast({
         title: "Desafio deletado",
-        description: "O desafio foi deletado com sucesso.",
+        description,
       });
       queryClient.invalidateQueries({ queryKey: ["/api/gamification/challenges"] });
     },
-    onError: () => {
+    onError: (error: any) => {
+      if (error.type === "has_submissions") {
+        setDeleteConfirmation(error.data);
+        return;
+      }
+      
       toast({
         title: "Erro",
-        description: "Falha ao deletar desafio.",
+        description: error.message || "Falha ao deletar desafio.",
         variant: "destructive",
       });
     },
   });
+
+  const handleDeleteChallenge = (challengeId: number) => {
+    deleteChallengeMutation.mutate({ id: challengeId });
+  };
+
+  const handleConfirmDelete = (returnSubmissions: boolean) => {
+    if (!deleteConfirmation) return;
+    
+    deleteChallengeMutation.mutate({ 
+      id: deleteConfirmation.challengeId, 
+      forceDelete: true, 
+      returnSubmissions 
+    });
+    
+    setDeleteConfirmation(null);
+  };
 
   // Forms
   const addPointsForm = useForm<AddPointsForm>({
@@ -417,9 +464,7 @@ export default function AdminGamificationPage() {
   };
 
   const onDeleteChallenge = (id: number) => {
-    if (confirm("Tem certeza que deseja deletar este desafio?")) {
-      deleteChallengeMutation.mutate(id);
-    }
+    handleDeleteChallenge(id);
   };
 
   const openCreateChallengeDialog = () => {
@@ -1195,6 +1240,60 @@ export default function AdminGamificationPage() {
               onClose={() => setIsReorderDialogOpen(false)}
             />
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de Confirmação de Exclusão com Submissões */}
+      <Dialog open={!!deleteConfirmation} onOpenChange={(open) => !open && setDeleteConfirmation(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-orange-600">⚠️ Desafio possui submissões</DialogTitle>
+            <DialogDescription className="space-y-3">
+              {deleteConfirmation && (
+                <>
+                  <p>
+                    <strong>Desafio:</strong> {deleteConfirmation.challengeTitle}
+                  </p>
+                  <p>
+                    <strong>Submissões encontradas:</strong> {deleteConfirmation.submissionCount}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    {deleteConfirmation.message}
+                  </p>
+                  <div className="bg-yellow-50 p-3 rounded-lg border border-yellow-200">
+                    <p className="text-sm font-medium text-yellow-800 mb-2">Escolha uma opção:</p>
+                    <ul className="text-sm text-yellow-700 space-y-1">
+                      <li>• <strong>Devolver submissões:</strong> Usuários poderão reenviar suas respostas</li>
+                      <li>• <strong>Deletar tudo:</strong> Submissões serão perdidas permanentemente</li>
+                    </ul>
+                  </div>
+                </>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col gap-2 pt-4">
+            <Button
+              onClick={() => handleConfirmDelete(true)}
+              disabled={deleteChallengeMutation.isPending}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              📤 Devolver submissões e deletar
+            </Button>
+            <Button
+              onClick={() => handleConfirmDelete(false)}
+              disabled={deleteChallengeMutation.isPending}
+              variant="destructive"
+            >
+              🗑️ Deletar tudo permanentemente
+            </Button>
+            <Button
+              onClick={() => setDeleteConfirmation(null)}
+              variant="outline"
+              disabled={deleteChallengeMutation.isPending}
+            >
+              Cancelar
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
