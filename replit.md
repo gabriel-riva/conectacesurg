@@ -66,7 +66,8 @@ Preferred communication style: Simple, everyday language.
 
 ### August 16, 2025 - Complete Production File System Resolution
 - **Material Access Fix**: Resolved "access denied" errors for regular users viewing materials in production by removing ACL checks for public materials
-- **Upload System Stabilization**: Fixed 503 errors in file uploads by correcting TypeScript types and Object Storage integration
+- **Upload System Stabilization**: Fixed 503 errors in file uploads by correcting TypeScript types and adding credentials to fetch requests
+- **Frontend Upload Fix**: Added `credentials: 'include'` to challenge file uploads to properly send authentication cookies
 - **Route Enhancement**: Added specific `/objects/materials/:fileId` route for direct material access bypassing ACL restrictions
 - **User Parity**: Both admin and regular users now have identical access to material viewing and downloading in production
 - **Challenge Uploads**: File upload system for gamification challenges working correctly for all user types

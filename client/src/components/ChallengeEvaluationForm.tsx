@@ -150,10 +150,11 @@ export const ChallengeEvaluationForm: React.FC<ChallengeEvaluationFormProps> = (
               formData.append('challengeId', challengeId.toString());
               formData.append('requirementId', requirementId);
 
-              // Enviar arquivo para o servidor
+              // Enviar arquivo para o servidor com credenciais
               const response = await fetch('/api/upload', {
                 method: 'POST',
-                body: formData
+                body: formData,
+                credentials: 'include' // Incluir cookies de sessão
               });
 
               if (!response.ok) {

@@ -162,11 +162,11 @@ export function GamificationChallengeDetailCard({ challenge, onBackClick }: Gami
           </div>
 
           {/* Informações do criador */}
-          {challenge.creatorName && (
+          {challenge.createdAt && (
             <div className="pt-4 border-t">
               <div className="flex items-center space-x-2 text-sm text-gray-600">
                 <User className="h-4 w-4" />
-                <span>Criado por {challenge.creatorName}</span>
+                <span>Criado pelo Sistema</span>
                 <span>•</span>
                 <span>{format(new Date(challenge.createdAt), "dd/MM/yyyy", { locale: ptBR })}</span>
               </div>
@@ -203,7 +203,7 @@ export function GamificationChallengeDetailCard({ challenge, onBackClick }: Gami
             {isActive ? (
               <ChallengeEvaluationForm
                 challengeId={challenge.id}
-                evaluationType={challenge.evaluationType}
+                evaluationType={challenge.evaluationType as 'quiz' | 'text' | 'file' | 'qrcode'}
                 evaluationConfig={challenge.evaluationConfig || {}}
                 onSubmit={submitChallengeMutation.mutate}
                 isLoading={submitChallengeMutation.isPending}
