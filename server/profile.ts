@@ -260,7 +260,7 @@ router.post('/documents', isAuthenticated, upload.array('documents', 5), async (
     ];
     
     // Atualizar documentos no banco de dados
-    const updatedUser = await storage.updateUser(userId, { documents });
+    const updatedUser = await storage.updateUser(userId, { documents } as any);
 
     console.log(`✅ UPLOAD DOCUMENTOS PERFIL: ${files.length} documentos salvos no Object Storage`);
     
@@ -302,7 +302,7 @@ router.delete('/documents/:index', isAuthenticated, async (req: Request, res: Re
     const documents = user.documents.filter((_, i) => i !== index);
     
     // Atualizar documentos no banco de dados
-    const updatedUser = await storage.updateUser(userId, { documents });
+    const updatedUser = await storage.updateUser(userId, { documents } as any);
     
     // Tentar excluir o arquivo físico (ignorando erros)
     try {

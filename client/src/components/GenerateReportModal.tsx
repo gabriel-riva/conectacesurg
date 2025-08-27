@@ -69,7 +69,7 @@ export function GenerateReportModal({ isOpen, onClose }: GenerateReportModalProp
           return {
             ...user,
             categories,
-            documents: documentsResponse.documents || []
+            documents: (documentsResponse as any)?.documents || []
           };
         })
       );
@@ -84,7 +84,6 @@ export function GenerateReportModal({ isOpen, onClose }: GenerateReportModalProp
         'Cidade': user.city || '',
         'Estado': user.state || '',
         'CEP': user.zipCode || '',
-        'Data de Nascimento': user.birthDate ? new Date(user.birthDate).toLocaleDateString('pt-BR') : '',
         'Data de Ingresso na CESURG': user.joinDate ? new Date(user.joinDate).toLocaleDateString('pt-BR') : '',
         'Cadastrado no Portal em': user.createdAt ? new Date(user.createdAt).toLocaleDateString('pt-BR') : '',
         'Categorias': Array.isArray(user.categories) ? user.categories.map((cat: any) => cat.name).join('; ') : '',
@@ -138,7 +137,6 @@ export function GenerateReportModal({ isOpen, onClose }: GenerateReportModalProp
         { wch: 15 }, // Cidade
         { wch: 12 }, // Estado
         { wch: 12 }, // CEP
-        { wch: 15 }, // Data Nascimento
         { wch: 20 }, // Data Ingresso
         { wch: 20 }, // Cadastrado em
         { wch: 25 }, // Categorias

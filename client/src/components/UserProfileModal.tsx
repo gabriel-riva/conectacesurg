@@ -44,6 +44,7 @@ interface UserProfile {
   zipCode?: string;
   phoneNumbers?: string[];
   secondaryEmail?: string;
+  biografia?: string;
   emergencyContact?: {
     name: string;
     phone: string;
@@ -204,6 +205,23 @@ export function UserProfileModal({ isOpen, onClose, userId, userName }: UserProf
                           </div>
                         )}
                       </div>
+                    </div>
+
+                    <Separator />
+
+                    {/* Biografia */}
+                    <div>
+                      <h4 className="font-semibold mb-3 flex items-center gap-2">
+                        <FileText className="w-4 h-4" />
+                        Biografia
+                      </h4>
+                      {profile.biografia ? (
+                        <div className="bg-gray-50 p-3 rounded-md">
+                          <p className="text-sm text-gray-700 whitespace-pre-wrap">{profile.biografia}</p>
+                        </div>
+                      ) : (
+                        <p className="text-sm text-gray-500">Nenhuma biografia cadastrada</p>
+                      )}
                     </div>
 
                     <Separator />
