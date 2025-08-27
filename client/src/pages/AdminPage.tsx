@@ -360,14 +360,14 @@ export default function AdminPage({ activeTab: initialActiveTab }: { activeTab?:
       <div className="flex flex-1 bg-gray-100">
         <AdminSidebar />
         
-        <div className="flex-1 p-8 max-w-full overflow-hidden">
-          <div className="flex justify-between items-center mb-6 flex-wrap gap-4">
+        <div className="flex-1 p-8">
+          <div className="flex justify-between items-center mb-6">
             <h1 className="text-2xl font-bold text-primary">Gestão de Usuários</h1>
             {activeTab === "usuarios" ? (
-              <div className="flex gap-2 flex-shrink-0">
+              <div className="flex gap-2">
                 <Button 
                   onClick={() => setIsUserModalOpen(true)}
-                  className="btn-primary flex items-center whitespace-nowrap">
+                  className="btn-primary flex items-center">
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                   </svg>
@@ -376,7 +376,7 @@ export default function AdminPage({ activeTab: initialActiveTab }: { activeTab?:
                 <Button 
                   onClick={() => setIsReportModalOpen(true)}
                   variant="outline"
-                  className="flex items-center whitespace-nowrap">
+                  className="flex items-center">
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                   </svg>
@@ -404,7 +404,7 @@ export default function AdminPage({ activeTab: initialActiveTab }: { activeTab?:
             ) : null}
           </div>
           
-          <Tabs defaultValue={activeTab} className="w-full max-w-full overflow-hidden" onValueChange={setActiveTab}>
+          <Tabs defaultValue={activeTab} className="w-full" onValueChange={setActiveTab}>
             <TabsList className="mb-4">
               <TabsTrigger value="usuarios">Usuários</TabsTrigger>
               <TabsTrigger value="categorias">Categorias</TabsTrigger>
@@ -467,59 +467,72 @@ export default function AdminPage({ activeTab: initialActiveTab }: { activeTab?:
                       <p>Carregando usuários...</p>
                     </div>
                   ) : (
-                    <div className="overflow-x-auto border border-gray-200 rounded-lg">
-                      <table className="min-w-full bg-white">
-                        <thead className="bg-gray-50">
-                          <tr>
-                            <th 
-                              scope="col" 
-                              className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                              onClick={() => handleSortClick('name')}
-                            >
-                              <div className="flex items-center">
-                                Nome
-                                {sortColumn === 'name' && (
-                                  <span className="ml-1">
-                                    {sortDirection === 'asc' ? '↑' : '↓'}
-                                  </span>
-                                )}
-                              </div>
-                            </th>
-                            <th 
-                              scope="col" 
-                              className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                              onClick={() => handleSortClick('email')}
-                            >
-                              <div className="flex items-center">
-                                Email
-                                {sortColumn === 'email' && (
-                                  <span className="ml-1">
-                                    {sortDirection === 'asc' ? '↑' : '↓'}
-                                  </span>
-                                )}
-                              </div>
-                            </th>
-                            <th 
-                              scope="col" 
-                              className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                              onClick={() => handleSortClick('role')}
-                            >
-                              <div className="flex items-center">
-                                Função
-                                {sortColumn === 'role' && (
-                                  <span className="ml-1">
-                                    {sortDirection === 'asc' ? '↑' : '↓'}
-                                  </span>
-                                )}
-                              </div>
-                            </th>
-                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Categorias</th>
-                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>
-                          </tr>
-                        </thead>
-                        <tbody className="bg-white divide-y divide-gray-200">
-                          {sortedUsers.length === 0 ? (
+                    <div className="border border-gray-200 rounded-lg overflow-hidden">
+                      {/* Scroll horizontal para toda a tabela */}
+                      <div className="overflow-x-auto">
+                        {/* Cabeçalho fixo da tabela */}
+                        <div className="bg-gray-50 border-b border-gray-200">
+                          <table className="min-w-[1200px] w-full">
+                            <thead>
+                              <tr>
+                                <th 
+                                  scope="col" 
+                                  className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                                  style={{ width: '200px' }}
+                                  onClick={() => handleSortClick('name')}
+                                >
+                                  <div className="flex items-center">
+                                    Nome
+                                    {sortColumn === 'name' && (
+                                      <span className="ml-1">
+                                        {sortDirection === 'asc' ? '↑' : '↓'}
+                                      </span>
+                                    )}
+                                  </div>
+                                </th>
+                                <th 
+                                  scope="col" 
+                                  className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                                  style={{ width: '250px' }}
+                                  onClick={() => handleSortClick('email')}
+                                >
+                                  <div className="flex items-center">
+                                    Email
+                                    {sortColumn === 'email' && (
+                                      <span className="ml-1">
+                                        {sortDirection === 'asc' ? '↑' : '↓'}
+                                      </span>
+                                    )}
+                                  </div>
+                                </th>
+                                <th 
+                                  scope="col" 
+                                  className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                                  style={{ width: '120px' }}
+                                  onClick={() => handleSortClick('role')}
+                                >
+                                  <div className="flex items-center">
+                                    Função
+                                    {sortColumn === 'role' && (
+                                      <span className="ml-1">
+                                        {sortDirection === 'asc' ? '↑' : '↓'}
+                                      </span>
+                                    )}
+                                  </div>
+                                </th>
+                                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style={{ width: '80px' }}>Status</th>
+                                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style={{ width: '200px' }}>Categorias</th>
+                                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style={{ width: '300px' }}>Ações</th>
+                              </tr>
+                            </thead>
+                          </table>
+                        </div>
+                        
+                        {/* Corpo da tabela com scroll vertical */}
+                        <div className="overflow-y-auto max-h-[500px] bg-white">
+                          <table className="min-w-[1200px] w-full">
+                          <tbody className="bg-white divide-y divide-gray-200">
+                            {sortedUsers.length === 0 ? (
                               <tr>
                                 <td colSpan={6} className="px-4 py-4 text-center text-sm text-gray-500">
                                   Nenhum usuário encontrado
@@ -685,9 +698,10 @@ ${userCategoriesMapping[user.id].map(c => `• ${c.name}`).join('\n')}`}
                             )}
                           </tbody>
                         </table>
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    )}
                 </CardContent>
               </Card>
             </TabsContent>
