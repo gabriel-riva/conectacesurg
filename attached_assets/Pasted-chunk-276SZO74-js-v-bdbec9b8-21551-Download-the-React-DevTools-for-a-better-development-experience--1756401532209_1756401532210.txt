@@ -1,0 +1,136 @@
+chunk-276SZO74.js?v=bdbec9b8:21551 Download the React DevTools for a better development experience: https://reactjs.org/link/react-devtools
+RichTextEditor.tsx:39 quill Overwriting formats/video with class VideoBlot extends BlockEmbed {
+  static create(value) {
+    const node = super.create();
+    node.setAttribute("src", value);
+    node.setAttribute("frameborder", "0");
+    node.setAttribute("allowfu…
+debug @ react-quill.js?v=bdbec9b8:3487
+register @ react-quill.js?v=bdbec9b8:2591
+register @ react-quill.js?v=bdbec9b8:2583
+(anonymous) @ RichTextEditor.tsx:39
+SurveyWidget.tsx:72 Pesquisas carregadas: undefined
+AdminPage.tsx:77 Buscando todos os usuários
+SurveyWidget.tsx:72 Pesquisas carregadas: []
+chunk-OH3UFEMP.js?v=bdbec9b8:338 Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.
+(anonymous) @ chunk-OH3UFEMP.js?v=bdbec9b8:338
+commitHookEffectListMount @ chunk-276SZO74.js?v=bdbec9b8:16915
+commitPassiveMountOnFiber @ chunk-276SZO74.js?v=bdbec9b8:18156
+commitPassiveMountEffects_complete @ chunk-276SZO74.js?v=bdbec9b8:18129
+commitPassiveMountEffects_begin @ chunk-276SZO74.js?v=bdbec9b8:18119
+commitPassiveMountEffects @ chunk-276SZO74.js?v=bdbec9b8:18109
+flushPassiveEffectsImpl @ chunk-276SZO74.js?v=bdbec9b8:19490
+flushPassiveEffects @ chunk-276SZO74.js?v=bdbec9b8:19447
+commitRootImpl @ chunk-276SZO74.js?v=bdbec9b8:19416
+commitRoot @ chunk-276SZO74.js?v=bdbec9b8:19277
+performSyncWorkOnRoot @ chunk-276SZO74.js?v=bdbec9b8:18895
+flushSyncCallbacks @ chunk-276SZO74.js?v=bdbec9b8:9119
+(anonymous) @ chunk-276SZO74.js?v=bdbec9b8:18627
+GenerateReportModal.tsx:197 DEBUG: Usuários retornados da API: (2) [{…}, {…}]
+GenerateReportModal.tsx:198 DEBUG: Exemplo de biografia do primeiro usuário: testando a biografia
+GenerateReportModal.tsx:477 DEBUG PDF: Usuário Admin Conecta - biografia encontrada: testando a biografia
+GenerateReportModal.tsx:482 DEBUG PDF: Usuário Diretor Adm (Leandro) - biografia vazia ou undefined: null
+GenerateReportModal.tsx:482 DEBUG PDF: Usuário Ensino Marau - biografia vazia ou undefined: null
+GenerateReportModal.tsx:482 DEBUG PDF: Usuário Gabriel Riva - biografia vazia ou undefined: null
+GenerateReportModal.tsx:482 DEBUG PDF: Usuário Secretaria Cesurg - biografia vazia ou undefined: null
+GenerateReportModal.tsx:482 DEBUG PDF: Usuário Adriano Pilla Zeilmann - biografia vazia ou undefined: null
+GenerateReportModal.tsx:482 DEBUG PDF: Usuário Ana Carolina Oliveira Dos Santos - biografia vazia ou undefined: null
+GenerateReportModal.tsx:482 DEBUG PDF: Usuário Ana Paula Bianchi - biografia vazia ou undefined: null
+GenerateReportModal.tsx:482 DEBUG PDF: Usuário Andressa Bosa - biografia vazia ou undefined: null
+GenerateReportModal.tsx:482 DEBUG PDF: Usuário Bruno Vidaletti Brum - biografia vazia ou undefined: null
+GenerateReportModal.tsx:482 DEBUG PDF: Usuário Catia Meneguzzi - biografia vazia ou undefined: null
+GenerateReportModal.tsx:482 DEBUG PDF: Usuário Cinara Dassi Borges - biografia vazia ou undefined: null
+GenerateReportModal.tsx:482 DEBUG PDF: Usuário Cristiano Corato - biografia vazia ou undefined: null
+GenerateReportModal.tsx:482 DEBUG PDF: Usuário Cristini Milech - biografia vazia ou undefined: 
+GenerateReportModal.tsx:477 DEBUG PDF: Usuário Damiane Marques Farias - biografia encontrada: Advogada.
+Sócia proprietária do Escritório Andreis, Dal Paz e Marques - Advocacia.
+Tesoureira da OAB Subseção de Marau (RS) - Gestão 2022/2024 e 2025/2027.
+Delegada da Escola Superior da Advocacia (ESA).
+ 
+GenerateReportModal.tsx:482 DEBUG PDF: Usuário Daniela Favero - biografia vazia ou undefined: null
+GenerateReportModal.tsx:482 DEBUG PDF: Usuário Débora Rita Kujawa - biografia vazia ou undefined: null
+GenerateReportModal.tsx:482 DEBUG PDF: Usuário Dieison Eduardo Haupt Xavier - biografia vazia ou undefined: null
+GenerateReportModal.tsx:482 DEBUG PDF: Usuário Diogo Da Silva Moura - biografia vazia ou undefined: null
+GenerateReportModal.tsx:482 DEBUG PDF: Usuário Edimara Da Silva - biografia vazia ou undefined: null
+GenerateReportModal.tsx:283 Erro ao carregar imagem: /uploads/photos/1752804735365-238918022-editada.jpeg
+img.onerror @ GenerateReportModal.tsx:283
+GenerateReportModal.tsx:482 DEBUG PDF: Usuário Edivane Ferro - biografia vazia ou undefined: null
+GenerateReportModal.tsx:482 DEBUG PDF: Usuário Elizabete Casagrande Lazarotto - biografia vazia ou undefined: null
+GenerateReportModal.tsx:477 DEBUG PDF: Usuário Evandro Consaltér - biografia encontrada: Doutor em Educação (Bolsista CAPES) pela Universidade de Passo Fundo (2021). Mestre em Educação pelo programa de Pós-graduação em Educação da Universidade de Passo Fundo, na Linha Políticas Educacionais (2016). Psicopedagogo Clínico e Institucional pela Universidade de Caxias do Sul - UCS (2023). Especialista em Estratégias de Aprendizagem pela Faculdade da Associação Brasiliense de Educação - FABE Marau/RS (2013). Graduado em Letras (Língua Portuguesa, Língua Inglesa e suas respectivas Literaturas) pela Universidade de Passo Fundo (2009). Pesquisador do Grupo de Estudos e Pesquisas em Educação Superior - GEPES/UPF - , ligado ao Programa de Pós-Graduação em Educação da Universidade de Passo Fundo - RS/Brasil e vinculado ao Grupo Internacional de Estudos e Pesquisas sobre Educação Superior - GIEPES, com sede na Universidade de Campinas - Unicamp/São Paulo/Brasil. Diretor de Ensino e Graduação da Universidade de Passo Fundo - UPF (2024/2025). Coordenador Pedagógico e Professor nos cursos de graduação e pós-graduação da Faculdade Cesurg Marau. Tem experiência nas áreas da Educação, com ênfase na formação de professores, políticas educacionais, inclusão, gestão da educação, ensino superior, leitura e escrita na formação acadêmica e alfabetização.
+GenerateReportModal.tsx:482 DEBUG PDF: Usuário Felipe Minosso Mezzomo - biografia vazia ou undefined: null
+GenerateReportModal.tsx:482 DEBUG PDF: Usuário Felippe Migon Bortolini - biografia vazia ou undefined: 
+GenerateReportModal.tsx:482 DEBUG PDF: Usuário Fernanda De Carvalho Bisolo - biografia vazia ou undefined: null
+GenerateReportModal.tsx:482 DEBUG PDF: Usuário Fernanda Gracieli Machado Brum - biografia vazia ou undefined: 
+GenerateReportModal.tsx:283 Erro ao carregar imagem: /uploads/photos/1752857645336-183617687-foto-2.jpg
+img.onerror @ GenerateReportModal.tsx:283
+GenerateReportModal.tsx:482 DEBUG PDF: Usuário Flavio Mariotti - biografia vazia ou undefined: null
+GenerateReportModal.tsx:482 DEBUG PDF: Usuário IA Lab - biografia vazia ou undefined: null
+GenerateReportModal.tsx:482 DEBUG PDF: Usuário Igor Bosa - biografia vazia ou undefined: null
+GenerateReportModal.tsx:482 DEBUG PDF: Usuário Igor Casagrande - biografia vazia ou undefined: null
+GenerateReportModal.tsx:482 DEBUG PDF: Usuário Jaine Maciel - biografia vazia ou undefined: null
+GenerateReportModal.tsx:283 Erro ao carregar imagem: /uploads/photos/1753404387547-263661881-Capturar.PNG
+img.onerror @ GenerateReportModal.tsx:283
+GenerateReportModal.tsx:477 DEBUG PDF: Usuário Jean Carlos Benetti - biografia encontrada: Profissional com mais de 10 anos de experiência nas áreas de marketing e comercial. Graduado em Gestão Comercial e Mestre em Administração pela Universidade de Passo Fundo (UPF). Possui também pós-graduação em Práticas Emergentes de Aprendizagem pela Faculdade Cesurg Marau, onde atua como professor universitário. Atua como estrategista de marca, com foco em marketing, comunicação e posicionamento mercadológico, sempre priorizando a aplicação prática de conceitos estratégicos. É palestrante em temas relacionados a marketing, inovação, marcas e empreendedorismo. Desenvolve pesquisas na linha de "Estratégia e Competitividade", com ênfase em marketing e estratégia. Foi bolsista do programa executivo "Liderança e Inovação na Gestão de Projetos", promovido pelo Instituto Universitário de Lisboa (Iscte), em Portugal. Possui trajetória de liderança voluntária no LEO Clube Serafina Corrêa e no Distrito LEO L D-7, onde atuou em cargos de Preparador de Lideranças, Vice-presidente, Presidente, Diretor de Estatutos e Regulamentos e Diretor de Comunicação e Marketing.
+GenerateReportModal.tsx:482 DEBUG PDF: Usuário Jéssica Alves Galante - biografia vazia ou undefined: null
+GenerateReportModal.tsx:482 DEBUG PDF: Usuário Jessica Boscardin dos Santos - biografia vazia ou undefined: null
+GenerateReportModal.tsx:482 DEBUG PDF: Usuário Júlia Giordani Berton - biografia vazia ou undefined: null
+GenerateReportModal.tsx:482 DEBUG PDF: Usuário Julian Conterno Borges - biografia vazia ou undefined: 
+GenerateReportModal.tsx:482 DEBUG PDF: Usuário Juliana Triches Boscardin - biografia vazia ou undefined: null
+GenerateReportModal.tsx:482 DEBUG PDF: Usuário Keila Milczarek - biografia vazia ou undefined: null
+GenerateReportModal.tsx:482 DEBUG PDF: Usuário Lariza Benedetti - biografia vazia ou undefined: null
+GenerateReportModal.tsx:482 DEBUG PDF: Usuário Leandro Paludo - biografia vazia ou undefined: null
+GenerateReportModal.tsx:482 DEBUG PDF: Usuário Leonardo Calice Schneider - biografia vazia ou undefined: null
+GenerateReportModal.tsx:482 DEBUG PDF: Usuário Leoni Menta Zamin - biografia vazia ou undefined: null
+GenerateReportModal.tsx:482 DEBUG PDF: Usuário Luana Dalacorte - biografia vazia ou undefined: null
+GenerateReportModal.tsx:482 DEBUG PDF: Usuário Lucas Vanz - biografia vazia ou undefined: null
+GenerateReportModal.tsx:283 Erro ao carregar imagem: /uploads/photos/1752832014784-747335209-foto-maikel2.jpg
+img.onerror @ GenerateReportModal.tsx:283
+GenerateReportModal.tsx:482 DEBUG PDF: Usuário Maikel Machado Ozorio - biografia vazia ou undefined: null
+GenerateReportModal.tsx:482 DEBUG PDF: Usuário Manuela Apolinário Zanchin - biografia vazia ou undefined: null
+GenerateReportModal.tsx:482 DEBUG PDF: Usuário Maraline Kopioleski - biografia vazia ou undefined: null
+GenerateReportModal.tsx:482 DEBUG PDF: Usuário Marcio Luiz de Carli - biografia vazia ou undefined: null
+GenerateReportModal.tsx:482 DEBUG PDF: Usuário Marcos Renato Triches - biografia vazia ou undefined: null
+GenerateReportModal.tsx:482 DEBUG PDF: Usuário Mario Fedatto Neto - biografia vazia ou undefined: null
+GenerateReportModal.tsx:482 DEBUG PDF: Usuário Marta Rejane Tessaro - biografia vazia ou undefined: null
+GenerateReportModal.tsx:283 Erro ao carregar imagem: /uploads/photos/1755024650164-557168597-2024082513420913-2.png
+img.onerror @ GenerateReportModal.tsx:283
+GenerateReportModal.tsx:482 DEBUG PDF: Usuário Mateus Sebben - biografia vazia ou undefined: null
+GenerateReportModal.tsx:482 DEBUG PDF: Usuário Matheus Giongo Pavan - biografia vazia ou undefined: null
+GenerateReportModal.tsx:482 DEBUG PDF: Usuário Maviela Maestri Mate - biografia vazia ou undefined: null
+GenerateReportModal.tsx:477 DEBUG PDF: Usuário Miriam Frosi - biografia encontrada: Mestre em Ciências Contábeis no Programa de Pós - Graduação em Ciências Contábeis da UNISINOS;
+Bacharel em Ciências Contábeis pela Universidade de Passo Fundo (UPF);
+Técnica Contábil pela Associação Cristã de Moços de Passo Fundo (ACM).
+
+Experiência com Perícia Contábil - Judicial e Extrajudicial em processos trabalhistas desde 2017/Atual.
+Experiência na docência do ensino superior, cursos técnicos e de pós-graduação desde 2013/Atual.
+Experiência profissional na área de contabilidade, fiscal e recursos humanos, com foco na contabilidade de empresas de lucro real.
+
+GenerateReportModal.tsx:482 DEBUG PDF: Usuário Monique Tocchetto - biografia vazia ou undefined: null
+GenerateReportModal.tsx:482 DEBUG PDF: Usuário Nathalia Brocco De Oliveira - biografia vazia ou undefined: null
+GenerateReportModal.tsx:482 DEBUG PDF: Usuário Nayara Fátima Favretto - biografia vazia ou undefined: null
+GenerateReportModal.tsx:482 DEBUG PDF: Usuário Naylene Fraccanabbia - biografia vazia ou undefined: null
+GenerateReportModal.tsx:482 DEBUG PDF: Usuário Neidmar Pablo Scortegagna - biografia vazia ou undefined: null
+GenerateReportModal.tsx:482 DEBUG PDF: Usuário Paola Do Prado - biografia vazia ou undefined: null
+GenerateReportModal.tsx:482 DEBUG PDF: Usuário Patricia Maté - biografia vazia ou undefined: null
+GenerateReportModal.tsx:482 DEBUG PDF: Usuário Rafael Matias Meneguzzi - biografia vazia ou undefined: null
+GenerateReportModal.tsx:482 DEBUG PDF: Usuário Rafael Toscan Vieira - biografia vazia ou undefined: null
+GenerateReportModal.tsx:482 DEBUG PDF: Usuário Rejane Costenaro Mezzomo - biografia vazia ou undefined: null
+GenerateReportModal.tsx:482 DEBUG PDF: Usuário Ricardo Ficanha - biografia vazia ou undefined: null
+GenerateReportModal.tsx:482 DEBUG PDF: Usuário Roberta Triches - biografia vazia ou undefined: null
+GenerateReportModal.tsx:482 DEBUG PDF: Usuário Rodrigo Ferneda - biografia vazia ou undefined: null
+GenerateReportModal.tsx:482 DEBUG PDF: Usuário Rogiane Panisson - biografia vazia ou undefined: null
+GenerateReportModal.tsx:482 DEBUG PDF: Usuário Rose Gayeski - biografia vazia ou undefined: null
+GenerateReportModal.tsx:482 DEBUG PDF: Usuário Rosiane Marafon Zanella - biografia vazia ou undefined: null
+GenerateReportModal.tsx:482 DEBUG PDF: Usuário Rubens Meneguzzi - biografia vazia ou undefined: null
+GenerateReportModal.tsx:482 DEBUG PDF: Usuário Samir Casagrande - biografia vazia ou undefined: null
+GenerateReportModal.tsx:482 DEBUG PDF: Usuário Sara Vanin Giasson - biografia vazia ou undefined: null
+GenerateReportModal.tsx:482 DEBUG PDF: Usuário Taimara Foresti - biografia vazia ou undefined: null
+GenerateReportModal.tsx:482 DEBUG PDF: Usuário Tainara Kaspary - biografia vazia ou undefined: null
+GenerateReportModal.tsx:482 DEBUG PDF: Usuário Tatiana Dalacorte - biografia vazia ou undefined: null
+GenerateReportModal.tsx:482 DEBUG PDF: Usuário Tiago Bordin - biografia vazia ou undefined: null
+GenerateReportModal.tsx:482 DEBUG PDF: Usuário Tiago Dalla Corte - biografia vazia ou undefined: null
+GenerateReportModal.tsx:482 DEBUG PDF: Usuário User Teste 1 - biografia vazia ou undefined: null
+GenerateReportModal.tsx:482 DEBUG PDF: Usuário Valquíria Paza - biografia vazia ou undefined: null
+GenerateReportModal.tsx:482 DEBUG PDF: Usuário Veronica Paludo Bressan - biografia vazia ou undefined: null
+GenerateReportModal.tsx:482 DEBUG PDF: Usuário Victor Hugo Fernandes Bonamigo - biografia vazia ou undefined: null
+GenerateReportModal.tsx:482 DEBUG PDF: Usuário Wesley Chimento - biografia vazia ou undefined: null
