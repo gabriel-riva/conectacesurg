@@ -194,6 +194,8 @@ export function GenerateReportModal({ isOpen, onClose }: GenerateReportModalProp
       // Buscar usuários baseado no tipo de relatório
       if (reportType === 'all') {
         users = await apiRequest("GET", "/api/users") as User[];
+        console.log('DEBUG: Usuários retornados da API:', users.slice(0, 2)); // Log dos primeiros 2 usuários
+        console.log('DEBUG: Exemplo de biografia do primeiro usuário:', users[0]?.biografia);
       } else {
         // Para relatório por categorias, buscar usuários de cada categoria selecionada
         const allCategoryUsers = new Set<User>();
@@ -472,10 +474,12 @@ export function GenerateReportModal({ isOpen, onClose }: GenerateReportModalProp
         pdf.setTextColor(0, 0, 0);
 
         if (user.biografia) {
+          console.log(`DEBUG PDF: Usuário ${user.name} - biografia encontrada:`, user.biografia);
           const bioLines = pdf.splitTextToSize(user.biografia, maxWidth);
           pdf.text(bioLines, margin, yPosition);
           yPosition += bioLines.length * 5 + 5;
         } else {
+          console.log(`DEBUG PDF: Usuário ${user.name} - biografia vazia ou undefined:`, user.biografia);
           pdf.text('Não informado', margin, yPosition);
           yPosition += 7;
         }
