@@ -186,12 +186,23 @@ export const ChallengeEvaluationForm: React.FC<ChallengeEvaluationFormProps> = (
               const response = await fetch('/api/upload', {
                 method: 'POST',
                 body: formData,
-                credentials: 'include' // Incluir cookies de sessão
+                credentials: 'include', // Incluir cookies de sessão
+                headers: {
+                  // Não definir Content-Type - deixar o navegador definir automaticamente para multipart/form-data
+                }
               });
 
               if (!response.ok) {
-                const errorText = await response.text();
-                throw new Error(`Erro ao enviar ${file.name}: ${response.status}`);
+                let errorMessage = `Erro ao enviar ${file.name}`;
+                try {
+                  const errorData = await response.json();
+                  errorMessage = errorData.error || errorData.message || errorMessage;
+                  console.error('Erro do servidor:', errorData);
+                } catch {
+                  const errorText = await response.text();
+                  errorMessage = errorText || `Status ${response.status}`;
+                }
+                throw new Error(errorMessage);
               }
 
               const uploadResult = await response.json();

@@ -24,11 +24,16 @@ const router = Router();
 // Middleware para verificar autenticação
 const isAuthenticated = (req: Request, res: Response, next: Function) => {
   console.log(`🔐 VERIFICAÇÃO AUTH: User present: ${!!req.user}, ID: ${(req.user as any)?.id || 'N/A'}`);
+  console.log(`🍪 COOKIES: ${req.headers.cookie ? 'Presentes' : 'Ausentes'}`);
+  console.log(`📌 SESSION: ${(req as any).session?.id || 'Sem sessão'}`);
+  
   if (!req.user) {
     console.log(`❌ AUTH FALHOU: Usuário não autenticado`);
-    return res.status(401).json({ error: "Não autorizado" });
+    console.log(`❌ Session ID: ${(req as any).session?.id || 'nenhuma'}`);
+    console.log(`❌ Passport User: ${(req as any).session?.passport?.user || 'não definido'}`);
+    return res.status(401).json({ error: "Não autorizado. Por favor, faça login novamente." });
   }
-  console.log(`✅ AUTH OK: Usuário ${(req.user as any).id} autenticado`);
+  console.log(`✅ AUTH OK: Usuário ${(req.user as any).id} (${(req.user as any).email}) autenticado`);
   next();
 };
 
@@ -51,12 +56,17 @@ const upload = multer({
 // Endpoint para upload de arquivo único (migrado para Object Storage)
 router.post("/", isAuthenticated, upload.single('file'), async (req: Request, res: Response) => {
   try {
-    console.log(`📥 UPLOAD REQUEST: Headers: ${JSON.stringify(req.headers.cookie ? 'present' : 'missing')}`);
-    console.log(`📥 UPLOAD REQUEST: User: ${(req.user as any)?.id || 'N/A'} (${(req.user as any)?.email || 'N/A'})`);
-    console.log(`📥 UPLOAD REQUEST: Body keys: ${Object.keys(req.body)}`);
+    console.log(`📥 UPLOAD REQUEST INICIADO`);
+    console.log(`📥 Headers Cookie: ${req.headers.cookie ? 'Presente' : 'Ausente'}`);
+    console.log(`📥 User ID: ${(req.user as any)?.id || 'N/A'}`);
+    console.log(`📥 User Email: ${(req.user as any)?.email || 'N/A'}`);
+    console.log(`📥 Body Keys: ${Object.keys(req.body).join(', ')}`);
+    console.log(`📥 Challenge ID: ${req.body.challengeId || 'N/A'}`);
+    console.log(`📥 Requirement ID: ${req.body.requirementId || 'N/A'}`);
     
     if (!req.file) {
       console.log(`❌ UPLOAD: Nenhum arquivo no request`);
+      console.log(`❌ Headers Content-Type: ${req.headers['content-type']}`);
       return res.status(400).json({ error: "Nenhum arquivo foi enviado" });
     }
 

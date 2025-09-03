@@ -53,6 +53,25 @@ const createSessionStore = () => {
 };
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Configurar CORS para permitir credenciais em uploads e requisições AJAX
+  app.use((req, res, next) => {
+    const origin = req.headers.origin || req.headers.host || 'http://localhost:5000';
+    
+    // Permitir credenciais para todas as origens no mesmo domínio
+    if (origin) {
+      res.header('Access-Control-Allow-Origin', origin);
+      res.header('Access-Control-Allow-Credentials', 'true');
+    }
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
+    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+    
+    // Responder imediatamente a preflight requests
+    if (req.method === 'OPTIONS') {
+      return res.sendStatus(200);
+    }
+    next();
+  });
+
   // Session configuration
   app.use(
     session({
@@ -815,6 +834,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(diagnostics);
   });
 
+  // Middleware de debug para upload
+  app.use('/api/upload', (req, res, next) => {
+    console.log('🔍 Upload route hit');
+    console.log('🔍 Method:', req.method);
+    console.log('🔍 User:', req.user ? (req.user as any).id : 'NOT AUTHENTICATED');
+    console.log('🔍 Session ID:', (req as any).session?.id);
+    console.log('🔍 Session Passport:', (req as any).session?.passport);
+    console.log('🔍 Cookies:', req.headers.cookie ? 'Present' : 'Missing');
+    next();
+  });
+  
   app.use('/api/upload', uploadRouter);
   
   // Adicionar rotas de materiais
