@@ -859,6 +859,21 @@ export const ChallengeEvaluationForm: React.FC<ChallengeEvaluationFormProps> = (
               </div>
             </div>
 
+            {/* Barra de progresso durante upload */}
+            {isUploading && uploadProgress.total > 0 && (
+              <div className="space-y-2 mb-4">
+                <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+                  <div 
+                    className="bg-blue-600 h-2 rounded-full transition-all duration-300 ease-out"
+                    style={{ width: `${(uploadProgress.current / uploadProgress.total) * 100}%` }}
+                  />
+                </div>
+                <p className="text-sm text-center text-gray-600">
+                  {Math.round((uploadProgress.current / uploadProgress.total) * 100)}% completo
+                </p>
+              </div>
+            )}
+
             <Button 
               onClick={handleFileSubmit} 
               className="w-full"
