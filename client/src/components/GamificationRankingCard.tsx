@@ -118,8 +118,8 @@ export function GamificationRankingCard() {
           </Select>
         </div>
 
-        {/* Lista de usuários com altura fixa */}
-        <div className="flex-1 overflow-hidden" style={{ maxHeight: "240px" }}>
+        {/* Lista de usuários ocupando todo espaço disponível */}
+        <div className="flex-1 overflow-hidden">
           {isLoading ? (
             <div className="flex items-center justify-center h-full">
               <div className="text-sm text-gray-500">Carregando...</div>
