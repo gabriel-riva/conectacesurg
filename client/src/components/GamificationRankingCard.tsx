@@ -67,7 +67,7 @@ export function GamificationRankingCard() {
   };
 
   return (
-    <Card className="shadow-md hover:shadow-lg transition-shadow duration-300 border-none h-full flex flex-col">
+    <Card className="shadow-md hover:shadow-lg transition-shadow duration-300 border-none h-[600px] max-h-[80vh] flex flex-col">
       <CardHeader className="pb-4 bg-gradient-to-r from-primary/5 to-transparent flex-shrink-0">
         <CardTitle className="text-primary/90 flex items-center">
           <span className="inline-block w-1 h-5 bg-primary rounded mr-2"></span>
@@ -76,9 +76,9 @@ export function GamificationRankingCard() {
         </CardTitle>
       </CardHeader>
       
-      <CardContent className="p-4 flex-1 flex flex-col">
+      <CardContent className="p-4 flex-1 flex flex-col overflow-hidden">
         {/* Filtros */}
-        <div className="space-y-3 mb-4">
+        <div className="space-y-3 mb-4 flex-shrink-0">
           <div className="flex gap-2">
             <Button
               variant={period === 'cycle' ? 'default' : 'outline'}
@@ -118,7 +118,7 @@ export function GamificationRankingCard() {
           </Select>
         </div>
 
-        {/* Lista de usuários ocupando todo espaço disponível */}
+        {/* Lista de usuários com scroll interno */}
         <div className="flex-1 min-h-0 overflow-hidden">
           {isLoading ? (
             <div className="flex items-center justify-center h-full">
