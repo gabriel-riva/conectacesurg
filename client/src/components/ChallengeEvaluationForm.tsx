@@ -75,6 +75,7 @@ export const ChallengeEvaluationForm: React.FC<ChallengeEvaluationFormProps> = (
   const [qrScannerActive, setQrScannerActive] = useState(false);
   const [scannedData, setScannedData] = useState<string>('');
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState({ current: 0, total: 0 });
 
   const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
   const [scanningActive, setScanningActive] = useState(false);
@@ -163,43 +164,73 @@ export const ChallengeEvaluationForm: React.FC<ChallengeEvaluationFormProps> = (
     if (!config?.fileRequirements) return;
 
     try {
-      setIsUploading(true); // Mostrar loading durante upload
+      setIsUploading(true);
       const submissionData = [];
       let hasData = false;
       
-      // Para cada requisito
+      // Coletar todos os arquivos e links primeiro
+      const uploadTasks: Array<{
+        type: 'file' | 'link';
+        requirementId: string;
+        file?: File;
+        link?: string;
+      }> = [];
+      
       for (const requirement of config.fileRequirements) {
         const requirementId = requirement.id;
         const submissionType = requirement.submissionType || 'file';
         
         if (submissionType === 'file') {
-          // Processar arquivos
           const files = selectedFiles[requirementId] || [];
-          
           for (const file of files) {
+            uploadTasks.push({ type: 'file', requirementId, file });
+          }
+        } else if (submissionType === 'link') {
+          const links = linkInputs[requirementId] || [];
+          for (const link of links) {
+            if (link && link.trim()) {
+              uploadTasks.push({ type: 'link', requirementId, link: link.trim() });
+            }
+          }
+        }
+      }
+      
+      const totalFiles = uploadTasks.filter(t => t.type === 'file').length;
+      setUploadProgress({ current: 0, total: totalFiles });
+      
+      // Processar uploads em paralelo (máximo 3 por vez para não sobrecarregar)
+      const BATCH_SIZE = 3;
+      let uploadedCount = 0;
+      
+      for (let i = 0; i < uploadTasks.length; i += BATCH_SIZE) {
+        const batch = uploadTasks.slice(i, Math.min(i + BATCH_SIZE, uploadTasks.length));
+        
+        const batchPromises = batch.map(async (task) => {
+          if (task.type === 'link') {
+            // Links não precisam de upload
+            return {
+              requirementId: task.requirementId,
+              type: 'link',
+              linkUrl: task.link
+            };
+          } else if (task.type === 'file' && task.file) {
             try {
-              // Criar FormData para envio do arquivo
               const formData = new FormData();
-              formData.append('file', file);
+              formData.append('file', task.file);
               formData.append('challengeId', challengeId.toString());
-              formData.append('requirementId', requirementId);
+              formData.append('requirementId', task.requirementId);
 
-              // Enviar arquivo para o servidor com credenciais
               const response = await fetch('/api/upload', {
                 method: 'POST',
                 body: formData,
-                credentials: 'include', // Incluir cookies de sessão
-                headers: {
-                  // Não definir Content-Type - deixar o navegador definir automaticamente para multipart/form-data
-                }
+                credentials: 'include',
               });
 
               if (!response.ok) {
-                let errorMessage = `Erro ao enviar ${file.name}`;
+                let errorMessage = `Erro ao enviar ${task.file.name}`;
                 try {
                   const errorData = await response.json();
                   errorMessage = errorData.error || errorData.message || errorMessage;
-                  console.error('Erro do servidor:', errorData);
                 } catch {
                   const errorText = await response.text();
                   errorMessage = errorText || `Status ${response.status}`;
@@ -209,38 +240,42 @@ export const ChallengeEvaluationForm: React.FC<ChallengeEvaluationFormProps> = (
 
               const uploadResult = await response.json();
               
-              submissionData.push({
-                requirementId,
+              // Atualizar progresso
+              uploadedCount++;
+              setUploadProgress({ current: uploadedCount, total: totalFiles });
+              
+              return {
+                requirementId: task.requirementId,
                 type: 'file',
-                fileName: file.name,
+                fileName: task.file.name,
                 fileUrl: uploadResult.url || uploadResult.fileUrl,
-                fileSize: file.size,
-                mimeType: file.type
-              });
-              hasData = true;
-            } catch (fileError: any) {
-              toast({
-                title: "Erro no Upload",
-                description: `Falha ao enviar ${file.name}: ${fileError.message}`,
-                variant: "destructive"
-              });
-              return;
+                fileSize: task.file.size,
+                mimeType: task.file.type
+              };
+            } catch (error: any) {
+              throw new Error(`Falha ao enviar ${task.file.name}: ${error.message}`);
             }
           }
-        } else if (submissionType === 'link') {
-          // Processar links
-          const links = linkInputs[requirementId] || [];
-          
-          for (const link of links) {
-            if (link && link.trim()) {
-              submissionData.push({
-                requirementId,
-                type: 'link',
-                linkUrl: link.trim()
-              });
+          return null;
+        });
+        
+        try {
+          const batchResults = await Promise.all(batchPromises);
+          batchResults.forEach(result => {
+            if (result) {
+              submissionData.push(result);
               hasData = true;
             }
-          }
+          });
+        } catch (error: any) {
+          toast({
+            title: "Erro no Upload",
+            description: error.message,
+            variant: "destructive"
+          });
+          setIsUploading(false);
+          setUploadProgress({ current: 0, total: 0 });
+          return;
         }
       }
 
@@ -250,6 +285,8 @@ export const ChallengeEvaluationForm: React.FC<ChallengeEvaluationFormProps> = (
           description: "Adicione pelo menos um arquivo ou link.",
           variant: "destructive"
         });
+        setIsUploading(false);
+        setUploadProgress({ current: 0, total: 0 });
         return;
       }
 
@@ -261,10 +298,10 @@ export const ChallengeEvaluationForm: React.FC<ChallengeEvaluationFormProps> = (
 
       onSubmit(submission);
       
-      // Mostrar feedback de sucesso local também
+      // Mostrar feedback de sucesso
       toast({
-        title: "✅ Arquivos enviados!",
-        description: "Processando sua submissão...",
+        title: "✅ Arquivos enviados com sucesso!",
+        description: `${uploadTasks.length} arquivo(s) processado(s)`,
       });
     } catch (error: any) {
       console.error('Erro geral no upload:', error);
@@ -274,7 +311,8 @@ export const ChallengeEvaluationForm: React.FC<ChallengeEvaluationFormProps> = (
         variant: "destructive"
       });
     } finally {
-      setIsUploading(false); // Remover loading
+      setIsUploading(false);
+      setUploadProgress({ current: 0, total: 0 });
     }
   };
 
@@ -826,7 +864,11 @@ export const ChallengeEvaluationForm: React.FC<ChallengeEvaluationFormProps> = (
               className="w-full"
               disabled={isUploading || isLoading || totalSubmissions === 0 || totalSubmissions > fileConfig.maxFiles}
             >
-              {isUploading ? '📤 Enviando arquivos...' : 
+              {isUploading ? (
+                uploadProgress.total > 0 ? 
+                  `📤 Enviando ${uploadProgress.current} de ${uploadProgress.total} arquivo(s)...` : 
+                  '📤 Preparando envio...'
+              ) : 
                isLoading ? '⏳ Processando submissão...' : 
                `Enviar ${totalSubmissions} submiss${totalSubmissions !== 1 ? 'ões' : 'ão'}`}
             </Button>
