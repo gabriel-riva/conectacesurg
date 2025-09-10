@@ -59,8 +59,8 @@ export function GamificationRankingCard() {
     enabled: true,
   });
 
-  // Limitar a 15 registros para o card
-  const topUsers = ranking.slice(0, 15);
+  // Mostrar todos os usuários (sem limitação)
+  const topUsers = ranking;
 
   const getInitials = (name: string) => {
     return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);

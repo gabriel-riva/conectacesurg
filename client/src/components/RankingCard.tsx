@@ -59,8 +59,8 @@ export function RankingCard() {
     enabled: true,
   });
 
-  // Limitar a 20 registros
-  const topUsers = ranking.slice(0, 20);
+  // Mostrar todos os usuários (sem limitação)
+  const topUsers = ranking;
 
 
 
