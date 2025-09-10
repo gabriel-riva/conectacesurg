@@ -67,7 +67,7 @@ export function GamificationRankingCard() {
   };
 
   return (
-    <Card className="shadow-md hover:shadow-lg transition-shadow duration-300 border-none h-full flex flex-col">
+    <Card className="shadow-md hover:shadow-lg transition-shadow duration-300 border-none max-h-[600px] flex flex-col">
       <CardHeader className="pb-4 bg-gradient-to-r from-primary/5 to-transparent flex-shrink-0">
         <CardTitle className="text-primary/90 flex items-center">
           <span className="inline-block w-1 h-5 bg-primary rounded mr-2"></span>
