@@ -119,26 +119,25 @@ export function GamificationRankingCard() {
         </div>
 
         {/* Lista de usuários com scroll interno */}
-        <div className="flex-1 min-h-0 relative">
-          {isLoading ? (
-            <div className="flex items-center justify-center h-full">
-              <div className="text-sm text-gray-500">Carregando...</div>
+        {isLoading ? (
+          <div className="flex items-center justify-center h-32">
+            <div className="text-sm text-gray-500">Carregando...</div>
+          </div>
+        ) : topUsers.length === 0 ? (
+          <div className="flex items-center justify-center h-32">
+            <div className="text-center text-gray-500">
+              <Trophy className="h-8 w-8 mx-auto mb-2 opacity-50" />
+              <p className="text-sm">Nenhum usuário no ranking</p>
             </div>
-          ) : topUsers.length === 0 ? (
-            <div className="flex items-center justify-center h-full">
-              <div className="text-center text-gray-500">
-                <Trophy className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                <p className="text-sm">Nenhum usuário no ranking</p>
-              </div>
-            </div>
-          ) : (
-            <ScrollArea className="absolute inset-0">
-              <div className="space-y-2 p-1">
-                {topUsers.map((user) => (
-                  <div
-                    key={user.userId}
-                    className="flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 transition-colors"
-                  >
+          </div>
+        ) : (
+          <div className="flex-1 min-h-0 overflow-y-auto">
+            <div className="space-y-2">
+              {topUsers.map((user) => (
+                <div
+                  key={user.userId}
+                  className="flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 transition-colors"
+                >
                     <div className="flex items-center space-x-3 flex-1 min-w-0">
                       <div className="flex-shrink-0">
                         <Badge 
@@ -167,11 +166,10 @@ export function GamificationRankingCard() {
                       </p>
                     </div>
                   </div>
-                ))}
-              </div>
-            </ScrollArea>
-          )}
-        </div>
+              ))}
+            </div>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
