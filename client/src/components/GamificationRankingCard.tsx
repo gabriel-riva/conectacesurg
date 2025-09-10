@@ -119,7 +119,7 @@ export function GamificationRankingCard() {
         </div>
 
         {/* Lista de usuários com scroll interno */}
-        <div className="flex-1 min-h-0 overflow-hidden">
+        <div className="flex-1 min-h-0 relative">
           {isLoading ? (
             <div className="flex items-center justify-center h-full">
               <div className="text-sm text-gray-500">Carregando...</div>
@@ -132,8 +132,8 @@ export function GamificationRankingCard() {
               </div>
             </div>
           ) : (
-            <ScrollArea className="h-full w-full">
-              <div className="space-y-2 pr-4">
+            <ScrollArea className="absolute inset-0">
+              <div className="space-y-2 p-1">
                 {topUsers.map((user) => (
                   <div
                     key={user.userId}
