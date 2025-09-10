@@ -132,6 +132,13 @@ export const AdminAllSubmissions: React.FC = () => {
 
   const returnSubmissionMutation = useMutation({
     mutationFn: async (submissionId: number) => {
+      console.log(`🔄 Tentando devolver submissão ID: ${submissionId}`);
+      
+      // Verificar se o ID é válido
+      if (!submissionId || isNaN(submissionId)) {
+        throw new Error(`ID de submissão inválido: ${submissionId}`);
+      }
+      
       return apiRequest(`/api/gamification/submissions/${submissionId}/return`, {
         method: 'DELETE'
       });
@@ -145,10 +152,18 @@ export const AdminAllSubmissions: React.FC = () => {
         description: data.message || "Submissão devolvida com sucesso! O usuário pode resubmeter.",
       });
     },
-    onError: (error) => {
+    onError: (error: any) => {
+      console.error('❌ Erro ao devolver submissão:', error);
+      
+      // Extrair mensagem de erro mais específica
+      const errorMessage = error?.message || 
+                          error?.response?.data?.error || 
+                          error?.response?.statusText || 
+                          "Erro desconhecido ao devolver submissão";
+      
       toast({
-        title: "Erro",
-        description: "Erro ao devolver submissão",
+        title: "Erro ao devolver submissão",
+        description: errorMessage,
         variant: "destructive"
       });
     }

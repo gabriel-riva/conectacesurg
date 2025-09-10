@@ -74,6 +74,7 @@ export const ChallengeEvaluationForm: React.FC<ChallengeEvaluationFormProps> = (
   const [linkInputs, setLinkInputs] = useState<{[requirementId: string]: string[]}>({});
   const [qrScannerActive, setQrScannerActive] = useState(false);
   const [scannedData, setScannedData] = useState<string>('');
+  const [isUploading, setIsUploading] = useState(false);
 
   const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
   const [scanningActive, setScanningActive] = useState(false);
@@ -162,6 +163,7 @@ export const ChallengeEvaluationForm: React.FC<ChallengeEvaluationFormProps> = (
     if (!config?.fileRequirements) return;
 
     try {
+      setIsUploading(true); // Mostrar loading durante upload
       const submissionData = [];
       let hasData = false;
       
@@ -258,6 +260,12 @@ export const ChallengeEvaluationForm: React.FC<ChallengeEvaluationFormProps> = (
       };
 
       onSubmit(submission);
+      
+      // Mostrar feedback de sucesso local também
+      toast({
+        title: "✅ Arquivos enviados!",
+        description: "Processando sua submissão...",
+      });
     } catch (error: any) {
       console.error('Erro geral no upload:', error);
       toast({
@@ -265,6 +273,8 @@ export const ChallengeEvaluationForm: React.FC<ChallengeEvaluationFormProps> = (
         description: error.message || "Erro ao enviar submissão",
         variant: "destructive"
       });
+    } finally {
+      setIsUploading(false); // Remover loading
     }
   };
 
@@ -814,9 +824,11 @@ export const ChallengeEvaluationForm: React.FC<ChallengeEvaluationFormProps> = (
             <Button 
               onClick={handleFileSubmit} 
               className="w-full"
-              disabled={isLoading || totalSubmissions === 0 || totalSubmissions > fileConfig.maxFiles}
+              disabled={isUploading || isLoading || totalSubmissions === 0 || totalSubmissions > fileConfig.maxFiles}
             >
-              {isLoading ? 'Enviando...' : `Enviar ${totalSubmissions} submiss${totalSubmissions !== 1 ? 'ões' : 'ão'}`}
+              {isUploading ? '📤 Enviando arquivos...' : 
+               isLoading ? '⏳ Processando submissão...' : 
+               `Enviar ${totalSubmissions} submiss${totalSubmissions !== 1 ? 'ões' : 'ão'}`}
             </Button>
           </div>
         );
