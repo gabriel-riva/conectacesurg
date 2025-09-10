@@ -67,7 +67,7 @@ export function GamificationRankingCard() {
   };
 
   return (
-    <Card className="shadow-md hover:shadow-lg transition-shadow duration-300 border-none max-h-[600px] flex flex-col">
+    <Card className="shadow-md hover:shadow-lg transition-shadow duration-300 border-none h-full flex flex-col">
       <CardHeader className="pb-4 bg-gradient-to-r from-primary/5 to-transparent flex-shrink-0">
         <CardTitle className="text-primary/90 flex items-center">
           <span className="inline-block w-1 h-5 bg-primary rounded mr-2"></span>
@@ -119,7 +119,7 @@ export function GamificationRankingCard() {
         </div>
 
         {/* Lista de usuários ocupando todo espaço disponível */}
-        <div className="flex-1 overflow-hidden">
+        <div className="flex-1 min-h-0 overflow-hidden">
           {isLoading ? (
             <div className="flex items-center justify-center h-full">
               <div className="text-sm text-gray-500">Carregando...</div>
@@ -132,8 +132,8 @@ export function GamificationRankingCard() {
               </div>
             </div>
           ) : (
-            <ScrollArea className="h-full">
-              <div className="space-y-2">
+            <ScrollArea className="h-full w-full">
+              <div className="space-y-2 pr-4">
                 {topUsers.map((user) => (
                   <div
                     key={user.userId}
