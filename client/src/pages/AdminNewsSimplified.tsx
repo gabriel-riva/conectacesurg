@@ -216,7 +216,7 @@ function NewsImportTab() {
       ) : (
         <div className="space-y-4">
           {filteredNews.map((item: News) => (
-            <Card key={item.id} className="w-full">
+            <Card key={item.id ?? item.sourceUrl ?? item.title} className="w-full">
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
