@@ -1470,7 +1470,8 @@ export const materialFolders: any = pgTable("material_folders", {
   creatorId: integer("creator_id").notNull().references(() => users.id),
   imageUrl: text("image_url"),
   isPublic: boolean("is_public").notNull().default(false),
-  groupIds: integer("group_ids").array().default([]), // IDs dos grupos que têm acesso
+  groupIds: integer("group_ids").array().default([]), // IDs dos grupos que têm acesso (legado)
+  targetUserCategories: integer("target_user_categories").array().default([]), // IDs das categorias de usuário que podem ver a pasta
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
