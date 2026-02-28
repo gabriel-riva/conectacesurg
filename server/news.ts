@@ -5,7 +5,51 @@ import fs from "fs";
 import { storage } from "./storage";
 import { InsertNews, InsertNewsCategory } from "@shared/schema";
 
-// Função para extrair informações da notícia da CESURG
+const CESURG_API_BASE = 'https://www.cesurgmarau.com.br/api/site';
+const CESURG_UPLOAD_BASE = 'https://www.cesurgmarau.com.br/upload/noticia';
+
+// Função para buscar detalhes de uma notícia da CESURG via API
+async function fetchCesurgNewsDetail(cesurgId: number) {
+  const response = await fetch(`${CESURG_API_BASE}/noticia/${cesurgId}`);
+  if (!response.ok) {
+    throw new Error(`Erro ao acessar API da CESURG: ${response.status}`);
+  }
+  const data = await response.json();
+
+  const title = data.titulo || '';
+  const content = data.texto || '';
+  // Criar descrição a partir do texto HTML (remover tags e pegar primeiros 200 chars)
+  const plainText = content.replace(/<[^>]+>/g, '').trim();
+  const description = plainText.substring(0, 200) || 'Confira esta notícia no site da CESURG';
+
+  // Montar URL da imagem
+  let imageUrl = null;
+  if (data.imagem) {
+    imageUrl = `${CESURG_UPLOAD_BASE}/${data.imagem}`;
+  } else if (data.fotos && data.fotos.length > 0) {
+    imageUrl = `${CESURG_UPLOAD_BASE}/${data.fotos[0].nome}`;
+  }
+
+  // Parsear data no formato DD/MM/YYYY
+  let publishedAt: Date | null = null;
+  if (data.data) {
+    const [day, month, year] = data.data.split('/');
+    if (day && month && year) {
+      publishedAt = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+    }
+  }
+
+  return {
+    cesurgId: data.id,
+    title,
+    description,
+    content,
+    imageUrl,
+    publishedAt,
+  };
+}
+
+// Função para extrair informações da notícia da CESURG a partir de uma URL
 async function extractCesurgNews(url: string) {
   try {
     // Validar URL
@@ -14,98 +58,70 @@ async function extractCesurgNews(url: string) {
     }
 
     // Extrair ID da notícia da URL
-    const urlIdMatch = url.match(/\/noticia\/(\d+)\//);
-    const newsId = urlIdMatch ? parseInt(urlIdMatch[1]) : null;
-
-    const response = await fetch(url);
-    if (!response.ok) {
-      throw new Error(`Erro ao acessar a URL: ${response.status}`);
+    const urlIdMatch = url.match(/\/noticia\/(\d+)/);
+    if (!urlIdMatch) {
+      throw new Error('Não foi possível extrair o ID da notícia da URL');
     }
+    const cesurgId = parseInt(urlIdMatch[1]);
 
-    const html = await response.text();
-    
-    // Extrair título dos meta tags Open Graph
-    const ogTitleMatch = html.match(/<meta property="og:title" content="([^"]+)"/);
-    const title = ogTitleMatch ? ogTitleMatch[1].trim() : '';
-    
-    // Extrair imagem dos meta tags Open Graph
-    const ogImageMatch = html.match(/<meta property="og:image" content="([^"]+)"/);
-    const imageUrl = ogImageMatch ? ogImageMatch[1] : null;
-    
-    // Extrair descrição dos meta tags Open Graph
-    const ogDescMatch = html.match(/<meta property="og:description" content="([^"]+)"/);
-    let description = ogDescMatch ? ogDescMatch[1].trim() : '';
-    
-    // Se não tiver descrição, criar uma breve
-    if (!description) {
-      description = "Confira esta notícia no site da CESURG";
-    }
-
-    // Não vamos extrair data - deixar sem data de publicação
-    let publishedAt = null;
-    console.log(`Importando notícia sem data de publicação: ${url}`);
-    
-    return {
-      title,
-      description,
-      content: description, // Conteúdo simples já que vai abrir no site original
-      imageUrl,
-      publishedAt,
-    };
+    return await fetchCesurgNewsDetail(cesurgId);
   } catch (error) {
     console.error('Erro ao extrair notícia da CESURG:', error);
     throw error;
   }
 }
 
-// Função para importar últimas notícias da CESURG
+// Função para importar últimas notícias da CESURG via API real
 async function importLatestCesurgNews() {
   try {
-    // URLs das notícias mais recentes da CESURG (baseado em IDs reais encontrados)
-    const testUrls = [
-      'https://cesurgmarau.com.br/noticia/516/aplicativo-auxilia-aprendizagem-de-exatas-no-colegio-integrado-cesurg',
-      'https://cesurgmarau.com.br/noticia/515/curso-de-comunicacao-eficaz-e-concluido-com-sucesso-na-faculdade-cesurg-marau',
-      'https://cesurgmarau.com.br/noticia/514/engenharia-mecanica-cesurg-entrega-cadeiras-de-rodas-adaptadas-e-andador-a-apae-de-marau',
-      'https://cesurgmarau.com.br/noticia/513/faculdade-cesurg-marau-realiza-competicao-de-superpontes-de-espaguete',
-      'https://cesurgmarau.com.br/noticia/512/curso-de-formacao-continuada-da-faculdade-cesurg-marau-reune-gestores-escolares-da-regiao',
-    ];
-    
+    // Buscar as últimas 10 notícias da API da CESURG
+    const response = await fetch(`${CESURG_API_BASE}/noticias?page=1&rowsPerPage=10`);
+    if (!response.ok) {
+      throw new Error(`Erro ao acessar API da CESURG: ${response.status}`);
+    }
+    const result = await response.json();
+    const cesurgNewsList = result.data || [];
+
+    console.log(`CESURG API retornou ${cesurgNewsList.length} notícias`);
+
     const importedNews = [];
-    
-    for (const url of testUrls) {
+
+    for (const cesurgItem of cesurgNewsList) {
       try {
+        const sourceUrl = `https://www.cesurgmarau.com.br/noticia/${cesurgItem.id}`;
+
         // Verificar se já existe notícia com essa URL
-        const existingNews = await storage.getNewsBySourceUrl(url);
+        const existingNews = await storage.getNewsBySourceUrl(sourceUrl);
         if (existingNews) {
-          console.log(`Notícia já existe: ${url}`);
+          console.log(`Notícia já existe: ${cesurgItem.titulo}`);
           continue;
         }
-        
-        // Extrair informações da notícia
-        const newsData = await extractCesurgNews(url);
-        
+
+        // Buscar detalhes completos da notícia
+        const newsData = await fetchCesurgNewsDetail(cesurgItem.id);
+
         if (newsData.title && newsData.content) {
           const insertData: InsertNews = {
             title: newsData.title,
             description: newsData.description,
             content: newsData.content,
-            sourceUrl: url,
+            sourceUrl: sourceUrl,
             imageUrl: newsData.imageUrl,
             creatorId: 1, // Usar o primeiro admin como criador
             isPublished: true,
             publishedAt: newsData.publishedAt,
           };
-          
+
           const newNews = await storage.createNews(insertData);
           importedNews.push(newNews);
           console.log(`Notícia importada: ${newsData.title}`);
         }
       } catch (error) {
-        console.error(`Erro ao importar notícia ${url}:`, error);
-        // Continuar com as próximas URLs mesmo se uma falhar
+        console.error(`Erro ao importar notícia ${cesurgItem.id}:`, error);
+        // Continuar com as próximas mesmo se uma falhar
       }
     }
-    
+
     return importedNews;
   } catch (error) {
     console.error('Erro ao importar notícias da CESURG:', error);
@@ -339,27 +355,30 @@ router.get("/:id", async (req: Request, res: Response) => {
 router.post("/import-cesurg", isAdmin, async (req: Request, res: Response) => {
   try {
     const { url, categoryId } = req.body;
-    
+
     if (!url) {
-      return res.status(400).json({ 
-        error: "URL da notícia é obrigatória" 
+      return res.status(400).json({
+        error: "URL da notícia é obrigatória"
       });
     }
 
-    // Verificar se a notícia já existe
-    const existingNews = await storage.getNewsBySourceUrl(url);
-    if (existingNews) {
-      return res.status(400).json({ 
-        error: "Esta notícia já foi importada" 
-      });
-    }
-
-    // Extrair informações da notícia
+    // Extrair informações da notícia via API
     const extractedData = await extractCesurgNews(url);
-    
+
     if (!extractedData.title || !extractedData.content) {
-      return res.status(400).json({ 
-        error: "Não foi possível extrair informações da notícia" 
+      return res.status(400).json({
+        error: "Não foi possível extrair informações da notícia"
+      });
+    }
+
+    // Normalizar sourceUrl para formato consistente
+    const sourceUrl = `https://www.cesurgmarau.com.br/noticia/${extractedData.cesurgId}`;
+
+    // Verificar se a notícia já existe (checar tanto a URL original quanto a normalizada)
+    const existingNews = await storage.getNewsBySourceUrl(sourceUrl) || await storage.getNewsBySourceUrl(url);
+    if (existingNews) {
+      return res.status(400).json({
+        error: "Esta notícia já foi importada"
       });
     }
 
@@ -367,7 +386,7 @@ router.post("/import-cesurg", isAdmin, async (req: Request, res: Response) => {
       title: extractedData.title,
       description: extractedData.description,
       content: extractedData.content,
-      sourceUrl: url,
+      sourceUrl: sourceUrl,
       imageUrl: extractedData.imageUrl,
       creatorId: req.user.id,
       isPublished: true,
