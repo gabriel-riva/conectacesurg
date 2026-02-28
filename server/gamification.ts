@@ -90,18 +90,28 @@ router.get("/ranking", isAuthenticated, async (req: Request, res: Response) => {
     const currentSettings = settings[0];
     
     // Construir condições de filtro de data
-    let dateCondition = sql`1=1`;
-    
-    if (filter === 'cycle' && currentSettings?.cycleStartDate && currentSettings?.cycleEndDate) {
-      dateCondition = and(
-        gte(gamificationPoints.createdAt, new Date(currentSettings.cycleStartDate)),
-        lte(gamificationPoints.createdAt, new Date(currentSettings.cycleEndDate))
-      );
-    } else if (filter === 'annual' && currentSettings?.annualStartDate && currentSettings?.annualEndDate) {
-      dateCondition = and(
-        gte(gamificationPoints.createdAt, new Date(currentSettings.annualStartDate)),
-        lte(gamificationPoints.createdAt, new Date(currentSettings.annualEndDate))
-      );
+    let dateCondition: any = sql`1=1`;
+
+    if (filter === 'cycle') {
+      if (currentSettings?.cycleStartDate && currentSettings?.cycleEndDate) {
+        dateCondition = and(
+          gte(gamificationPoints.createdAt, new Date(currentSettings.cycleStartDate)),
+          lte(gamificationPoints.createdAt, new Date(currentSettings.cycleEndDate))
+        );
+      } else {
+        // Ciclo solicitado mas sem datas configuradas - retornar vazio
+        return res.json([]);
+      }
+    } else if (filter === 'annual') {
+      if (currentSettings?.annualStartDate && currentSettings?.annualEndDate) {
+        dateCondition = and(
+          gte(gamificationPoints.createdAt, new Date(currentSettings.annualStartDate)),
+          lte(gamificationPoints.createdAt, new Date(currentSettings.annualEndDate))
+        );
+      } else {
+        // Período anual solicitado mas sem datas configuradas - retornar vazio
+        return res.json([]);
+      }
     }
 
     // Buscar usuários elegíveis baseados na configuração de gamificação
@@ -256,6 +266,9 @@ router.get("/points/extract", isAuthenticated, async (req: Request, res: Respons
     if (currentSettings?.cycleStartDate && currentSettings?.cycleEndDate) {
       conditions.push(gte(gamificationPoints.createdAt, new Date(currentSettings.cycleStartDate)));
       conditions.push(lte(gamificationPoints.createdAt, new Date(currentSettings.cycleEndDate)));
+    } else {
+      // Sem período configurado - retornar vazio para não mostrar pontos de períodos antigos
+      return res.json({ totalPoints: 0, history: [] });
     }
 
     const pointsHistory = await db

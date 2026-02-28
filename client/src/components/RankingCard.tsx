@@ -47,7 +47,7 @@ export function RankingCard() {
     queryKey: ['/api/gamification/ranking', period, selectedCategory],
     queryFn: async () => {
       const params = new URLSearchParams();
-      params.append('period', period);
+      params.append('filter', period);
       if (selectedCategory !== 'all') {
         params.append('categoryId', selectedCategory);
       }
