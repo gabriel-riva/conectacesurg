@@ -1490,6 +1490,7 @@ export const materialFiles = pgTable("material_files", {
   downloadCount: integer("download_count").notNull().default(0),
   contentType: text("content_type").notNull().default("file"), // "file" ou "youtube"
   youtubeUrl: text("youtube_url"), // URL do YouTube quando contentType é "youtube"
+  targetUserCategories: integer("target_user_categories").array().default([]), // IDs das categorias de usuário que podem ver o arquivo
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
