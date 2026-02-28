@@ -67,7 +67,7 @@ const LatestNewsCard: React.FC<LatestNewsCardProps> = ({ limit = 3 }) => {
           <div className="space-y-4">
             {latestNews.map((news: any) => (
               <div 
-                key={news.id} 
+                key={news.id ?? news.sourceUrl ?? news.title} 
                 className="flex gap-3 cursor-pointer hover:bg-accent p-2 rounded-md transition-colors"
                 onClick={() => handleNewsClick(news)}
               >
