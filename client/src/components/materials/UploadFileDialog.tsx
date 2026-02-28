@@ -3,15 +3,17 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Upload, X, FileText, Youtube, File, Folder } from 'lucide-react';
+import { Upload, X, FileText, Youtube, File, Folder, Eye } from 'lucide-react';
 import { DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from '@/hooks/use-toast';
+import { UserCategory } from '@shared/schema';
 
 interface MaterialFolder {
   id: number;
@@ -89,7 +91,14 @@ interface UploadFileDialogProps {
 export default function UploadFileDialog({ folderId, onSuccess }: UploadFileDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [dragActive, setDragActive] = useState(false);
+  const [selectedCategories, setSelectedCategories] = useState<number[]>([]);
+  const [selectedYoutubeCategories, setSelectedYoutubeCategories] = useState<number[]>([]);
   const queryClient = useQueryClient();
+
+  // Query para buscar categorias de usuário
+  const { data: userCategories = [] } = useQuery<UserCategory[]>({
+    queryKey: ['/api/user-categories'],
+  });
 
   // Query para buscar pastas
   const { data: folders = [], isLoading: foldersLoading } = useQuery<MaterialFolder[]>({
@@ -130,6 +139,9 @@ export default function UploadFileDialog({ folderId, onSuccess }: UploadFileDial
       formData.append('name', data.name);
       if (data.description) formData.append('description', data.description);
       if (data.folderId) formData.append('folderId', data.folderId.toString());
+      if (selectedCategories.length > 0) {
+        formData.append('targetUserCategories', JSON.stringify(selectedCategories));
+      }
 
       const response = await fetch('/api/materials/files', {
         method: 'POST',
@@ -168,6 +180,9 @@ export default function UploadFileDialog({ folderId, onSuccess }: UploadFileDial
       formData.append('youtubeUrl', data.youtubeUrl);
       formData.append('contentType', 'youtube');
       if (data.folderId) formData.append('folderId', data.folderId.toString());
+      if (selectedYoutubeCategories.length > 0) {
+        formData.append('targetUserCategories', JSON.stringify(selectedYoutubeCategories));
+      }
 
       const response = await fetch('/api/materials/files', {
         method: 'POST',
@@ -409,6 +424,43 @@ export default function UploadFileDialog({ folderId, onSuccess }: UploadFileDial
                 )}
               />
 
+              <div>
+                <label className="text-sm font-medium">Visibilidade por Categoria</label>
+                <div className="text-xs text-muted-foreground mb-2">
+                  Se nenhuma categoria for selecionada, o arquivo será visível para todos.
+                </div>
+                {userCategories.length > 0 ? (
+                  <div className="space-y-2 max-h-40 overflow-y-auto border rounded-md p-3">
+                    {userCategories.map((category) => (
+                      <div key={category.id} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={`file-category-${category.id}`}
+                          checked={selectedCategories.includes(category.id)}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              setSelectedCategories([...selectedCategories, category.id]);
+                            } else {
+                              setSelectedCategories(selectedCategories.filter((id) => id !== category.id));
+                            }
+                          }}
+                        />
+                        <label
+                          htmlFor={`file-category-${category.id}`}
+                          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex items-center gap-2"
+                        >
+                          <div className="w-3 h-3 rounded-full" style={{ backgroundColor: category.color || undefined }} />
+                          {category.name}
+                        </label>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                    <Eye className="w-3 h-3" /> Visível para todos
+                  </div>
+                )}
+              </div>
+
               <div className="flex justify-end gap-2 pt-4">
                 <Button type="button" variant="outline" onClick={onSuccess}>
                   Cancelar
@@ -501,6 +553,43 @@ export default function UploadFileDialog({ folderId, onSuccess }: UploadFileDial
                   </FormItem>
                 )}
               />
+
+              <div>
+                <label className="text-sm font-medium">Visibilidade por Categoria</label>
+                <div className="text-xs text-muted-foreground mb-2">
+                  Se nenhuma categoria for selecionada, o vídeo será visível para todos.
+                </div>
+                {userCategories.length > 0 ? (
+                  <div className="space-y-2 max-h-40 overflow-y-auto border rounded-md p-3">
+                    {userCategories.map((category) => (
+                      <div key={category.id} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={`yt-category-${category.id}`}
+                          checked={selectedYoutubeCategories.includes(category.id)}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              setSelectedYoutubeCategories([...selectedYoutubeCategories, category.id]);
+                            } else {
+                              setSelectedYoutubeCategories(selectedYoutubeCategories.filter((id) => id !== category.id));
+                            }
+                          }}
+                        />
+                        <label
+                          htmlFor={`yt-category-${category.id}`}
+                          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex items-center gap-2"
+                        >
+                          <div className="w-3 h-3 rounded-full" style={{ backgroundColor: category.color || undefined }} />
+                          {category.name}
+                        </label>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                    <Eye className="w-3 h-3" /> Visível para todos
+                  </div>
+                )}
+              </div>
 
               <div className="flex justify-end gap-2 pt-4">
                 <Button type="button" variant="outline" onClick={onSuccess}>

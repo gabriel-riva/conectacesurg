@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient } from "@/lib/queryClient";
-import { Edit, Eye, Folder, BookOpen, ClipboardList } from "lucide-react";
+import { Edit, Eye, Folder, BookOpen, ClipboardList, FileText } from "lucide-react";
 import { UserCategory } from "@shared/schema";
 
 interface MaterialFolder {
@@ -45,10 +45,19 @@ interface Survey {
   isActive: boolean;
 }
 
+interface MaterialFile {
+  id: number;
+  name: string;
+  description: string | null;
+  folderId: number | null;
+  targetUserCategories: number[];
+  contentType?: string;
+}
+
 export function AdminAccessManagement() {
   const [accessTab, setAccessTab] = useState("materiais");
   const [editingResource, setEditingResource] = useState<{
-    type: "folder" | "trail" | "survey";
+    type: "folder" | "file" | "trail" | "survey";
     id: number;
     name: string;
     targetUserCategories: number[];
@@ -88,6 +97,43 @@ export function AdminAccessManagement() {
       const response = await fetch("/api/surveys");
       if (!response.ok) throw new Error("Failed to fetch surveys");
       return response.json();
+    },
+  });
+
+  // Fetch material files
+  const { data: files = [], isLoading: filesLoading } = useQuery<MaterialFile[]>({
+    queryKey: ["/api/materials/files"],
+    queryFn: async () => {
+      const response = await fetch("/api/materials/files");
+      if (!response.ok) throw new Error("Failed to fetch files");
+      return response.json();
+    },
+  });
+
+  // Mutation for updating file access
+  const updateFileMutation = useMutation({
+    mutationFn: async ({ id, targetUserCategories }: { id: number; targetUserCategories: number[] }) => {
+      const file = files.find(f => f.id === id);
+      const response = await fetch(`/api/materials/files/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: file?.name,
+          description: file?.description,
+          folderId: file?.folderId,
+          targetUserCategories,
+        }),
+      });
+      if (!response.ok) throw new Error("Failed to update file");
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/materials/files"] });
+      toast({ title: "Acesso do arquivo atualizado com sucesso" });
+      setEditingResource(null);
+    },
+    onError: () => {
+      toast({ title: "Erro ao atualizar acesso do arquivo", variant: "destructive" });
     },
   });
 
@@ -175,7 +221,7 @@ export function AdminAccessManagement() {
     },
   });
 
-  const handleEdit = (type: "folder" | "trail" | "survey", id: number, name: string, targetUserCategories: number[]) => {
+  const handleEdit = (type: "folder" | "file" | "trail" | "survey", id: number, name: string, targetUserCategories: number[]) => {
     setEditingResource({ type, id, name, targetUserCategories });
     setSelectedCategories(targetUserCategories || []);
   };
@@ -186,6 +232,9 @@ export function AdminAccessManagement() {
     switch (editingResource.type) {
       case "folder":
         updateFolderMutation.mutate({ id: editingResource.id, targetUserCategories: selectedCategories });
+        break;
+      case "file":
+        updateFileMutation.mutate({ id: editingResource.id, targetUserCategories: selectedCategories });
         break;
       case "trail":
         updateTrailMutation.mutate({ id: editingResource.id, targetUserCategories: selectedCategories });
@@ -217,7 +266,7 @@ export function AdminAccessManagement() {
     });
   };
 
-  const isSaving = updateFolderMutation.isPending || updateTrailMutation.isPending || updateSurveyMutation.isPending;
+  const isSaving = updateFolderMutation.isPending || updateFileMutation.isPending || updateTrailMutation.isPending || updateSurveyMutation.isPending;
 
   return (
     <>
@@ -281,6 +330,54 @@ export function AdminAccessManagement() {
                             variant="ghost"
                             size="sm"
                             onClick={() => handleEdit("folder", folder.id, folder.name, folder.targetUserCategories || [])}
+                          >
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+
+              {/* Seção de Arquivos */}
+              <h3 className="text-md font-semibold mt-6 mb-3">Arquivos</h3>
+              {filesLoading ? (
+                <div className="flex justify-center items-center h-32">
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+                </div>
+              ) : files.length === 0 ? (
+                <div className="text-center py-10 text-gray-500">
+                  Nenhum arquivo encontrado.
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Arquivo</TableHead>
+                      <TableHead>Categorias com acesso</TableHead>
+                      <TableHead className="w-20">Editar</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {files.map((file) => (
+                      <TableRow key={file.id}>
+                        <TableCell className="font-medium">
+                          <div className="flex items-center gap-2">
+                            <FileText className="w-4 h-4 text-gray-600" />
+                            {file.name}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex flex-wrap gap-1">
+                            {renderCategoryBadges(file.targetUserCategories || [])}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleEdit("file", file.id, file.name, file.targetUserCategories || [])}
                           >
                             <Edit className="w-4 h-4" />
                           </Button>

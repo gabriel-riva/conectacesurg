@@ -3,14 +3,16 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Folder } from 'lucide-react';
+import { Folder, Eye } from 'lucide-react';
 import { DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from '@/hooks/use-toast';
+import { UserCategory } from '@shared/schema';
 
 interface MaterialFolder {
   id: number;
@@ -46,6 +48,7 @@ interface MaterialFile {
   downloadCount: number;
   contentType?: string;
   youtubeUrl?: string;
+  targetUserCategories?: number[];
   createdAt: Date;
   updatedAt: Date;
   uploader: {
@@ -75,7 +78,13 @@ interface EditFileDialogProps {
 
 export default function EditFileDialog({ file, onSuccess }: EditFileDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedCategories, setSelectedCategories] = useState<number[]>(file.targetUserCategories || []);
   const queryClient = useQueryClient();
+
+  // Query para buscar categorias de usuário
+  const { data: userCategories = [] } = useQuery<UserCategory[]>({
+    queryKey: ['/api/user-categories'],
+  });
 
   // Query para buscar pastas
   const { data: folders = [], isLoading: foldersLoading } = useQuery<MaterialFolder[]>({
@@ -103,7 +112,10 @@ export default function EditFileDialog({ file, onSuccess }: EditFileDialogProps)
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(data),
+        body: JSON.stringify({
+          ...data,
+          targetUserCategories: selectedCategories,
+        }),
       });
 
       if (!response.ok) {
@@ -207,6 +219,43 @@ export default function EditFileDialog({ file, onSuccess }: EditFileDialogProps)
               </FormItem>
             )}
           />
+
+          <div>
+            <label className="text-sm font-medium">Visibilidade por Categoria</label>
+            <div className="text-xs text-muted-foreground mb-2">
+              Se nenhuma categoria for selecionada, o arquivo será visível para todos.
+            </div>
+            {userCategories.length > 0 ? (
+              <div className="space-y-2 max-h-40 overflow-y-auto border rounded-md p-3">
+                {userCategories.map((category) => (
+                  <div key={category.id} className="flex items-center space-x-2">
+                    <Checkbox
+                      id={`edit-file-category-${category.id}`}
+                      checked={selectedCategories.includes(category.id)}
+                      onCheckedChange={(checked) => {
+                        if (checked) {
+                          setSelectedCategories([...selectedCategories, category.id]);
+                        } else {
+                          setSelectedCategories(selectedCategories.filter((id) => id !== category.id));
+                        }
+                      }}
+                    />
+                    <label
+                      htmlFor={`edit-file-category-${category.id}`}
+                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex items-center gap-2"
+                    >
+                      <div className="w-3 h-3 rounded-full" style={{ backgroundColor: category.color || undefined }} />
+                      {category.name}
+                    </label>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                <Eye className="w-3 h-3" /> Visível para todos
+              </div>
+            )}
+          </div>
 
           <div className="flex justify-end gap-2 pt-4">
             <Button type="button" variant="outline" onClick={onSuccess}>

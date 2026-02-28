@@ -108,6 +108,30 @@ const hasAccessToFolder = async (folderId: number, userId: number | undefined, u
   return false;
 };
 
+// Função para verificar se o usuário tem acesso a um arquivo específico
+const hasAccessToFile = async (file: any, userId: number | undefined, userRole: string) => {
+  if (userRole === "admin" || userRole === "superadmin") {
+    return true;
+  }
+
+  // Se targetUserCategories está vazio, o arquivo é visível para todos
+  if (!file.targetUserCategories || file.targetUserCategories.length === 0) {
+    return true;
+  }
+
+  if (!userId) return false;
+
+  // Verificar por categorias de usuário
+  const userCategories = await dbStorage.getUserCategoryAssignments(userId);
+  const userCategoryIds = userCategories.map(a => a.categoryId);
+
+  if (file.targetUserCategories.some((catId: number) => userCategoryIds.includes(catId))) {
+    return true;
+  }
+
+  return false;
+};
+
 // ROTAS PARA PASTAS
 
 // Listar todas as pastas (com controle de acesso)
@@ -345,13 +369,14 @@ router.get("/files", isAuthenticated, async (req: Request, res: Response) => {
     const accessibleFiles = [];
     
     for (const file of files) {
+      // Verificar acesso à pasta (se houver)
       if (file.folderId) {
-        const hasAccess = await hasAccessToFolder(file.folderId, userId, userRole);
-        if (hasAccess) {
-          accessibleFiles.push(file);
-        }
-      } else {
-        // Arquivos sem pasta são públicos
+        const hasFolderAccess = await hasAccessToFolder(file.folderId, userId, userRole);
+        if (!hasFolderAccess) continue;
+      }
+      // Verificar acesso ao arquivo
+      const hasFileAccess = await hasAccessToFile(file, userId, userRole);
+      if (hasFileAccess) {
         accessibleFiles.push(file);
       }
     }
@@ -376,14 +401,19 @@ router.get("/files/:id", isAuthenticated, async (req: Request, res: Response) =>
       return res.status(404).json({ error: "Arquivo não encontrado" });
     }
     
-    // Verificar acesso
+    // Verificar acesso à pasta
     if (file.folderId) {
-      const hasAccess = await hasAccessToFolder(file.folderId, userId, userRole);
-      if (!hasAccess) {
+      const hasFolderAccess = await hasAccessToFolder(file.folderId, userId, userRole);
+      if (!hasFolderAccess) {
         return res.status(403).json({ error: "Acesso negado" });
       }
     }
-    
+    // Verificar acesso ao arquivo
+    const hasFileAccess = await hasAccessToFile(file, userId, userRole);
+    if (!hasFileAccess) {
+      return res.status(403).json({ error: "Acesso negado" });
+    }
+
     res.json(file);
   } catch (error) {
     console.error("Erro ao buscar arquivo:", error);
@@ -417,6 +447,20 @@ router.post("/files", isAdmin, (req: Request, res: Response, next: Function) => 
         return res.status(400).json({ error: "URL deve ser do YouTube" });
       }
       
+      // Processar targetUserCategories
+      let targetUserCategories: number[] = [];
+      if (req.body.targetUserCategories) {
+        if (typeof req.body.targetUserCategories === 'string') {
+          if (req.body.targetUserCategories.trim() !== '') {
+            try {
+              targetUserCategories = JSON.parse(req.body.targetUserCategories);
+            } catch { targetUserCategories = []; }
+          }
+        } else if (Array.isArray(req.body.targetUserCategories)) {
+          targetUserCategories = req.body.targetUserCategories.map(Number);
+        }
+      }
+
       const fileData = {
         name: req.body.name,
         description: req.body.description,
@@ -428,6 +472,7 @@ router.post("/files", isAdmin, (req: Request, res: Response, next: Function) => 
         fileSize: 0,
         contentType: "youtube",
         youtubeUrl: req.body.youtubeUrl,
+        targetUserCategories,
       };
       
       // Validar dados
@@ -455,6 +500,20 @@ router.post("/files", isAdmin, (req: Request, res: Response, next: Function) => 
       
       console.log(`✅ Arquivo uploadado para Object Storage - Path: ${objectPath}, Size: ${fileSize} bytes`);
       
+      // Processar targetUserCategories para arquivos
+      let fileTargetUserCategories: number[] = [];
+      if (req.body.targetUserCategories) {
+        if (typeof req.body.targetUserCategories === 'string') {
+          if (req.body.targetUserCategories.trim() !== '') {
+            try {
+              fileTargetUserCategories = JSON.parse(req.body.targetUserCategories);
+            } catch { fileTargetUserCategories = []; }
+          }
+        } else if (Array.isArray(req.body.targetUserCategories)) {
+          fileTargetUserCategories = req.body.targetUserCategories.map(Number);
+        }
+      }
+
       // Salvar no banco de dados
       const fileData = {
         name: req.body.name || req.file.originalname,
@@ -467,6 +526,7 @@ router.post("/files", isAdmin, (req: Request, res: Response, next: Function) => 
         fileSize: fileSize,
         contentType: "file",
         youtubeUrl: null,
+        targetUserCategories: fileTargetUserCategories,
       };
       
       // Validar dados
@@ -503,15 +563,21 @@ router.get("/files/:id/download", isAuthenticated, async (req: Request, res: Res
       return res.status(404).json({ error: "Arquivo não encontrado" });
     }
     
-    // Verificar acesso
+    // Verificar acesso à pasta
     if (file.folderId) {
-      const hasAccess = await hasAccessToFolder(file.folderId, userId, userRole);
-      if (!hasAccess) {
-        console.log(`❌ Acesso negado - User: ${(req.user as any)?.name}, Arquivo: ${file.name}, Pasta: ${file.folderId}`);
+      const hasFolderAccess = await hasAccessToFolder(file.folderId, userId, userRole);
+      if (!hasFolderAccess) {
+        console.log(`❌ Acesso negado (pasta) - User: ${(req.user as any)?.name}, Arquivo: ${file.name}, Pasta: ${file.folderId}`);
         return res.status(403).json({ error: "Acesso negado" });
       }
     }
-    
+    // Verificar acesso ao arquivo
+    const hasFileAccessDownload = await hasAccessToFile(file, userId, userRole);
+    if (!hasFileAccessDownload) {
+      console.log(`❌ Acesso negado (arquivo) - User: ${(req.user as any)?.name}, Arquivo: ${file.name}`);
+      return res.status(403).json({ error: "Acesso negado" });
+    }
+
     // Verificar se é um arquivo no Object Storage
     if (file.fileUrl && file.fileUrl.startsWith('/objects/')) {
       const objectStorageService = new ObjectStorageService();
@@ -585,21 +651,26 @@ router.get("/files/:id/view", isAuthenticated, async (req: Request, res: Respons
       return res.status(404).json({ error: "Arquivo não encontrado" });
     }
     
-    // Verificar acesso
+    // Verificar acesso à pasta
     if (file.folderId) {
-      const hasAccess = await hasAccessToFolder(file.folderId, userId, userRole);
-      if (!hasAccess) {
+      const hasFolderAccess = await hasAccessToFolder(file.folderId, userId, userRole);
+      if (!hasFolderAccess) {
         return res.status(403).json({ error: "Acesso negado" });
       }
     }
-    
+    // Verificar acesso ao arquivo
+    const hasFileAccessView = await hasAccessToFile(file, userId, userRole);
+    if (!hasFileAccessView) {
+      return res.status(403).json({ error: "Acesso negado" });
+    }
+
     // Verificar se é um arquivo no Object Storage
     if (file.fileUrl && file.fileUrl.startsWith('/objects/')) {
       const objectStorageService = new ObjectStorageService();
-      
+
       try {
         const objectFile = await objectStorageService.getObjectEntityFile(file.fileUrl);
-        
+
         // MATERIAIS SÃO PÚBLICOS PARA VISUALIZAÇÃO - Não verificar ACL
         // Isso resolve o problema de "acesso negado" na visualização para usuários comuns
         console.log(`✅ Material visualização pública - Acesso liberado para usuário: ${(req.user as any)?.name} (${(req.user as any)?.role})`);
@@ -654,12 +725,29 @@ router.put("/files/:id", isAdmin, async (req: Request, res: Response) => {
   try {
     const fileId = parseInt(req.params.id);
     
-    const fileData = {
+    // Processar targetUserCategories
+    let updateTargetUserCategories: number[] | undefined;
+    if (req.body.targetUserCategories !== undefined) {
+      if (Array.isArray(req.body.targetUserCategories)) {
+        updateTargetUserCategories = req.body.targetUserCategories.map(Number);
+      } else if (typeof req.body.targetUserCategories === 'string') {
+        try {
+          updateTargetUserCategories = JSON.parse(req.body.targetUserCategories);
+        } catch { updateTargetUserCategories = []; }
+      } else {
+        updateTargetUserCategories = [];
+      }
+    }
+
+    const fileData: any = {
       name: req.body.name,
       description: req.body.description,
       folderId: req.body.folderId ? parseInt(req.body.folderId) : null,
     };
-    
+    if (updateTargetUserCategories !== undefined) {
+      fileData.targetUserCategories = updateTargetUserCategories;
+    }
+
     const file = await dbStorage.updateMaterialFile(fileId, fileData);
     
     if (!file) {

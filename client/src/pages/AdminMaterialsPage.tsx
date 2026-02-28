@@ -66,6 +66,7 @@ interface MaterialFile {
   downloadCount: number;
   contentType?: string;
   youtubeUrl?: string;
+  targetUserCategories?: number[];
   createdAt: Date;
   updatedAt: Date;
   uploader: {
@@ -549,6 +550,7 @@ export default function AdminMaterialsPage() {
                           <TableHead>Pasta</TableHead>
                           <TableHead>Tamanho</TableHead>
                           <TableHead>Tipo</TableHead>
+                          <TableHead>Visibilidade</TableHead>
                           <TableHead>Uploader</TableHead>
                           <TableHead>Downloads</TableHead>
                           <TableHead>Enviado em</TableHead>
@@ -573,6 +575,11 @@ export default function AdminMaterialsPage() {
                             <TableCell>{file.fileType === 'video/youtube' ? 'Vídeo YouTube' : formatFileSize(file.fileSize)}</TableCell>
                             <TableCell>
                               <Badge variant="outline">{file.fileType}</Badge>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex flex-wrap gap-1">
+                                {getCategoryBadges({ targetUserCategories: file.targetUserCategories || [] } as any)}
+                              </div>
                             </TableCell>
                             <TableCell>
                               <div className="flex items-center gap-2">
