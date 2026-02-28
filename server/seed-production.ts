@@ -1,6 +1,7 @@
 import { pool } from "./db";
 import fs from "fs";
 import path from "path";
+import { fileURLToPath } from "url";
 
 export async function seedProductionIfEmpty(): Promise<void> {
   try {
@@ -14,17 +15,24 @@ export async function seedProductionIfEmpty(): Promise<void> {
     
     console.log(`⚠️ Banco quase vazio (${userCount} usuários). Iniciando seed de produção...`);
     
-    const seedFile = path.join(__dirname, "seed-data", "production-seed.sql");
+    const possiblePaths = [
+      path.join(process.cwd(), "server", "seed-data", "production-seed.sql"),
+      path.join(process.cwd(), "seed-data", "production-seed.sql"),
+    ];
     
-    if (!fs.existsSync(seedFile)) {
-      const altPath = path.join(process.cwd(), "server", "seed-data", "production-seed.sql");
-      if (!fs.existsSync(altPath)) {
-        console.log("❌ Arquivo de seed não encontrado. Pulando.");
-        return;
+    let sqlContent: string | null = null;
+    for (const p of possiblePaths) {
+      if (fs.existsSync(p)) {
+        sqlContent = fs.readFileSync(p, "utf-8");
+        console.log(`📄 Arquivo de seed encontrado: ${p}`);
+        break;
       }
-      var sqlContent = fs.readFileSync(altPath, "utf-8");
-    } else {
-      var sqlContent = fs.readFileSync(seedFile, "utf-8");
+    }
+    
+    if (!sqlContent) {
+      console.log("❌ Arquivo de seed não encontrado em nenhum caminho. Pulando.");
+      console.log("   Caminhos tentados:", possiblePaths.join(", "));
+      return;
     }
     
     const lines = sqlContent.split("\n");
@@ -38,7 +46,9 @@ export async function seedProductionIfEmpty(): Promise<void> {
         trimmed.startsWith("--") ||
         trimmed.startsWith("SET ") ||
         trimmed.startsWith("SELECT pg_catalog") ||
-        trimmed.startsWith("\\")
+        trimmed.startsWith("\\") ||
+        trimmed.startsWith("ALTER TABLE") ||
+        trimmed.startsWith("SESSION AUTHORIZATION")
       ) {
         continue;
       }
