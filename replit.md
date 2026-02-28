@@ -46,18 +46,12 @@ Preferred communication style: Simple, everyday language.
 - **Survey/Polls System**: Comprehensive survey functionality with multiple question types, user category targeting, and an adaptive widget display.
 - **Trail System**: Content pages with commenting, replies, likes, and category-based visibility.
 
-### Database Environment Separation
-- **Development/Production Separation**: Fully implemented with schema-based separation (`development` and `production` schemas).
-- **Automatic Environment Detection**: Based on `NODE_ENV` variable, utilizing `search_path` for complete environment isolation.
-- **Migration Process**: Leverages `npm run db:push` for schema synchronization.
-- **Data Synchronization**: Process established for copying production data to development with automatic path updates for environment isolation.
-- **Last Migration**: August 16, 2025 - Production schema copied to development with file paths updated from `/objects/materials/` to `/objects/dev/materials/`. Object Storage files also copied to development paths.
-- **Schema Organization**: 
-  - `production`: Current production data (active users, all features and tables)
-  - `development`: Testing environment with complete mirror of production data
-  - `production_legacy`: Former `public` schema renamed to avoid confusion (old data - DO NOT USE)
-  - `public`: Standard PostgreSQL schema (empty, reserved for PostgreSQL extensions - NEVER USE)
-- **Important**: Application NEVER uses `public` or `production_legacy` schemas - only `production` or `development` based on NODE_ENV
+### Database Architecture
+- **Schema**: Uses standard PostgreSQL `public` schema (Replit default)
+- **Migration Process**: Uses `npm run db:push` for schema synchronization via Drizzle ORM
+- **Legacy Schemas**: Old `development`, `production`, and `production_legacy` schemas still exist in the database as backups but are NOT used by the application
+- **Last Migration**: February 28, 2026 - Migrated from custom schema-based separation to standard `public` schema for Replit compatibility. Data copied from `development` schema to `public`.
+- **Important**: `server/config/database.ts` no longer modifies DATABASE_URL with search_path — uses Replit's DATABASE_URL directly
 
 ### File Upload Protection System (August 2025)
 - **Environment-Based Object Storage**: All file uploads use environment-specific paths to prevent conflicts between development and production.
