@@ -47,17 +47,15 @@ Preferred communication style: Simple, everyday language.
 - **Trail System**: Content pages with commenting, replies, likes, and category-based visibility.
 
 ### Database Architecture
-- **Same Neon database** for development and production, separated by PostgreSQL schemas
-- **Development** (NODE_ENV=development): Uses `public` schema (padrão Replit, visível na aba Database)
-- **Production** (NODE_ENV=production): Uses `production` schema via `search_path` (99+ usuários reais, dados críticos)
+- **Schema**: Uses standard PostgreSQL `public` schema (Replit default) — no custom `search_path` logic
+- **Both environments** (dev and production) use `public` schema via DATABASE_URL directly
 - **Migration Process**: Uses `npm run db:push` for schema synchronization via Drizzle ORM
-- **Schema Organization**:
-  - `public`: Development data (85 users mirror, visible in Replit Database tab)
-  - `production`: Production data (99+ real users - DO NOT DELETE)
-  - `development`: Legacy dev schema (backup, no longer used by app)
-  - `production_legacy`: Old renamed schema (backup, not used)
-- **Last Migration**: February 28, 2026 - Dev data moved from `development` schema to `public` schema so Replit Database tab can display it. Production schema untouched.
-- **Important**: `server/config/database.ts` adds `search_path=production` only for production; development uses DATABASE_URL directly (defaults to `public`)
+- **Backup Schemas** (still in database, NOT used by app):
+  - `production`: Former production data (99 users) — DO NOT DELETE, kept as backup
+  - `development`: Former dev data (85 users) — kept as backup
+  - `production_legacy`: Old renamed schema — kept as backup
+- **Last Migration**: February 28, 2026 - Production data (99 users) copied to `public` schema. All `search_path` logic removed from `database.ts`. App now uses Replit's standard database pattern. When republished, Replit will create a separate production database and copy data from `public`.
+- **Important**: `server/config/database.ts` uses DATABASE_URL directly without modification. No schema switching.
 
 ### File Upload Protection System (August 2025)
 - **Environment-Based Object Storage**: All file uploads use environment-specific paths to prevent conflicts between development and production.
