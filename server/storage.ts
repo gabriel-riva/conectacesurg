@@ -79,7 +79,7 @@ import {
   type InsertChallengeCommentLike
 } from "@shared/schema";
 import { db, pool } from "./db";
-import { and, asc, desc, eq, gte, lte, or, inArray, SQL, isNull, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gte, lte, or, inArray, SQL, isNull, sql, getTableColumns } from "drizzle-orm";
 
 export interface IStorage {
   // User related methods
@@ -1307,21 +1307,22 @@ export class DatabaseStorage implements IStorage {
   // News methods
   async getAllNews(includeUnpublished: boolean = false): Promise<(News & { category?: NewsCategory })[]> {
     try {
+      const newsColumns = getTableColumns(news);
       const query = db
         .select({
-          ...news,
+          ...newsColumns,
           category: newsCategories
         })
         .from(news)
         .leftJoin(newsCategories, eq(news.categoryId, newsCategories.id))
         .orderBy(desc(news.createdAt));
-      
+
       if (!includeUnpublished) {
         query.where(eq(news.isPublished, true));
       }
-      
+
       const results = await query;
-      
+
       return results.map(item => ({
         ...item,
         category: item.category || undefined
@@ -1334,9 +1335,10 @@ export class DatabaseStorage implements IStorage {
 
   async getLatestNews(limit: number): Promise<(News & { category?: NewsCategory })[]> {
     try {
+      const newsColumns = getTableColumns(news);
       const results = await db
         .select({
-          ...news,
+          ...newsColumns,
           category: newsCategories
         })
         .from(news)
@@ -1344,7 +1346,7 @@ export class DatabaseStorage implements IStorage {
         .where(eq(news.isPublished, true))
         .orderBy(desc(news.publishedAt), desc(news.createdAt))
         .limit(limit);
-      
+
       return results.map(item => ({
         ...item,
         category: item.category || undefined
@@ -1357,17 +1359,18 @@ export class DatabaseStorage implements IStorage {
 
   async getNewsById(id: number): Promise<(News & { category?: NewsCategory }) | undefined> {
     try {
+      const newsColumns = getTableColumns(news);
       const [result] = await db
         .select({
-          ...news,
+          ...newsColumns,
           category: newsCategories
         })
         .from(news)
         .leftJoin(newsCategories, eq(news.categoryId, newsCategories.id))
         .where(eq(news.id, id));
-      
+
       if (!result) return undefined;
-      
+
       return {
         ...result,
         category: result.category || undefined
