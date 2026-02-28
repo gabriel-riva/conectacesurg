@@ -47,11 +47,17 @@ Preferred communication style: Simple, everyday language.
 - **Trail System**: Content pages with commenting, replies, likes, and category-based visibility.
 
 ### Database Architecture
-- **Schema**: Uses standard PostgreSQL `public` schema (Replit default)
+- **Same Neon database** for development and production, separated by PostgreSQL schemas
+- **Development** (NODE_ENV=development): Uses `public` schema (padrão Replit, visível na aba Database)
+- **Production** (NODE_ENV=production): Uses `production` schema via `search_path` (99+ usuários reais, dados críticos)
 - **Migration Process**: Uses `npm run db:push` for schema synchronization via Drizzle ORM
-- **Legacy Schemas**: Old `development`, `production`, and `production_legacy` schemas still exist in the database as backups but are NOT used by the application
-- **Last Migration**: February 28, 2026 - Migrated from custom schema-based separation to standard `public` schema for Replit compatibility. Data copied from `development` schema to `public`.
-- **Important**: `server/config/database.ts` no longer modifies DATABASE_URL with search_path — uses Replit's DATABASE_URL directly
+- **Schema Organization**:
+  - `public`: Development data (85 users mirror, visible in Replit Database tab)
+  - `production`: Production data (99+ real users - DO NOT DELETE)
+  - `development`: Legacy dev schema (backup, no longer used by app)
+  - `production_legacy`: Old renamed schema (backup, not used)
+- **Last Migration**: February 28, 2026 - Dev data moved from `development` schema to `public` schema so Replit Database tab can display it. Production schema untouched.
+- **Important**: `server/config/database.ts` adds `search_path=production` only for production; development uses DATABASE_URL directly (defaults to `public`)
 
 ### File Upload Protection System (August 2025)
 - **Environment-Based Object Storage**: All file uploads use environment-specific paths to prevent conflicts between development and production.

@@ -1,7 +1,7 @@
 /**
- * Configuração de banco de dados
- * Usa o banco PostgreSQL padrão do Replit (schema public)
- * O Replit gerencia automaticamente a separação dev/produção
+ * Configuração de banco de dados com separação de ambientes
+ * - Desenvolvimento: usa schema public (padrão Replit, visível na aba Database)
+ * - Produção: usa schema production (dados reais dos 99+ usuários)
  */
 
 interface DatabaseConfig {
@@ -23,11 +23,23 @@ export function getDatabaseConfig(): DatabaseConfig {
     );
   }
   
-  const safeUrl = databaseUrl.replace(/:[^:@]*@/, ':****@');
+  let finalUrl: string;
+  
+  if (isProduction) {
+    finalUrl = databaseUrl.includes('?') 
+      ? `${databaseUrl}&options=--search_path%3Dproduction`
+      : `${databaseUrl}?options=--search_path%3Dproduction`;
+    console.log("🚀 BANCO DE PRODUÇÃO ATIVO (schema: production)");
+  } else {
+    finalUrl = databaseUrl;
+    console.log("🔧 BANCO DE DESENVOLVIMENTO ATIVO (schema: public)");
+  }
+  
+  const safeUrl = finalUrl.replace(/:[^:@]*@/, ':****@');
   console.log(`📊 Conectando ao banco: ${safeUrl.substring(0, 50)}...`);
   
   return {
-    url: databaseUrl,
+    url: finalUrl,
     isProduction,
     environment: nodeEnv
   };
