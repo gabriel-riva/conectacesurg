@@ -2,6 +2,7 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { fileIntegrityMonitor } from "./file-integrity-monitor";
+import { seedProductionIfEmpty } from "./seed-production";
 import path from "path";
 
 const app = express();
@@ -51,9 +52,10 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  await seedProductionIfEmpty();
+  
   const server = await registerRoutes(app);
   
-  // Iniciar monitoramento de integridade de arquivos
   fileIntegrityMonitor.startMonitoring();
   
   // Verificação inicial de integridade
