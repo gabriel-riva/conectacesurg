@@ -10,11 +10,28 @@ const CESURG_UPLOAD_BASE = 'https://www.cesurgmarau.com.br/upload/noticia';
 
 // Função para buscar detalhes de uma notícia da CESURG via API
 async function fetchCesurgNewsDetail(cesurgId: number) {
-  const response = await fetch(`${CESURG_API_BASE}/noticia/${cesurgId}`);
-  if (!response.ok) {
-    throw new Error(`Erro ao acessar API da CESURG: ${response.status}`);
+  // Tentar até 2 vezes com delay entre tentativas
+  let lastError: Error | null = null;
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      if (attempt > 0) {
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        console.log(`Tentativa ${attempt + 1} para notícia ${cesurgId}...`);
+      }
+      const response = await fetch(`${CESURG_API_BASE}/noticia/${cesurgId}`);
+      if (!response.ok) {
+        throw new Error(`Erro ao acessar API da CESURG: ${response.status}`);
+      }
+      const data = await response.json();
+      return parseCesurgNewsData(data);
+    } catch (error: any) {
+      lastError = error;
+    }
   }
-  const data = await response.json();
+  throw lastError;
+}
+
+function parseCesurgNewsData(data: any) {
 
   const title = data.titulo || '';
   const content = data.texto || '';
@@ -71,6 +88,11 @@ async function extractCesurgNews(url: string) {
   }
 }
 
+// Helper: delay entre requests para evitar rate limiting
+function delay(ms: number) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 // Função para importar últimas notícias da CESURG via API real
 async function importLatestCesurgNews() {
   try {
@@ -84,40 +106,60 @@ async function importLatestCesurgNews() {
 
     console.log(`CESURG API retornou ${cesurgNewsList.length} notícias`);
 
+    // Primeiro, filtrar quais notícias ainda não existem no banco
+    const newItems = [];
+    for (const cesurgItem of cesurgNewsList) {
+      const sourceUrl = `https://www.cesurgmarau.com.br/noticia/${cesurgItem.id}`;
+      const existingNews = await storage.getNewsBySourceUrl(sourceUrl);
+      if (existingNews) {
+        console.log(`Notícia já existe: ${cesurgItem.titulo}`);
+        continue;
+      }
+      newItems.push({ ...cesurgItem, sourceUrl });
+    }
+
+    console.log(`${newItems.length} notícias novas para importar`);
+
     const importedNews = [];
 
-    for (const cesurgItem of cesurgNewsList) {
+    for (let i = 0; i < newItems.length; i++) {
+      const cesurgItem = newItems[i];
       try {
-        const sourceUrl = `https://www.cesurgmarau.com.br/noticia/${cesurgItem.id}`;
-
-        // Verificar se já existe notícia com essa URL
-        const existingNews = await storage.getNewsBySourceUrl(sourceUrl);
-        if (existingNews) {
-          console.log(`Notícia já existe: ${cesurgItem.titulo}`);
-          continue;
+        // Delay entre requests para evitar rate limiting da API da CESURG
+        if (i > 0) {
+          await delay(500);
         }
 
         // Buscar detalhes completos da notícia
+        console.log(`Buscando detalhes da notícia ${cesurgItem.id} (${i + 1}/${newItems.length})...`);
         const newsData = await fetchCesurgNewsDetail(cesurgItem.id);
 
         if (newsData.title && newsData.content) {
+          // Usar imagem da listagem como fallback (a listagem sempre tem imagem)
+          let imageUrl = newsData.imageUrl;
+          if (!imageUrl && cesurgItem.imagem) {
+            imageUrl = `${CESURG_UPLOAD_BASE}/${cesurgItem.imagem}`;
+          }
+
           const insertData: InsertNews = {
             title: newsData.title,
             description: newsData.description,
             content: newsData.content,
-            sourceUrl: sourceUrl,
-            imageUrl: newsData.imageUrl,
-            creatorId: 1, // Usar o primeiro admin como criador
+            sourceUrl: cesurgItem.sourceUrl,
+            imageUrl: imageUrl,
+            creatorId: 1,
             isPublished: true,
             publishedAt: newsData.publishedAt,
           };
 
           const newNews = await storage.createNews(insertData);
           importedNews.push(newNews);
-          console.log(`Notícia importada: ${newsData.title}`);
+          console.log(`Notícia importada com sucesso: ${newsData.title}`);
+        } else {
+          console.log(`Notícia ${cesurgItem.id} sem título ou conteúdo, pulando`);
         }
-      } catch (error) {
-        console.error(`Erro ao importar notícia ${cesurgItem.id}:`, error);
+      } catch (error: any) {
+        console.error(`Erro ao importar notícia ${cesurgItem.id} (${cesurgItem.titulo}):`, error?.message || error);
         // Continuar com as próximas mesmo se uma falhar
       }
     }
