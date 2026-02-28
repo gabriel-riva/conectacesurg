@@ -8,9 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Card } from '@/components/ui/card';
 import { toast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
 
@@ -18,17 +16,15 @@ const createFolderSchema = z.object({
   name: z.string().min(1, 'Nome é obrigatório'),
   description: z.string().optional(),
   imageUrl: z.string().url('URL deve ser válida').optional().or(z.literal('')),
-  isPublic: z.boolean().default(false),
-  groupIds: z.array(z.number()).default([])
+  targetUserCategories: z.array(z.number()).default([])
 });
 
 type CreateFolderData = z.infer<typeof createFolderSchema>;
 
-interface Group {
+interface UserCategory {
   id: number;
   name: string;
-  description: string;
-  isPrivate: boolean;
+  color: string;
 }
 
 interface CreateFolderDialogProps {
@@ -40,11 +36,11 @@ export default function CreateFolderDialog({ parentId, onSuccess }: CreateFolder
   const [isSubmitting, setIsSubmitting] = useState(false);
   const queryClient = useQueryClient();
 
-  const { data: groups = [] } = useQuery<Group[]>({
-    queryKey: ['/api/groups'],
+  const { data: userCategories = [] } = useQuery<UserCategory[]>({
+    queryKey: ['/api/user-categories'],
     queryFn: async () => {
-      const response = await fetch('/api/groups');
-      if (!response.ok) throw new Error('Failed to fetch groups');
+      const response = await fetch('/api/user-categories');
+      if (!response.ok) throw new Error('Failed to fetch user categories');
       return response.json();
     }
   });
@@ -55,8 +51,7 @@ export default function CreateFolderDialog({ parentId, onSuccess }: CreateFolder
       name: '',
       description: '',
       imageUrl: '',
-      isPublic: false,
-      groupIds: []
+      targetUserCategories: []
     }
   });
 
@@ -103,7 +98,7 @@ export default function CreateFolderDialog({ parentId, onSuccess }: CreateFolder
       <DialogHeader>
         <DialogTitle>Nova Pasta</DialogTitle>
       </DialogHeader>
-      
+
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 mt-4">
           <FormField
@@ -127,8 +122,8 @@ export default function CreateFolderDialog({ parentId, onSuccess }: CreateFolder
               <FormItem>
                 <FormLabel>Descrição (opcional)</FormLabel>
                 <FormControl>
-                  <Textarea 
-                    placeholder="Descreva o conteúdo da pasta" 
+                  <Textarea
+                    placeholder="Descreva o conteúdo da pasta"
                     {...field}
                     rows={3}
                   />
@@ -145,8 +140,8 @@ export default function CreateFolderDialog({ parentId, onSuccess }: CreateFolder
               <FormItem>
                 <FormLabel>URL da Imagem (opcional)</FormLabel>
                 <FormControl>
-                  <Input 
-                    placeholder="https://exemplo.com/imagem.jpg" 
+                  <Input
+                    placeholder="https://exemplo.com/imagem.jpg"
                     {...field}
                   />
                 </FormControl>
@@ -157,78 +152,44 @@ export default function CreateFolderDialog({ parentId, onSuccess }: CreateFolder
 
           <FormField
             control={form.control}
-            name="isPublic"
+            name="targetUserCategories"
             render={({ field }) => (
-              <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                <div className="space-y-0.5">
-                  <FormLabel className="text-base">Pasta Pública</FormLabel>
-                  <div className="text-sm text-gray-600">
-                    Quando marcada, todos os usuários poderão ver esta pasta
-                  </div>
+              <FormItem>
+                <FormLabel>Visibilidade por Categoria</FormLabel>
+                <div className="text-sm text-muted-foreground mb-2">
+                  Se nenhuma categoria for selecionada, a pasta será visível para todos os usuários.
                 </div>
-                <FormControl>
-                  <Switch
-                    checked={field.value}
-                    onCheckedChange={field.onChange}
-                  />
-                </FormControl>
+                <div className="space-y-2 max-h-40 overflow-y-auto border rounded-md p-3">
+                  {userCategories.map((category) => (
+                    <div key={category.id} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`create-folder-category-${category.id}`}
+                        checked={field.value.includes(category.id)}
+                        onCheckedChange={(checked) => {
+                          if (checked) {
+                            field.onChange([...field.value, category.id]);
+                          } else {
+                            field.onChange(field.value.filter((id: number) => id !== category.id));
+                          }
+                        }}
+                      />
+                      <label
+                        htmlFor={`create-folder-category-${category.id}`}
+                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex items-center gap-2"
+                      >
+                        <div
+                          className="w-3 h-3 rounded-full"
+                          style={{ backgroundColor: category.color }}
+                        />
+                        {category.name}
+                      </label>
+                    </div>
+                  ))}
+                </div>
+                <FormMessage />
               </FormItem>
             )}
           />
-
-          {!form.watch('isPublic') && groups.length > 0 && (
-            <FormField
-              control={form.control}
-              name="groupIds"
-              render={() => (
-                <FormItem>
-                  <FormLabel>Grupos com Acesso</FormLabel>
-                  <Card className="p-4">
-                    <div className="space-y-2">
-                      {groups.map((group) => (
-                        <FormField
-                          key={group.id}
-                          control={form.control}
-                          name="groupIds"
-                          render={({ field }) => (
-                            <FormItem
-                              key={group.id}
-                              className="flex flex-row items-start space-x-3 space-y-0"
-                            >
-                              <FormControl>
-                                <Checkbox
-                                  checked={field.value?.includes(group.id)}
-                                  onCheckedChange={(checked) => {
-                                    const current = field.value || [];
-                                    if (checked) {
-                                      field.onChange([...current, group.id]);
-                                    } else {
-                                      field.onChange(current.filter(id => id !== group.id));
-                                    }
-                                  }}
-                                />
-                              </FormControl>
-                              <div className="space-y-1 leading-none">
-                                <FormLabel className="text-sm font-normal">
-                                  {group.name}
-                                </FormLabel>
-                                {group.description && (
-                                  <p className="text-xs text-gray-600">
-                                    {group.description}
-                                  </p>
-                                )}
-                              </div>
-                            </FormItem>
-                          )}
-                        />
-                      ))}
-                    </div>
-                  </Card>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          )}
 
           <div className="flex justify-end gap-2 pt-4">
             <Button type="button" variant="outline" onClick={onSuccess}>

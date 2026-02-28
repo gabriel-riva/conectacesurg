@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Folder, FileText, Edit, Trash2, Users, Eye, Lock, Upload, Download, Youtube } from 'lucide-react';
+import { Plus, Folder, FileText, Edit, Trash2, Eye, Upload, Download, Youtube } from 'lucide-react';
 import { Header } from '@/components/Header';
 import { AdminSidebar } from '@/components/AdminSidebar';
 import { AdminHeader } from '@/components/AdminHeader';
@@ -12,9 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -28,6 +26,12 @@ import { apiRequest } from '@/lib/queryClient';
 import UploadFileDialog from '@/components/materials/UploadFileDialog';
 import EditFileDialog from '@/components/materials/EditFileDialog';
 
+interface UserCategory {
+  id: number;
+  name: string;
+  color: string;
+}
+
 interface MaterialFolder {
   id: number;
   name: string;
@@ -36,7 +40,7 @@ interface MaterialFolder {
   parentId: number | null;
   imageUrl: string | null;
   isPublic: boolean;
-  groupIds: number[];
+  targetUserCategories: number[];
   createdAt: Date;
   updatedAt: Date;
   creator: {
@@ -76,18 +80,11 @@ interface MaterialFile {
   };
 }
 
-interface Group {
-  id: number;
-  name: string;
-  description: string | null;
-}
-
 const folderSchema = z.object({
   name: z.string().min(1, 'Nome é obrigatório'),
   description: z.string().optional(),
   parentId: z.number().optional(),
-  isPublic: z.boolean().default(false),
-  groupIds: z.array(z.number()).default([]),
+  targetUserCategories: z.array(z.number()).default([]),
 });
 
 type FolderFormData = z.infer<typeof folderSchema>;
@@ -102,7 +99,7 @@ export default function AdminMaterialsPage() {
   const [editingFolder, setEditingFolder] = useState<MaterialFolder | null>(null);
   const [editingFile, setEditingFile] = useState<MaterialFile | null>(null);
   const [deletingItem, setDeletingItem] = useState<{type: 'folder' | 'file', id: number} | null>(null);
-  
+
   const queryClient = useQueryClient();
 
   // Queries
@@ -124,11 +121,11 @@ export default function AdminMaterialsPage() {
     }
   });
 
-  const { data: groups = [] } = useQuery<Group[]>({
-    queryKey: ['/api/groups'],
+  const { data: userCategories = [] } = useQuery<UserCategory[]>({
+    queryKey: ['/api/user-categories'],
     queryFn: async () => {
-      const response = await fetch('/api/groups');
-      if (!response.ok) throw new Error('Failed to fetch groups');
+      const response = await fetch('/api/user-categories');
+      if (!response.ok) throw new Error('Failed to fetch user categories');
       return response.json();
     }
   });
@@ -139,8 +136,7 @@ export default function AdminMaterialsPage() {
     defaultValues: {
       name: '',
       description: '',
-      isPublic: false,
-      groupIds: [],
+      targetUserCategories: [],
     },
   });
 
@@ -207,13 +203,13 @@ export default function AdminMaterialsPage() {
 
   const deleteFileMutation = useMutation({
     mutationFn: async (id: number) => {
-      console.log('🗑️ Tentando excluir arquivo no frontend:', id);
+      console.log('Tentando excluir arquivo no frontend:', id);
       try {
         const result = await apiRequest(`/api/materials/files/${id}`, { method: 'DELETE' });
-        console.log('✅ Arquivo excluído com sucesso no frontend:', result);
+        console.log('Arquivo excluído com sucesso no frontend:', result);
         return result;
       } catch (error) {
-        console.error('❌ Erro ao excluir arquivo no frontend:', error);
+        console.error('Erro ao excluir arquivo no frontend:', error);
         throw error;
       }
     },
@@ -222,7 +218,7 @@ export default function AdminMaterialsPage() {
       toast({ title: 'Arquivo excluído com sucesso' });
     },
     onError: (error: any) => {
-      console.error('❌ Erro na mutação de exclusão:', error);
+      console.error('Erro na mutação de exclusão:', error);
       toast({ title: 'Erro ao excluir arquivo', description: error.message, variant: 'destructive' });
     },
   });
@@ -234,20 +230,9 @@ export default function AdminMaterialsPage() {
       name: folder.name,
       description: folder.description || '',
       parentId: folder.parentId || undefined,
-      isPublic: folder.isPublic,
-      groupIds: folder.groupIds || [],
+      targetUserCategories: folder.targetUserCategories || [],
     });
     setIsFolderDialogOpen(true);
-  };
-
-  const handleEditFile = (file: MaterialFile) => {
-    setEditingFile(file);
-    fileForm.reset({
-      name: file.name,
-      description: file.description || '',
-      folderId: file.folderId || undefined,
-    });
-    setIsFileDialogOpen(true);
   };
 
   const handleFolderSubmit = (data: FolderFormData) => {
@@ -258,11 +243,9 @@ export default function AdminMaterialsPage() {
     }
   };
 
-
-
   const handleDelete = () => {
     if (!deletingItem) return;
-    
+
     if (deletingItem.type === 'folder') {
       deleteFolderMutation.mutate(deletingItem.id);
     } else {
@@ -276,27 +259,42 @@ export default function AdminMaterialsPage() {
     folderForm.reset();
   };
 
-
+  // Helper to get category names for a folder
+  const getCategoryBadges = (folder: MaterialFolder) => {
+    if (!folder.targetUserCategories || folder.targetUserCategories.length === 0) {
+      return <Badge variant="default"><Eye className="w-3 h-3 mr-1" />Visível para todos</Badge>;
+    }
+    return folder.targetUserCategories.map((catId) => {
+      const category = userCategories.find(c => c.id === catId);
+      if (!category) return null;
+      return (
+        <Badge key={catId} variant="secondary" className="mr-1">
+          <div className="w-2 h-2 rounded-full mr-1" style={{ backgroundColor: category.color }} />
+          {category.name}
+        </Badge>
+      );
+    });
+  };
 
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
-      
+
       <div className="flex flex-1 bg-gray-100">
         <AdminSidebar />
-        
+
         <div className="flex-1 p-8">
           <AdminHeader
             title="Gerenciamento de Materiais"
             description="Gerencie pastas e arquivos do repositório de materiais."
           />
-          
+
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="mb-6">
               <TabsTrigger value="pastas">Pastas</TabsTrigger>
               <TabsTrigger value="arquivos">Arquivos</TabsTrigger>
             </TabsList>
-            
+
             <TabsContent value="pastas">
               <Card>
                 <CardHeader>
@@ -330,7 +328,7 @@ export default function AdminMaterialsPage() {
                                 </FormItem>
                               )}
                             />
-                            
+
                             <FormField
                               control={folderForm.control}
                               name="description"
@@ -344,7 +342,7 @@ export default function AdminMaterialsPage() {
                                 </FormItem>
                               )}
                             />
-                            
+
                             <FormField
                               control={folderForm.control}
                               name="parentId"
@@ -370,66 +368,48 @@ export default function AdminMaterialsPage() {
                                 </FormItem>
                               )}
                             />
-                            
+
                             <FormField
                               control={folderForm.control}
-                              name="isPublic"
+                              name="targetUserCategories"
                               render={({ field }) => (
-                                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                                  <div className="space-y-0.5">
-                                    <FormLabel className="text-base">Público</FormLabel>
-                                    <p className="text-sm text-muted-foreground">
-                                      Pasta visível para todos os usuários
-                                    </p>
+                                <FormItem>
+                                  <FormLabel>Visibilidade por Categoria</FormLabel>
+                                  <div className="text-sm text-muted-foreground mb-2">
+                                    Se nenhuma categoria for selecionada, a pasta será visível para todos os usuários.
                                   </div>
-                                  <FormControl>
-                                    <Switch
-                                      checked={field.value}
-                                      onCheckedChange={field.onChange}
-                                    />
-                                  </FormControl>
+                                  <div className="space-y-2 max-h-40 overflow-y-auto border rounded-md p-3">
+                                    {userCategories.map((category) => (
+                                      <div key={category.id} className="flex items-center space-x-2">
+                                        <Checkbox
+                                          id={`folder-category-${category.id}`}
+                                          checked={field.value.includes(category.id)}
+                                          onCheckedChange={(checked) => {
+                                            if (checked) {
+                                              field.onChange([...field.value, category.id]);
+                                            } else {
+                                              field.onChange(field.value.filter((id: number) => id !== category.id));
+                                            }
+                                          }}
+                                        />
+                                        <label
+                                          htmlFor={`folder-category-${category.id}`}
+                                          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex items-center gap-2"
+                                        >
+                                          <div
+                                            className="w-3 h-3 rounded-full"
+                                            style={{ backgroundColor: category.color }}
+                                          />
+                                          {category.name}
+                                        </label>
+                                      </div>
+                                    ))}
+                                  </div>
+                                  <FormMessage />
                                 </FormItem>
                               )}
                             />
-                            
-                            {!folderForm.watch('isPublic') && (
-                              <FormField
-                                control={folderForm.control}
-                                name="groupIds"
-                                render={({ field }) => (
-                                  <FormItem>
-                                    <FormLabel>Grupos com Acesso</FormLabel>
-                                    <FormControl>
-                                      <div className="space-y-2">
-                                        {groups.map((group) => (
-                                          <div key={group.id} className="flex items-center space-x-2">
-                                            <Checkbox
-                                              id={`group-${group.id}`}
-                                              checked={field.value?.includes(group.id) || false}
-                                              onCheckedChange={(checked) => {
-                                                if (checked) {
-                                                  field.onChange([...(field.value || []), group.id]);
-                                                } else {
-                                                  field.onChange(field.value?.filter(id => id !== group.id) || []);
-                                                }
-                                              }}
-                                            />
-                                            <label
-                                              htmlFor={`group-${group.id}`}
-                                              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                                            >
-                                              {group.name}
-                                            </label>
-                                          </div>
-                                        ))}
-                                      </div>
-                                    </FormControl>
-                                    <FormMessage />
-                                  </FormItem>
-                                )}
-                              />
-                            )}
-                            
+
                             <div className="flex justify-end gap-2">
                               <Button type="button" variant="outline" onClick={closeFolderDialog}>
                                 Cancelar
@@ -472,13 +452,9 @@ export default function AdminMaterialsPage() {
                             </TableCell>
                             <TableCell>{folder.description || '-'}</TableCell>
                             <TableCell>
-                              <Badge variant={folder.isPublic ? 'default' : 'secondary'}>
-                                {folder.isPublic ? (
-                                  <><Eye className="w-3 h-3 mr-1" />Público</>
-                                ) : (
-                                  <><Lock className="w-3 h-3 mr-1" />Privado</>
-                                )}
-                              </Badge>
+                              <div className="flex flex-wrap gap-1">
+                                {getCategoryBadges(folder)}
+                              </div>
                             </TableCell>
                             <TableCell>
                               <div className="flex items-center gap-2">
@@ -537,7 +513,7 @@ export default function AdminMaterialsPage() {
                 </CardContent>
               </Card>
             </TabsContent>
-            
+
             <TabsContent value="arquivos">
               <Card>
                 <CardHeader>
@@ -620,7 +596,7 @@ export default function AdminMaterialsPage() {
                                     if (file.fileType === 'video/youtube' && file.youtubeUrl) {
                                       window.open(file.youtubeUrl, '_blank');
                                     } else {
-                                      window.open(file.fileUrl, '_blank');
+                                      window.open(file.fileUrl || '', '_blank');
                                     }
                                   }}
                                 >

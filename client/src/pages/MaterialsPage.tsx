@@ -44,7 +44,7 @@ interface MaterialFolder {
   parentId: number | null;
   imageUrl: string | null;
   isPublic: boolean;
-  groupIds: number[];
+  targetUserCategories: number[];
   createdAt: Date;
   updatedAt: Date;
   creator: {
@@ -400,7 +400,7 @@ export default function MaterialsPage() {
                             <p className="text-sm text-gray-600 mt-1">{folder.description}</p>
                           </div>
                           <div className="flex items-center gap-1">
-                            {folder.isPublic ? (
+                            {(!folder.targetUserCategories || folder.targetUserCategories.length === 0) ? (
                               <Eye className="w-4 h-4 text-green-600" />
                             ) : (
                               <Lock className="w-4 h-4 text-amber-600" />
@@ -411,11 +411,11 @@ export default function MaterialsPage() {
                       <CardContent>
                         <div className="flex items-center justify-between text-sm text-gray-500">
                           <div className="flex items-center gap-2">
-                            {!folder.isPublic && (
+                            {folder.targetUserCategories && folder.targetUserCategories.length > 0 && (
                               <Lock className="w-4 h-4 text-gray-400" />
                             )}
                             <span className="text-xs">
-                              {folder.isPublic ? 'Pasta pública' : 'Pasta privada'}
+                              {(!folder.targetUserCategories || folder.targetUserCategories.length === 0) ? 'Pasta pública' : 'Acesso restrito'}
                             </span>
                           </div>
                         </div>

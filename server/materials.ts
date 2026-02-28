@@ -76,14 +76,36 @@ const hasAccessToFolder = async (folderId: number, userId: number | undefined, u
   const folder = await dbStorage.getMaterialFolder(folderId);
   if (!folder) return false;
 
-  // Se a pasta é pública, todos têm acesso
-  if (folder.isPublic) return true;
+  // Se targetUserCategories está vazio, a pasta é visível para todos
+  if (!folder.targetUserCategories || folder.targetUserCategories.length === 0) {
+    // Transição: também verificar isPublic legado
+    if (folder.isPublic) return true;
+    // Se não tem categorias e não é pública, verificar groupIds legado
+    if (!folder.groupIds || folder.groupIds.length === 0) return true;
+  }
 
-  // Se não é pública, verificar se o usuário está nos grupos permitidos
-  const userGroups = await dbStorage.getUserGroups(userId);
-  const userGroupIds = userGroups.map(g => g.id);
-  
-  return folder.groupIds.some((groupId: any) => userGroupIds.includes(groupId));
+  if (!userId) return false;
+
+  // Verificar por categorias de usuário (novo mecanismo)
+  const userCategories = await dbStorage.getUserCategoryAssignments(userId);
+  const userCategoryIds = userCategories.map(a => a.categoryId);
+
+  if (folder.targetUserCategories && folder.targetUserCategories.length > 0) {
+    if (folder.targetUserCategories.some((catId: number) => userCategoryIds.includes(catId))) {
+      return true;
+    }
+  }
+
+  // Transição: fallback para groupIds legado
+  if (folder.groupIds && folder.groupIds.length > 0) {
+    const userGroups = await dbStorage.getUserGroups(userId);
+    const userGroupIds = userGroups.map(g => g.id);
+    if (folder.groupIds.some((groupId: any) => userGroupIds.includes(groupId))) {
+      return true;
+    }
+  }
+
+  return false;
 };
 
 // ROTAS PARA PASTAS
@@ -93,28 +115,45 @@ router.get("/folders", isAuthenticated, async (req: Request, res: Response) => {
   try {
     const userId = req.user?.id;
     const userRole = req.user?.role;
-    
+
     const folders = await dbStorage.getAllMaterialFolders(userId);
-    
+
+    // Admins veem tudo
+    if (userRole === "admin" || userRole === "superadmin") {
+      return res.json(folders);
+    }
+
+    // Buscar categorias e grupos do usuário uma vez (fora do loop)
+    const userCategories = userId ? await dbStorage.getUserCategoryAssignments(userId) : [];
+    const userCategoryIds = userCategories.map(a => a.categoryId);
+    const userGroups = userId ? await dbStorage.getUserGroups(userId) : [];
+    const userGroupIds = userGroups.map(g => g.id);
+
     // Filtrar pastas com base no acesso do usuário
-    const accessibleFolders = [];
-    
-    for (const folder of folders) {
-      if (userRole === "admin" || userRole === "superadmin") {
-        accessibleFolders.push(folder);
-      } else if (folder.isPublic) {
-        accessibleFolders.push(folder);
-      } else {
-        // Verificar se o usuário está nos grupos permitidos
-        const userGroups = await dbStorage.getUserGroups(userId);
-        const userGroupIds = userGroups.map(g => g.id);
-        
-        if (folder.groupIds.some((groupId: any) => userGroupIds.includes(groupId))) {
-          accessibleFolders.push(folder);
+    const accessibleFolders = folders.filter((folder: any) => {
+      // Se targetUserCategories está vazio, verificar lógica legada
+      if (!folder.targetUserCategories || folder.targetUserCategories.length === 0) {
+        if (folder.isPublic) return true;
+        if (!folder.groupIds || folder.groupIds.length === 0) return true;
+      }
+
+      // Verificar por categorias de usuário
+      if (folder.targetUserCategories && folder.targetUserCategories.length > 0) {
+        if (folder.targetUserCategories.some((catId: number) => userCategoryIds.includes(catId))) {
+          return true;
         }
       }
-    }
-    
+
+      // Transição: fallback para groupIds legado
+      if (folder.groupIds && folder.groupIds.length > 0) {
+        if (folder.groupIds.some((groupId: any) => userGroupIds.includes(groupId))) {
+          return true;
+        }
+      }
+
+      return false;
+    });
+
     res.json(accessibleFolders);
   } catch (error) {
     console.error("Erro ao buscar pastas:", error);
@@ -152,6 +191,23 @@ router.get("/folders/:id", isAuthenticated, async (req: Request, res: Response) 
 // Criar nova pasta (admin apenas)
 router.post("/folders", isAdmin, upload.single("image"), async (req: Request, res: Response) => {
   try {
+    let targetUserCategories: number[] = [];
+    if (req.body.targetUserCategories) {
+      if (typeof req.body.targetUserCategories === 'string') {
+        if (req.body.targetUserCategories.trim() !== '') {
+          try {
+            targetUserCategories = JSON.parse(req.body.targetUserCategories);
+          } catch (e) {
+            console.error("Erro ao fazer parse dos targetUserCategories:", e);
+            targetUserCategories = [];
+          }
+        }
+      } else if (Array.isArray(req.body.targetUserCategories)) {
+        targetUserCategories = req.body.targetUserCategories.map(Number);
+      }
+    }
+
+    // Suporte legado para groupIds
     let groupIds: number[] = [];
     if (req.body.groupIds) {
       if (typeof req.body.groupIds === 'string') {
@@ -159,7 +215,6 @@ router.post("/folders", isAdmin, upload.single("image"), async (req: Request, re
           try {
             groupIds = JSON.parse(req.body.groupIds);
           } catch (e) {
-            console.error("Erro ao fazer parse dos groupIds:", e);
             groupIds = [];
           }
         }
@@ -167,22 +222,23 @@ router.post("/folders", isAdmin, upload.single("image"), async (req: Request, re
         groupIds = req.body.groupIds;
       }
     }
-    
+
     const folderData = {
       name: req.body.name,
       description: req.body.description,
       parentId: req.body.parentId ? parseInt(req.body.parentId) : null,
       creatorId: req.user?.id,
-      isPublic: req.body.isPublic === "true" || req.body.isPublic === true,
+      isPublic: targetUserCategories.length === 0,
       groupIds: groupIds,
+      targetUserCategories: targetUserCategories,
       imageUrl: req.file ? `/uploads/materials/${req.file.filename}` : null,
     };
-    
+
     // Validar dados
     const validatedData = insertMaterialFolderSchema.parse(folderData);
-    
+
     const folder = await dbStorage.createMaterialFolder(validatedData);
-    
+
     res.status(201).json(folder);
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -197,7 +253,24 @@ router.post("/folders", isAdmin, upload.single("image"), async (req: Request, re
 router.put("/folders/:id", isAdmin, upload.single("image"), async (req: Request, res: Response) => {
   try {
     const folderId = parseInt(req.params.id);
-    
+
+    let targetUserCategories: number[] = [];
+    if (req.body.targetUserCategories) {
+      if (typeof req.body.targetUserCategories === 'string') {
+        if (req.body.targetUserCategories.trim() !== '') {
+          try {
+            targetUserCategories = JSON.parse(req.body.targetUserCategories);
+          } catch (e) {
+            console.error("Erro ao fazer parse dos targetUserCategories:", e);
+            targetUserCategories = [];
+          }
+        }
+      } else if (Array.isArray(req.body.targetUserCategories)) {
+        targetUserCategories = req.body.targetUserCategories.map(Number);
+      }
+    }
+
+    // Suporte legado para groupIds
     let groupIds: number[] = [];
     if (req.body.groupIds) {
       if (typeof req.body.groupIds === 'string') {
@@ -205,7 +278,6 @@ router.put("/folders/:id", isAdmin, upload.single("image"), async (req: Request,
           try {
             groupIds = JSON.parse(req.body.groupIds);
           } catch (e) {
-            console.error("Erro ao fazer parse dos groupIds:", e);
             groupIds = [];
           }
         }
@@ -213,25 +285,26 @@ router.put("/folders/:id", isAdmin, upload.single("image"), async (req: Request,
         groupIds = req.body.groupIds;
       }
     }
-    
+
     const folderData: any = {
       name: req.body.name,
       description: req.body.description,
       parentId: req.body.parentId ? parseInt(req.body.parentId) : null,
-      isPublic: req.body.isPublic === "true" || req.body.isPublic === true,
+      isPublic: targetUserCategories.length === 0,
       groupIds: groupIds,
+      targetUserCategories: targetUserCategories,
     };
-    
+
     if (req.file) {
       folderData.imageUrl = `/uploads/materials/${req.file.filename}`;
     }
-    
+
     const folder = await dbStorage.updateMaterialFolder(folderId, folderData);
-    
+
     if (!folder) {
       return res.status(404).json({ error: "Pasta não encontrada" });
     }
-    
+
     res.json(folder);
   } catch (error) {
     console.error("Erro ao atualizar pasta:", error);
