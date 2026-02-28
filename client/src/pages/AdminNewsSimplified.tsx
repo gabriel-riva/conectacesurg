@@ -92,9 +92,17 @@ function NewsImportTab() {
       });
     },
     onSuccess: (data: any) => {
+      const debug = data.debug;
+      let description = data.message || "Notícias importadas com sucesso.";
+      if (debug) {
+        const parts = [`API retornou: ${debug.totalFromApi}`];
+        if (debug.skipped?.length > 0) parts.push(`Já existentes: ${debug.skipped.length}`);
+        if (debug.errors?.length > 0) parts.push(`Erros: ${debug.errors.join('; ')}`);
+        description += ` (${parts.join(' | ')})`;
+      }
       toast({
         title: "Importação concluída",
-        description: data.message || "Notícias importadas com sucesso.",
+        description,
       });
       refetch();
     },
