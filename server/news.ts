@@ -470,15 +470,19 @@ router.post("/import-latest-cesurg", isAdmin, async (req: Request, res: Response
   try {
     const result = await importLatestCesurgNews();
 
+    // Montar mensagem detalhada direto no message para garantir que aparece no toast
+    let message = `${result.importedNews.length} notícias importadas.`;
+    message += ` API CESURG retornou ${result.totalFromApi}.`;
+    if (result.skipped.length > 0) {
+      message += ` ${result.skipped.length} já existiam.`;
+    }
+    if (result.errors.length > 0) {
+      message += ` ${result.errors.length} erros: ${result.errors.slice(0, 3).join(' | ')}`;
+    }
+
     res.status(200).json({
-      message: `${result.importedNews.length} notícias importadas com sucesso`,
+      message,
       news: result.importedNews,
-      debug: {
-        totalFromApi: result.totalFromApi,
-        imported: result.importedNews.length,
-        skipped: result.skipped,
-        errors: result.errors,
-      }
     });
   } catch (error: any) {
     console.error("Erro ao importar notícias da CESURG:", error);

@@ -92,17 +92,10 @@ function NewsImportTab() {
       });
     },
     onSuccess: (data: any) => {
-      const debug = data.debug;
-      let description = data.message || "Notícias importadas com sucesso.";
-      if (debug) {
-        const parts = [`API retornou: ${debug.totalFromApi}`];
-        if (debug.skipped?.length > 0) parts.push(`Já existentes: ${debug.skipped.length}`);
-        if (debug.errors?.length > 0) parts.push(`Erros: ${debug.errors.join('; ')}`);
-        description += ` (${parts.join(' | ')})`;
-      }
       toast({
         title: "Importação concluída",
-        description,
+        description: data.message || "Notícias importadas com sucesso.",
+        duration: 15000,
       });
       refetch();
     },
@@ -149,7 +142,7 @@ function NewsImportTab() {
         title: "Notícia excluída",
         description: "A notícia foi excluída com sucesso.",
       });
-      refetch();
+      queryClient.invalidateQueries({ queryKey: ["/api/news"] });
       setIsDeleteDialogOpen(false);
       setNewsToDelete(null);
     },
@@ -158,6 +151,7 @@ function NewsImportTab() {
         title: "Erro ao excluir notícia",
         description: error.message || "Ocorreu um erro ao excluir a notícia.",
         variant: "destructive",
+        duration: 10000,
       });
     },
   });
