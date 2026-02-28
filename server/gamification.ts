@@ -240,7 +240,24 @@ router.get("/ranking", isAuthenticated, async (req: Request, res: Response) => {
 router.get("/points/extract", isAuthenticated, async (req: Request, res: Response) => {
   try {
     const userId = req.user.id;
-    
+
+    // Buscar configurações para filtrar pelo período atual
+    const settings = await db
+      .select()
+      .from(gamificationSettings)
+      .limit(1);
+
+    const currentSettings = settings[0];
+
+    // Construir condições: sempre filtrar por userId
+    const conditions: any[] = [eq(gamificationPoints.userId, userId)];
+
+    // Filtrar pelo período do ciclo atual se configurado
+    if (currentSettings?.cycleStartDate && currentSettings?.cycleEndDate) {
+      conditions.push(gte(gamificationPoints.createdAt, new Date(currentSettings.cycleStartDate)));
+      conditions.push(lte(gamificationPoints.createdAt, new Date(currentSettings.cycleEndDate)));
+    }
+
     const pointsHistory = await db
       .select({
         id: gamificationPoints.id,
@@ -252,9 +269,9 @@ router.get("/points/extract", isAuthenticated, async (req: Request, res: Respons
       })
       .from(gamificationPoints)
       .leftJoin(users, eq(gamificationPoints.createdBy, users.id))
-      .where(eq(gamificationPoints.userId, userId))
+      .where(and(...conditions))
       .orderBy(desc(gamificationPoints.createdAt));
-    
+
     // Calcular total de pontos
     const totalPoints = pointsHistory.reduce((sum, entry) => sum + entry.points, 0);
     
@@ -400,9 +417,11 @@ router.get("/challenges", isAuthenticated, async (req: Request, res: Response) =
     // Construir condições WHERE
     const conditions: any[] = [];
     
-    // Para usuários não-admin, filtrar apenas desafios ativos
+    // Para usuários não-admin, filtrar apenas desafios ativos e dentro do período válido
     if (!isAdminRequest) {
       conditions.push(eq(gamificationChallenges.isActive, true));
+      // Não mostrar desafios cujo período já encerrou
+      conditions.push(sql`${gamificationChallenges.endDate} >= CURRENT_DATE`);
     }
     
     // Filtrar por tipo se especificado

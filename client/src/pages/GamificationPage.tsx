@@ -12,7 +12,7 @@ import { FeatureGuard } from "@/components/FeatureGuard";
 import { Header } from "@/components/Header";
 
 function GamificationPageContent() {
-  const [rankingFilter, setRankingFilter] = useState("all");
+  const [rankingFilter, setRankingFilter] = useState("cycle");
   const [categoryFilter, setCategoryFilter] = useState("all");
 
   // Queries
